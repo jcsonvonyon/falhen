@@ -1,0 +1,1249 @@
+{
+    "hero_direct_video_url": "",
+    "hero_youtube_bg": "",
+    "hero_vimeo_bg": "",
+    "hero_poster_image": "https://res.cloudinary.com/pnabfi91/image/upload/v1786578372/falhen/uploads/r96mxsji9cdogqrkxwoe.jpg",
+    "showreel_youtube_id": "Tf8rNMZ-Bw0",
+    "hero_badge_label": "",
+    "hero_headline_line1": "Creating what the",
+    "hero_headline_line2": "World Watches",
+    "hero_tagline": "From cinematic campaigns to viral content \u2014 we craft the visual stories your audience can't look away from.",
+    "hero_primary_cta_text": "Explore Our Projects",
+    "hero_primary_cta_url": "/portfolio.php",
+    "hero_secondary_cta_text": "Watch Showreel",
+    "stats_badge_label": "By the Numbers",
+    "stats_headline_white": "A Decade of",
+    "stats_headline_red": "Impact",
+    "stats_description": "The numbers behind Falhen's reputation as one of Africa's most awarded and globally recognised production houses.",
+    "stats_items": [
+        {
+            "number": "150",
+            "suffix": "+",
+            "prefix": "",
+            "label": "Projects Delivered",
+            "sublabel": "Across commercial, film & events",
+            "icon": "ri-film-line"
+        },
+        {
+            "number": "12",
+            "suffix": "+",
+            "prefix": "",
+            "label": "Years Experience",
+            "sublabel": "Delivering world-class productions",
+            "icon": "ri-history-line"
+        },
+        {
+            "number": "7",
+            "suffix": "+",
+            "prefix": "",
+            "label": "Industries Served",
+            "sublabel": "From tech to luxury to social",
+            "icon": "ri-earth-line"
+        },
+        {
+            "number": "4",
+            "suffix": "+",
+            "prefix": "",
+            "label": "Industry Awards",
+            "sublabel": "SHH, Webby & more",
+            "icon": "ri-trophy-line"
+        }
+    ],
+    "bts_badge_label": "Production BTS",
+    "bts_headline_white": "Every Frame",
+    "bts_headline_red": "Speaks",
+    "bts_description": "A raw look at what it takes to create world-class content \u2014 from location scouts to post-production suites.",
+    "bts_items": [
+        {
+            "id": 1,
+            "title": "On set \u2014 RedBull Campaign, Dubai 2024",
+            "subtitle": "Director reviewing footage on set",
+            "image": "https://images.unsplash.com/photo-1574717024653-61fd2cf4d44d?auto=format&fit=crop&w=800&q=80",
+            "visible": true
+        },
+        {
+            "id": 2,
+            "title": "ARRI ALEXA Mini LF \u2014 lens prep",
+            "subtitle": "Camera rig setup",
+            "image": "https://images.unsplash.com/photo-1585829365295-ab7cd400c167?auto=format&fit=crop&w=800&q=80",
+            "visible": true
+        },
+        {
+            "id": 3,
+            "title": "Lighting rig \u2014 HBO Teaser, Cape Town",
+            "subtitle": "Lighting setup",
+            "image": "https://images.unsplash.com/photo-1598899134739-24c46f58b8c0?auto=format&fit=crop&w=800&q=80",
+            "visible": true
+        },
+        {
+            "id": 4,
+            "title": "Aerial Drone Scout \u2014 Kenya Safari",
+            "subtitle": "4K aerial footage capture",
+            "image": "https://images.unsplash.com/photo-1508614589041-895b88991e3e?auto=format&fit=crop&w=800&q=80",
+            "visible": true
+        },
+        {
+            "id": 5,
+            "title": "Post-Production Suite \u2014 Color Grading",
+            "subtitle": "DaVinci Resolve studio session",
+            "image": "https://images.unsplash.com/photo-1536240478700-b869070f9279?auto=format&fit=crop&w=800&q=80",
+            "visible": true
+        },
+        {
+            "id": 6,
+            "title": "Wedding Cinema Shoot \u2014 Sunset",
+            "subtitle": "Romantic Golden Hour capture",
+            "image": "https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=800&q=80",
+            "visible": true
+        }
+    ],
+    "featured_work_items": [
+        {
+            "id": 1,
+            "project_name": "40th Birthday Celebration",
+            "client": "Halima",
+            "category": "Social Event",
+            "year": "2024",
+            "duration": "1:23",
+            "youtube_id": "YlmUJ16sIrY",
+            "video_source": "youtube",
+            "thumbnail": "https://img.youtube.com/vi/YlmUJ16sIrY/hqdefault.jpg",
+            "is_hero_featured": true,
+            "status": "live"
+        },
+        {
+            "id": 2,
+            "project_name": "Wedding Celebration",
+            "client": "Kane Oberman",
+            "category": "Wedding Film",
+            "year": "2024",
+            "duration": "0:00",
+            "youtube_id": "jaJawGCnx-I",
+            "video_source": "youtube",
+            "thumbnail": "https://img.youtube.com/vi/jaJawGCnx-I/hqdefault.jpg",
+            "is_hero_featured": false,
+            "status": "live"
+        },
+        {
+            "id": 3,
+            "project_name": "Wedding Celebration",
+            "client": "Kailey and William",
+            "category": "Wedding Trailer",
+            "year": "2024",
+            "duration": "1:28",
+            "youtube_id": "z56VNoHV11c",
+            "video_source": "youtube",
+            "thumbnail": "https://img.youtube.com/vi/z56VNoHV11c/hqdefault.jpg",
+            "is_hero_featured": false,
+            "status": "live"
+        },
+        {
+            "id": 4,
+            "project_name": "Gala Award Night",
+            "client": "Ibadan College of Medicine",
+            "category": "Award Night Documentary",
+            "year": "2024",
+            "duration": "1:53",
+            "youtube_id": "Tf8rNMZ-Bw0",
+            "video_source": "youtube",
+            "thumbnail": "https://img.youtube.com/vi/Tf8rNMZ-Bw0/hqdefault.jpg",
+            "is_hero_featured": false,
+            "status": "live"
+        },
+        {
+            "id": 5,
+            "project_name": "Black History Month",
+            "client": "BMRC",
+            "category": "Commercial Documentary",
+            "year": "2024",
+            "duration": "2:25",
+            "youtube_id": "Z84AOc_t2Sk",
+            "video_source": "youtube",
+            "thumbnail": "https://img.youtube.com/vi/Z84AOc_t2Sk/hqdefault.jpg",
+            "is_hero_featured": false,
+            "status": "live"
+        },
+        {
+            "id": 6,
+            "project_name": "Wedding Celebration",
+            "client": "Dian\u00e9 and Max",
+            "category": "Wedding Film",
+            "year": "2024",
+            "duration": "1:49",
+            "youtube_id": "AXqylP5AENQ",
+            "video_source": "youtube",
+            "thumbnail": "https://img.youtube.com/vi/AXqylP5AENQ/hqdefault.jpg",
+            "is_hero_featured": false,
+            "status": "live"
+        },
+        {
+            "id": 7,
+            "project_name": "Wedding Celebration",
+            "client": "Ernie and Emily",
+            "category": "Wedding Film",
+            "year": "2024",
+            "duration": "1:30",
+            "youtube_id": "zidrFg1ikBc",
+            "video_source": "youtube",
+            "thumbnail": "https://img.youtube.com/vi/zidrFg1ikBc/hqdefault.jpg",
+            "is_hero_featured": false,
+            "status": "live"
+        },
+        {
+            "id": 8,
+            "project_name": "Wedding Reels",
+            "client": "Wedding",
+            "category": "Wedding Film",
+            "year": "2024",
+            "duration": "1:28",
+            "youtube_id": "ezAGweXeQOw",
+            "video_source": "youtube",
+            "thumbnail": "https://img.youtube.com/vi/ezAGweXeQOw/hqdefault.jpg",
+            "is_hero_featured": false,
+            "status": "live"
+        }
+    ],
+    "services_items": [
+        {
+            "id": 1,
+            "slug": "video-production",
+            "title": "Video Production",
+            "icon": "fa-solid fa-film",
+            "short_description": "Professional video production services from concept to completion, including scripting, filming, and editing with state-of-the-art equipment.",
+            "detail_description": "Our full-service video production team handles every stage of the process \u2014 from initial creative briefs and scriptwriting through on-set filming with cinema-grade cameras to the final polished edit. Whether you need a 30-second ad or a 30-minute brand documentary, we bring precision and artistry to every frame.",
+            "image": "https://res.cloudinary.com/pnabfi91/image/upload/v1786584437/falhen/services/ofbxty4lh9mvblwic5pk.jpg",
+            "card_features": [
+                "Corporate videos & commercials",
+                "4K & 8K video capture",
+                "Drone cinematography",
+                "Multi-camera productions"
+            ],
+            "detail_features": [
+                "4K & 8K Cinema Capture",
+                "Drone Aerial Cinematography",
+                "Multi-Camera Rigs",
+                "Scriptwriting & Storyboarding",
+                "Director & DP on Set",
+                "Color Grading & VFX Finishing"
+            ]
+        },
+        {
+            "id": 2,
+            "slug": "live-streaming",
+            "title": "Live Streaming",
+            "icon": "fa-solid fa-tower-broadcast",
+            "short_description": "Seamless live streaming solutions for events, conferences, and broadcasts with professional-grade equipment and technical support.",
+            "detail_description": "We broadcast your live events to global audiences with multi-camera setups, real-time graphics, custom lower-thirds, and instant backup failovers.",
+            "image": "https://res.cloudinary.com/pnabfi91/image/upload/v1786584520/falhen/services/cibskhbuvi4owca9wyiq.jpg",
+            "card_features": [
+                "Multi-platform streaming",
+                "Real-time graphics & overlays",
+                "Interactive audience engagement",
+                "Technical support & monitoring"
+            ],
+            "detail_features": [
+                "YouTube, FB & Custom RTMP",
+                "Real-Time Lower-Thirds & Bugs",
+                "Redundant Failover Systems",
+                "Audience Interaction Tools",
+                "24/7 Technical Monitoring",
+                "Stream Archive & VOD Delivery"
+            ]
+        },
+        {
+            "id": 3,
+            "slug": "post-production",
+            "title": "Post Production",
+            "icon": "fa-solid fa-sliders",
+            "short_description": "Comprehensive post-production services including editing, color grading, sound design, and visual effects to polish your content.",
+            "detail_description": "Transform raw footage into a cinematic masterpiece. Our DaVinci Resolve colorists, sound designers, and VFX artists bring high-end polish to every visual asset.",
+            "image": "https://res.cloudinary.com/pnabfi91/image/upload/v1786584616/falhen/services/zenpahes1m1rfr5w8grj.jpg",
+            "card_features": [
+                "Professional video editing",
+                "Color correction & grading",
+                "Sound design & mixing",
+                "Visual effects & compositing"
+            ],
+            "detail_features": [
+                "Premiere Pro & DaVinci Resolve",
+                "Hollywood-Grade Color Science",
+                "Dolby Atmos Sound Mixing",
+                "VFX & Motion Compositing",
+                "Proxy & Remote Workflows",
+                "Secure File Delivery"
+            ]
+        },
+        {
+            "id": 4,
+            "slug": "animation-motion-graphics",
+            "title": "Animation & Motion Graphics",
+            "icon": "fa-solid fa-wand-magic-sparkles",
+            "short_description": "Creative animation and motion graphics services to enhance your brand storytelling with engaging visual elements.",
+            "detail_description": "Elevate complex ideas with custom 2D & 3D motion graphics, brand identity bumpers, UI/UX video walkthroughs, and explainer animations.",
+            "image": "https://res.cloudinary.com/pnabfi91/image/upload/v1786584683/falhen/services/uj4lxa9iq8at4vinsrqd.jpg",
+            "card_features": [
+                "2D & 3D animation",
+                "Motion graphics design",
+                "Logo animations",
+                "Explainer videos"
+            ],
+            "detail_features": [
+                "2D Frame-by-Frame & Rigged",
+                "Cinema 4D & Blender 3D",
+                "After Effects Motion Graphics",
+                "Logo Stings & Brand Assets",
+                "Explainer & Infographic Video",
+                "Character & Mascot Animation"
+            ]
+        },
+        {
+            "id": 5,
+            "slug": "creative-services",
+            "title": "Creative Services",
+            "icon": "ri-article-line",
+            "short_description": "Strategic content planning and creation to maximise engagement across all digital platforms and social media channels.",
+            "detail_description": "A beautiful video means nothing without the right strategy. We combine data analytics, audience research, and creative direction to build content calendars that grow your brand consistently. From platform-native short-form to long-form series, we plan, produce, and measure what resonates.",
+            "image": "https://res.cloudinary.com/pnabfi91/image/upload/v1786584766/falhen/services/vrtehd9al98vtxkdh6hh.jpg",
+            "card_features": [
+                "Content planning & scheduling",
+                "Social media optimisation",
+                "Brand storytelling",
+                "Analytics & reporting"
+            ],
+            "detail_features": [
+                "Audience & Competitor Research",
+                "Platform-Native Content Plans",
+                "Editorial Calendar Management",
+                "SEO & Hashtag Strategy",
+                "Monthly Performance Reports",
+                "A/B Creative Testing"
+            ]
+        },
+        {
+            "id": 6,
+            "slug": "photography",
+            "title": "Photography",
+            "icon": "ri-camera-line",
+            "short_description": "Professional photography services for corporate events, products, and promotional materials with creative direction.",
+            "detail_description": "Still images speak volumes. Our photographers specialise in capturing authentic brand moments \u2014 from high-stakes product launches and executive headshots to multi-day corporate conferences and lifestyle campaigns. Every shot is meticulously composed, lit, and retouched to exceed your expectations.",
+            "image": "https://res.cloudinary.com/pnabfi91/image/upload/v1786584832/falhen/services/xgspuyvkdgmvd6i8t7y0.jpg",
+            "card_features": [
+                "Event photography",
+                "Product photography",
+                "Corporate headshots",
+                "Photo editing & retouching"
+            ],
+            "detail_features": [
+                "Medium & Full-Frame Systems",
+                "Studio & On-Location Shoots",
+                "Product & Lifestyle Campaigns",
+                "Executive Headshots",
+                "Event & Conference Coverage",
+                "Advanced Retouching & Delivery"
+            ]
+        },
+        {
+            "id": 7,
+            "slug": "wedding-events",
+            "title": "Wedding & Events",
+            "icon": "ri-heart-3-line",
+            "short_description": "Cinematic wedding films and full-service event coverage that preserve your most precious memories with extraordinary artistry.",
+            "detail_description": "Every love story deserves a cinematic masterpiece. Our dedicated wedding and events team blends into your day, capturing every emotion, detail, and unscripted moment with discretion and artistry. From intimate ceremonies to grand destination weddings and corporate galas, we deliver films you'll treasure forever.",
+            "image": "https://res.cloudinary.com/pnabfi91/image/upload/v1786584918/falhen/services/aanux57e05g65v3hfe9w.jpg",
+            "card_features": [
+                "Cinematic wedding films",
+                "Same-day highlight edits",
+                "Multi-camera event coverage",
+                "Drone aerials & stabilised shots"
+            ],
+            "detail_features": [
+                "Cinematic Storytelling Films",
+                "Same-Day Highlight Reels",
+                "Drone Aerial Coverage",
+                "Multi-Angle Ceremony Capture",
+                "Documentary-Style Coverage",
+                "Blu-Ray & Digital Delivery"
+            ]
+        },
+        {
+            "id": 8,
+            "slug": "wedding-events",
+            "title": "Wedding & Events",
+            "icon": "ri-heart-3-line",
+            "short_description": "Cinematic wedding films and full-service event coverage that preserve your most precious memories with extraordinary artistry.",
+            "detail_description": "Every love story deserves a cinematic masterpiece. Our dedicated wedding and events team blends into your day, capturing every emotion, detail, and unscripted moment with discretion and artistry. From intimate ceremonies to grand destination weddings and corporate galas, we deliver films you'll treasure forever.",
+            "image": "https://res.cloudinary.com/pnabfi91/image/upload/v1786585237/falhen/services/btwbhhl4v7ktws9axwki.jpg",
+            "card_features": [
+                "Cinematic wedding films",
+                "Same-day highlight edits",
+                "Multi-camera event coverage",
+                "Drone aerials & stabilised shots"
+            ],
+            "detail_features": [
+                "Cinematic Storytelling Films",
+                "Same-Day Highlight Reels",
+                "Drone Aerial Coverage",
+                "Multi-Angle Ceremony Capture",
+                "Documentary-Style Coverage",
+                "Blu-Ray & Digital Delivery"
+            ]
+        }
+    ],
+    "testimonials_items": [
+        {
+            "id": 1,
+            "name": "Marcus Webbs",
+            "role": "Head of Marketing",
+            "company": "RedBull EMEA",
+            "project": "Energy Unleashed Campaign",
+            "avatar": "https://res.cloudinary.com/pnabfi91/image/upload/v1786723593/falhen/testimonials/u9k6yagz29txawt5o00l.jpg",
+            "rating": 5,
+            "quote": "Falhen Media delivered a campaign that exceeded every benchmark we set. The team understood our brand DNA from day one and translated it into visuals that literally stopped people mid-scroll. Our engagement numbers tripled."
+        },
+        {
+            "id": 2,
+            "name": "Serena Okafor",
+            "role": "Creative Director",
+            "company": "Nike Africa",
+            "project": "Sprint Series Brand Film",
+            "avatar": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=150&q=80",
+            "rating": 5,
+            "quote": "Working with Falhen was genuinely one of the best creative decisions we made this year. They don't just shoot video \u2014 they engineer emotion. The final film had our entire team in tears. In the best way."
+        },
+        {
+            "id": 3,
+            "name": "James Thornton",
+            "role": "VP of Content",
+            "company": "HBO Original",
+            "project": "Dark Horizons Series Teaser",
+            "avatar": "https://res.cloudinary.com/pnabfi91/image/upload/v1786723628/falhen/testimonials/icgorikgwft3quxrt0lk.jpg",
+            "rating": 5,
+            "quote": "The teaser Falhen produced for Dark Horizons generated more pre-release buzz than anything we'd done in five years. Cinematic, punchy, and perfectly on brief. They are our go-to production partner now."
+        },
+        {
+            "id": 4,
+            "name": "Priya Nair",
+            "role": "Brand Manager",
+            "company": "Sony Music",
+            "project": "Next Generation Product Launch",
+            "avatar": "https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&w=150&q=80",
+            "rating": 5,
+            "quote": "From briefing to final delivery, the Falhen team was exceptional. They pushed back on ideas that weren't strong enough and brought solutions we hadn't imagined. The launch film is still being shared organically two months later."
+        },
+        {
+            "id": 5,
+            "name": "Luca Ferrari",
+            "role": "Event Director",
+            "company": "Ferrari Private Events",
+            "project": "Annual Gala Highlight Reel",
+            "avatar": "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=150&q=80",
+            "rating": 5,
+            "quote": "The same-day highlight reel they produced for our annual gala was breathtaking. Guests were watching it at the closing dinner. I have never seen a production team move that fast without sacrificing a single frame of quality."
+        },
+        {
+            "id": 6,
+            "name": "Aisha Diallo",
+            "role": "Founder",
+            "company": "Diallo Cosmetics",
+            "project": "Brand Identity Video Series",
+            "avatar": "https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?auto=format&fit=crop&w=150&q=80",
+            "rating": 5,
+            "quote": "As a growing brand, we needed content that could compete with the big players. Falhen made us look like a global company on a startup budget. Our Instagram reels from that shoot still perform better than anything we've posted since."
+        }
+    ],
+    "portfolio_items": [
+        {
+            "id": 1,
+            "title": "King David - Grad Shoot",
+            "category": "Portrait",
+            "media_type": "photo",
+            "featured": true,
+            "client": "King David",
+            "location": "Chicago",
+            "image": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=800&auto=format&fit=crop",
+            "desc": "Commemorative academic graduate portrait session capturing milestone achievements with editorial studio lighting.",
+            "photosCount": 30
+        },
+        {
+            "id": 2,
+            "title": "Halima's 40th Birthday Shoot",
+            "category": "Birthday",
+            "media_type": "photo",
+            "featured": true,
+            "client": "Halima Ogunde",
+            "location": "Lagos",
+            "image": "/assets/img/portfolio/portfolio_halima.png",
+            "desc": "A golden-hour pre-wedding & birthday session set in a lush garden estate. Every frame tells the story of elegance, captured with cinematic warmth.",
+            "photosCount": 30
+        },
+        {
+            "id": 3,
+            "title": "Demola Violinist - Tour",
+            "category": "Wedding",
+            "media_type": "photo",
+            "featured": true,
+            "client": "Demola The Violinist",
+            "location": "London",
+            "image": "/assets/img/portfolio/portfolio_wedding.png",
+            "desc": "Live concert and tour performance capturing electric stage energy, dramatic lighting, and musical virtuosity.",
+            "photosCount": 30
+        },
+        {
+            "id": 4,
+            "title": "Dex Million - Surprise 50th Birthday",
+            "category": "Birthday",
+            "media_type": "photo",
+            "featured": false,
+            "client": "Dex Million",
+            "location": "Atlanta",
+            "image": "https://images.unsplash.com/photo-1511795409834-ef04bbd61622?q=80&w=800&auto=format&fit=crop",
+            "desc": "Surprise milestone celebration featuring high-profile guests, live music, and candid moment capture.",
+            "photosCount": 30
+        },
+        {
+            "id": 5,
+            "title": "Jussoul \u2014 Winery Music Tour",
+            "category": "Event",
+            "media_type": "photo",
+            "featured": false,
+            "client": "Jussoul",
+            "location": "California",
+            "image": "/assets/img/portfolio/portfolio_award.png",
+            "desc": "Acoustic live sessions and winery tour performance captured in intimate 4K resolution.",
+            "photosCount": 30
+        },
+        {
+            "id": 6,
+            "title": "Halima Ogunde",
+            "category": "Event",
+            "media_type": "photo",
+            "featured": false,
+            "client": "Halima Ogunde",
+            "location": "Lagos",
+            "image": "/assets/img/portfolio/portfolio_halima.png",
+            "desc": "High-fashion portrait and luxury event coverage.",
+            "photosCount": 30
+        },
+        {
+            "id": 7,
+            "title": "Darasinmi - Studio Session",
+            "category": "Portrait",
+            "media_type": "photo",
+            "featured": false,
+            "client": "Darasinmi",
+            "location": "Oakbrook",
+            "image": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=800&auto=format&fit=crop",
+            "desc": "Creative indoor studio portrait session with modern color tones and dramatic contrast.",
+            "photosCount": 30
+        },
+        {
+            "id": 8,
+            "title": "Darasinmi - 10th Birthday",
+            "category": "Event",
+            "media_type": "photo",
+            "featured": false,
+            "client": "Darasinmi Family",
+            "location": "Chicago",
+            "image": "https://images.unsplash.com/photo-1530103862676-de8c9debad1d?q=80&w=800&auto=format&fit=crop",
+            "desc": "Vibrant milestone 10th birthday party photography and celebratory family moments.",
+            "photosCount": 30
+        },
+        {
+            "id": 9,
+            "title": "Adetutu - Burial Repass",
+            "category": "Event",
+            "media_type": "photo",
+            "featured": false,
+            "client": "Adetutu Family",
+            "location": "Lagos",
+            "image": "/assets/img/portfolio/portfolio_commercial.png",
+            "desc": "Traditional cultural celebration and remembrance service photography.",
+            "photosCount": 30
+        },
+        {
+            "id": 10,
+            "title": "40th Birthday Celebration",
+            "category": "Social Event",
+            "media_type": "video",
+            "duration": "1:23",
+            "featured": true,
+            "client": "Halima",
+            "location": "Chicago",
+            "image": "https://i.ytimg.com/vi/YlmUJ16sIrY/hqdefault.jpg",
+            "video_url": "YlmUJ16sIrY",
+            "desc": "",
+            "gdrive_url": ""
+        },
+        {
+            "id": 11,
+            "title": "Wedding Celebration",
+            "category": "Wedding Film",
+            "media_type": "video",
+            "duration": "04:15",
+            "featured": true,
+            "client": "Kane Oberman",
+            "location": "Chicago",
+            "image": "https://i.ytimg.com/vi/jaJawGCnx-I/hqdefault.jpg",
+            "video_url": "jaJawGCnx-I",
+            "desc": "Cinematic live performance video capturing multi-camera stage coverage, dramatic arena lighting, and musical virtuosity.",
+            "gdrive_url": ""
+        },
+        {
+            "id": 12,
+            "title": "Wedding Celebration",
+            "category": "Wedding Trailer",
+            "media_type": "video",
+            "duration": "1:20",
+            "featured": true,
+            "client": "Kailey and William",
+            "location": "Chicago",
+            "image": "https://i.ytimg.com/vi/z56VNoHV11c/hqdefault.jpg",
+            "video_url": "z56VNoHV11c",
+            "desc": "Luxury destination wedding mini-documentary with aerial drone shots, emotional vows, and cinematic color grading.",
+            "gdrive_url": ""
+        },
+        {
+            "id": 13,
+            "title": "Gala Award Night",
+            "category": "Award Night Documentary",
+            "media_type": "video",
+            "duration": "1:53",
+            "featured": true,
+            "client": "Ibadan College of Medicine",
+            "location": "Chicago",
+            "image": "https://i.ytimg.com/vi/Tf8rNMZ-Bw0/hqdefault.jpg",
+            "video_url": "Tf8rNMZ-Bw0",
+            "desc": "Multi-camera live broadcast setup and highlight recap reel for an international corporate keynote.",
+            "gdrive_url": ""
+        },
+        {
+            "id": 14,
+            "title": "Wedding Celebration",
+            "category": "Wedding Film",
+            "media_type": "video",
+            "duration": "1:30",
+            "featured": true,
+            "client": "Ernie and Emily",
+            "location": "Chicago",
+            "image": "https://i.ytimg.com/vi/zidrFg1ikBc/hqdefault.jpg",
+            "video_url": "zidrFg1ikBc",
+            "desc": "",
+            "gdrive_url": ""
+        },
+        {
+            "id": 15,
+            "title": "Black History Month",
+            "category": "Commercial Documentary",
+            "media_type": "video",
+            "duration": "2:55",
+            "featured": true,
+            "client": "Black History Month",
+            "location": "Chicago",
+            "image": "https://i.ytimg.com/vi/Z84AOc_t2Sk/hqdefault.jpg",
+            "video_url": "Z84AOc_t2Sk",
+            "desc": "",
+            "gdrive_url": ""
+        },
+        {
+            "id": 16,
+            "title": "Wedding Reels",
+            "category": "Wedding Film",
+            "media_type": "video",
+            "featured": true,
+            "client": "Wedding",
+            "location": "Chicago",
+            "duration": "1:28",
+            "video_url": "ezAGweXeQOw",
+            "gdrive_url": "",
+            "image": "https://i.ytimg.com/vi/ezAGweXeQOw/hqdefault.jpg",
+            "desc": "",
+            "photosCount": 30
+        },
+        {
+            "id": 17,
+            "title": "Wedding Celebration",
+            "category": "Wedding Film",
+            "media_type": "video",
+            "duration": "1:49",
+            "featured": true,
+            "client": "Dian\u00e9 and Max",
+            "location": "Chicago",
+            "image": "https://i.ytimg.com/vi/AXqylP5AENQ/hqdefault.jpg",
+            "video_url": "AXqylP5AENQ",
+            "desc": "",
+            "gdrive_url": ""
+        }
+    ],
+    "team_items": [
+        {
+            "id": 1,
+            "number": "01",
+            "name": "Henry Falonipe",
+            "role": "Creative Director",
+            "department": "Creative",
+            "location": "Chicago",
+            "experience": "15+ years at Falhen",
+            "image": "https://res.cloudinary.com/pnabfi91/image/upload/v1786712075/falhen/team/ctxjp9mymgqdh2ecg2hu.jpg",
+            "bio": "Visionary Creative Director and founder of Falhen, where he leads high-end cinematic storytelling and media production. With over 15 years of experience, Henry has transformed a boutique studio into a recognized production house.",
+            "skills": [
+                "Creative Direction",
+                "Brand Strategy",
+                "Concert Development"
+            ]
+        },
+        {
+            "id": 3,
+            "number": "02",
+            "name": "Lisa Okoli",
+            "role": "Client Partnership & Head of Marketing",
+            "department": "Creative",
+            "location": "USA",
+            "experience": "5+ years at Falhen",
+            "image": "https://res.cloudinary.com/pnabfi91/image/upload/v1786713962/falhen/team/b5v6o8oirs95xihokmgc.jpg",
+            "bio": "Leading brand partnerships, campaign strategy, and client communications. Lisa connects world-class brands with Falhen's production engine.",
+            "skills": [
+                "Client Partnerships",
+                "Marketing Strategy",
+                "Brand Development"
+            ]
+        },
+        {
+            "id": 4,
+            "number": "03",
+            "name": "Mojisola Emjay",
+            "role": "Resource Manager",
+            "department": "Strategy",
+            "location": "USA",
+            "experience": "10+ years at Falhen",
+            "image": "https://res.cloudinary.com/pnabfi91/image/upload/v1786714006/falhen/team/ini79za7jvbjokrf1dup.jpg",
+            "bio": "With over a decade of experience in the HR industry, Mojisola has a proven track record of enhancing operational efficiency and resource allocation.",
+            "skills": [
+                "Resource Management",
+                "Talent Scheduling",
+                "Budget Optimization"
+            ]
+        },
+        {
+            "id": 7,
+            "number": "04",
+            "name": "Kingsley Fadipe",
+            "role": "Operations Manager",
+            "department": "Operations",
+            "location": "Canada",
+            "experience": "4+ years at Falhen",
+            "image": "https://res.cloudinary.com/pnabfi91/image/upload/v1786713360/falhen/team/ftmzlwwv1szlyurijyno.png",
+            "bio": "Specialize in identifying emerging operational trends and translating them into actionable growth opportunities for the brand.",
+            "skills": [
+                "Operations",
+                "Market Analysis",
+                "Growth Campaigns"
+            ]
+        },
+        {
+            "id": 8,
+            "number": "05",
+            "name": "Ligali Oluwatosin",
+            "role": "IT Support Specialist",
+            "department": "Strategy",
+            "location": "Lagos",
+            "experience": "1+ year at Falhen",
+            "image": "https://res.cloudinary.com/pnabfi91/image/upload/v1786714111/falhen/team/q4atws8zhxaogyzm8bgw.png",
+            "bio": "Approach technical infrastructure with a proactive, solutions-driven mindset. My mission is to ensure smooth studio operations.",
+            "skills": [
+                "IT Support",
+                "Technical Infrastructure",
+                "Systems Security"
+            ]
+        },
+        {
+            "id": 5,
+            "number": "06",
+            "name": "Daniel Ifeoluwa",
+            "role": "Graphics Designer",
+            "department": "Creative",
+            "location": "Lagos",
+            "experience": "1+ years at Falhen",
+            "image": "https://res.cloudinary.com/pnabfi91/image/upload/v1786714147/falhen/team/xba4ep38ewfdq3chfx1h.jpg",
+            "bio": "Combining technical precision with creative artistry to produce immersive visual assets that elevate brand storytelling.",
+            "skills": [
+                "Graphics Design",
+                "Visual Assets",
+                "Brand Design"
+            ]
+        },
+        {
+            "id": 6,
+            "number": "07",
+            "name": "Victoria Opemipo",
+            "role": "Social Media Manager",
+            "department": "Creative",
+            "location": "Lagos",
+            "experience": "1+ years at Falhen",
+            "image": "https://res.cloudinary.com/pnabfi91/image/upload/v1786714208/falhen/team/ri0fc0rdmjfvyzx1lihn.jpg",
+            "bio": "Specialized in crafting digital narratives that amplify brand identity and foster genuine community engagement.",
+            "skills": [
+                "Social Strategy",
+                "Audience Engagement Specialist",
+                "Visual Storytelling for Social"
+            ]
+        },
+        {
+            "id": 2,
+            "number": "08",
+            "name": "Oluwatosin King",
+            "role": "Operations Specialist",
+            "department": "Creative",
+            "location": "Lagos",
+            "experience": "4+ years at Falhen",
+            "image": "/assets/img/portfolio/portfolio_halima.png",
+            "bio": "Bridging the gap between creative vision and seamless execution. With a proactive and friendly approach, Oluwatosin ensures that complex production workflows run with precision.",
+            "skills": [
+                "Productions",
+                "Operational Management",
+                "Client Relations"
+            ]
+        }
+    ],
+    "blog_items": [
+        {
+            "id": 1,
+            "title": "10 Essential Tips for Creating Engaging Social Media Videos",
+            "category": "Social Media",
+            "date": "March 12, 2024",
+            "read_time": "6 min read",
+            "excerpt": "Learn the secrets to creating scroll-stopping social media content that captures attention and drives engagement.",
+            "author": "Victoria Opemipo",
+            "role": "Social Media Manager",
+            "image": "https://res.cloudinary.com/pnabfi91/image/upload/v1786715592/falhen/blog/d2zuwp0anpg2oxerq5tz.png",
+            "content": "<blockquote>\"Learn the secrets to creating scroll-stopping social media content that captures attention and drives engagement.\"</blockquote><p>Social media video is the most competitive creative arena in existence. You have less than two seconds to prevent a thumb from scrolling past your content. That's not hyperbole \u2014 it's the documented average attention threshold before a decision to scroll is made.</p><h3>1. Lead With the Payoff</h3><p>Traditional storytelling builds to a climax. Social video inverts this. Your most compelling moment \u2014 the reveal, the transformation, the surprising fact \u2014 goes in the first three seconds. This is called a hook-first structure and it consistently outperforms slow-burn openings by 3\u20135x in completion rate.</p><h3>2. Design for Silent Viewing</h3><p>Over 70% of social video is watched without sound. If your video only works with audio, it's likely missing a large portion of your audience. Use bold on-screen text, expressive visuals, and clear visual storytelling.</p><blockquote>If you can't communicate your message in silent mode, your video isn't working hard enough. \u2014 Michael Chen, Creative Director</blockquote><h3>3. Match Energy to Platform</h3><ul><li>TikTok: Raw, fast, trend-aware, under 30 seconds</li><li>Instagram Reels: Polished but personal, 15\u201330 seconds</li><li>YouTube Shorts: Educational or entertaining, up to 60 seconds</li><li>LinkedIn: Authority-driven, measured, 60\u201390 seconds</li></ul>",
+            "featured": true
+        },
+        {
+            "id": 2,
+            "title": "Behind the Scenes: Our Award-Winning Commercial Production",
+            "category": "Case Study",
+            "date": "March 8, 2024",
+            "read_time": "10 min read",
+            "excerpt": "Take an exclusive look at the making of our latest award-winning commercial. Discover the creative process, technical challenges...",
+            "author": "Victoria Opemipo",
+            "role": "Social Media Manager",
+            "image": "https://res.cloudinary.com/pnabfi91/image/upload/v1786715668/falhen/blog/nmasnkvkayhf90rhdrkr.jpg",
+            "content": "Step inside the production studio as we pull back the curtain on our award-winning commercial campaign. From concept development and storyboarding to multi-camera lighting and sound design, here is how our creative team brought cinematic vision to life.",
+            "featured": false
+        },
+        {
+            "id": 3,
+            "title": "Mastering Color Grading: A Comprehensive Guide",
+            "category": "Tutorial",
+            "date": "March 5, 2024",
+            "read_time": "12 min read",
+            "excerpt": "Dive deep into the art and science of color grading. Learn professional techniques to enhance mood, create visual consistency...",
+            "author": "David Park",
+            "role": "Colorist & Editor",
+            "image": "/assets/img/services/service_post.png",
+            "content": "Color grading is the secret sauce behind cinematic film production. Understand color spaces, tone curves, LUT application, and skin tone protection to create distinct visual identities for your commercial projects.",
+            "featured": false
+        },
+        {
+            "id": 4,
+            "title": "The Power of Storytelling in Brand Videos",
+            "category": "Strategy",
+            "date": "March 1, 2024",
+            "read_time": "7 min read",
+            "excerpt": "Discover how compelling narratives can transform your brand videos from forgettable to unforgettable. Storytelling framework...",
+            "author": "Jessica Thompson",
+            "role": "Brand Strategist",
+            "image": "/assets/img/services/service_creative.png",
+            "content": "Audiences remember stories, not sales pitches. Learn how to structure brand video narratives around human emotion, tension, and resolution to build lasting brand affinity.",
+            "featured": false
+        },
+        {
+            "id": 5,
+            "title": "Choosing the Right Equipment for Your Video Project",
+            "category": "Equipment",
+            "date": "February 28, 2024",
+            "read_time": "9 min read",
+            "excerpt": "Navigate the world of video production equipment with confidence. From cameras and lenses to lighting and audio...",
+            "author": "Alex Johnson",
+            "role": "Technical Director",
+            "image": "/assets/img/services/service_photo.png",
+            "content": "Selecting the right camera package, prime lenses, wireless audio, and lighting modifiers can make or break production efficiency. Here is our recommended equipment guide for various budget tiers.",
+            "featured": false
+        },
+        {
+            "id": 6,
+            "title": "The Future of Video Production: Trends to Watch in 2024",
+            "category": "Industry Trends",
+            "date": "March 15, 2024",
+            "read_time": "8 min read",
+            "excerpt": "Explore the latest trends shaping the video production industry, from AI-powered editing tools to immersive 360-degree...",
+            "author": "Sarah Mitchell",
+            "role": "Innovation Lead",
+            "image": "/assets/img/services/service_anim.png",
+            "content": "Artificial intelligence, virtual LED volumes, real-time rendering, and interactive broadcasting are reshaping the production landscape. Discover the key innovations driving the next era of filmmaking.",
+            "featured": false
+        }
+    ],
+    "job_openings": [
+        {
+            "id": 1,
+            "title": "Senior Video Producer",
+            "dept": "Creative",
+            "type": "Full-time",
+            "status": "open",
+            "posted": "Recently",
+            "location": "USA",
+            "salary": "$15,000 - $20,000",
+            "overview": "Lead end-to-end commercial video productions from concept through final delivery. You will manage shoots, direct talent, and collaborate with editors and strategists to deliver premium content for top-tier brands.",
+            "responsibilities": "<div><ul><li><span style=\"font-size: 15.2px;\">Lead and manage 8-12 video productions per month across commercial, brand, and social formats</span></li><li><span style=\"font-size: 15.2px;\">Develop creative treatments, shot lists, and production schedules</span></li><li><span style=\"font-size: 15.2px;\">Direct on-set talent, crew, and client stakeholders</span></li><li><span style=\"font-size: 15.2px;\">Collaborate with post-production team on rough cuts, revisions, and final delivery</span></li><li><span style=\"font-size: 15.2px;\">Manage production budgets and vendor relationships</span></li><li><span style=\"font-size: 15.2px;\">Mentor junior producers and interns</span></li></ul><div><font color=\"#1e293b\"><br></font></div></div><div><span style=\"font-size: 15.2px;\"><b>Requirements</b></span></div><div><ul><li><span style=\"font-size: 15.2px;\">5+ years of professional video production experience in commercial or agency setting</span></li><li><span style=\"font-size: 15.2px;\">Proficiency with professional cinema cameras (RED, Sony FX, Canon C-series)</span></li><li><span style=\"font-size: 15.2px;\">Strong understanding of lighting, composition, and visual storytelling</span></li><li><span style=\"font-size: 15.2px;\">Experience managing shoots with 5+ crew members</span></li><li><span style=\"font-size: 15.2px;\">Excellent client communication and presentation skills</span></li><li><span style=\"font-size: 15.2px;\">Portfolio demonstrating 10+ completed commercial projects</span></li></ul><div><font color=\"#1e293b\"><br></font></div></div><div><span style=\"font-size: 15.2px;\"><b>Nice to Have</b></span></div><div><ul><li><span style=\"font-size: 15.2px;\">Experience with live streaming production</span></li><li><span style=\"font-size: 15.2px;\">FAA Part 107 drone license</span></li><li><span style=\"font-size: 15.2px;\">Adobe Premiere / DaVinci Resolve proficiency</span></li><li><span style=\"font-size: 15.2px;\">Bilingual (Spanish) preferred</span></li></ul><div><font color=\"#1e293b\"><br></font></div></div><div><span style=\"font-size: 15.2px;\"><b>Benefits</b></span></div><div><ul><li><span style=\"font-size: 15.2px;\">Health, dental, and vision insurance</span></li><li><span style=\"font-size: 15.2px;\">401(k) with 4% company match</span></li><li><span style=\"font-size: 15.2px;\">Unlimited PTO (minimum 15 days encouraged)</span></li><li><span style=\"font-size: 15.2px;\">Annual equipment stipend ($2,500)</span></li><li><span style=\"font-size: 15.2px;\">Professional development budget ($3,000/year)</span></li><li><span style=\"font-size: 15.2px;\">Flexible hybrid schedule (3 days in studio, 2 remote)</span></li></ul></div>",
+            "requirements": "",
+            "benefits": ""
+        },
+        {
+            "id": 2,
+            "title": "Motion Graphics Designer",
+            "dept": "Post Production",
+            "type": "Full-time",
+            "status": "open",
+            "posted": "Recently",
+            "location": "Oakbrook, IL / Remote",
+            "salary": "$65,000 - $95,000",
+            "overview": "Craft 2D/3D visual effects, kinetic typography, lower thirds, and animated brand identity assets for high-impact commercial campaigns.",
+            "responsibilities": "<ul><li>Design dynamic 2D and 3D motion graphic packages for broadcast and digital platforms</li><li>Develop 3D product animations and procedural render assets in Cinema 4D / Blender</li><li>Collaborate with video editors to integrate visual effects seamlessly</li></ul>",
+            "requirements": "<ul><li>3+ years of professional motion design experience</li><li>Expert mastery of Adobe After Effects, Illustrator, Photoshop, and Cinema 4D / Blender</li><li>Strong portfolio showcasing 3D animation, kinetic typography, and VFX compositing</li></ul>",
+            "benefits": "<ul><li>Health, dental, and vision insurance</li><li>Remote work flexibility</li><li>$2,000 annual home studio hardware budget</li></ul>"
+        },
+        {
+            "id": 3,
+            "title": "Content Strategist",
+            "dept": "Strategy",
+            "type": "Full-time",
+            "status": "open",
+            "posted": "Recently",
+            "location": "Oakbrook, IL / Hybrid",
+            "salary": "$70,000 - $100,000",
+            "overview": "Develop multi-platform video distribution strategies, editorial storyboards, social media campaigns, and audience engagement architectures for global client brands.",
+            "responsibilities": "<ul><li>Formulate end-to-end video content strategies aligned with client KPIs</li><li>Conduct audience research, competitive analysis, and content performance audits</li><li>Write compelling creative briefs, story scripts, and video treatments</li></ul>",
+            "requirements": "<ul><li>4+ years experience in brand strategy, digital agency, or media planning</li><li>Deep understanding of YouTube, Instagram Reels, TikTok, and LinkedIn video algorithms</li></ul>",
+            "benefits": "<ul><li>Competitive health and dental coverage</li><li>Flexible hybrid work options</li><li>$3,000 annual learning & development stipend</li></ul>"
+        },
+        {
+            "id": 4,
+            "title": "Wedding & Events Cinematographer",
+            "dept": "Production",
+            "type": "Full-time",
+            "status": "open",
+            "posted": "Recently",
+            "location": "Oakbrook, IL / On-Location",
+            "salary": "$60,000 - $85,000",
+            "overview": "Capture luxury weddings, galas, and multi-cam live events with artistic framing, gimbal movements, and emotional depth.",
+            "responsibilities": "<ul><li>Operate main camera rigs on multi-camera event shoots</li><li>Set up portable lighting set-ups and wireless audio systems on location</li></ul>",
+            "requirements": "<ul><li>3+ years experience filming high-end weddings and live events</li><li>Mastery of camera stabilization (DJI Ronin), prime lenses, and audio recorders</li></ul>",
+            "benefits": "<ul><li>Travel per diem and luxury accommodations for destination events</li><li>Full health insurance & equipment maintenance support</li></ul>"
+        },
+        {
+            "id": 5,
+            "title": "Post-Production Editor",
+            "dept": "Post Production",
+            "type": "Full-time",
+            "status": "open",
+            "posted": "Recently",
+            "location": "Oakbrook, IL / Remote",
+            "salary": "$55,000 - $80,000",
+            "overview": "Cut documentary highlights, brand reels, and short-form social videos in Premiere Pro and DaVinci Resolve with precise pacing, sound design, and color grading.",
+            "responsibilities": "<ul><li>Assemble rough and fine cuts from multi-camera footage</li><li>Perform audio cleanup, sound design, and music mixing</li></ul>",
+            "requirements": "<ul><li>3+ years experience in video editing and post-production</li><li>Mastery of Adobe Premiere Pro, DaVinci Resolve, and Audition</li></ul>",
+            "benefits": "<ul><li>Remote editing rig provided by company</li><li>Flexible work hours and health benefits</li></ul>"
+        },
+        {
+            "id": 6,
+            "title": "Production Assistant (Intern)",
+            "dept": "Production",
+            "type": "Internship",
+            "status": "open",
+            "posted": "Recently",
+            "location": "Oakbrook, IL",
+            "salary": "$18 - $22 / hour",
+            "overview": "Assist on set with camera gear setup, lighting, media offloading, production logistics, and post-production organization.",
+            "responsibilities": "<ul><li>Support camera operators, gaffers, and sound engineers on set</li><li>Assist with equipment transport, inventory, and location setup</li></ul>",
+            "requirements": "<ul><li>Enrolled in or recent graduate of Film, Media, or Communications program</li><li>Strong passion for cinema, eagerness to learn, and reliable work ethic</li></ul>",
+            "benefits": "<ul><li>Direct mentorship from industry-leading producers and cinematographers</li><li>Paid internship with path to full-time career roles</li></ul>"
+        }
+    ],
+    "job_applications": [
+        {
+            "id": 1,
+            "job_id": 0,
+            "job_title": "Senior Video Producer",
+            "full_name": "Test Candidate",
+            "email": "test@candidate.com",
+            "phone": "+1234567890",
+            "portfolio_url": "https://vimeo.com/testportfolio",
+            "linkedin_url": "https://linkedin.com/in/testcandidate",
+            "cover_note": "I am an experienced Senior Video Producer with a strong track record of delivering high-quality commercial productions.",
+            "status": "new",
+            "applied_at": "2026-08-14 16:50:42"
+        },
+        {
+            "id": 2,
+            "job_id": 0,
+            "job_title": "Senior Video Producer",
+            "full_name": "Jane Talent",
+            "email": "jane.talent@example.com",
+            "phone": "+1 555-888-9999",
+            "portfolio_url": "https://vimeo.com/janetalent",
+            "linkedin_url": "",
+            "cover_note": "Passionate video producer with 6 years experience.",
+            "status": "new",
+            "applied_at": "2026-08-14 17:01:05"
+        },
+        {
+            "id": 3,
+            "job_id": 1,
+            "job_title": "Senior Video Producer",
+            "full_name": "Test Candidate Jane",
+            "email": "jane.candidate@example.com",
+            "phone": "+1 (555) 999-8888",
+            "portfolio_url": "https://vimeo.com/janecandidate",
+            "linkedin_url": "https://linkedin.com/in/janecandidate",
+            "cover_note": "I am an experienced Senior Video Producer eager to join Falhen Media.",
+            "status": "new",
+            "applied_at": "2026-08-14 22:23:31"
+        }
+    ],
+    "brand_logos_items": [
+        {
+            "id": 1,
+            "name": "Universal",
+            "icon": "fa-solid fa-globe",
+            "image": "",
+            "visible": true
+        },
+        {
+            "id": 2,
+            "name": "ESPN",
+            "icon": "fa-solid fa-trophy",
+            "image": "",
+            "visible": true
+        },
+        {
+            "id": 3,
+            "name": "Warner",
+            "icon": "fa-solid fa-video",
+            "image": "",
+            "visible": true
+        },
+        {
+            "id": 4,
+            "name": "RedBull",
+            "icon": "fa-solid fa-mug-hot",
+            "image": "",
+            "visible": true
+        },
+        {
+            "id": 5,
+            "name": "Netflix",
+            "icon": "fa-solid fa-film",
+            "image": "",
+            "visible": true
+        },
+        {
+            "id": 6,
+            "name": "Nike",
+            "icon": "fa-solid fa-person-running",
+            "image": "",
+            "visible": true
+        },
+        {
+            "id": 7,
+            "name": "Spotify",
+            "icon": "fa-brands fa-spotify",
+            "image": "",
+            "visible": true
+        },
+        {
+            "id": 8,
+            "name": "Apple",
+            "icon": "fa-brands fa-apple",
+            "image": "",
+            "visible": true
+        },
+        {
+            "id": 9,
+            "name": "HBO",
+            "icon": "fa-solid fa-tv",
+            "image": "",
+            "visible": true
+        },
+        {
+            "id": 10,
+            "name": "Adidas",
+            "icon": "fa-solid fa-shirt",
+            "image": "",
+            "visible": true
+        }
+    ],
+    "admin_profile": {
+        "full_name": "Oluwatosin Ligali",
+        "username": "admin",
+        "email": "Oluwatosin.ligali@falhenmedia.com",
+        "role": "IT Support Specialist",
+        "avatar": "https://res.cloudinary.com/pnabfi91/image/upload/v1786752054/falhen/profile/vo0hzeidqes0giydxkmr.png",
+        "bio": "Visionary Creative Director and founder of Falhen Media.",
+        "password_hash": "$2y$10$1WjN6Hyou2/JLvl.rvv7YuceT1EqQh5YuFANe1GEQR8TbXtFcQxvW"
+    },
+    "staff_accounts": [
+        {
+            "id": 1,
+            "full_name": "Henry Falonipe",
+            "username": "admin",
+            "email": "admin@falhen.com",
+            "role": "Super Admin",
+            "status": "active",
+            "avatar": "https://res.cloudinary.com/pnabfi91/image/upload/v1786712075/falhen/team/ctxjp9mymgqdh2ecg2hu.jpg",
+            "created_at": "2024-01-10",
+            "password_hash": "$2y$10$JXpfSKp9kdnpy8wSqB2iX.sNB2VlRi6.iKose61vMIL131MPHtkny"
+        },
+        {
+            "id": 2,
+            "full_name": "Oluwatosin King",
+            "username": "oluwatosin.king",
+            "email": "oluwatosin@falhen.com",
+            "role": "Operations Specialist",
+            "status": "active",
+            "avatar": "https://res.cloudinary.com/pnabfi91/image/upload/v1786713360/falhen/team/ftmzlwwv1szlyurijyno.png",
+            "created_at": "2024-02-01",
+            "password_hash": "$2y$10$JXpfSKp9kdnpy8wSqB2iX.sNB2VlRi6.iKose61vMIL131MPHtkny"
+        },
+        {
+            "id": 3,
+            "full_name": "Lisa Okoli",
+            "username": "lisa.okoli",
+            "email": "lisa@falhen.com",
+            "role": "Head of Marketing & Client Partnerships",
+            "status": "active",
+            "avatar": "https://res.cloudinary.com/pnabfi91/image/upload/v1786713962/falhen/team/b5v6o8oirs95xihokmgc.jpg",
+            "created_at": "2024-02-15",
+            "password_hash": "$2y$10$JXpfSKp9kdnpy8wSqB2iX.sNB2VlRi6.iKose61vMIL131MPHtkny"
+        },
+        {
+            "id": 4,
+            "full_name": "Mojisola Emjay",
+            "username": "mojisola.emjay",
+            "email": "mojisola.emjay@falhenmedia.com",
+            "role": "Talent Manager",
+            "status": "active",
+            "avatar": "https://res.cloudinary.com/pnabfi91/image/upload/v1786714006/falhen/team/ini79za7jvbjokrf1dup.jpg",
+            "created_at": "2024-03-01",
+            "password_hash": "$2y$10$h8hiRkyw9dJSmV3.6Y22Y.s5yZdczEtVYLU4H./gUQ/f8uwqwdU2q"
+        },
+        {
+            "id": 5,
+            "full_name": "Daniel Ifeoluwa",
+            "username": "daniel.ifeoluwa",
+            "email": "daniel.ifeoluwa@falhenmedia.com",
+            "role": "Staff",
+            "status": "active",
+            "avatar": "https://res.cloudinary.com/pnabfi91/image/upload/v1786714147/falhen/team/xba4ep38ewfdq3chfx1h.jpg",
+            "created_at": "2024-03-10",
+            "password_hash": "$2y$10$jeH3MaV.zSI3qo6E.qmEGOvDpZnLtJk7LcFLl//3gWFhqXxO6vC4."
+        },
+        {
+            "id": 6,
+            "full_name": "Victoria Opemipo",
+            "username": "victoria.opemipo",
+            "email": "victoria@falhen.com",
+            "role": "Social Media Manager",
+            "status": "active",
+            "avatar": "https://res.cloudinary.com/pnabfi91/image/upload/v1786714208/falhen/team/ri0fc0rdmjfvyzx1lihn.jpg",
+            "created_at": "2024-04-05",
+            "password_hash": "$2y$10$JXpfSKp9kdnpy8wSqB2iX.sNB2VlRi6.iKose61vMIL131MPHtkny"
+        },
+        {
+            "id": 7,
+            "full_name": "Micheal Otuwho",
+            "username": "micheal.otuwho",
+            "email": "micheal@falhen.com",
+            "role": "Content Manager",
+            "status": "active",
+            "avatar": "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=600&auto=format&fit=crop",
+            "created_at": "2024-04-18",
+            "password_hash": "$2y$10$JXpfSKp9kdnpy8wSqB2iX.sNB2VlRi6.iKose61vMIL131MPHtkny"
+        },
+        {
+            "id": 8,
+            "full_name": "Ligali Oluwatosin",
+            "username": "oluwatosin.ligali",
+            "email": "oluwatosin.ligali@falhenmedia.com",
+            "role": "Super Admin",
+            "status": "active",
+            "avatar": "https://res.cloudinary.com/pnabfi91/image/upload/v1786753671/falhen/team/sptg6oyc6wudqirgzqxc.png",
+            "created_at": "2024-05-01",
+            "password_hash": "$2y$10$t7bfxh0MFRPZfR3q0yYzFepwVAxwWLrlbYWEhE1DpfFVJmyGvwuZi"
+        }
+    ],
+    "attendance_logs": [
+        {
+            "id": 2,
+            "username": "daniel.ifeoluwa",
+            "full_name": "Daniel Ifeoluwa",
+            "date": "2026-08-15",
+            "clock_in": "10:00 AM",
+            "clock_out": null,
+            "break_start": null,
+            "break_end": null,
+            "duration": "In Progress",
+            "status": "Clocked In",
+            "work_state": "working"
+        },
+        {
+            "id": 1,
+            "username": "daniel.ifeoluwa",
+            "full_name": "Daniel Ifeoluwa",
+            "date": "2026-08-14",
+            "clock_in": "08:45 AM",
+            "clock_out": "05:30 PM",
+            "duration": "8 hrs 45 mins",
+            "status": "Present"
+        }
+    ],
+    "user_onboarding": {
+        "daniel.ifeoluwa": {
+            "bank_details": {
+                "status": "Approved",
+                "account_number": "9876543210",
+                "bank_name": "Zenith Bank",
+                "account_name": "Daniel Ifeoluwa"
+            },
+            "offer_letter": {
+                "status": "Approved",
+                "accepted": true,
+                "document_url": "/assets/docs/Offer_Letter_Falhen.pdf"
+            },
+            "employment_agreement": {
+                "status": "Approved",
+                "signed": true,
+                "document_url": "/assets/docs/Employment_Agreement_Daniel.pdf"
+            },
+            "reference_1": {
+                "status": "Pending",
+                "ref_name": "",
+                "ref_contact": "",
+                "relationship": ""
+            },
+            "sop": {
+                "status": "Approved",
+                "acknowledged": true
+            },
+            "staff_handbook": {
+                "status": "Approved",
+                "acknowledged": true
+            },
+            "id_verification": {
+                "status": "Pending",
+                "document_type": "Government ID / Tax ID",
+                "file_url": ""
+            }
+        }
+    }
+}

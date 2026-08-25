@@ -1,0 +1,34 @@
+# Falhen Media - cPanel .htaccess Configuration
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteBase /
+
+    # Force HTTPS (optional based on cPanel SSL setup)
+    # RewriteCond %{HTTPS} off
+    # RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+    # Serve existing files and directories directly
+    RewriteCond %{REQUEST_FILENAME} -f [OR]
+    RewriteCond %{REQUEST_FILENAME} -d
+    RewriteRule ^ - [L]
+
+    # Legal & Services URL rewriting
+    RewriteRule ^dashboard/?$ admin/login.php [L]
+    RewriteRule ^privacy/?$ privacy.php [L]
+    RewriteRule ^terms/?$ terms.php [L]
+    RewriteRule ^cookies/?$ cookies.php [L]
+    RewriteRule ^dpa/?$ dpa.php [L]
+    RewriteRule ^faq/?$ faq.php [L]
+    RewriteRule ^services/([^/]+)/?$ service-single.php?slug=$1 [QSA,L]
+
+    # Remove .php extension from URLs
+    RewriteCond %{REQUEST_FILENAME}.php -f
+    RewriteRule ^([^/]+)/?$ $1.php [L]
+</IfModule>
+
+# Security Headers & Cache Settings
+<IfModule mod_headers.c>
+    Header set X-Content-Type-Options "nosniff"
+    Header set X-Frame-Options "SAMEORIGIN"
+    Header set X-XSS-Protection "1; mode=block"
+</IfModule>
