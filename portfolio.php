@@ -8,14 +8,17 @@ $masterPortfolioItems = getPortfolioRepo();
 
 $portfolioAlbums = [];
 $portfolioVideos = [];
+$portfolioProjects = [];
 $allProjects = [];
 
 foreach ($masterPortfolioItems as $item) {
     $mediaType = $item['media_type'] ?? 'photo';
     if ($mediaType === 'photo') {
         $portfolioAlbums[$item['id']] = $item;
-    } else {
+    } elseif ($mediaType === 'video') {
         $portfolioVideos[$item['id']] = $item;
+    } elseif ($mediaType === 'project') {
+        $portfolioProjects[$item['id']] = $item;
     }
     $allProjects[] = $item;
 }
@@ -525,33 +528,175 @@ $featuredAllProjects = array_filter($allProjects, function($item) {
             flex-wrap: wrap;
         }
 
-        .cat-pill-btn {
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.12);
-            color: #a1a1aa;
+        .cat-pill-btn,
+        .project-pill-btn {
+            background: transparent;
+            border: 1px solid rgba(255, 255, 255, 0.22);
+            color: #ffffff;
             font-family: inherit;
             font-size: 0.86rem;
-            font-weight: 600;
-            padding: 8px 20px;
+            font-weight: 700;
+            padding: 8px 22px;
             border-radius: 50px;
             cursor: pointer;
             transition: all 0.25s ease;
         }
 
         .cat-pill-btn.active,
-        .cat-pill-btn:hover {
+        .cat-pill-btn:hover,
+        .project-pill-btn.active,
+        .project-pill-btn:hover {
             background: #dc2626;
             border-color: #dc2626;
             color: #ffffff;
-            box-shadow: 0 4px 15px rgba(220, 38, 38, 0.35);
+            box-shadow: 0 4px 15px rgba(220, 38, 38, 0.4);
         }
 
-        /* All Albums Grid (3 columns) */
+        /* All Albums & Video Grid (3 columns) */
         .all-albums-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
             gap: 24px;
             margin-bottom: 50px;
+        }
+
+        @media (max-width: 992px) {
+            .all-albums-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 600px) {
+            .all-albums-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Projects 4-Column Grid & Card Styling */
+        .projects-4col-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            margin-bottom: 50px;
+        }
+
+        @media (max-width: 1200px) {
+            .projects-4col-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+
+        @media (max-width: 900px) {
+            .projects-4col-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 600px) {
+            .projects-4col-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .project-card {
+            background: #0e0e12;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 18px;
+            overflow: hidden;
+            position: relative;
+            cursor: pointer;
+            transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+            height: 260px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .project-card:hover {
+            border-color: rgba(220, 38, 38, 0.6);
+            transform: translateY(-6px);
+            box-shadow: 0 16px 40px rgba(220, 38, 38, 0.25);
+        }
+
+        .project-card-image-wrap {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        .project-card-image-wrap img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transform: scale(1.05);
+            transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .project-card:hover .project-card-image-wrap img {
+            transform: scale(1.0);
+        }
+
+        .project-card-overlay {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(180deg, rgba(3, 3, 5, 0.4) 0%, rgba(3, 3, 5, 0.2) 40%, rgba(3, 3, 5, 0.95) 100%);
+            padding: 18px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            z-index: 2;
+        }
+
+        .project-card-top-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .project-cat-badge {
+            background: #dc2626;
+            color: #ffffff;
+            font-size: 0.72rem;
+            font-weight: 700;
+            padding: 4px 12px;
+            border-radius: 50px;
+            box-shadow: 0 2px 8px rgba(220, 38, 38, 0.4);
+            letter-spacing: 0.2px;
+        }
+
+        .project-star-badge {
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: rgba(234, 179, 8, 0.25);
+            border: 1px solid rgba(234, 179, 8, 0.5);
+            color: #facc15;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            backdrop-filter: blur(4px);
+        }
+
+        .project-card-bottom-info {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .project-client-name {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #a1a1aa;
+            margin: 0;
+        }
+
+        .project-card-title {
+            font-size: 1.05rem;
+            font-weight: 800;
+            color: #ffffff;
+            margin: 0;
+            line-height: 1.25;
         }
 
         .grid-album-card {
@@ -880,8 +1025,8 @@ $featuredAllProjects = array_filter($allProjects, function($item) {
             <button class="gallery-tab-btn" id="btnTypeVideo" onclick="switchGalleryType('video')">
                 <i class="fa-solid fa-film"></i> Video Gallery <span class="tab-tag">Reels</span>
             </button>
-            <button class="gallery-tab-btn" id="btnTypeAll" onclick="switchGalleryType('all')">
-                <i class="fa-solid fa-border-all"></i> All Portfolio <span class="tab-tag"><?php echo count($allProjects); ?> items</span>
+            <button class="gallery-tab-btn" id="btnTypeProject" onclick="switchGalleryType('project')">
+                <i class="fa-solid fa-border-all"></i> All Projects <span class="tab-tag"><?php echo count($portfolioProjects); ?> projects</span>
             </button>
         </div>
     </section>
@@ -918,7 +1063,7 @@ $featuredAllProjects = array_filter($allProjects, function($item) {
             <!-- All Albums 3-Column Grid -->
             <div class="all-albums-grid" id="allAlbumsGrid">
                 <?php foreach ($portfolioAlbums as $item): ?>
-                    <div class="grid-album-card" data-cat="<?php echo htmlspecialchars($item['category']); ?>" onclick="window.location.href='/portfolio-single.php?id=<?php echo $item['id']; ?>'">
+                    <div class="grid-album-card" data-cat="<?php echo htmlspecialchars($item['category']); ?>" onclick="window.location.href='/portfolio-photo.php?id=<?php echo $item['id']; ?>'">
                         <div class="grid-thumb-box">
                             <?php if (!empty($item['featured'])): ?>
                                 <div class="grid-star-badge"><i class="fa-solid fa-star"></i></div>
@@ -957,7 +1102,7 @@ $featuredAllProjects = array_filter($allProjects, function($item) {
             <!-- All Video Productions 3-Column Grid -->
             <div class="all-albums-grid" id="allVideosGrid">
                 <?php foreach ($portfolioVideos as $vItem): ?>
-                    <div class="grid-album-card" data-cat="<?php echo htmlspecialchars($vItem['category']); ?>" onclick="openVideoModal(<?php echo $vItem['id']; ?>)">
+                    <div class="grid-album-card" data-cat="<?php echo htmlspecialchars($vItem['category']); ?>" onclick="window.location.href='/portfolio-video.php?id=<?php echo $vItem['id']; ?>'">
                         <div class="grid-thumb-box">
                             <?php if (!empty($vItem['featured'])): ?>
                                 <div class="grid-star-badge"><i class="fa-solid fa-star"></i></div>
@@ -984,69 +1129,42 @@ $featuredAllProjects = array_filter($allProjects, function($item) {
             </div>
         </div>
 
-        <!-- All Portfolio View -->
-        <div id="allProjectsView" style="display: none;">
-            <!-- Category & Type Filter Tabs -->
+        <!-- Projects Gallery View -->
+        <div id="projectsGalleryView" style="display: none;">
+            <!-- Category Filter Tabs -->
             <div class="filter-pills-row">
-                <button class="cat-pill-btn active" onclick="filterAllCategory('all', this)">All</button>
-                <button class="cat-pill-btn" onclick="filterAllCategory('Portrait', this)">Portrait</button>
-                <button class="cat-pill-btn" onclick="filterAllCategory('Event', this)">Event</button>
-                <button class="cat-pill-btn" onclick="filterAllCategory('Birthday', this)">Birthday</button>
-                <button class="cat-pill-btn" onclick="filterAllCategory('Wedding', this)">Wedding</button>
-                <button class="cat-pill-btn" onclick="filterAllCategory('Commercial', this)">Commercial</button>
-                <button class="cat-pill-btn" onclick="filterAllCategory('Music Video', this)">Music Video</button>
-                <button class="cat-pill-btn" onclick="filterAllCategory('Documentary', this)">Documentary</button>
+                <button class="project-pill-btn active" onclick="filterProjectsCategory('all', this)">All Work</button>
+                <button class="project-pill-btn" onclick="filterProjectsCategory('Commercials', this)">Commercials</button>
+                <button class="project-pill-btn" onclick="filterProjectsCategory('Corporate', this)">Corporate</button>
+                <button class="project-pill-btn" onclick="filterProjectsCategory('Events', this)">Events</button>
+                <button class="project-pill-btn" onclick="filterProjectsCategory('Documentary', this)">Documentary</button>
+                <button class="project-pill-btn" onclick="filterProjectsCategory('Social', this)">Social</button>
+                <button class="project-pill-btn" onclick="filterProjectsCategory('Broadcast', this)">Broadcast</button>
+                <button class="project-pill-btn" onclick="filterProjectsCategory('Wedding', this)">Wedding</button>
             </div>
 
-            <!-- All Projects 3-Column Grid -->
-            <div class="all-albums-grid" id="allProjectsGrid">
-                <?php foreach ($allProjects as $item): ?>
-                    <?php if ($item['media_type'] === 'photo'): ?>
-                        <div class="grid-album-card" data-type="photo" data-cat="<?php echo htmlspecialchars($item['category']); ?>" onclick="window.location.href='/portfolio-single.php?id=<?php echo $item['id']; ?>'">
-                            <div class="grid-thumb-box">
-                                <?php if (!empty($item['featured'])): ?>
-                                    <div class="grid-star-badge"><i class="fa-solid fa-star"></i></div>
-                                <?php endif; ?>
-                                <img src="<?php echo htmlspecialchars($item['image']); ?>" alt="<?php echo htmlspecialchars($item['title']); ?>">
-                                <div class="album-overlay-center">
-                                    <div class="icon-view-btn">
-                                        <i class="fa-regular fa-image"></i>
-                                    </div>
+            <!-- Projects 4-Column Grid -->
+            <div class="projects-4col-grid" id="projectsGrid">
+                <?php foreach ($portfolioProjects as $pItem): ?>
+                    <div class="project-card" data-cat="<?php echo htmlspecialchars($pItem['category']); ?>" onclick="window.location.href='/portfolio-project.php?id=<?php echo $pItem['id']; ?>'">
+                        <div class="project-card-image-wrap">
+                            <img src="<?php echo htmlspecialchars($pItem['image']); ?>" alt="<?php echo htmlspecialchars($pItem['title']); ?>">
+                            <div class="project-card-overlay">
+                                <div class="project-card-top-row">
+                                    <span class="project-cat-badge"><?php echo htmlspecialchars($pItem['category']); ?></span>
+                                    <?php if (!empty($pItem['featured'])): ?>
+                                        <div class="project-star-badge"><i class="fa-solid fa-star"></i></div>
+                                    <?php endif; ?>
                                 </div>
-                            </div>
-                            <div class="grid-card-footer">
-                                <div>
-                                    <h4 class="grid-card-title"><?php echo htmlspecialchars($item['title']); ?></h4>
-                                    <span class="grid-card-cat"><i class="fa-regular fa-image"></i> <?php echo htmlspecialchars($item['category']); ?></span>
+                                <div class="project-card-bottom-info">
+                                    <?php if (!empty($pItem['client'])): ?>
+                                        <div class="project-client-name"><?php echo htmlspecialchars($pItem['client']); ?></div>
+                                    <?php endif; ?>
+                                    <h4 class="project-card-title"><?php echo htmlspecialchars($pItem['title']); ?></h4>
                                 </div>
-                                <i class="fa-solid fa-chevron-right grid-card-arrow"></i>
                             </div>
                         </div>
-                    <?php else: ?>
-                        <div class="grid-album-card" data-type="video" data-cat="<?php echo htmlspecialchars($item['category']); ?>" onclick="openVideoModal(<?php echo $item['id']; ?>)">
-                            <div class="grid-thumb-box">
-                                <?php if (!empty($item['featured'])): ?>
-                                    <div class="grid-star-badge"><i class="fa-solid fa-star"></i></div>
-                                <?php endif; ?>
-                                <img src="<?php echo htmlspecialchars($item['image']); ?>" alt="<?php echo htmlspecialchars($item['title']); ?>">
-                                <div class="video-duration-badge">
-                                    <i class="fa-regular fa-clock"></i> <?php echo htmlspecialchars($item['duration']); ?>
-                                </div>
-                                <div class="album-overlay-center">
-                                    <div class="icon-play-btn">
-                                        <i class="fa-solid fa-play"></i>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="grid-card-footer">
-                                <div>
-                                    <h4 class="grid-card-title"><?php echo htmlspecialchars($item['title']); ?></h4>
-                                    <span class="grid-card-cat" style="color: #ff4d4d;"><i class="fa-solid fa-film"></i> <?php echo htmlspecialchars($item['category']); ?></span>
-                                </div>
-                                <i class="fa-solid fa-play grid-card-arrow" style="font-size:0.85rem; color:#dc2626;"></i>
-                            </div>
-                        </div>
-                    <?php endif; ?>
+                    </div>
                 <?php endforeach; ?>
             </div>
         </div>
@@ -1109,36 +1227,33 @@ $featuredAllProjects = array_filter($allProjects, function($item) {
 
     <!-- Interactive Scripts -->
     <script>
-        const albumsData = <?php echo json_encode($portfolioAlbums); ?>;
-        const videosData = <?php echo json_encode($portfolioVideos); ?>;
-        const allProjectsData = <?php echo json_encode($allProjects); ?>;
+        const portfolioProjectsData = <?php echo json_encode($portfolioProjects); ?>;
 
         function switchGalleryType(type) {
             const btnPhoto = document.getElementById('btnTypePhoto');
             const btnVideo = document.getElementById('btnTypeVideo');
-            const btnAll = document.getElementById('btnTypeAll');
+            const btnProject = document.getElementById('btnTypeProject');
             const photoView = document.getElementById('photoGalleryView');
             const videoView = document.getElementById('videoGalleryView');
-            const allView = document.getElementById('allProjectsView');
-            const counterText = document.getElementById('counterText');
+            const projectView = document.getElementById('projectsGalleryView');
             const bookShootCard = document.getElementById('bookShootCard');
 
             if (btnPhoto) btnPhoto.classList.remove('active');
             if (btnVideo) btnVideo.classList.remove('active');
-            if (btnAll) btnAll.classList.remove('active');
+            if (btnProject) btnProject.classList.remove('active');
 
             if (photoView) photoView.style.display = 'none';
             if (videoView) videoView.style.display = 'none';
-            if (allView) allView.style.display = 'none';
+            if (projectView) projectView.style.display = 'none';
 
             if (type === 'video') {
                 if (btnVideo) btnVideo.classList.add('active');
                 if (videoView) videoView.style.display = 'block';
                 if (bookShootCard) bookShootCard.style.display = 'flex';
-            } else if (type === 'all') {
-                if (btnAll) btnAll.classList.add('active');
-                if (allView) allView.style.display = 'block';
-                if (bookShootCard) bookShootCard.style.display = 'none';
+            } else if (type === 'project' || type === 'all') {
+                if (btnProject) btnProject.classList.add('active');
+                if (projectView) projectView.style.display = 'block';
+                if (bookShootCard) bookShootCard.style.display = 'flex';
             } else {
                 if (btnPhoto) btnPhoto.classList.add('active');
                 if (photoView) photoView.style.display = 'block';
@@ -1146,56 +1261,23 @@ $featuredAllProjects = array_filter($allProjects, function($item) {
             }
         }
 
-        function filterCategory(cat, btn) {
-            const buttons = document.querySelectorAll('#photoGalleryView .cat-pill-btn');
+        function filterProjectsCategory(cat, btn) {
+            const buttons = document.querySelectorAll('#projectsGalleryView .project-pill-btn, #projectsGalleryView .cat-pill-btn');
             buttons.forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
 
-            const cards = document.querySelectorAll('#allAlbumsGrid .grid-album-card');
+            const cards = document.querySelectorAll('#projectsGrid .project-card, #projectsGrid .grid-album-card');
             cards.forEach(card => {
                 const cardCat = card.getAttribute('data-cat');
-                if (cat === 'all' || cardCat === cat) {
+                if (
+                    cat === 'all' || 
+                    cardCat === cat || 
+                    (cat === 'Events' && (cardCat === 'Event' || cardCat === 'Events')) ||
+                    (cat === 'Commercials' && (cardCat === 'Commercial' || cardCat === 'Commercials'))
+                ) {
                     card.style.display = 'flex';
                 } else {
                     card.style.display = 'none';
-                }
-            });
-        }
-
-        function filterVideoCategory(cat, btn) {
-            const buttons = document.querySelectorAll('#videoGalleryView .cat-pill-btn');
-            buttons.forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-
-            const cards = document.querySelectorAll('#allVideosGrid .grid-album-card');
-            cards.forEach(card => {
-                const cardCat = card.getAttribute('data-cat');
-                if (cat === 'all' || cardCat === cat) {
-                    card.style.display = 'flex';
-                } else {
-                    card.style.display = 'none';
-                }
-            });
-        }
-
-        function filterAllCategory(filterVal, btn) {
-            const buttons = document.querySelectorAll('#allProjectsView .cat-pill-btn');
-            buttons.forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-
-            const cards = document.querySelectorAll('#allProjectsGrid .grid-album-card');
-            cards.forEach(card => {
-                const cardCat = card.getAttribute('data-cat');
-                const cardType = card.getAttribute('data-type');
-
-                if (filterVal === 'all') {
-                    card.style.display = 'flex';
-                } else if (filterVal === 'photo') {
-                    card.style.display = cardType === 'photo' ? 'flex' : 'none';
-                } else if (filterVal === 'video') {
-                    card.style.display = cardType === 'video' ? 'flex' : 'none';
-                } else {
-                    card.style.display = cardCat === filterVal ? 'flex' : 'none';
                 }
             });
         }
@@ -1274,8 +1356,8 @@ $featuredAllProjects = array_filter($allProjects, function($item) {
         document.addEventListener('DOMContentLoaded', function() {
             const urlParams = new URLSearchParams(window.location.search);
             const tabParam = urlParams.get('tab') || urlParams.get('type');
-            if (tabParam === 'all') {
-                switchGalleryType('all');
+            if (tabParam === 'project' || tabParam === 'all') {
+                switchGalleryType('project');
             } else if (tabParam === 'video') {
                 switchGalleryType('video');
             }

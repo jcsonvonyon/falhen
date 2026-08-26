@@ -1,0 +1,130 @@
+[
+    {
+        "id": "task_1787747236_43",
+        "title": "New Graphics Designer",
+        "description": "Getting us the best hand for graphics",
+        "assignee_username": "admin,kingsley.falonipe,admin",
+        "assignee_name": "Henry Falonipe, Kingsley Falonipe, Henry Falonipe",
+        "assignee_avatar": "https:\/\/res.cloudinary.com\/pnabfi91\/image\/upload\/v1786712075\/falhen\/team\/ctxjp9mymgqdh2ecg2hu.jpg",
+        "stage": "ideas",
+        "due_date": "2026-09-05",
+        "due_date_str": "Sep 05",
+        "priority": "High",
+        "tags": [
+            "Employment",
+            "Recruit"
+        ],
+        "checklist": [
+            {
+                "id": "item_1",
+                "text": "Prepare onboarding documents",
+                "completed": true
+            },
+            {
+                "id": "item_2",
+                "text": "Use Fiver",
+                "completed": true
+            },
+            {
+                "id": "item_3",
+                "text": "Use social media",
+                "completed": false
+            },
+            {
+                "id": "item_4",
+                "text": "Interview",
+                "completed": false
+            },
+            {
+                "id": "item_5",
+                "text": "Select",
+                "completed": false
+            }
+        ],
+        "comments_count": 0,
+        "attachments_count": 0,
+        "created_at": "2026-08-26 12:27:16",
+        "client_org": "Nike",
+        "assignees": [
+            {
+                "username": "admin",
+                "name": "Henry Falonipe",
+                "avatar": "https:\/\/res.cloudinary.com\/pnabfi91\/image\/upload\/v1786712075\/falhen\/team\/ctxjp9mymgqdh2ecg2hu.jpg"
+            },
+            {
+                "username": "kingsley.falonipe",
+                "name": "Kingsley Falonipe",
+                "avatar": "https:\/\/res.cloudinary.com\/pnabfi91\/image\/upload\/v1786713360\/falhen\/team\/ftmzlwwv1szlyurijyno.png"
+            },
+            {
+                "username": "admin",
+                "name": "Henry Falonipe",
+                "avatar": "https:\/\/res.cloudinary.com\/pnabfi91\/image\/upload\/v1786712075\/falhen\/team\/ctxjp9mymgqdh2ecg2hu.jpg"
+            }
+        ]
+    },
+    {
+        "id": "task_2",
+        "project": "Q3 BRAND REFRESH",
+        "title": "Draft Logo Concepts",
+        "description": "Create 3 variations based on brief.",
+        "assignee_username": "oluwatosin",
+        "assignee_name": "Oluwatosin Ligali",
+        "assignee_avatar": "https:\/\/res.cloudinary.com\/pnabfi91\/image\/upload\/f_auto,q_auto\/v1786714111\/falhen\/team\/q4atws8zhxaogyzm8bgw.png",
+        "stage": "primary",
+        "due_date": "2026-07-05",
+        "due_date_str": "Jul 5",
+        "priority": "Medium",
+        "comments_count": 0,
+        "attachments_count": 0,
+        "created_at": "2026-08-26 10:37:09"
+    },
+    {
+        "id": "task_3",
+        "project": "COMMERCIAL PRODUCTION",
+        "title": "RED V-Raptor Gear Orientation Briefing",
+        "description": "Review camera rig calibration and lens packages.",
+        "assignee_username": "victoria",
+        "assignee_name": "Victoria Opemipo",
+        "assignee_avatar": "https:\/\/res.cloudinary.com\/pnabfi91\/image\/upload\/f_auto,q_auto\/v1786714111\/falhen\/team\/q4atws8zhxaogyzm8bgw.png",
+        "stage": "ongoing",
+        "due_date": "2026-08-28",
+        "due_date_str": "Aug 28",
+        "priority": "High",
+        "comments_count": 2,
+        "attachments_count": 1,
+        "created_at": "2026-08-26 10:37:09"
+    },
+    {
+        "id": "task_4",
+        "project": "SHOWREEL 2026",
+        "title": "Q3 Commercial Showreel Final Cut Sync",
+        "description": "Master sound mixing and color grade output.",
+        "assignee_username": "victoria",
+        "assignee_name": "Victoria Opemipo",
+        "assignee_avatar": "",
+        "stage": "pending_review",
+        "due_date": "2026-09-02",
+        "due_date_str": "Sep 02",
+        "priority": "Medium",
+        "comments_count": 1,
+        "attachments_count": 0,
+        "created_at": "2026-08-26 10:37:09"
+    },
+    {
+        "id": "task_5",
+        "project": "STUDIO HR & AUDIT",
+        "title": "August Health Stipend Audit & Verification",
+        "description": "Verify receipts and disburse health reimbursements.",
+        "assignee_username": "mojisola",
+        "assignee_name": "Mojisola Emjay",
+        "assignee_avatar": "https:\/\/res.cloudinary.com\/pnabfi91\/image\/upload\/v1786714006\/falhen\/team\/ini79za7jvbjokrf1dup.jpg",
+        "stage": "completed",
+        "due_date": "2026-08-25",
+        "due_date_str": "Aug 25",
+        "priority": "Low",
+        "comments_count": 4,
+        "attachments_count": 2,
+        "created_at": "2026-08-26 10:37:09"
+    }
+]

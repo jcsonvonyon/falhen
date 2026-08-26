@@ -149,13 +149,13 @@ function getTeamMembers() {
             [
                 'id' => 2,
                 'number' => '02',
-                'name' => 'Oluwatosin King',
+                'name' => 'Kingsley Falonipe',
                 'role' => 'Operations Specialist',
-                'department' => 'Creative',
+                'department' => 'Operations',
                 'location' => 'Lagos',
                 'experience' => '4+ years at Falhen',
-                'image' => '/assets/img/portfolio/portfolio_halima.png',
-                'bio' => "Bridging the gap between creative vision and seamless execution. With a proactive and friendly approach, Oluwatosin ensures that complex production workflows run with precision.",
+                'image' => 'https://res.cloudinary.com/pnabfi91/image/upload/v1786713360/falhen/team/ftmzlwwv1szlyurijyno.png',
+                'bio' => "Bridging the gap between creative vision and seamless execution. With a proactive and friendly approach, Kingsley ensures that complex production workflows run with precision.",
                 'skills' => ['Productions', 'Operational Management', 'Client Relations']
             ],
             [
@@ -674,6 +674,150 @@ function getPortfolioRepo() {
                 'image' => '/assets/img/portfolio/portfolio_commercial.png',
                 'video_url' => 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/Sintel.mp4',
                 'desc' => 'Award-winning short documentary exploring street art, culture, and creative passion in modern urban cities.'
+            ],
+            [
+                'id' => 16,
+                'title' => 'Tech Innovation Summit 2024',
+                'category' => 'Corporate',
+                'media_type' => 'project',
+                'featured' => true,
+                'client' => 'TechCorp International',
+                'location' => 'Chicago',
+                'image' => 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?q=80&w=800&auto=format&fit=crop',
+                'gdrive_url' => 'https://drive.google.com/drive/folders/tech-summit-2024',
+                'desc' => 'Global technology conference keynote recording, stage visual direction, and corporate livestream coverage.'
+            ],
+            [
+                'id' => 17,
+                'title' => 'Luxury Brand Fashion Show',
+                'category' => 'Events',
+                'media_type' => 'project',
+                'featured' => true,
+                'client' => 'Elegance Fashion House',
+                'location' => 'Paris & Lagos',
+                'image' => 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=800&auto=format&fit=crop',
+                'gdrive_url' => 'https://drive.google.com/drive/folders/fashion-show-2024',
+                'desc' => 'High-fashion runway showcase, 4K slow-motion captures, and backstage model portraiture.'
+            ],
+            [
+                'id' => 18,
+                'title' => 'Electric Vehicle Launch Campaign',
+                'category' => 'Commercials',
+                'media_type' => 'project',
+                'featured' => true,
+                'client' => 'EcoMotors',
+                'location' => 'Los Angeles',
+                'image' => 'https://images.unsplash.com/photo-1503376780353-7e6692767b70?q=80&w=800&auto=format&fit=crop',
+                'gdrive_url' => 'https://drive.google.com/drive/folders/ecomotors-campaign',
+                'desc' => 'Commercial launch campaign featuring cinematic night automotive tracking shots and digital ad spots.'
+            ],
+            [
+                'id' => 19,
+                'title' => 'Fitness Brand Social Campaign',
+                'category' => 'Social',
+                'media_type' => 'project',
+                'featured' => false,
+                'client' => 'FitLife Athletics',
+                'location' => 'New York',
+                'image' => 'https://images.unsplash.com/photo-1517838277536-f5f99be501cd?q=80&w=800&auto=format&fit=crop',
+                'gdrive_url' => 'https://drive.google.com/drive/folders/fitlife-social',
+                'desc' => 'High-intensity athletic promotional reels and vertical social video asset package.'
+            ],
+            [
+                'id' => 20,
+                'title' => 'SoundWave Music Festival',
+                'category' => 'Events',
+                'media_type' => 'project',
+                'featured' => false,
+                'client' => 'SoundWave Festival',
+                'location' => 'Lagos',
+                'image' => 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?q=80&w=800&auto=format&fit=crop',
+                'gdrive_url' => 'https://drive.google.com/drive/folders/soundwave-fest',
+                'desc' => 'Multi-stage festival coverage, crowd energy captures, and mainstage headliner recap video.'
+            ],
+            [
+                'id' => 21,
+                'title' => 'Metro Morning News Show',
+                'category' => 'Broadcast',
+                'media_type' => 'project',
+                'featured' => false,
+                'client' => 'Metro News Network',
+                'location' => 'London',
+                'image' => 'https://images.unsplash.com/photo-1585829365295-ab7cd400c167?q=80&w=800&auto=format&fit=crop',
+                'gdrive_url' => 'https://drive.google.com/drive/folders/metro-news-show',
+                'desc' => 'State-of-the-art studio set design, multi-camera live broadcast infrastructure, and news graphics package.'
+            ],
+            [
+                'id' => 22,
+                'title' => 'Coastal Wedding — Nichelle & Michael',
+                'category' => 'Wedding',
+                'media_type' => 'project',
+                'featured' => false,
+                'client' => 'Nichelle & Michael',
+                'location' => 'Cape Town',
+                'image' => 'https://images.unsplash.com/photo-1519741497674-611481863552?q=80&w=800&auto=format&fit=crop',
+                'gdrive_url' => 'https://drive.google.com/drive/folders/nichelle-michael-wedding',
+                'desc' => 'Luxury oceanfront destination wedding documentary film and comprehensive photo archive.'
+            ],
+            [
+                'id' => 23,
+                'title' => 'Artisan Coffee — Brand Story',
+                'category' => 'Commercials',
+                'media_type' => 'project',
+                'featured' => true,
+                'client' => 'Roast & Ritual',
+                'location' => 'Seattle',
+                'image' => 'https://images.unsplash.com/photo-1447933601403-0c6688de566e?q=80&w=800&auto=format&fit=crop',
+                'gdrive_url' => 'https://drive.google.com/drive/folders/roast-ritual-story',
+                'desc' => 'Cinematic brand documentary profiling craft coffee roasters and ethical bean sourcing.'
+            ],
+            [
+                'id' => 24,
+                'title' => 'Falhen Brand Campaign 2026',
+                'category' => 'Corporate',
+                'media_type' => 'project',
+                'featured' => true,
+                'client' => 'Falhen Global',
+                'location' => 'Lagos & Chicago',
+                'image' => '/assets/img/portfolio/portfolio_award.png',
+                'gdrive_url' => 'https://drive.google.com/drive/folders/falhen-brand-2026',
+                'desc' => 'Complete visual rebrand, corporate media campaign, and multimedia brand guidelines production.'
+            ],
+            [
+                'id' => 25,
+                'title' => 'Demola World Tour Production',
+                'category' => 'Events',
+                'media_type' => 'project',
+                'featured' => true,
+                'client' => 'Demola Music',
+                'location' => 'London & New York',
+                'image' => '/assets/img/portfolio/portfolio_wedding.png',
+                'gdrive_url' => 'https://drive.google.com/drive/folders/demola-tour-2026',
+                'desc' => 'Stage LED visual curation, concert live recording setup, and international promotional assets.'
+            ],
+            [
+                'id' => 26,
+                'title' => 'Urban Culture Short Film',
+                'category' => 'Documentary',
+                'media_type' => 'project',
+                'featured' => true,
+                'client' => 'Falhen Originals',
+                'location' => 'Lagos',
+                'image' => '/assets/img/portfolio/portfolio_commercial.png',
+                'gdrive_url' => 'https://drive.google.com/drive/folders/urban-culture-doc',
+                'desc' => 'Award-winning short documentary exploring street art, urban music, and creative youth culture.'
+            ],
+            [
+                'id' => 27,
+                'title' => 'Global Apex Summit 2026',
+                'category' => 'Broadcast',
+                'media_type' => 'project',
+                'featured' => false,
+                'client' => 'Apex Tech',
+                'location' => 'Tokyo',
+                'image' => 'https://images.unsplash.com/photo-1505373877841-8d25f7d46678?q=80&w=800&auto=format&fit=crop',
+                'gdrive_url' => 'https://drive.google.com/drive/folders/apex-summit-2026',
+                'desc' => 'International tech conference hybrid broadcast stream and multi-lingual video production.'
             ]
         ];
     }
@@ -1106,9 +1250,9 @@ function getStaffAccountsRepo() {
             ],
             [
                 'id'            => 2,
-                'full_name'     => 'Oluwatosin King',
-                'username'      => 'oluwatosin.king',
-                'email'         => 'oluwatosin@falhen.com',
+                'full_name'     => 'Kingsley Falonipe',
+                'username'      => 'kingsley.falonipe',
+                'email'         => 'kingsley@falhen.com',
                 'role'          => 'Operations Specialist',
                 'status'        => 'active',
                 'avatar'        => 'https://res.cloudinary.com/pnabfi91/image/upload/v1786713360/falhen/team/ftmzlwwv1szlyurijyno.png',
@@ -1187,13 +1331,18 @@ function getStaffAccountsRepo() {
         saveSiteSettings($settings);
     }
 
-    // Auto-sync missing/placeholder avatars with team members profile photos
+    // Direct synchronization of avatars from Team (Content) menu
     $teamMembers = getTeamMembers();
     $teamAvatarMap = [];
     foreach ($teamMembers as $tm) {
         if (!empty($tm['name']) && !empty($tm['image'])) {
-            $nameKey = strtolower(trim($tm['name']));
-            $teamAvatarMap[$nameKey] = $tm['image'];
+            $fullNameLower = strtolower(trim($tm['name']));
+            $firstNameLower = strtolower(explode(' ', trim($tm['name']))[0]);
+
+            $teamAvatarMap[$fullNameLower] = $tm['image'];
+            if (!isset($teamAvatarMap[$firstNameLower])) {
+                $teamAvatarMap[$firstNameLower] = $tm['image'];
+            }
         }
     }
 
@@ -1202,15 +1351,14 @@ function getStaffAccountsRepo() {
     foreach ($items as $idx => $item) {
         $id = (int)($item['id'] ?? 0);
         $nameLower = strtolower(trim($item['full_name'] ?? ''));
-        $currentAvatar = $item['avatar'] ?? '';
+        $firstNameLower = strtolower(explode(' ', $nameLower)[0]);
 
-        // If avatar is missing or set to a portfolio image placeholder, replace with team photo
-        if (empty($currentAvatar) || str_contains($currentAvatar, '/assets/img/portfolio/')) {
-            if (!empty($teamAvatarMap[$nameLower])) {
-                $item['avatar'] = $teamAvatarMap[$nameLower];
-                $items[$idx]['avatar'] = $teamAvatarMap[$nameLower];
-                $modified = true;
-            }
+        // Always sync avatar photo directly from Team (Content) roster
+        $syncedAvatar = $teamAvatarMap[$nameLower] ?? ($teamAvatarMap[$firstNameLower] ?? ($item['avatar'] ?? ''));
+        if (!empty($syncedAvatar) && $syncedAvatar !== ($item['avatar'] ?? '')) {
+            $item['avatar'] = $syncedAvatar;
+            $items[$idx]['avatar'] = $syncedAvatar;
+            $modified = true;
         }
 
         if ($id > 0) {
@@ -1233,6 +1381,82 @@ function getStaffAccountById($id) {
     $repo = getStaffAccountsRepo();
     $id = (int)$id;
     return $repo[$id] ?? null;
+}
+
+/**
+ * Synchronize Team (Content) Roster & Staff Accounts
+ */
+function syncTeamAndStaffAccounts() {
+    $teamMembers = array_values(getTeamMembers());
+    $staffAccounts = getStaffAccountsRepo();
+
+    $addedCount = 0;
+    $updatedCount = 0;
+
+    $staffByName = [];
+    foreach ($staffAccounts as $idx => $st) {
+        $nameKey = strtolower(trim($st['full_name'] ?? ''));
+        $firstNameKey = strtolower(explode(' ', $nameKey)[0]);
+        $staffByName[$nameKey] = $st['id'];
+        if (!isset($staffByName[$firstNameKey])) {
+            $staffByName[$firstNameKey] = $st['id'];
+        }
+    }
+
+    $defaultPasswordHash = password_hash('Password123#', PASSWORD_DEFAULT);
+
+    foreach ($teamMembers as $tm) {
+        $tmName = trim($tm['name'] ?? '');
+        if (empty($tmName)) continue;
+
+        $tmNameLower = strtolower($tmName);
+        $tmFirstLower = strtolower(explode(' ', $tmNameLower)[0]);
+        $tmImage = $tm['image'] ?? '';
+
+        if (isset($staffByName[$tmNameLower])) {
+            $stId = $staffByName[$tmNameLower];
+            if (isset($staffAccounts[$stId])) {
+                if (($staffAccounts[$stId]['avatar'] ?? '') !== $tmImage && !empty($tmImage)) {
+                    $staffAccounts[$stId]['avatar'] = $tmImage;
+                    $updatedCount++;
+                }
+            }
+        } else if (isset($staffByName[$tmFirstLower])) {
+            $stId = $staffByName[$tmFirstLower];
+            if (isset($staffAccounts[$stId])) {
+                if (($staffAccounts[$stId]['avatar'] ?? '') !== $tmImage && !empty($tmImage)) {
+                    $staffAccounts[$stId]['avatar'] = $tmImage;
+                    $updatedCount++;
+                }
+            }
+        } else {
+            // Auto-create matching staff account for team member
+            $maxId = 0;
+            foreach ($staffAccounts as $st) {
+                $id = (int)($st['id'] ?? 0);
+                if ($id > $maxId) $maxId = $id;
+            }
+            $newId = $maxId + 1;
+            $username = strtolower(str_replace(' ', '.', $tmName));
+            $email = $tmFirstLower . '@falhen.com';
+
+            $staffAccounts[$newId] = [
+                'id'            => $newId,
+                'full_name'     => $tmName,
+                'username'      => $username,
+                'email'         => $email,
+                'role'          => $tm['role'] ?? 'Staff',
+                'status'        => 'active',
+                'avatar'        => $tmImage,
+                'created_at'    => date('Y-m-d'),
+                'password_hash' => $defaultPasswordHash
+            ];
+            $addedCount++;
+        }
+    }
+
+    saveSiteSettings(['staff_accounts' => array_values($staffAccounts)]);
+    return ['added' => $addedCount, 'updated' => $updatedCount];
 }
 
 /**
@@ -1273,15 +1497,49 @@ function isAdminUser($role = null, $email = null, $username = null) {
     }
 
     // Role title checks
-    if ($r === 'super admin' || $r === 'administrator' || $r === 'admin' || str_contains($r, 'admin') || str_contains($r, 'director') || str_contains($r, 'manager')) {
+    if ($r === 'super admin' || $r === 'administrator' || $r === 'admin' || str_contains($r, 'admin') || str_contains($r, 'director') || str_contains($r, 'manager') || str_contains($r, 'editor')) {
         return true;
     }
 
     return false;
 }
 
+function isTalentManager($role = null) {
+    if ($role === null) {
+        $role = $_SESSION['admin_role'] ?? '';
+    }
+    return strtolower(trim((string)$role)) === 'talent manager';
+}
+
+function isContentEditor($role = null) {
+    if ($role === null) {
+        $role = $_SESSION['admin_role'] ?? '';
+    }
+    return strtolower(trim((string)$role)) === 'content editor';
+}
+
 function isAdminRole($role) {
     return isAdminUser($role);
+}
+
+function isSuperAdminUser($role = null, $email = null, $username = null) {
+    if ($role === null) {
+        $role = $_SESSION['admin_role'] ?? '';
+    }
+    if ($email === null) {
+        $email = $_SESSION['admin_email'] ?? '';
+    }
+    if ($username === null) {
+        $username = $_SESSION['admin_username'] ?? '';
+    }
+    $r = strtolower(trim((string)$role));
+    $e = strtolower(trim((string)$email));
+    $u = strtolower(trim((string)$username));
+
+    if ($r === 'super admin' || $r === 'administrator' || $u === 'admin' || $u === 'henry' || $e === 'mail@falhenmedia.com' || $e === 'admin@falhen.com') {
+        return true;
+    }
+    return false;
 }
 
 /**
@@ -1328,9 +1586,14 @@ function hasSectionAccess($section, $role = null, $email = null, $username = nul
     $role = trim((string)$role);
     $section = strtolower(trim((string)$section));
 
-    // Personal profile and settings are always accessible
-    if ($section === 'profile' || $section === 'my_profile') {
+    // Personal profile, settings, studio communications, and task board are always accessible to logged-in team members
+    if ($section === 'profile' || $section === 'my_profile' || $section === 'comms' || $section === 'tasks' || $section === 'feeds' || $section === 'channels') {
         return true;
+    }
+
+    // Content Editor cannot access staff_accounts
+    if (isContentEditor($role) && $section === 'staff_accounts') {
+        return false;
     }
 
     if (isAdminUser($role, $email, $username)) {
@@ -1360,6 +1623,9 @@ function hasSectionAccess($section, $role = null, $email = null, $username = nul
  * Get default fallback section for a user account
  */
 function getUserFirstAllowedSection($role = null, $email = null, $username = null) {
+    if (isTalentManager($role)) {
+        return 'dashboard';
+    }
     if (isAdminUser($role, $email, $username)) {
         return 'hero';
     }
@@ -1367,9 +1633,101 @@ function getUserFirstAllowedSection($role = null, $email = null, $username = nul
 }
 
 /**
- * Get Attendance Logs Repository
+ * Automatically clock out any attendance records from previous days that were left unclosed after midnight.
  */
-function getAttendanceLogs($username = null) {
+function autoCloseStaleAttendanceLogs() {
+    $settings = getSiteSettings();
+    $logs = $settings['attendance_logs'] ?? [];
+    if (empty($logs)) return;
+
+    $today = date('Y-m-d');
+    $modified = false;
+
+    foreach ($logs as $idx => &$entry) {
+        $entryDate = $entry['date'] ?? '';
+        $isUnclosed = empty($entry['clock_out']) || ($entry['clock_out'] === 'In Progress') || ($entry['status'] ?? '') === 'Clocked In' || ($entry['status'] ?? '') === 'On Break' || ($entry['duration'] ?? '') === 'In Progress';
+        
+        // If the record date is earlier than today and it was left unclosed after midnight
+        if (!empty($entryDate) && $entryDate < $today && $isUnclosed) {
+            $clockInTimeStr = !empty($entry['clock_in']) && $entry['clock_in'] !== 'In Progress' ? $entry['clock_in'] : '09:00 AM';
+            $clockInTs = strtotime($entryDate . ' ' . $clockInTimeStr);
+            $autoClockOutTs = strtotime($entryDate . ' 11:59 PM');
+
+            if ($clockInTs && $autoClockOutTs && $autoClockOutTs > $clockInTs) {
+                $diffMins = max(1, round(($autoClockOutTs - $clockInTs) / 60));
+                $hrs = floor($diffMins / 60);
+                $mins = $diffMins % 60;
+                $durationStr = ($hrs > 0 ? $hrs . ' hrs ' : '') . $mins . ' mins';
+            } else {
+                $durationStr = '8 hrs 00 mins';
+            }
+
+            $entry['clock_out'] = '11:59 PM';
+            $entry['duration'] = $durationStr;
+            $entry['status'] = 'Present';
+            $entry['work_state'] = 'completed';
+            $entry['auto_clocked_out'] = true;
+            $modified = true;
+        }
+    }
+
+    if ($modified) {
+        $settings['attendance_logs'] = array_values($logs);
+        saveSiteSettings($settings);
+    }
+}
+
+/**
+ * Check if a user role/account is authorized to view attendance logs of all staff members
+ */
+function canViewAllAttendanceLogs($role = null, $email = null, $username = null) {
+    if ($role === null) {
+        $role = $_SESSION['admin_role'] ?? '';
+    }
+    if ($email === null) {
+        $email = $_SESSION['admin_email'] ?? '';
+    }
+    if ($username === null) {
+        $username = $_SESSION['admin_username'] ?? '';
+    }
+
+    if (isTalentManager($role)) {
+        return true;
+    }
+
+    $r = strtolower(trim((string)$role));
+    $e = strtolower(trim((string)$email));
+    $u = strtolower(trim((string)$username));
+
+    $adminEmails = [
+        'oluwatosin.ligali@falhenmedia.com',
+        'ligali@falhen.com',
+        'admin@falhen.com',
+        'kim@falhen.com',
+        'mail@falhenmedia.com'
+    ];
+    $adminUsernames = [
+        'admin',
+        'ligali.oluwatosin',
+        'oluwatosin.ligali'
+    ];
+
+    if (in_array($e, $adminEmails, true) || in_array($u, $adminUsernames, true)) {
+        return true;
+    }
+
+    if ($r === 'super admin' || $r === 'administrator' || $r === 'admin') {
+        return true;
+    }
+
+    return false;
+}
+
+/**
+ * Get Attendance Logs Repository (Auto-cleans stale unclosed shifts)
+ */
+function getAttendanceLogs($username = null, $role = null, $email = null) {
+    autoCloseStaleAttendanceLogs();
     $settings = getSiteSettings();
     $logs = $settings['attendance_logs'] ?? [];
 
@@ -1413,9 +1771,22 @@ function getAttendanceLogs($username = null) {
         saveSiteSettings($settings);
     }
 
-    if ($username !== null && !isAdminUser()) {
-        $userLogs = array_filter($logs, function($item) use ($username) {
-            return strtolower(trim($item['username'] ?? '')) === strtolower(trim($username));
+    if ($role === null) {
+        $role = $_SESSION['admin_role'] ?? '';
+    }
+    if ($email === null) {
+        $email = $_SESSION['admin_email'] ?? '';
+    }
+    if ($username === null) {
+        $username = $_SESSION['admin_username'] ?? '';
+    }
+
+    $canSeeAll = canViewAllAttendanceLogs($role, $email, $username);
+
+    if (!$canSeeAll && !empty($username)) {
+        $u = strtolower(trim((string)$username));
+        $userLogs = array_filter($logs, function($item) use ($u) {
+            return strtolower(trim($item['username'] ?? '')) === $u;
         });
         return array_values($userLogs);
     }
@@ -1837,9 +2208,986 @@ function postSiteAnnouncement($data) {
     return $newAnnouncement;
 }
 
+/**
+ * Get all leave requests from JSON storage
+ */
+function getLeaveRequests() {
+    $filePath = __DIR__ . '/../config/leave_requests.json';
+    if (!file_exists($filePath)) {
+        // Default initial seed data if file does not exist yet
+        $initialData = [
+            [
+                'id' => 1,
+                'username' => 'mojisola',
+                'staff_name' => 'Mojisola Emjay',
+                'staff_role' => 'Talent Manager',
+                'type' => 'Annual Leave',
+                'dates' => 'Sep 01, 2026 – Sep 03, 2026 (3 Days)',
+                'reason' => 'End of Summer Studio Break',
+                'status' => 'Pending HR Approval',
+                'status_type' => 'pending',
+                'created_at' => date('Y-m-d H:i:s')
+            ],
+            [
+                'id' => 2,
+                'username' => 'mojisola',
+                'staff_name' => 'Mojisola Emjay',
+                'staff_role' => 'Talent Manager',
+                'type' => 'Annual Leave',
+                'dates' => 'Aug 10, 2026 – Aug 12, 2026 (3 Days)',
+                'reason' => 'Family Vacation & Personal Time',
+                'status' => 'Approved',
+                'status_type' => 'approved',
+                'created_at' => date('Y-m-d H:i:s')
+            ],
+            [
+                'id' => 3,
+                'username' => 'victoria',
+                'staff_name' => 'Victoria Opemipo',
+                'staff_role' => 'Creative Director',
+                'type' => 'Casual Leave',
+                'dates' => 'Aug 28, 2026 (1 Day)',
+                'reason' => 'Personal Errand & Administrative Work',
+                'status' => 'Pending HR Approval',
+                'status_type' => 'pending',
+                'created_at' => date('Y-m-d H:i:s')
+            ],
+            [
+                'id' => 4,
+                'username' => 'oluwatosin',
+                'staff_name' => 'Oluwatosin Ligali',
+                'staff_role' => 'Lead Developer',
+                'type' => 'Annual Leave',
+                'dates' => 'Sep 15, 2026 – Sep 20, 2026 (5 Days)',
+                'reason' => 'Annual Recess & Rest',
+                'status' => 'Approved',
+                'status_type' => 'approved',
+                'created_at' => date('Y-m-d H:i:s')
+            ],
+            [
+                'id' => 5,
+                'username' => 'daniel.ifeoluwa',
+                'staff_name' => 'Daniel Ifeoluwa',
+                'staff_role' => 'Staff',
+                'type' => 'Sick Leave',
+                'dates' => 'Jul 04, 2026 (1 Day)',
+                'reason' => 'Medical Checkup',
+                'status' => 'Approved',
+                'status_type' => 'approved',
+                'created_at' => date('Y-m-d H:i:s')
+            ]
+        ];
+        @file_put_contents($filePath, json_encode($initialData, JSON_PRETTY_PRINT));
+        return $initialData;
+    }
 
+    $content = @file_get_contents($filePath);
+    $data = json_decode($content, true);
+    return is_array($data) ? $data : [];
+}
 
+/**
+ * Submit a new leave request with custom Start & End Dates
+ */
+function submitLeaveRequest($username, $fullName, $role, $type, $startDateInput = '', $endDateInput = '', $duration = 1, $reason = '') {
+    $requests = getLeaveRequests();
+    
+    $startTs = !empty($startDateInput) ? strtotime($startDateInput) : strtotime('+1 day');
+    $days = max(1, (int)$duration);
 
+    if (!empty($endDateInput)) {
+        $endTs = strtotime($endDateInput);
+        if ($endTs < $startTs) {
+            $endTs = $startTs;
+        }
+        $calcDays = max(1, round(($endTs - $startTs) / 86400) + 1);
+        $days = (int)$calcDays;
+    } else {
+        $endTs = strtotime('+' . ($days - 1) . ' days', $startTs);
+    }
 
+    $startStr = date('M d, Y', $startTs);
+    $endStr = date('M d, Y', $endTs);
 
+    $dateStr = ($startStr === $endStr || $days === 1) 
+        ? "{$startStr} (1 Day)" 
+        : "{$startStr} – {$endStr} ({$days} Days)";
 
+    $newRequest = [
+        'id' => time() . rand(100, 999),
+        'username' => strtolower(trim($username)),
+        'staff_name' => $fullName,
+        'staff_role' => $role,
+        'type' => trim($type),
+        'start_date' => date('Y-m-d', $startTs),
+        'end_date' => date('Y-m-d', $endTs),
+        'duration' => $days,
+        'dates' => $dateStr,
+        'reason' => trim($reason),
+        'status' => 'Pending HR Approval',
+        'status_type' => 'pending',
+        'created_at' => date('Y-m-d H:i:s')
+    ];
+
+    // Unshift so new request appears at top of history
+    array_unshift($requests, $newRequest);
+
+    $filePath = __DIR__ . '/../config/leave_requests.json';
+    @file_put_contents($filePath, json_encode($requests, JSON_PRETTY_PRINT));
+    return $newRequest;
+}
+
+/**
+ * Update Leave Request Status (HR & Admin)
+ */
+function updateLeaveRequestStatus($requestId, $newStatus) {
+    $requests = getLeaveRequests();
+    $updated = false;
+
+    foreach ($requests as &$req) {
+        if ((string)($req['id'] ?? '') === (string)$requestId) {
+            $statusClean = ucfirst(strtolower(trim($newStatus)));
+            if ($statusClean === 'Approved') {
+                $req['status'] = 'Approved';
+                $req['status_type'] = 'approved';
+            } elseif ($statusClean === 'Rejected') {
+                $req['status'] = 'Rejected';
+                $req['status_type'] = 'rejected';
+            } else {
+                $req['status'] = $statusClean;
+                $req['status_type'] = strtolower($statusClean);
+            }
+            $req['updated_at'] = date('Y-m-d H:i:s');
+            $updated = true;
+            break;
+        }
+    }
+    unset($req);
+
+    if ($updated) {
+        $filePath = __DIR__ . '/../config/leave_requests.json';
+        @file_put_contents($filePath, json_encode($requests, JSON_PRETTY_PRINT));
+    }
+
+    return $updated;
+}
+
+/**
+ * Calculate dynamic leave balance statistics for a user
+ */
+function getUserLeaveStats($username) {
+    $allRequests = getLeaveRequests();
+    $userRequests = array_filter($allRequests, function($req) use ($username) {
+        return strtolower(trim($req['username'] ?? '')) === strtolower(trim($username));
+    });
+
+    $allowanceMap = [
+        'Annual Leave' => 20,
+        'Sick Leave' => 7,
+        'Casual Leave' => 5
+    ];
+
+    $usedMap = [
+        'Annual Leave' => 0,
+        'Sick Leave' => 0,
+        'Casual Leave' => 0
+    ];
+
+    foreach ($userRequests as $req) {
+        $statusType = strtolower(trim($req['status_type'] ?? ''));
+        // Include approved and pending requests in used calculation
+        if ($statusType === 'approved' || $statusType === 'pending') {
+            $type = trim($req['type'] ?? '');
+            $dur = max(1, intval($req['duration'] ?? 1));
+
+            if (isset($usedMap[$type])) {
+                $usedMap[$type] += $dur;
+            } else if (stripos($type, 'annual') !== false) {
+                $usedMap['Annual Leave'] += $dur;
+            } else if (stripos($type, 'sick') !== false) {
+                $usedMap['Sick Leave'] += $dur;
+            } else if (stripos($type, 'casual') !== false) {
+                $usedMap['Casual Leave'] += $dur;
+            }
+        }
+    }
+
+    $annualRemaining = max(0, $allowanceMap['Annual Leave'] - $usedMap['Annual Leave']);
+    $sickRemaining = max(0, $allowanceMap['Sick Leave'] - $usedMap['Sick Leave']);
+    $casualRemaining = max(0, $allowanceMap['Casual Leave'] - $usedMap['Casual Leave']);
+
+    return [
+        'annual' => [
+            'total' => $allowanceMap['Annual Leave'],
+            'used' => $usedMap['Annual Leave'],
+            'remaining' => $annualRemaining
+        ],
+        'sick' => [
+            'total' => $allowanceMap['Sick Leave'],
+            'used' => $usedMap['Sick Leave'],
+            'remaining' => $sickRemaining
+        ],
+        'casual' => [
+            'total' => $allowanceMap['Casual Leave'],
+            'used' => $usedMap['Casual Leave'],
+            'remaining' => $casualRemaining
+        ]
+    ];
+}
+
+/**
+ * Fetch persistent team comms messages
+ */
+function getCommsMessages($channel = 'general') {
+    $filePath = __DIR__ . '/../config/comms_messages.json';
+    if (!file_exists($filePath)) {
+        $initialData = [
+            [
+                'id' => 1,
+                'channel' => 'general',
+                'username' => 'henry',
+                'sender_name' => 'Henry Falonipe',
+                'sender_role' => 'Creative Director',
+                'message' => 'Good morning team! Please remember to submit your weekly production briefing updates.',
+                'time_str' => '09:00 AM',
+                'created_at' => date('Y-m-d 09:00:00')
+            ],
+            [
+                'id' => 2,
+                'channel' => 'general',
+                'username' => 'victoria',
+                'sender_name' => 'Victoria Opemipo',
+                'sender_role' => 'Creative Director',
+                'message' => 'Reviewing the latest color grade drafts for the RED V-Raptor footage now.',
+                'time_str' => '09:15 AM',
+                'created_at' => date('Y-m-d 09:15:00')
+            ],
+            [
+                'id' => 3,
+                'channel' => 'general',
+                'username' => 'daniel',
+                'sender_name' => 'Daniel Ifeoluwa',
+                'sender_role' => 'Operations Manager',
+                'message' => 'Call sheets for next week\'s commercial shoot have been uploaded under Operations.',
+                'time_str' => '10:30 AM',
+                'created_at' => date('Y-m-d 10:30:00')
+            ],
+            [
+                'id' => 4,
+                'channel' => 'production',
+                'username' => 'oluwatosin',
+                'sender_name' => 'Oluwatosin Ligali',
+                'sender_role' => 'Lead Developer',
+                'message' => 'Gear orientation briefing scheduled for tomorrow at 2 PM.',
+                'time_str' => '11:00 AM',
+                'created_at' => date('Y-m-d 11:00:00')
+            ],
+            [
+                'id' => 5,
+                'channel' => 'hr-helpdesk',
+                'username' => 'mojisola',
+                'sender_name' => 'Mojisola Emjay',
+                'sender_role' => 'Talent Manager',
+                'message' => 'Monthly health reimbursement claims are open until the 25th.',
+                'time_str' => '11:30 AM',
+                'created_at' => date('Y-m-d 11:30:00')
+            ]
+        ];
+        $dir = dirname($filePath);
+        if (!is_dir($dir)) {
+            @mkdir($dir, 0777, true);
+        }
+        @file_put_contents($filePath, json_encode($initialData, JSON_PRETTY_PRINT));
+        return $initialData;
+    }
+
+    $content = @file_get_contents($filePath);
+    $data = json_decode($content, true);
+    return is_array($data) ? $data : [];
+}
+
+/**
+ * Send a new comms message
+ */
+function sendCommsMessage($username, $senderName, $senderRole, $channel, $messageText) {
+    $messages = getCommsMessages();
+    $newMsg = [
+        'id' => time() . rand(100, 999),
+        'channel' => strtolower(trim($channel)),
+        'username' => strtolower(trim($username)),
+        'sender_name' => trim($senderName),
+        'sender_role' => trim($senderRole),
+        'message' => trim($messageText),
+        'time_str' => date('h:i A'),
+        'created_at' => date('Y-m-d H:i:s')
+    ];
+    $messages[] = $newMsg;
+
+    $filePath = __DIR__ . '/../config/comms_messages.json';
+    @file_put_contents($filePath, json_encode($messages, JSON_PRETTY_PRINT));
+    return $newMsg;
+}
+
+/**
+ * Studio Calls Repository Functions
+ */
+function getStudioCallsFile() {
+    return __DIR__ . '/../config/studio_calls.json';
+}
+
+function getActiveStudioCalls() {
+    $file = getStudioCallsFile();
+    if (!file_exists($file)) return [];
+    $data = json_decode(@file_get_contents($file), true);
+    return is_array($data) ? $data : [];
+}
+
+function saveActiveStudioCalls($calls) {
+    $file = getStudioCallsFile();
+    @file_put_contents($file, json_encode(array_values($calls), JSON_PRETTY_PRINT));
+}
+
+function initiateStudioCallState($callerUser, $callerName, $callerAvatar, $receiverUser, $receiverName, $receiverAvatar, $callType = 'audio') {
+    $calls = getActiveStudioCalls();
+    $callId = 'call_' . time() . '_' . rand(100, 999);
+    
+    $now = time();
+    $calls = array_filter($calls, fn($c) => ($now - ($c['created_at'] ?? 0)) < 300);
+
+    $newCall = [
+        'call_id' => $callId,
+        'caller_username' => getCanonicalUsername($callerUser),
+        'caller_name' => $callerName,
+        'caller_avatar' => $callerAvatar,
+        'receiver_username' => getCanonicalUsername($receiverUser),
+        'receiver_name' => $receiverName,
+        'receiver_avatar' => $receiverAvatar,
+        'type' => $callType,
+        'status' => 'ringing',
+        'created_at' => $now
+    ];
+
+    $calls[] = $newCall;
+    saveActiveStudioCalls($calls);
+    return $newCall;
+}
+
+function updateStudioCallStatus($callId, $status) {
+    $calls = getActiveStudioCalls();
+    $updated = null;
+    foreach ($calls as &$c) {
+        if (($c['call_id'] ?? '') === $callId) {
+            $c['status'] = $status;
+            $updated = $c;
+            break;
+        }
+    }
+    saveActiveStudioCalls($calls);
+    return $updated;
+}
+
+function checkUserStudioCallState($username) {
+    $userCanon = getCanonicalUsername($username);
+    if (empty($userCanon)) return null;
+
+    $calls = getActiveStudioCalls();
+    $now = time();
+    
+    // Check for incoming call targeted at this user
+    foreach ($calls as $c) {
+        if (($c['receiver_username'] ?? '') === $userCanon && ($c['status'] ?? '') === 'ringing' && ($now - ($c['created_at'] ?? 0)) < 60) {
+            return [
+                'role' => 'receiver',
+                'call' => $c
+            ];
+        }
+    }
+
+    // Check for caller's active call status update
+    foreach ($calls as $c) {
+        if (($c['caller_username'] ?? '') === $userCanon && ($now - ($c['created_at'] ?? 0)) < 300) {
+            return [
+                'role' => 'caller',
+                'call' => $c
+            ];
+        }
+    }
+
+    return null;
+}
+
+/**
+ * Get Canonical Short Username for Consistent Channel Mapping
+ */
+function getCanonicalUsername($username) {
+    $u = strtolower(trim((string)$username));
+    if (empty($u)) return '';
+
+    // If username is "admin", inspect active session full_name & email
+    if ($u === 'admin') {
+        $sessName = strtolower($_SESSION['admin_full_name'] ?? $_SESSION['admin_name'] ?? '');
+        $sessEmail = strtolower($_SESSION['admin_email'] ?? '');
+        if (str_contains($sessName, 'oluwatosin') || str_contains($sessName, 'ligali') || str_contains($sessEmail, 'ligali') || str_contains($sessEmail, 'oluwatosin')) {
+            return 'oluwatosin';
+        }
+        if (str_contains($sessName, 'mojisola') || str_contains($sessEmail, 'mojisola')) {
+            return 'mojisola';
+        }
+        if (str_contains($sessName, 'daniel') || str_contains($sessEmail, 'daniel')) {
+            return 'daniel';
+        }
+        if (str_contains($sessName, 'victoria') || str_contains($sessEmail, 'victoria')) {
+            return 'victoria';
+        }
+        if (str_contains($sessName, 'henry') || str_contains($sessEmail, 'henry')) {
+            return 'henry';
+        }
+    }
+
+    $aliasMap = [
+        'kingsley.falonipe' => 'kingsley',
+        'kingsley'          => 'kingsley',
+        'mojisola.emjay'   => 'mojisola',
+        'mojisola'         => 'mojisola',
+        'henry'            => 'henry',
+        'henry.falonipe'   => 'henry',
+        'daniel.ifeoluwa'  => 'daniel',
+        'daniel'           => 'daniel',
+        'victoria.opemipo' => 'victoria',
+        'victoria'         => 'victoria',
+        'ligali.oluwatosin'=> 'oluwatosin',
+        'oluwatosin.king'  => 'oluwatosin',
+        'oluwatosin'       => 'oluwatosin',
+        'micheal.otuwho'   => 'micheal',
+        'micheal'          => 'micheal',
+        'lisa.okoli'       => 'lisa',
+        'lisa'             => 'lisa'
+    ];
+
+    if (isset($aliasMap[$u])) {
+        return $aliasMap[$u];
+    }
+
+    if (str_contains($u, '.')) {
+        return explode('.', $u)[0];
+    }
+
+    return $u;
+}
+
+/**
+ * Helper to generate consistent channel key for direct messages between two users
+ */
+function getDmChannelKey($user1, $user2) {
+    $c1 = getCanonicalUsername($user1);
+    $c2 = getCanonicalUsername($user2);
+    $arr = [$c1, $c2];
+    sort($arr);
+    return 'dm_' . implode('_', $arr);
+}
+
+/**
+ * Dynamic calculation of staff contacts sorted by DM frequency and recency
+ */
+function getSortedRecentDmContacts($currentUsername) {
+    $repo = getStaffAccountsRepo();
+    $allMessages = getCommsMessages();
+    $userLower = strtolower(trim($currentUsername));
+    $userEmail = strtolower(trim($_SESSION['admin_email'] ?? ''));
+    $userFullName = strtolower(trim($_SESSION['admin_name'] ?? ''));
+
+    // Extract current user's first name
+    $currentUserFirstName = '';
+    if (!empty($userFullName)) {
+        $currentUserFirstName = strtolower(explode(' ', $userFullName)[0]);
+    }
+
+    $contactsMap = [];
+    foreach ($repo as $staff) {
+        $stUsername = strtolower(trim($staff['username'] ?? ''));
+        $stEmail = strtolower(trim($staff['email'] ?? ''));
+        $stFullName = strtolower(trim($staff['full_name'] ?? ''));
+        
+        if (empty($stUsername)) continue;
+
+        // Extract staff's first name
+        $rawFullName = trim($staff['full_name'] ?? 'Staff Member');
+        $nameParts = explode(' ', $rawFullName);
+        $firstName = $nameParts[0] ?? $rawFullName;
+        $stFirstNameLower = strtolower($firstName);
+
+        // 1. Skip if username matches
+        if ($stUsername === $userLower) continue;
+
+        // 2. Skip if email matches
+        if (!empty($userEmail) && $stEmail === $userEmail) continue;
+
+        // 3. Skip if full name matches
+        if (!empty($userFullName) && $stFullName === $userFullName) continue;
+
+        // 4. Skip if first name matches current user's first name (prevents self-chatting under name variations)
+        if (!empty($currentUserFirstName) && $stFirstNameLower === $currentUserFirstName) continue;
+
+        $u1 = getCanonicalUsername($userLower);
+        $u2 = getCanonicalUsername($stUsername);
+        $dmKey = getDmChannelKey($userLower, $stUsername);
+
+        // Calculate total messages exchanged & latest timestamp
+        $msgCount = 0;
+        $latestTime = 0;
+
+        foreach ($allMessages as $msg) {
+            $ch = strtolower(trim($msg['channel'] ?? ''));
+            $isMatch = false;
+
+            if ($ch === $dmKey) {
+                $isMatch = true;
+            } elseif (str_starts_with($ch, 'dm_')) {
+                $parts = explode('_', substr($ch, 3));
+                if (count($parts) === 2) {
+                    $c1 = getCanonicalUsername($parts[0]);
+                    $c2 = getCanonicalUsername($parts[1]);
+                    if (($c1 === $u1 && $c2 === $u2) || ($c1 === $u2 && $c2 === $u1)) {
+                        $isMatch = true;
+                    }
+                }
+            }
+
+            if ($isMatch) {
+                $msgCount++;
+                $ts = strtotime($msg['created_at'] ?? 'now');
+                if ($ts > $latestTime) {
+                    $latestTime = $ts;
+                }
+            }
+        }
+
+        $contactsMap[$stUsername] = [
+            'username' => $stUsername,
+            'first_name' => $firstName,
+            'full_name' => $rawFullName,
+            'role' => $staff['role'] ?? 'Staff',
+            'avatar' => $staff['avatar'] ?? '',
+            'msg_count' => $msgCount,
+            'latest_time' => $latestTime
+        ];
+    }
+
+    // Sort staff contacts: Most messages first, then latest message time, then name
+    usort($contactsMap, function($a, $b) {
+        if ($a['msg_count'] !== $b['msg_count']) {
+            return $b['msg_count'] <=> $a['msg_count'];
+        }
+        if ($a['latest_time'] !== $b['latest_time']) {
+            return $b['latest_time'] <=> $a['latest_time'];
+        }
+        return strcmp($a['first_name'], $b['first_name']);
+    });
+
+    return $contactsMap;
+}
+
+/**
+ * Studio Tasks (Zoho Style Kanban Board) Repository Functions
+ */
+function getStudioTasksFile() {
+    return __DIR__ . '/../config/studio_tasks.json';
+}
+
+function getStudioTasksRepo() {
+    $filePath = getStudioTasksFile();
+    if (!file_exists($filePath)) {
+        $initialTasks = [
+            [
+                'id' => 'task_1',
+                'title' => 'Scout Locations',
+                'description' => 'Find 2 indoor studio options with high ceilings and sound proofing.',
+                'assignee_username' => 'oluwatosin',
+                'assignee_name' => 'Oluwatosin Ligali',
+                'assignee_avatar' => 'https://res.cloudinary.com/pnabfi91/image/upload/f_auto,q_auto/v1786714111/falhen/team/q4atws8zhxaogyzm8bgw.png',
+                'stage' => 'concept',
+                'due_date' => '2026-07-10',
+                'due_date_str' => 'Jul 10',
+                'priority' => 'High',
+                'tags' => ['Location Scout', 'Indoor Studio'],
+                'checklist' => [
+                    ['id' => 'item_1', 'text' => 'Inspect Soundstage A ceiling height', 'completed' => true],
+                    ['id' => 'item_2', 'text' => 'Verify acoustic dampening', 'completed' => false]
+                ],
+                'comments_count' => 0,
+                'attachments_count' => 0,
+                'created_at' => date('Y-m-d H:i:s')
+            ],
+            [
+                'id' => 'task_2',
+                'title' => 'Draft Logo Concepts',
+                'description' => 'Create 3 variations based on brief.',
+                'assignee_username' => 'oluwatosin',
+                'assignee_name' => 'Oluwatosin Ligali',
+                'assignee_avatar' => 'https://res.cloudinary.com/pnabfi91/image/upload/f_auto,q_auto/v1786714111/falhen/team/q4atws8zhxaogyzm8bgw.png',
+                'stage' => 'primary',
+                'due_date' => '2026-07-05',
+                'due_date_str' => 'Jul 5',
+                'priority' => 'Medium',
+                'tags' => ['Branding', 'Vector'],
+                'checklist' => [
+                    ['id' => 'item_1', 'text' => 'Monochrome sketch draft', 'completed' => true],
+                    ['id' => 'item_2', 'text' => 'Full color presentation deck', 'completed' => true]
+                ],
+                'comments_count' => 0,
+                'attachments_count' => 0,
+                'created_at' => date('Y-m-d H:i:s')
+            ],
+            [
+                'id' => 'task_3',
+                'title' => 'RED V-Raptor Gear Orientation Briefing',
+                'description' => 'Review camera rig calibration and lens packages.',
+                'assignee_username' => 'victoria',
+                'assignee_name' => 'Victoria Opemipo',
+                'assignee_avatar' => 'https://res.cloudinary.com/pnabfi91/image/upload/f_auto,q_auto/v1786714111/falhen/team/q4atws8zhxaogyzm8bgw.png',
+                'stage' => 'ongoing',
+                'due_date' => '2026-08-28',
+                'due_date_str' => 'Aug 28',
+                'priority' => 'Urgent',
+                'tags' => ['Camera Gear', 'RED V-Raptor', '8K Cinema'],
+                'checklist' => [
+                    ['id' => 'item_1', 'text' => 'Calibrate V-Mount batteries', 'completed' => true],
+                    ['id' => 'item_2', 'text' => 'Mount anamorphic prime lenses', 'completed' => false],
+                    ['id' => 'item_3', 'text' => 'Test wireless follow focus unit', 'completed' => false]
+                ],
+                'comments_count' => 2,
+                'attachments_count' => 1,
+                'created_at' => date('Y-m-d H:i:s')
+            ],
+            [
+                'id' => 'task_4',
+                'title' => 'Q3 Commercial Showreel Final Cut Sync',
+                'description' => 'Master sound mixing and color grade output.',
+                'assignee_username' => 'victoria',
+                'assignee_name' => 'Victoria Opemipo',
+                'assignee_avatar' => '',
+                'stage' => 'pending_review',
+                'due_date' => '2026-09-02',
+                'due_date_str' => 'Sep 02',
+                'priority' => 'Medium',
+                'tags' => ['Showreel', 'Post Production'],
+                'checklist' => [
+                    ['id' => 'item_1', 'text' => 'Export ProRes 422 Master', 'completed' => false]
+                ],
+                'comments_count' => 1,
+                'attachments_count' => 0,
+                'created_at' => date('Y-m-d H:i:s')
+            ],
+            [
+                'id' => 'task_5',
+                'title' => 'August Health Stipend Audit & Verification',
+                'description' => 'Verify receipts and disburse health reimbursements.',
+                'assignee_username' => 'mojisola',
+                'assignee_name' => 'Mojisola Emjay',
+                'assignee_avatar' => 'https://res.cloudinary.com/pnabfi91/image/upload/v1786714006/falhen/team/ini79za7jvbjokrf1dup.jpg',
+                'stage' => 'completed',
+                'due_date' => '2026-08-25',
+                'due_date_str' => 'Aug 25',
+                'priority' => 'Low',
+                'tags' => ['HR', 'Finance'],
+                'checklist' => [
+                    ['id' => 'item_1', 'text' => 'Audit 12 submitted receipts', 'completed' => true],
+                    ['id' => 'item_2', 'text' => 'Process payroll transfers', 'completed' => true]
+                ],
+                'comments_count' => 4,
+                'attachments_count' => 2,
+                'created_at' => date('Y-m-d H:i:s')
+            ]
+        ];
+        $dir = dirname($filePath);
+        if (!is_dir($dir)) @mkdir($dir, 0777, true);
+        @file_put_contents($filePath, json_encode($initialTasks, JSON_PRETTY_PRINT));
+        return $initialTasks;
+    }
+    $content = @file_get_contents($filePath);
+    $data = json_decode($content, true);
+    return is_array($data) ? $data : [];
+}
+
+function saveStudioTasksRepo($tasks) {
+    $filePath = getStudioTasksFile();
+    @file_put_contents($filePath, json_encode(array_values($tasks), JSON_PRETTY_PRINT));
+}
+
+function createStudioTask($data) {
+    $tasks = getStudioTasksRepo();
+    $id = 'task_' . time() . '_' . rand(10, 99);
+    $dueDateStr = !empty($data['due_date']) ? date('M d', strtotime($data['due_date'])) : 'No date';
+    
+    // Parse tags (comma separated)
+    $tagsRaw = trim($data['tags'] ?? '');
+    $tags = [];
+    if (!empty($tagsRaw)) {
+        $parts = explode(',', $tagsRaw);
+        foreach ($parts as $p) {
+            $t = trim($p);
+            if (!empty($t)) $tags[] = $t;
+        }
+    }
+
+    // Parse checklist (newline separated lines or array)
+    $checklistRaw = $data['checklist'] ?? '';
+    $checklist = [];
+    if (is_array($checklistRaw)) {
+        $checklist = $checklistRaw;
+    } else if (is_string($checklistRaw) && !empty(trim($checklistRaw))) {
+        $lines = explode("\n", $checklistRaw);
+        $idx = 1;
+        foreach ($lines as $ln) {
+            $txt = trim($ln);
+            if (!empty($txt)) {
+                $checklist[] = [
+                    'id' => 'item_' . $idx++,
+                    'text' => $txt,
+                    'completed' => false
+                ];
+            }
+        }
+    }
+
+    $attachments = [];
+    if (!empty($data['attachment_url'])) {
+        $attachments[] = [
+            'name' => $data['attachment_name'] ?? 'Task Attachment',
+            'url' => $data['attachment_url'],
+            'uploaded_at' => date('Y-m-d H:i:s')
+        ];
+    }
+
+    $assignees = $data['assignees'] ?? [];
+    $primaryUser = !empty($assignees) ? ($assignees[0]['username'] ?? '') : ($data['assignee_username'] ?? '');
+    $primaryName = !empty($assignees) ? implode(', ', array_column($assignees, 'name')) : ($data['assignee_name'] ?? 'Unassigned');
+    $primaryAvatar = !empty($assignees) ? ($assignees[0]['avatar'] ?? '') : ($data['assignee_avatar'] ?? '');
+
+    $newTask = [
+        'id' => $id,
+        'title' => trim($data['title'] ?? 'Untitled Task'),
+        'client_org' => trim($data['client_org'] ?? ''),
+        'description' => trim($data['description'] ?? ''),
+        'assignees' => $assignees,
+        'assignee_username' => $primaryUser,
+        'assignee_name' => $primaryName,
+        'assignee_avatar' => $primaryAvatar,
+        'stage' => strtolower(trim($data['stage'] ?? 'ideas')),
+        'due_date' => trim($data['due_date'] ?? date('Y-m-d')),
+        'due_date_str' => $dueDateStr,
+        'priority' => trim($data['priority'] ?? 'Medium'),
+        'tags' => $tags,
+        'checklist' => $checklist,
+        'attachments' => $attachments,
+        'comments_count' => 0,
+        'attachments_count' => count($attachments),
+        'created_at' => date('Y-m-d H:i:s')
+    ];
+    
+    array_unshift($tasks, $newTask);
+    saveStudioTasksRepo($tasks);
+    return $newTask;
+}
+
+function toggleTaskChecklistItem($taskId, $itemId) {
+    $tasks = getStudioTasksRepo();
+    $updated = null;
+    foreach ($tasks as &$t) {
+        if (($t['id'] ?? '') === $taskId && !empty($t['checklist'])) {
+            foreach ($t['checklist'] as &$item) {
+                if (($item['id'] ?? '') === $itemId) {
+                    $item['completed'] = !($item['completed'] ?? false);
+                    $updated = $t;
+                    break 2;
+                }
+            }
+        }
+    }
+    saveStudioTasksRepo($tasks);
+    return $updated;
+}
+
+function updateStudioTask($taskId, $data) {
+    $tasks = getStudioTasksRepo();
+    $updated = null;
+    
+    // Parse tags
+    $tagsRaw = trim($data['tags'] ?? '');
+    $tags = [];
+    if (!empty($tagsRaw)) {
+        $parts = explode(',', $tagsRaw);
+        foreach ($parts as $p) {
+            $t = trim($p);
+            if (!empty($t)) $tags[] = $t;
+        }
+    }
+
+    // Parse checklist items
+    $checklistRaw = $data['checklist'] ?? '';
+    $checklist = [];
+    if (is_array($checklistRaw)) {
+        $checklist = $checklistRaw;
+    } else if (is_string($checklistRaw) && !empty(trim($checklistRaw))) {
+        $lines = explode("\n", $checklistRaw);
+        $idx = 1;
+        foreach ($lines as $ln) {
+            $txt = trim($ln);
+            if (!empty($txt)) {
+                $checklist[] = [
+                    'id' => 'item_' . $idx++,
+                    'text' => $txt,
+                    'completed' => false
+                ];
+            }
+        }
+    }
+
+    $dueDateStr = !empty($data['due_date']) ? date('M d', strtotime($data['due_date'])) : 'No date';
+
+    foreach ($tasks as &$t) {
+        if (($t['id'] ?? '') === $taskId) {
+            $t['title'] = trim($data['title'] ?? $t['title']);
+            if (isset($data['client_org'])) {
+                $t['client_org'] = trim($data['client_org']);
+            }
+            $t['description'] = trim($data['description'] ?? $t['description']);
+            $t['stage'] = strtolower(trim($data['stage'] ?? $t['stage']));
+            $t['priority'] = trim($data['priority'] ?? $t['priority']);
+            $t['due_date'] = trim($data['due_date'] ?? $t['due_date']);
+            $t['due_date_str'] = $dueDateStr;
+            $t['tags'] = $tags;
+            $t['checklist'] = $checklist;
+            if (!empty($data['attachment_url'])) {
+                if (!isset($t['attachments']) || !is_array($t['attachments'])) {
+                    $t['attachments'] = [];
+                }
+                $t['attachments'][] = [
+                    'name' => $data['attachment_name'] ?? 'Task Attachment',
+                    'url' => $data['attachment_url'],
+                    'uploaded_at' => date('Y-m-d H:i:s')
+                ];
+            }
+            $t['attachments_count'] = count($t['attachments'] ?? []);
+            if (isset($data['assignees'])) {
+                $assignees = $data['assignees'];
+                $t['assignees'] = $assignees;
+                $t['assignee_username'] = !empty($assignees) ? implode(',', array_column($assignees, 'username')) : '';
+                $t['assignee_name'] = !empty($assignees) ? implode(', ', array_column($assignees, 'name')) : 'Unassigned';
+                $t['assignee_avatar'] = !empty($assignees) ? ($assignees[0]['avatar'] ?? '') : '';
+            } else if (isset($data['assignee_username'])) {
+                $t['assignee_username'] = getCanonicalUsername($data['assignee_username']);
+                $t['assignee_name'] = trim($data['assignee_name'] ?? $t['assignee_name']);
+                $t['assignee_avatar'] = trim($data['assignee_avatar'] ?? $t['assignee_avatar']);
+            }
+            $updated = $t;
+            break;
+        }
+    }
+    saveStudioTasksRepo($tasks);
+    return $updated;
+}
+
+function updateStudioTaskStage($taskId, $newStage) {
+    $tasks = getStudioTasksRepo();
+    $updated = null;
+    foreach ($tasks as &$t) {
+        if (($t['id'] ?? '') === $taskId) {
+            $t['stage'] = strtolower(trim($newStage));
+            $updated = $t;
+            break;
+        }
+    }
+    saveStudioTasksRepo($tasks);
+    return $updated;
+}
+
+function deleteStudioTask($taskId) {
+    $tasks = getStudioTasksRepo();
+    $filtered = array_filter($tasks, fn($t) => ($t['id'] ?? '') !== $taskId);
+    saveStudioTasksRepo($filtered);
+    return true;
+}
+
+function getStudioTaskStagesFile() {
+    return __DIR__ . '/../config/studio_task_stages.json';
+}
+
+function getStudioTaskStagesRepo() {
+    $filePath = getStudioTaskStagesFile();
+    if (file_exists($filePath)) {
+        $json = @file_get_contents($filePath);
+        $data = json_decode($json, true);
+        if (is_array($data) && !empty($data)) {
+            return $data;
+        }
+    }
+    return [
+        ['key' => 'ideas', 'title' => 'Ideas', 'color' => '#a855f7', 'is_default' => true],
+        ['key' => 'concept', 'title' => 'Concept Development', 'color' => '#0ea5e9', 'is_default' => true],
+        ['key' => 'primary', 'title' => 'Primary Development', 'color' => '#f59e0b', 'is_default' => true],
+        ['key' => 'ongoing', 'title' => 'On Going', 'color' => '#3b82f6', 'is_default' => true],
+        ['key' => 'pending_review', 'title' => 'Pending Review', 'color' => '#ec4899', 'is_default' => true],
+        ['key' => 'completed', 'title' => 'Completed', 'color' => '#22c55e', 'is_default' => true]
+    ];
+}
+
+function saveStudioTaskStagesRepo($stages) {
+    $filePath = getStudioTaskStagesFile();
+    @file_put_contents($filePath, json_encode(array_values($stages), JSON_PRETTY_PRINT));
+}
+
+function createStudioTaskStage($title, $color = '#3b82f6') {
+    $stages = getStudioTaskStagesRepo();
+    $key = strtolower(preg_replace('/[^a-zA-Z0-9_]/', '_', trim($title)));
+    if (empty($key)) $key = 'stage_' . time();
+    
+    foreach ($stages as $s) {
+        if (($s['key'] ?? '') === $key) {
+            $key .= '_' . rand(10, 99);
+            break;
+        }
+    }
+
+    $newStage = [
+        'key' => $key,
+        'title' => trim($title),
+        'color' => !empty($color) ? $color : '#3b82f6',
+        'is_default' => false
+    ];
+
+    $stages[] = $newStage;
+    saveStudioTaskStagesRepo($stages);
+    return $newStage;
+}
+
+function deleteStudioTaskStage($stageKey) {
+    $stages = getStudioTaskStagesRepo();
+    $filtered = [];
+    foreach ($stages as $s) {
+        if (($s['key'] ?? '') !== $stageKey) {
+            $filtered[] = $s;
+        }
+    }
+    saveStudioTaskStagesRepo($filtered);
+    return true;
+}
+
+function updateStudioTaskStageLabel($stageKey, $title, $color = null) {
+    $stages = getStudioTaskStagesRepo();
+    $updated = null;
+    foreach ($stages as &$s) {
+        if (($s['key'] ?? '') === $stageKey) {
+            if (!empty($title)) {
+                $s['title'] = trim($title);
+            }
+            if (!empty($color)) {
+                $s['color'] = trim($color);
+            }
+            $updated = $s;
+            break;
+        }
+    }
+    saveStudioTaskStagesRepo($stages);
+    return $updated;
+}

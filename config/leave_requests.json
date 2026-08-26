@@ -1,0 +1,92 @@
+[
+    {
+        "id": "1787709382796",
+        "username": "daniel.ifeoluwa",
+        "staff_name": "daniel.ifeoluwa",
+        "staff_role": "Staff",
+        "type": "Sick Leave",
+        "start_date": "2026-09-02",
+        "end_date": "2026-09-02",
+        "duration": 1,
+        "dates": "Sep 02, 2026 (1 Day)",
+        "reason": "goh",
+        "status": "Approved",
+        "status_type": "approved",
+        "created_at": "2026-08-26 01:56:22",
+        "updated_at": "2026-08-26 01:56:58"
+    },
+    {
+        "id": "1787708953446",
+        "username": "daniel.ifeoluwa",
+        "staff_name": "daniel.ifeoluwa",
+        "staff_role": "Staff",
+        "type": "Annual Leave",
+        "duration": 2,
+        "dates": "Aug 28, 2026 \u2013 Aug 29, 2026 (2 Days)",
+        "reason": "ffdgdfg",
+        "status": "Approved",
+        "status_type": "approved",
+        "created_at": "2026-08-26 01:49:13",
+        "updated_at": "2026-08-26 01:54:32"
+    },
+    {
+        "id": 1,
+        "username": "mojisola",
+        "staff_name": "Mojisola Emjay",
+        "staff_role": "Talent Manager",
+        "type": "Annual Leave",
+        "dates": "Sep 01, 2026 \u2013 Sep 03, 2026 (3 Days)",
+        "reason": "End of Summer Studio Break",
+        "status": "Pending HR Approval",
+        "status_type": "pending",
+        "created_at": "2026-08-26 01:48:45"
+    },
+    {
+        "id": 2,
+        "username": "mojisola",
+        "staff_name": "Mojisola Emjay",
+        "staff_role": "Talent Manager",
+        "type": "Annual Leave",
+        "dates": "Aug 10, 2026 \u2013 Aug 12, 2026 (3 Days)",
+        "reason": "Family Vacation & Personal Time",
+        "status": "Approved",
+        "status_type": "approved",
+        "created_at": "2026-08-26 01:48:45"
+    },
+    {
+        "id": 3,
+        "username": "victoria",
+        "staff_name": "Victoria Opemipo",
+        "staff_role": "Creative Director",
+        "type": "Casual Leave",
+        "dates": "Aug 28, 2026 (1 Day)",
+        "reason": "Personal Errand & Administrative Work",
+        "status": "Pending HR Approval",
+        "status_type": "pending",
+        "created_at": "2026-08-26 01:48:45"
+    },
+    {
+        "id": 4,
+        "username": "oluwatosin",
+        "staff_name": "Oluwatosin Ligali",
+        "staff_role": "Lead Developer",
+        "type": "Annual Leave",
+        "dates": "Sep 15, 2026 \u2013 Sep 20, 2026 (5 Days)",
+        "reason": "Annual Recess & Rest",
+        "status": "Approved",
+        "status_type": "approved",
+        "created_at": "2026-08-26 01:48:45"
+    },
+    {
+        "id": 5,
+        "username": "daniel.ifeoluwa",
+        "staff_name": "Daniel Ifeoluwa",
+        "staff_role": "Staff",
+        "type": "Sick Leave",
+        "dates": "Jul 04, 2026 (1 Day)",
+        "reason": "Medical Checkup",
+        "status": "Approved",
+        "status_type": "approved",
+        "created_at": "2026-08-26 01:48:45"
+    }
+]

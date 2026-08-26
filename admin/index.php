@@ -73,15 +73,102 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'admin_provide_offer'        => 'onboarding',
         'schedule_staff_meeting'     => 'directory',
         'post_announcement'          => 'announcements',
-        'submit_leave_request'       => 'leaves'
+        'submit_leave_request'       => 'leaves',
+        'update_leave_status'        => 'leaves',
+        'send_comms_message'         => 'comms',
+        'create_studio_task'         => 'comms',
+        'update_studio_task'         => 'comms',
+        'update_task_stage'          => 'comms',
+        'toggle_task_checklist_item' => 'comms',
+        'delete_studio_task'         => 'comms',
+        'create_studio_task_stage'   => 'comms',
+        'delete_studio_task_stage'   => 'comms',
+        'update_studio_task_stage_label' => 'comms'
     ];
 
     $currentEmail = $_SESSION['admin_email'] ?? '';
     $currentUsername = $_SESSION['admin_username'] ?? '';
 
     $targetSection = $actionSectionMap[$action] ?? ($_GET['section'] ?? 'hero');
-    if (!hasSectionAccess($targetSection, $currentRole, $currentEmail, $currentUsername)) {
+    if ($action !== 'upload_cloudinary_ajax' && !hasSectionAccess($targetSection, $currentRole, $currentEmail, $currentUsername)) {
         header('Location: /admin/index.php?section=' . urlencode($targetSection) . '&denied=1');
+        exit;
+    }
+
+    if ($action === 'upload_cloudinary_ajax') {
+        header('Content-Type: application/json');
+        $folder = trim(strip_tags($_POST['folder'] ?? 'falhen/portfolio'));
+        $fileToUpload = null;
+        
+        if (!empty($_FILES['file']['tmp_name'])) {
+            $fileToUpload = $_FILES['file']['tmp_name'];
+        } else if (!empty($_POST['cropped_data'])) {
+            $fileToUpload = $_POST['cropped_data'];
+        }
+
+        if (empty($fileToUpload)) {
+            echo json_encode(['success' => false, 'message' => 'No image file or cropped data received.']);
+            exit;
+        }
+
+        $res = uploadToCloudinary($fileToUpload, $folder);
+        if (!empty($res['success']) && !empty($res['url'])) {
+            echo json_encode(['success' => true, 'url' => $res['url']]);
+        } else {
+            echo json_encode(['success' => false, 'message' => $res['message'] ?? 'Cloudinary upload failed.']);
+        }
+        exit;
+    }
+
+    if ($action === 'initiate_studio_call_ajax') {
+        header('Content-Type: application/json');
+        $targetUser = trim($_POST['target_user'] ?? '');
+        $targetName = trim($_POST['target_name'] ?? 'Staff Member');
+        $targetAvatar = trim($_POST['target_avatar'] ?? '');
+        $callType = trim($_POST['call_type'] ?? 'audio');
+
+        $callerName = !empty($_SESSION['admin_full_name']) ? $_SESSION['admin_full_name'] : (!empty($_SESSION['admin_name']) ? $_SESSION['admin_name'] : $currentUsername);
+        $callerAvatar = $_SESSION['admin_avatar'] ?? '';
+
+        if (empty($callerAvatar)) {
+            $staffRepo = getStaffAccountsRepo();
+            $userCanon = getCanonicalUsername($currentUsername);
+            foreach ($staffRepo as $st) {
+                if (getCanonicalUsername($st['username'] ?? '') === $userCanon) {
+                    $callerAvatar = getCloudinaryUrl($st['avatar'] ?? '');
+                    break;
+                }
+            }
+        }
+        if (empty($callerAvatar)) {
+            $teamRepo = getTeamMembers();
+            foreach ($teamRepo as $tm) {
+                if (!empty($tm['name']) && str_contains(strtolower($tm['name']), strtolower($currentUsername))) {
+                    $callerAvatar = getCloudinaryUrl($tm['image'] ?? '');
+                    break;
+                }
+            }
+        }
+
+        $call = initiateStudioCallState($currentUsername, $callerName, $callerAvatar, $targetUser, $targetName, $targetAvatar, $callType);
+        echo json_encode(['success' => true, 'call' => $call]);
+        exit;
+    }
+
+    if ($action === 'update_studio_call_status_ajax') {
+        header('Content-Type: application/json');
+        $callId = trim($_POST['call_id'] ?? '');
+        $status = trim($_POST['status'] ?? 'ended');
+
+        $updated = updateStudioCallStatus($callId, $status);
+        echo json_encode(['success' => true, 'call' => $updated]);
+        exit;
+    }
+
+    if ($action === 'check_studio_call_signal_ajax') {
+        header('Content-Type: application/json');
+        $state = checkUserStudioCallState($currentUsername);
+        echo json_encode(['success' => true, 'state' => $state]);
         exit;
     }
 
@@ -134,36 +221,385 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if ($action === 'post_announcement') {
-        if (!isAdminUser($currentRole, $currentEmail, $currentUsername)) {
-            header('Location: /admin/index.php?section=announcements&denied=1');
-            exit;
-        }
-
         $title = trim(strip_tags($_POST['title'] ?? ''));
         $category = trim(strip_tags($_POST['category'] ?? 'General'));
         $content = trim(strip_tags($_POST['content'] ?? ''));
 
         if (!empty($title) && !empty($content)) {
+            $authorName = ($_SESSION['admin_name'] ?? $currentUsername);
+            if (!empty($currentRole)) {
+                $authorName .= ' (' . $currentRole . ')';
+            }
             postSiteAnnouncement([
                 'title' => $title,
                 'category' => $category,
-                'posted_by' => ($_SESSION['admin_name'] ?? $username) . ' (HR & Admin)',
+                'posted_by' => $authorName,
                 'content' => $content
             ]);
             $_SESSION['saved_message'] = 'Announcement "' . htmlspecialchars($title) . '" published successfully!';
         }
 
-        header('Location: /admin/index.php?section=announcements&saved=1');
+        $redirectSection = trim($_POST['redirect_section'] ?? 'comms');
+        $redirectTab = trim($_POST['redirect_tab'] ?? 'feeds');
+        header('Location: /admin/index.php?section=' . urlencode($redirectSection) . '&tab=' . urlencode($redirectTab) . '&saved=1');
+        exit;
+    }
+
+    if ($action === 'create_studio_task') {
+        $title = trim(strip_tags($_POST['title'] ?? ''));
+        $clientOrg = trim(strip_tags($_POST['client_org'] ?? ''));
+        $stage = trim(strip_tags($_POST['stage'] ?? 'ideas'));
+        $assigneeUser = trim(strip_tags($_POST['assignee_username'] ?? ''));
+        $dueDate = trim(strip_tags($_POST['due_date'] ?? date('Y-m-d')));
+        $priority = trim(strip_tags($_POST['priority'] ?? 'Medium'));
+        $tags = trim(strip_tags($_POST['tags'] ?? ''));
+        $description = trim(strip_tags($_POST['description'] ?? ''));
+        // Parse dynamic checklist items & status
+        $checklist = [];
+        if (!empty($_POST['checklist_items']) && is_array($_POST['checklist_items'])) {
+            $statuses = $_POST['checklist_status'] ?? [];
+            foreach ($_POST['checklist_items'] as $idx => $txt) {
+                $itemTxt = trim(strip_tags($txt));
+                if (!empty($itemTxt)) {
+                    $isDone = !empty($statuses[$idx]) && ($statuses[$idx] == '1' || $statuses[$idx] == 'on' || $statuses[$idx] == 'true');
+                    $checklist[] = [
+                        'id' => 'item_' . ($idx + 1),
+                        'text' => $itemTxt,
+                        'completed' => (bool)$isDone
+                    ];
+                }
+            }
+        }
+
+        $attachmentUrl = '';
+        $attachmentName = '';
+
+        if (!empty($_FILES['task_attachment']['name']) && $_FILES['task_attachment']['error'] === UPLOAD_ERR_OK) {
+            $attachmentName = $_FILES['task_attachment']['name'];
+            if (function_exists('uploadToCloudinary')) {
+                $upRes = uploadToCloudinary($_FILES['task_attachment']['tmp_name'], 'falhen/tasks');
+                if (!empty($upRes['success']) && !empty($upRes['secure_url'])) {
+                    $attachmentUrl = $upRes['secure_url'];
+                }
+            }
+            if (empty($attachmentUrl)) {
+                $targetDir = __DIR__ . '/../uploads/tasks/';
+                if (!is_dir($targetDir)) @mkdir($targetDir, 0777, true);
+                $cleanFile = time() . '_' . preg_replace('/[^a-zA-Z0-9_\.-]/', '_', $attachmentName);
+                if (move_uploaded_file($_FILES['task_attachment']['tmp_name'], $targetDir . $cleanFile)) {
+                    $attachmentUrl = '/uploads/tasks/' . $cleanFile;
+                }
+            }
+        }
+
+        $assigneesInput = $_POST['assignees'] ?? [];
+        if (!is_array($assigneesInput) && !empty($_POST['assignee_username'])) {
+            $assigneesInput = [$_POST['assignee_username']];
+        }
+
+        $assigneesList = [];
+        $staffRepo = getStaffAccountsRepo();
+        foreach ($assigneesInput as $u) {
+            $cUser = getCanonicalUsername($u);
+            foreach ($staffRepo as $st) {
+                if (getCanonicalUsername($st['username'] ?? '') === $cUser) {
+                    $assigneesList[] = [
+                        'username' => $st['username'],
+                        'name' => $st['full_name'],
+                        'avatar' => $st['avatar'] ?? ''
+                    ];
+                    break;
+                }
+            }
+        }
+
+        if (!empty($title)) {
+            createStudioTask([
+                'title' => $title,
+                'client_org' => $clientOrg,
+                'stage' => $stage,
+                'assignees' => $assigneesList,
+                'assignee_username' => !empty($assigneesList) ? implode(',', array_column($assigneesList, 'username')) : '',
+                'assignee_name' => !empty($assigneesList) ? implode(', ', array_column($assigneesList, 'name')) : 'Unassigned',
+                'assignee_avatar' => !empty($assigneesList) ? ($assigneesList[0]['avatar'] ?? '') : '',
+                'due_date' => $dueDate,
+                'priority' => $priority,
+                'tags' => $tags,
+                'checklist' => $checklist,
+                'attachment_url' => $attachmentUrl,
+                'attachment_name' => $attachmentName,
+                'description' => $description
+            ]);
+            $_SESSION['saved_message'] = 'New task "' . htmlspecialchars($title) . '" created successfully!';
+        }
+
+        header('Location: /admin/index.php?section=comms&tab=tasks&saved=1');
+        exit;
+    }
+
+    if ($action === 'toggle_task_checklist_item') {
+        $taskId = trim($_POST['task_id'] ?? '');
+        $itemId = trim($_POST['item_id'] ?? '');
+        if (!empty($taskId) && !empty($itemId)) {
+            toggleTaskChecklistItem($taskId, $itemId);
+        }
+        if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => true]);
+            exit;
+        }
+        header('Location: /admin/index.php?section=comms&tab=tasks&saved=1');
+        exit;
+    }
+
+    if ($action === 'update_studio_task') {
+        $taskId = trim($_POST['task_id'] ?? '');
+        $title = trim(strip_tags($_POST['title'] ?? ''));
+        $clientOrg = trim(strip_tags($_POST['client_org'] ?? ''));
+        $stage = trim(strip_tags($_POST['stage'] ?? 'ideas'));
+        $assigneeUser = trim(strip_tags($_POST['assignee_username'] ?? ''));
+        $dueDate = trim(strip_tags($_POST['due_date'] ?? date('Y-m-d')));
+        $priority = trim(strip_tags($_POST['priority'] ?? 'Medium'));
+        $tags = trim(strip_tags($_POST['tags'] ?? ''));
+        $description = trim(strip_tags($_POST['description'] ?? ''));
+        // Parse dynamic checklist items & status
+        $checklist = [];
+        if (!empty($_POST['checklist_items']) && is_array($_POST['checklist_items'])) {
+            $statuses = $_POST['checklist_status'] ?? [];
+            foreach ($_POST['checklist_items'] as $idx => $txt) {
+                $itemTxt = trim(strip_tags($txt));
+                if (!empty($itemTxt)) {
+                    $isDone = !empty($statuses[$idx]) && ($statuses[$idx] == '1' || $statuses[$idx] == 'on' || $statuses[$idx] == 'true');
+                    $checklist[] = [
+                        'id' => 'item_' . ($idx + 1),
+                        'text' => $itemTxt,
+                        'completed' => (bool)$isDone
+                    ];
+                }
+            }
+        }
+
+        $attachmentUrl = '';
+        $attachmentName = '';
+
+        if (!empty($_FILES['task_attachment']['name']) && $_FILES['task_attachment']['error'] === UPLOAD_ERR_OK) {
+            $attachmentName = $_FILES['task_attachment']['name'];
+            if (function_exists('uploadToCloudinary')) {
+                $upRes = uploadToCloudinary($_FILES['task_attachment']['tmp_name'], 'falhen/tasks');
+                if (!empty($upRes['success']) && !empty($upRes['secure_url'])) {
+                    $attachmentUrl = $upRes['secure_url'];
+                }
+            }
+            if (empty($attachmentUrl)) {
+                $targetDir = __DIR__ . '/../uploads/tasks/';
+                if (!is_dir($targetDir)) @mkdir($targetDir, 0777, true);
+                $cleanFile = time() . '_' . preg_replace('/[^a-zA-Z0-9_\.-]/', '_', $attachmentName);
+                if (move_uploaded_file($_FILES['task_attachment']['tmp_name'], $targetDir . $cleanFile)) {
+                    $attachmentUrl = '/uploads/tasks/' . $cleanFile;
+                }
+            }
+        }
+
+        $assigneesInput = $_POST['assignees'] ?? [];
+        if (!is_array($assigneesInput) && !empty($_POST['assignee_username'])) {
+            $assigneesInput = [$_POST['assignee_username']];
+        }
+
+        $assigneesList = [];
+        $staffRepo = getStaffAccountsRepo();
+        foreach ($assigneesInput as $u) {
+            $cUser = getCanonicalUsername($u);
+            foreach ($staffRepo as $st) {
+                if (getCanonicalUsername($st['username'] ?? '') === $cUser) {
+                    $assigneesList[] = [
+                        'username' => $st['username'],
+                        'name' => $st['full_name'],
+                        'avatar' => $st['avatar'] ?? ''
+                    ];
+                    break;
+                }
+            }
+        }
+
+        if (!empty($taskId) && !empty($title)) {
+            updateStudioTask($taskId, [
+                'title' => $title,
+                'client_org' => $clientOrg,
+                'stage' => $stage,
+                'assignees' => $assigneesList,
+                'assignee_username' => !empty($assigneesList) ? implode(',', array_column($assigneesList, 'username')) : '',
+                'assignee_name' => !empty($assigneesList) ? implode(', ', array_column($assigneesList, 'name')) : 'Unassigned',
+                'assignee_avatar' => !empty($assigneesList) ? ($assigneesList[0]['avatar'] ?? '') : '',
+                'due_date' => $dueDate,
+                'priority' => $priority,
+                'tags' => $tags,
+                'checklist' => $checklist,
+                'attachment_url' => $attachmentUrl,
+                'attachment_name' => $attachmentName,
+                'description' => $description
+            ]);
+            $_SESSION['saved_message'] = 'Task "' . htmlspecialchars($title) . '" updated successfully!';
+        }
+
+        header('Location: /admin/index.php?section=comms&tab=tasks&saved=1');
+        exit;
+    }
+
+    if ($action === 'create_studio_task_stage') {
+        if (!isSuperAdminUser($currentRole, $currentEmail, $currentUsername)) {
+            $_SESSION['saved_message'] = 'Error: Creating section labels is restricted to Super Admin users only.';
+            header('Location: /admin/index.php?section=comms&tab=tasks&denied=1');
+            exit;
+        }
+
+        $title = trim(strip_tags($_POST['stage_title'] ?? ''));
+        $color = trim(strip_tags($_POST['stage_color'] ?? '#3b82f6'));
+
+        if (!empty($title)) {
+            createStudioTaskStage($title, $color);
+            $_SESSION['saved_message'] = 'New Section Label "' . htmlspecialchars($title) . '" created successfully!';
+        }
+
+        header('Location: /admin/index.php?section=comms&tab=tasks&saved=1');
+        exit;
+    }
+
+    if ($action === 'delete_studio_task_stage') {
+        if (!isSuperAdminUser($currentRole, $currentEmail, $currentUsername)) {
+            $_SESSION['saved_message'] = 'Error: Deleting section labels is restricted to Super Admin users only.';
+            header('Location: /admin/index.php?section=comms&tab=tasks&denied=1');
+            exit;
+        }
+
+        $stageKey = trim($_POST['stage_key'] ?? '');
+        if (!empty($stageKey)) {
+            deleteStudioTaskStage($stageKey);
+            $_SESSION['saved_message'] = 'Section Label deleted successfully!';
+        }
+
+        header('Location: /admin/index.php?section=comms&tab=tasks&saved=1');
+        exit;
+    }
+
+    if ($action === 'update_studio_task_stage_label') {
+        if (!isSuperAdminUser($currentRole, $currentEmail, $currentUsername)) {
+            $_SESSION['saved_message'] = 'Error: Renaming section labels is restricted to Super Admin users only.';
+            header('Location: /admin/index.php?section=comms&tab=tasks&denied=1');
+            exit;
+        }
+
+        $stageKey = trim($_POST['stage_key'] ?? '');
+        $title = trim(strip_tags($_POST['stage_title'] ?? ''));
+        $color = trim(strip_tags($_POST['stage_color'] ?? ''));
+
+        if (!empty($stageKey) && !empty($title)) {
+            updateStudioTaskStageLabel($stageKey, $title, $color);
+            $_SESSION['saved_message'] = 'Section Label updated to "' . htmlspecialchars($title) . '" successfully!';
+        }
+
+        header('Location: /admin/index.php?section=comms&tab=tasks&saved=1');
+        exit;
+    }
+
+    if ($action === 'update_task_stage') {
+        $taskId = trim($_POST['task_id'] ?? '');
+        $newStage = trim($_POST['new_stage'] ?? 'ideas');
+        if (!empty($taskId)) {
+            updateStudioTaskStage($taskId, $newStage);
+        }
+        if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => true]);
+            exit;
+        }
+        header('Location: /admin/index.php?section=comms&tab=tasks&saved=1');
+        exit;
+    }
+
+    if ($action === 'delete_studio_task') {
+        $taskId = trim($_POST['task_id'] ?? '');
+        if (!empty($taskId)) {
+            deleteStudioTask($taskId);
+            $_SESSION['saved_message'] = 'Task deleted successfully!';
+        }
+        header('Location: /admin/index.php?section=comms&tab=tasks&saved=1');
         exit;
     }
 
     if ($action === 'submit_leave_request') {
         $leaveType = trim(strip_tags($_POST['leave_type'] ?? 'Annual Leave'));
-        $duration = intval($_POST['duration'] ?? 1);
+        $startDate = trim(strip_tags($_POST['start_date'] ?? ''));
+        $endDate = trim(strip_tags($_POST['end_date'] ?? ''));
+        $duration = max(1, intval($_POST['duration'] ?? 1));
         $reason = trim(strip_tags($_POST['reason'] ?? 'Personal Time'));
+        $applicantName = $_SESSION['admin_name'] ?? $currentUsername;
 
-        $_SESSION['saved_message'] = 'Your ' . htmlspecialchars($leaveType) . ' request for ' . $duration . ' day(s) has been submitted for HR review!';
-        header('Location: /admin/index.php?section=leaves&submitted=1');
+        $newReq = submitLeaveRequest($currentUsername, $applicantName, $currentRole, $leaveType, $startDate, $endDate, $duration, $reason);
+
+        $_SESSION['saved_message'] = 'Your ' . htmlspecialchars($leaveType) . ' request (' . htmlspecialchars($newReq['dates']) . ') has been submitted successfully and is pending HR approval!';
+        header('Location: /admin/index.php?section=leaves&saved=1');
+        exit;
+    }
+
+    if ($action === 'update_leave_status') {
+        if (!canViewAllAttendanceLogs($currentRole, $currentEmail, $currentUsername)) {
+            header('Location: /admin/index.php?section=leaves&denied=1');
+            exit;
+        }
+
+        $leaveId = trim($_POST['leave_id'] ?? '');
+        $newStatus = trim($_POST['new_status'] ?? 'Approved');
+
+        if (!empty($leaveId)) {
+            updateLeaveRequestStatus($leaveId, $newStatus);
+            $_SESSION['saved_message'] = 'Leave request has been ' . strtolower(htmlspecialchars($newStatus)) . ' successfully!';
+        }
+
+        header('Location: /admin/index.php?section=leaves&tab=company&saved=1');
+        exit;
+    }
+
+    if ($action === 'send_comms_message') {
+        $channel = trim(strip_tags($_POST['channel'] ?? 'general'));
+        $messageText = trim(strip_tags($_POST['message'] ?? ''));
+        
+        $senderName = !empty($_SESSION['admin_full_name']) ? $_SESSION['admin_full_name'] : (!empty($_SESSION['admin_name']) ? $_SESSION['admin_name'] : $currentUsername);
+        $resolvedUsername = strtolower(trim($currentUsername));
+
+        if ($resolvedUsername === 'admin' || empty($resolvedUsername)) {
+            $sessNameLower = strtolower($senderName);
+            $sessEmailLower = strtolower($_SESSION['admin_email'] ?? '');
+            if (str_contains($sessNameLower, 'oluwatosin') || str_contains($sessNameLower, 'ligali') || str_contains($sessEmailLower, 'ligali') || str_contains($sessEmailLower, 'oluwatosin')) {
+                $resolvedUsername = 'ligali.oluwatosin';
+            } else if (str_contains($sessNameLower, 'mojisola') || str_contains($sessEmailLower, 'mojisola')) {
+                $resolvedUsername = 'mojisola.emjay';
+            } else if (str_contains($sessNameLower, 'kingsley') || str_contains($sessEmailLower, 'kingsley')) {
+                $resolvedUsername = 'kingsley.falonipe';
+            } else if (str_contains($sessNameLower, 'daniel') || str_contains($sessEmailLower, 'daniel')) {
+                $resolvedUsername = 'daniel.ifeoluwa';
+            } else if (str_contains($sessNameLower, 'victoria') || str_contains($sessEmailLower, 'victoria')) {
+                $resolvedUsername = 'victoria.opemipo';
+            } else if (str_contains($sessNameLower, 'lisa') || str_contains($sessEmailLower, 'lisa')) {
+                $resolvedUsername = 'lisa.okoli';
+            } else if (str_contains($sessNameLower, 'henry') || str_contains($sessEmailLower, 'henry')) {
+                $resolvedUsername = 'henry.falonipe';
+            }
+        }
+
+        if (!empty($messageText)) {
+            sendCommsMessage($resolvedUsername, $senderName, $currentRole, $channel, $messageText);
+        }
+
+        $redirectTab = $_GET['tab'] ?? 'nest';
+        $redirectDm = $_GET['dm'] ?? '';
+        $redirectUrl = "/admin/index.php?section=comms&tab=" . urlencode($redirectTab);
+        if (!empty($redirectDm)) {
+            $redirectUrl .= "&dm=" . urlencode($redirectDm);
+        } else {
+            $redirectUrl .= "&channel=" . urlencode($channel);
+        }
+
+        header('Location: ' . $redirectUrl);
         exit;
     }
 
@@ -174,14 +610,47 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         $targetUser = trim($_POST['target_user'] ?? '');
-        $docUrl = trim(strip_tags($_POST['document_url'] ?? '/assets/docs/Offer_Letter.pdf'));
+        $jobTitle = trim(strip_tags($_POST['job_title'] ?? 'Senior Video Editor & Cinematographer'));
+        $department = trim(strip_tags($_POST['department'] ?? 'Media Production & Post Studio'));
+        $employmentType = trim(strip_tags($_POST['employment_type'] ?? 'Full-Time'));
+        $rawSalary = trim(strip_tags($_POST['salary'] ?? '450,000 / month'));
+        $cleanSalary = preg_replace('/^[₦$€£\s]+/u', '', $rawSalary);
+        $currency = trim(strip_tags($_POST['currency'] ?? 'NGN'));
+        $currencySymbols = [
+            'NGN' => '₦',
+            'USD' => '$',
+            'EUR' => '€',
+            'GBP' => '£'
+        ];
+        $sym = $currencySymbols[$currency] ?? '₦';
+        
+        $salary = $sym . $cleanSalary;
 
-        updateUserOnboardingTaskStatus($targetUser, 'offer_letter', 'Approved', [
-            'accepted' => true,
-            'document_url' => $docUrl
+        $startDate = trim(strip_tags($_POST['start_date'] ?? date('Y-m-d', strtotime('+7 days'))));
+        $probationPeriod = trim(strip_tags($_POST['probation_period'] ?? '3 Months'));
+        $expiryDate = trim(strip_tags($_POST['expiry_date'] ?? date('Y-m-d', strtotime('+14 days'))));
+        $docUrl = trim(strip_tags($_POST['document_url'] ?? '/assets/docs/Offer_Letter_Falhen.pdf'));
+        $notes = trim(strip_tags($_POST['notes'] ?? ''));
+
+        $issuerName = $_SESSION['admin_full_name'] ?? $_SESSION['admin_username'] ?? 'Talent Manager';
+
+        updateUserOnboardingTaskStatus($targetUser, 'offer_letter', 'Issued', [
+            'issued' => true,
+            'issued_at' => date('Y-m-d H:i:s'),
+            'issued_by' => $issuerName,
+            'job_title' => $jobTitle,
+            'department' => $department,
+            'employment_type' => $employmentType,
+            'currency' => $currency,
+            'salary' => $salary,
+            'start_date' => $startDate,
+            'probation_period' => $probationPeriod,
+            'expiry_date' => $expiryDate,
+            'document_url' => $docUrl,
+            'notes' => $notes
         ]);
 
-        $_SESSION['saved_message'] = 'Offer Letter issued and marked Approved for @' . $targetUser . '!';
+        $_SESSION['saved_message'] = 'Offer Letter issued successfully to @' . $targetUser . '!';
         header('Location: /admin/index.php?section=onboarding&target_user=' . urlencode($targetUser) . '&saved=1');
         exit;
     }
@@ -640,9 +1109,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $client = trim(strip_tags($_POST['client'] ?? ''));
         $location = trim(strip_tags($_POST['location'] ?? ''));
         $duration = trim(strip_tags($_POST['duration'] ?? ''));
+        $year = trim(strip_tags($_POST['year'] ?? ''));
         $videoUrl = trim(strip_tags($_POST['video_url'] ?? ''));
         $gdriveUrl = trim(strip_tags($_POST['gdrive_url'] ?? ''));
         $desc = trim($_POST['desc'] ?? '');
+        $services = trim(strip_tags($_POST['services'] ?? ''));
         $featured = !empty($_POST['featured']) ? true : false;
         
         $image = trim(strip_tags($_POST['existing_image'] ?? ''));
@@ -687,9 +1158,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $it['client'] = $client;
                 $it['location'] = $location;
                 $it['duration'] = $duration;
+                $it['year'] = $year;
+                $it['project_date'] = $year;
                 $it['video_url'] = $videoUrl;
                 $it['gdrive_url'] = $gdriveUrl;
                 $it['desc'] = $desc;
+                $it['services'] = $services;
                 $it['featured'] = $featured;
                 if (!empty($image)) {
                     $it['image'] = $image;
@@ -716,16 +1190,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'client' => $client,
                 'location' => $location,
                 'duration' => $duration,
+                'year' => $year,
+                'project_date' => $year,
                 'video_url' => $videoUrl,
                 'gdrive_url' => $gdriveUrl,
                 'image' => !empty($image) ? $image : '/assets/img/portfolio/portfolio_halima.png',
                 'desc' => $desc,
+                'services' => $services,
                 'photosCount' => 30
             ];
         }
 
         saveSiteSettings(['portfolio_items' => $items]);
-        header('Location: index.php?section=portfolio&saved=1');
+        $redirectType = trim(strip_tags($_POST['type_filter'] ?? $_GET['type'] ?? ''));
+        if (empty($redirectType) || $redirectType === 'all') {
+            $redirectType = $mediaType ?? 'all';
+        }
+        header('Location: index.php?section=portfolio&type=' . urlencode($redirectType) . '&saved=1');
         exit;
     } else if ($action === 'delete_portfolio_item') {
         $pId = (int)($_POST['id'] ?? 0);
@@ -734,7 +1215,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             return (int)($it['id'] ?? 0) !== $pId;
         }));
         saveSiteSettings(['portfolio_items' => $newItems]);
-        header('Location: index.php?section=portfolio&deleted=1');
+        $redirectType = trim(strip_tags($_POST['type_filter'] ?? $_GET['type'] ?? 'all'));
+        header('Location: index.php?section=portfolio&type=' . urlencode($redirectType) . '&deleted=1');
         exit;
     } else if ($action === 'save_team_member') {
         $tId = (int)($_POST['id'] ?? 0);
@@ -1396,6 +1878,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         saveSiteSettings(['staff_accounts' => $items]);
         header('Location: index.php?section=staff_accounts&saved=1');
         exit;
+    } else if ($action === 'sync_team_and_staff') {
+        $result = syncTeamAndStaffAccounts();
+        $targetSection = $_GET['section'] ?? 'team';
+        header("Location: index.php?section={$targetSection}&synced=1&added={$result['added']}&updated={$result['updated']}");
+        exit;
     } else if ($action === 'upload_cloudinary') {
         if (!empty($_FILES['cloudinary_file']['tmp_name'])) {
             $res = uploadToCloudinary($_FILES['cloudinary_file']['tmp_name'], 'falhen/uploads');
@@ -1718,18 +2205,60 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
 
         /* Navigation Menu Lists */
         .nav-category {
-            padding: 16px 20px 6px 20px;
+            padding: 14px 20px 6px 20px;
             font-size: 0.72rem;
             font-weight: 800;
             color: var(--text-muted);
             letter-spacing: 0.8px;
             text-transform: uppercase;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            user-select: none;
+            transition: color 0.2s ease;
+        }
+
+        .nav-category:hover {
+            color: #0f172a;
+        }
+
+        .nav-category.active-category,
+        .nav-category.active {
+            color: #0f172a !important;
+        }
+
+        .nav-category-chevron {
+            font-size: 0.68rem;
+            color: #94a3b8;
+            transition: transform 0.25s ease, color 0.2s ease;
+        }
+
+        .nav-category:hover .nav-category-chevron,
+        .nav-category.active-category .nav-category-chevron,
+        .nav-category.active .nav-category-chevron {
+            color: #0f172a !important;
+        }
+
+        .nav-category.collapsed .nav-category-chevron {
+            transform: rotate(-90deg);
         }
 
         .nav-list {
             list-style: none;
             padding: 0 10px;
             margin: 0;
+            transition: all 0.25s ease;
+        }
+
+        .nav-category.collapsed + .nav-list {
+            display: none;
+        }
+
+        @media (max-width: 992px) {
+            .leaves-layout-grid {
+                grid-template-columns: 1fr !important;
+            }
         }
 
         .nav-item a {
@@ -1794,6 +2323,9 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
             display: flex;
             flex-direction: column;
             min-height: 100vh;
+            padding-top: 60px;
+            min-width: 0;
+            overflow-x: hidden;
         }
 
         /* Top Header Navigation Bar */
@@ -1805,9 +2337,12 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
             align-items: center;
             justify-content: space-between;
             padding: 0 32px;
-            position: sticky;
+            position: fixed;
             top: 0;
-            z-index: 90;
+            left: 260px;
+            right: 0;
+            z-index: 999;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
         }
 
         .breadcrumb {
@@ -1860,8 +2395,32 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
         /* Section Container */
         .content-body {
             padding: 32px;
-            max-width: 1200px;
+            max-width: 100%;
+            margin: 0;
             width: 100%;
+            overflow-x: auto;
+            min-width: 0;
+        }
+
+        #kanbanBoardContainer::-webkit-scrollbar,
+        .content-body::-webkit-scrollbar {
+            height: 10px;
+            width: 10px;
+        }
+        #kanbanBoardContainer::-webkit-scrollbar-track,
+        .content-body::-webkit-scrollbar-track {
+            background: #1e293b;
+            border-radius: 6px;
+        }
+        #kanbanBoardContainer::-webkit-scrollbar-thumb,
+        .content-body::-webkit-scrollbar-thumb {
+            background: #dc2626;
+            border-radius: 6px;
+            border: 2px solid #1e293b;
+        }
+        #kanbanBoardContainer::-webkit-scrollbar-thumb:hover,
+        .content-body::-webkit-scrollbar-thumb:hover {
+            background: #ef4444;
         }
 
         /* Sticky / Main Section Header */
@@ -2154,9 +2713,20 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
         </a>
 
         <!-- Navigation Categories -->
+        <?php 
+        $isHomepageActive = in_array($activeSection, ['hero', 'stats', 'awards', 'bts', 'brands'], true);
+        $isContentActive = in_array($activeSection, ['inquiries', 'services', 'portfolio', 'client_galleries', 'team', 'blog', 'testimonials', 'careers'], true);
+        $isOperationsActive = in_array($activeSection, ['hr_portal', 'vendors', 'activity_log', 'email_templates'], true) || ($activeSection === 'careers' && ($_GET['tab'] ?? '') === 'applications');
+        $isEmployeePortalActive = in_array($activeSection, ['dashboard', 'directory', 'announcements', 'attendance', 'leaves', 'payslips'], true) || ($activeSection === 'onboarding' && !isAdminUser($userRole, $userEmail, $username));
+        $isAccountActive = in_array($activeSection, ['staff_accounts', 'my_profile', 'profile'], true);
+        ?>
         <?php if (isAdminUser($userRole, $userEmail, $username)): ?>
+            <?php if (!isTalentManager($userRole)): ?>
             <!-- CATEGORY: HOMEPAGE -->
-            <div class="nav-category">Homepage</div>
+            <div class="nav-category <?php echo $isHomepageActive ? 'active-category' : ''; ?>" onclick="toggleNavCategory(this)">
+                <span>Homepage</span>
+                <i class="fa-solid fa-chevron-down nav-category-chevron"></i>
+            </div>
             <ul class="nav-list">
                 <li class="nav-item <?php echo ($activeSection === 'hero') ? 'active' : ''; ?>">
                     <a href="/admin/index.php?section=hero">
@@ -2191,7 +2761,10 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
             </ul>
 
             <!-- CATEGORY: CONTENT -->
-            <div class="nav-category">Content</div>
+            <div class="nav-category <?php echo $isContentActive ? 'active-category' : ''; ?>" onclick="toggleNavCategory(this)">
+                <span>Content</span>
+                <i class="fa-solid fa-chevron-down nav-category-chevron"></i>
+            </div>
             <ul class="nav-list">
                 <li class="nav-item <?php echo ($activeSection === 'inquiries') ? 'active' : ''; ?>">
                     <a href="/admin/index.php?section=inquiries">
@@ -2242,13 +2815,18 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                     </a>
                 </li>
             </ul>
+            <?php endif; ?>
 
+            <?php if (!isContentEditor($userRole)): ?>
             <!-- CATEGORY: OPERATIONS -->
-            <div class="nav-category">Operations</div>
+            <div class="nav-category <?php echo $isOperationsActive ? 'active-category' : ''; ?>" onclick="toggleNavCategory(this)">
+                <span>Operations</span>
+                <i class="fa-solid fa-chevron-down nav-category-chevron"></i>
+            </div>
             <ul class="nav-list">
-                <li class="nav-item <?php echo ($activeSection === 'hr_portal') ? 'active' : ''; ?>">
+                <li class="nav-item <?php echo ($activeSection === 'hr_portal' || ($activeSection === 'careers' && ($_GET['tab'] ?? '') === 'applications')) ? 'active' : ''; ?>">
                     <a href="/admin/index.php?section=careers&tab=applications">
-                        <i class="fa-solid fa-users-gear nav-icon" style="color: #ef4444;"></i>
+                        <i class="fa-solid fa-users-gear nav-icon"></i>
                         <span>HR Portal &amp; Applications</span>
                     </a>
                 </li>
@@ -2277,26 +2855,13 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                     </a>
                 </li>
             </ul>
+            <?php endif; ?>
 
-            <!-- CATEGORY: ACCOUNT -->
-            <div class="nav-category">Account</div>
-            <ul class="nav-list" style="margin-bottom: 20px;">
-                <li class="nav-item <?php echo ($activeSection === 'staff_accounts') ? 'active' : ''; ?>">
-                    <a href="/admin/index.php?section=staff_accounts">
-                        <i class="fa-solid fa-user-shield nav-icon"></i>
-                        <span>Staff Accounts</span>
-                    </a>
-                </li>
-                <li class="nav-item <?php echo ($activeSection === 'my_profile' || $activeSection === 'profile') ? 'active' : ''; ?>">
-                    <a href="/admin/index.php?section=my_profile">
-                        <i class="fa-solid fa-circle-user nav-icon"></i>
-                        <span>My Profile</span>
-                    </a>
-                </li>
-            </ul>
-        <?php else: ?>
-            <!-- NON-ADMIN EMPLOYEE PORTAL NAVIGATION -->
-            <div class="nav-category">Employee Portal</div>
+            <!-- CATEGORY: EMPLOYEE PORTAL -->
+            <div class="nav-category <?php echo $isEmployeePortalActive ? 'active-category' : ''; ?>" onclick="toggleNavCategory(this)">
+                <span>Employee Portal</span>
+                <i class="fa-solid fa-chevron-down nav-category-chevron"></i>
+            </div>
             <ul class="nav-list">
                 <li class="nav-item <?php echo ($activeSection === 'dashboard') ? 'active' : ''; ?>">
                     <a href="/admin/index.php?section=dashboard">
@@ -2314,12 +2879,6 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                     <a href="/admin/index.php?section=directory">
                         <i class="fa-solid fa-address-book nav-icon"></i>
                         <span>Directory</span>
-                    </a>
-                </li>
-                <li class="nav-item <?php echo ($activeSection === 'announcements') ? 'active' : ''; ?>">
-                    <a href="/admin/index.php?section=announcements">
-                        <i class="fa-solid fa-bullhorn nav-icon"></i>
-                        <span>Announcements</span>
                     </a>
                 </li>
                 <li class="nav-item <?php echo ($activeSection === 'attendance') ? 'active' : ''; ?>">
@@ -2342,7 +2901,76 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                 </li>
             </ul>
 
-            <div class="nav-category">Account</div>
+            <!-- CATEGORY: ACCOUNT -->
+            <div class="nav-category <?php echo $isAccountActive ? 'active-category' : ''; ?>" onclick="toggleNavCategory(this)">
+                <span>Account</span>
+                <i class="fa-solid fa-chevron-down nav-category-chevron"></i>
+            </div>
+            <ul class="nav-list" style="margin-bottom: 20px;">
+                <?php if (!isContentEditor($userRole)): ?>
+                <li class="nav-item <?php echo ($activeSection === 'staff_accounts') ? 'active' : ''; ?>">
+                    <a href="/admin/index.php?section=staff_accounts">
+                        <i class="fa-solid fa-user-shield nav-icon"></i>
+                        <span>Staff Accounts</span>
+                    </a>
+                </li>
+                <?php endif; ?>
+                <li class="nav-item <?php echo ($activeSection === 'my_profile' || $activeSection === 'profile') ? 'active' : ''; ?>">
+                    <a href="/admin/index.php?section=my_profile">
+                        <i class="fa-solid fa-circle-user nav-icon"></i>
+                        <span>My Profile</span>
+                    </a>
+                </li>
+            </ul>
+        <?php else: ?>
+            <!-- NON-ADMIN EMPLOYEE PORTAL NAVIGATION -->
+            <div class="nav-category <?php echo $isEmployeePortalActive ? 'active-category' : ''; ?>" onclick="toggleNavCategory(this)">
+                <span>Employee Portal</span>
+                <i class="fa-solid fa-chevron-down nav-category-chevron"></i>
+            </div>
+            <ul class="nav-list">
+                <li class="nav-item <?php echo ($activeSection === 'dashboard') ? 'active' : ''; ?>">
+                    <a href="/admin/index.php?section=dashboard">
+                        <i class="fa-solid fa-gauge-high nav-icon"></i>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                <li class="nav-item <?php echo ($activeSection === 'onboarding') ? 'active' : ''; ?>">
+                    <a href="/admin/index.php?section=onboarding">
+                        <i class="fa-solid fa-clipboard-check nav-icon"></i>
+                        <span>Onboarding</span>
+                    </a>
+                </li>
+                <li class="nav-item <?php echo ($activeSection === 'directory') ? 'active' : ''; ?>">
+                    <a href="/admin/index.php?section=directory">
+                        <i class="fa-solid fa-address-book nav-icon"></i>
+                        <span>Directory</span>
+                    </a>
+                </li>
+                <li class="nav-item <?php echo ($activeSection === 'attendance') ? 'active' : ''; ?>">
+                    <a href="/admin/index.php?section=attendance">
+                        <i class="fa-solid fa-calendar-check nav-icon"></i>
+                        <span>My Attendance</span>
+                    </a>
+                </li>
+                <li class="nav-item <?php echo ($activeSection === 'leaves') ? 'active' : ''; ?>">
+                    <a href="/admin/index.php?section=leaves">
+                        <i class="fa-solid fa-umbrella-beach nav-icon"></i>
+                        <span>Time Off (Leaves)</span>
+                    </a>
+                </li>
+                <li class="nav-item <?php echo ($activeSection === 'payslips') ? 'active' : ''; ?>">
+                    <a href="/admin/index.php?section=payslips">
+                        <i class="fa-solid fa-file-invoice-dollar nav-icon"></i>
+                        <span>My Payslips</span>
+                    </a>
+                </li>
+            </ul>
+
+            <div class="nav-category <?php echo $isAccountActive ? 'active-category' : ''; ?>" onclick="toggleNavCategory(this)">
+                <span>Account</span>
+                <i class="fa-solid fa-chevron-down nav-category-chevron"></i>
+            </div>
             <ul class="nav-list" style="margin-bottom: 20px;">
                 <li class="nav-item <?php echo ($activeSection === 'my_profile' || $activeSection === 'profile') ? 'active' : ''; ?>">
                     <a href="/admin/index.php?section=my_profile">
@@ -2396,7 +3024,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                 $isHomeActive = in_array($activeSection, $homeSections, true);
                 ?>
                 <nav class="topbar-primary-nav" style="display: flex; align-items: center; gap: 4px; background: #f1f5f9; padding: 4px; border-radius: 10px; border: 1px solid #cbd5e1; margin-left: 8px;">
-                    <a href="/admin/index.php?section=<?php echo isAdminUser($userRole, $userEmail, $username) ? 'hero' : 'dashboard'; ?>" class="topbar-nav-link" style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; font-size: 0.84rem; font-weight: 700; text-decoration: none; border-radius: 7px; transition: all 0.15s ease; <?php echo $isHomeActive ? 'background: #ffffff; color: #dc2626; box-shadow: 0 1px 3px rgba(0,0,0,0.08);' : 'color: #475569;'; ?>">
+                    <a href="/admin/index.php?section=<?php echo (isAdminUser($userRole, $userEmail, $username) && !isTalentManager($userRole)) ? 'hero' : 'dashboard'; ?>" class="topbar-nav-link" style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; font-size: 0.84rem; font-weight: 700; text-decoration: none; border-radius: 7px; transition: all 0.15s ease; <?php echo $isHomeActive ? 'background: #ffffff; color: #dc2626; box-shadow: 0 1px 3px rgba(0,0,0,0.08);' : 'color: #475569;'; ?>">
                         <i class="fa-solid fa-house" style="font-size: 0.8rem; <?php echo $isHomeActive ? 'color: #dc2626;' : 'color: #64748b;'; ?>"></i>
                         <span>Home</span>
                     </a>
@@ -3956,6 +4584,11 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                     }
                 }
             ?>
+                <?php if (isset($_GET['synced'])): ?>
+                    <div style="background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; padding: 12px 18px; border-radius: 12px; margin-bottom: 20px; font-size: 0.9rem; font-weight: 700; display: flex; align-items: center; gap: 10px;">
+                        <i class="fa-solid fa-arrows-rotate" style="font-size: 1.1rem; color: #22c55e;"></i> Team Roster &amp; Staff Accounts fully synchronized! (<?php echo (int)($_GET['added'] ?? 0); ?> added, <?php echo (int)($_GET['updated'] ?? 0); ?> updated)
+                    </div>
+                <?php endif; ?>
                 <?php if (isset($_GET['saved'])): ?>
                     <div style="background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; padding: 12px 18px; border-radius: 12px; margin-bottom: 20px; font-size: 0.9rem; font-weight: 600; display: flex; align-items: center; gap: 8px;">
                         <i class="fa-solid fa-circle-check" style="font-size: 1.1rem; color: #22c55e;"></i> Team member saved successfully!
@@ -3970,17 +4603,16 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                 <!-- Top Section Title Bar -->
                 <div class="section-header-bar" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px;">
                     <div>
-                        <h1 class="section-header-title" style="font-size: 1.75rem; font-weight: 800; color: #0f172a; margin-bottom: 4px; display: flex; align-items: center; gap: 10px;">
-                            <i class="fa-solid fa-users" style="color: #dc2626; font-size: 1.5rem;"></i>
-                            Team Members
-                            <span id="teamReorderStatus" style="display: none; font-size: 0.78rem; font-weight: 700; padding: 4px 12px; border-radius: 20px; align-items: center; gap: 6px;"></span>
-                        </h1>
-                        <p class="section-header-subtitle" style="color: #64748b; font-size: 0.9rem; margin: 0;">
-                            Manage studio leadership, creative directors, operations, and technical staff. Drag cards or use arrows to rearrange frontpage order.
-                        </p>
+                        <span id="teamReorderStatus" style="display: none; font-size: 0.78rem; font-weight: 700; padding: 4px 12px; border-radius: 20px; align-items: center; gap: 6px;"></span>
                     </div>
                     <?php if ($subAction !== 'add' && $editingTeamId === null): ?>
                         <div style="display: flex; gap: 10px;">
+                            <form action="index.php?section=team" method="POST" style="margin: 0; display: inline;">
+                                <input type="hidden" name="action" value="sync_team_and_staff">
+                                <button type="submit" style="background: #ffffff; color: #0f172a; border: 1px solid #cbd5e1; border-radius: 10px; padding: 10px 16px; font-weight: 700; font-size: 0.85rem; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='#ffffff'" title="Synchronize Team Content with Staff Accounts">
+                                    <i class="fa-solid fa-arrows-rotate" style="color: #dc2626;"></i> Sync with Staff Accounts
+                                </button>
+                            </form>
                             <button type="button" onclick="saveTeamOrder()" style="background: #ffffff; color: #0f172a; border: 1px solid #cbd5e1; border-radius: 10px; padding: 10px 16px; font-weight: 700; font-size: 0.85rem; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
                                 <i class="fa-solid fa-floppy-disk" style="color: #dc2626;"></i> Save Display Order
                             </button>
@@ -4235,7 +4867,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                     <i class="fa-solid fa-pen-to-square" style="font-size: 0.75rem; color: #dc2626;"></i> Edit Member
                                 </a>
 
-                                <form action="index.php?section=team" method="POST" onsubmit="return confirm('Are you sure you want to remove this team member?');" style="margin: 0;">
+                                <form action="index.php?section=team" method="POST" onsubmit="return promptConfirmModal(this, 'Remove Team Member', 'Are you sure you want to remove <?php echo htmlspecialchars(addslashes($tmItem['name'])); ?> from the team roster?');" style="margin: 0;">
                                     <input type="hidden" name="action" value="delete_team_member">
                                     <input type="hidden" name="id" value="<?php echo $tmItem['id']; ?>">
                                     <button type="submit" style="background: none; border: none; color: #94a3b8; font-size: 0.82rem; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; padding: 4px 8px;" onmouseover="this.style.color='#dc2626'" onmouseout="this.style.color='#94a3b8'">
@@ -4659,10 +5291,12 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                             <span><?php echo count(array_filter($portfolioItems, function($i) { return ($i['media_type'] ?? 'photo') === 'photo'; })); ?> Photo Albums</span>
                             <span>&bull;</span>
                             <span><?php echo count(array_filter($portfolioItems, function($i) { return ($i['media_type'] ?? 'photo') === 'video'; })); ?> Video Reels</span>
+                            <span>&bull;</span>
+                            <span><?php echo count(array_filter($portfolioItems, function($i) { return ($i['media_type'] ?? 'photo') === 'project'; })); ?> Projects</span>
                         </p>
                     </div>
                     <?php if ($subAction !== 'add' && $editingPortfolioId === null): ?>
-                        <a href="index.php?section=portfolio&sub_action=add" class="btn-save-primary" style="text-decoration: none; padding: 10px 22px; background-color: #dc2626; display: inline-flex; align-items: center; gap: 8px;">
+                        <a href="index.php?section=portfolio&type=<?php echo urlencode($typeFilter); ?>&sub_action=add" class="btn-save-primary" style="text-decoration: none; padding: 10px 22px; background-color: #dc2626; display: inline-flex; align-items: center; gap: 8px;">
                             <i class="fa-solid fa-plus"></i> Add New Portfolio Item
                         </a>
                     <?php endif; ?>
@@ -4678,6 +5312,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
 
                         <form action="index.php?section=portfolio" method="POST" enctype="multipart/form-data">
                             <input type="hidden" name="action" value="save_portfolio_item">
+                            <input type="hidden" name="type_filter" value="<?php echo htmlspecialchars($typeFilter); ?>">
                             <?php if ($editingPortfolioId !== null): ?>
                                 <input type="hidden" name="id" value="<?php echo $editingPortfolioId; ?>">
                             <?php endif; ?>
@@ -4692,29 +5327,38 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                 <div>
                                     <label class="form-label-title">Media Type &amp; Source <span style="color: #ef4444;">*</span></label>
                                     <select name="media_type" id="portfolio_media_type_select" class="form-text-input" onchange="togglePortfolioMediaFields(this.value)">
-                                        <option value="photo" <?php echo ($editingPortfolio['media_type'] ?? 'photo') === 'photo' ? 'selected' : ''; ?>>📷 Photo Album (Google Drive Photos)</option>
-                                        <option value="video" <?php echo ($editingPortfolio['media_type'] ?? 'photo') === 'video' ? 'selected' : ''; ?>>🎬 Video Reel (YouTube Video)</option>
+                                        <option value="photo" <?php echo ($editingPortfolio['media_type'] ?? 'photo') === 'photo' ? 'selected' : ''; ?>>Photo Album (Google Drive Photos)</option>
+                                        <option value="video" <?php echo ($editingPortfolio['media_type'] ?? 'photo') === 'video' ? 'selected' : ''; ?>>Video Reel (YouTube Video)</option>
+                                        <option value="project" <?php echo ($editingPortfolio['media_type'] ?? 'photo') === 'project' ? 'selected' : ''; ?>>Project / Production (Case Study / Drive Link)</option>
                                     </select>
                                 </div>
 
                                 <div>
                                     <label class="form-label-title">Category <span style="color: #ef4444;">*</span></label>
-                                    <input type="text" name="category" class="form-text-input" value="<?php echo htmlspecialchars($editingPortfolio['category'] ?? 'Portrait'); ?>" placeholder="e.g. Portrait, Birthday, Wedding, Commercial, Event, Reels, Documentary" required list="category_suggestions">
-                                    <datalist id="category_suggestions">
-                                        <option value="Portrait">
-                                        <option value="Birthday">
-                                        <option value="Wedding">
-                                        <option value="Commercial">
-                                        <option value="Event">
-                                        <option value="Music Video">
-                                        <option value="Reels">
-                                        <option value="Documentary">
-                                    </datalist>
+                                    <select name="category" class="form-text-input" required>
+                                        <?php 
+                                        $currentCat = $editingPortfolio['category'] ?? 'Corporate';
+                                        $categories = ['Commercials', 'Corporate', 'Events', 'Documentary', 'Social', 'Broadcast', 'Wedding', 'Branding', 'Portrait', 'Birthday', 'Music Video', 'Reels'];
+                                        if (!in_array($currentCat, $categories) && !empty($currentCat)) {
+                                            $categories[] = $currentCat;
+                                        }
+                                        foreach ($categories as $catOpt): 
+                                        ?>
+                                            <option value="<?php echo htmlspecialchars($catOpt); ?>" <?php echo (strtolower($currentCat) === strtolower($catOpt)) ? 'selected' : ''; ?>>
+                                                <?php echo htmlspecialchars($catOpt); ?>
+                                            </option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <label class="form-label-title">Year / Project Date</label>
+                                    <input type="text" name="year" class="form-text-input" value="<?php echo htmlspecialchars($editingPortfolio['year'] ?? ($editingPortfolio['project_date'] ?? '2024')); ?>" placeholder="e.g. 2024">
                                 </div>
 
                                 <div>
                                     <label class="form-label-title">Client Name</label>
-                                    <input type="text" name="client" class="form-text-input" value="<?php echo htmlspecialchars($editingPortfolio['client'] ?? ''); ?>" placeholder="e.g. Halima Ogunde">
+                                    <input type="text" name="client" class="form-text-input" value="<?php echo htmlspecialchars($editingPortfolio['client'] ?? ''); ?>" placeholder="e.g. TechCorp International">
                                 </div>
 
                                 <div>
@@ -4728,8 +5372,8 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                 </div>
                             </div>
 
-                            <!-- Google Drive Folder / Share Link Input (For Photo Albums) -->
-                            <div id="portfolio_gdrive_url_wrapper" style="margin-top: 18px; display: <?php echo ($editingPortfolio['media_type'] ?? 'photo') === 'photo' ? 'block' : 'none'; ?>;">
+                            <!-- Google Drive Folder / Share Link Input (For Photo Albums & Projects) -->
+                            <div id="portfolio_gdrive_url_wrapper" style="margin-top: 18px; display: <?php echo (($editingPortfolio['media_type'] ?? 'photo') === 'photo' || ($editingPortfolio['media_type'] ?? 'photo') === 'project') ? 'block' : 'none'; ?>;">
                                 <label class="form-label-title" style="display: flex; align-items: center; gap: 6px;">
                                     <i class="fa-brands fa-google-drive" style="color: #4285F4; font-size: 1.1rem;"></i> Google Drive Folder or Album Share Link
                                 </label>
@@ -4788,11 +5432,13 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                             </button>
                                             <button 
                                                 type="button" 
+                                                id="portfolio_upload_btn"
                                                 onclick="document.getElementById('portfolio_image_file_input').click()"
                                                 style="background: #dc2626; color: #ffffff; border: none; border-radius: 6px; padding: 6px 12px; font-size: 0.78rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 5px;"
                                             >
                                                 <i class="fa-solid fa-cloud-arrow-up"></i> Upload Custom Cover
                                             </button>
+                                            <span id="portfolio_upload_status_badge" style="display: none; font-size: 0.75rem; font-weight: 600; padding: 3px 8px; border-radius: 6px; align-items: center; gap: 4px;"></span>
                                         </div>
                                         <input 
                                             type="text" 
@@ -4823,8 +5469,8 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                 >
                             </div>
 
-                            <!-- Description Textarea (Conditional for Photo Albums) -->
-                            <div id="portfolio_desc_wrapper" style="margin-top: 18px; display: <?php echo ($editingPortfolio['media_type'] ?? 'photo') === 'video' ? 'none' : 'block'; ?>;">
+                            <!-- Description Textarea -->
+                            <div id="portfolio_desc_wrapper" style="margin-top: 18px; display: block;">
                                 <label class="form-label-title">Project Description / Story</label>
                                 <textarea 
                                     name="desc" 
@@ -4833,6 +5479,18 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                     style="width: 100%; resize: vertical;" 
                                     placeholder="Enter project summary or backstory..."
                                 ><?php echo htmlspecialchars($editingPortfolio['desc'] ?? ''); ?></textarea>
+                            </div>
+
+                            <!-- Services Field (comma separated) -->
+                            <div id="portfolio_services_wrapper" style="margin-top: 18px;">
+                                <label class="form-label-title">Services (comma separated)</label>
+                                <input 
+                                    type="text" 
+                                    name="services" 
+                                    class="form-text-input" 
+                                    value="<?php echo htmlspecialchars($editingPortfolio['services'] ?? 'Video Production, Live Streaming, Post Production'); ?>" 
+                                    placeholder="Video Production, Live Streaming, Post Production"
+                                >
                             </div>
 
                             <!-- Featured Checkbox -->
@@ -4852,6 +5510,19 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                     Cancel
                                 </a>
                             </div>
+                            <script>
+                            function togglePortfolioMediaFields(val) {
+                                var durationWrap = document.getElementById('portfolio_duration_wrapper');
+                                var gdriveWrap = document.getElementById('portfolio_gdrive_url_wrapper');
+                                var videoWrap = document.getElementById('portfolio_video_url_wrapper');
+                                var descWrap = document.getElementById('portfolio_desc_wrapper');
+
+                                if (durationWrap) durationWrap.style.display = (val === 'video') ? 'block' : 'none';
+                                if (gdriveWrap) gdriveWrap.style.display = (val === 'photo' || val === 'project') ? 'block' : 'none';
+                                if (videoWrap) videoWrap.style.display = (val === 'video') ? 'block' : 'none';
+                                if (descWrap) descWrap.style.display = 'block';
+                            }
+                            </script>
                         </form>
                     </div>
                 <?php endif; ?>
@@ -4864,10 +5535,13 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                             All Types
                         </a>
                         <a href="index.php?section=portfolio&type=photo&cat=<?php echo urlencode($catFilter); ?>&q=<?php echo urlencode($searchQuery); ?>" style="padding: 6px 14px; border-radius: 8px; font-size: 0.82rem; font-weight: 700; text-decoration: none; transition: all 0.2s; <?php echo $typeFilter === 'photo' ? 'background: #ffffff; color: #0f172a; box-shadow: 0 1px 3px rgba(0,0,0,0.1);' : 'color: #64748b;'; ?>">
-                            📷 Photos Only
+                            <i class="fa-solid fa-camera" style="color: #38bdf8; margin-right: 4px;"></i> Photos Only
                         </a>
                         <a href="index.php?section=portfolio&type=video&cat=<?php echo urlencode($catFilter); ?>&q=<?php echo urlencode($searchQuery); ?>" style="padding: 6px 14px; border-radius: 8px; font-size: 0.82rem; font-weight: 700; text-decoration: none; transition: all 0.2s; <?php echo $typeFilter === 'video' ? 'background: #ffffff; color: #0f172a; box-shadow: 0 1px 3px rgba(0,0,0,0.1);' : 'color: #64748b;'; ?>">
-                            🎬 Videos Only
+                            <i class="fa-solid fa-film" style="color: #ef4444; margin-right: 4px;"></i> Videos Only
+                        </a>
+                        <a href="index.php?section=portfolio&type=project&cat=<?php echo urlencode($catFilter); ?>&q=<?php echo urlencode($searchQuery); ?>" style="padding: 6px 14px; border-radius: 8px; font-size: 0.82rem; font-weight: 700; text-decoration: none; transition: all 0.2s; <?php echo $typeFilter === 'project' ? 'background: #ffffff; color: #0f172a; box-shadow: 0 1px 3px rgba(0,0,0,0.1);' : 'color: #64748b;'; ?>">
+                            <i class="fa-solid fa-folder-open" style="color: #a78bfa; margin-right: 4px;"></i> Projects Only
                         </a>
                     </div>
 
@@ -4904,7 +5578,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                         <i class="fa-regular fa-folder-open" style="font-size: 2.5rem; color: #94a3b8; margin-bottom: 12px;"></i>
                         <h4 style="font-size: 1.1rem; font-weight: 700; color: #0f172a; margin-bottom: 6px;">No Portfolio Items Found</h4>
                         <p style="font-size: 0.88rem; color: #64748b; margin-bottom: 18px;">No projects match your filter criteria or search query.</p>
-                        <a href="index.php?section=portfolio&sub_action=add" class="btn-save-primary" style="text-decoration: none; padding: 8px 18px; background-color: #dc2626; font-size: 0.85rem;">
+                        <a href="index.php?section=portfolio&type=<?php echo urlencode($typeFilter); ?>&sub_action=add" class="btn-save-primary" style="text-decoration: none; padding: 8px 18px; background-color: #dc2626; font-size: 0.85rem;">
                             + Add New Item
                         </a>
                     </div>
@@ -4925,6 +5599,8 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                     <div style="position: absolute; top: 10px; left: 10px; background: rgba(15,23,42,0.85); color: #ffffff; font-size: 0.72rem; font-weight: 700; padding: 3px 8px; border-radius: 6px; backdrop-filter: blur(4px); display: flex; align-items: center; gap: 4px;">
                                         <?php if (($pItem['media_type'] ?? 'photo') === 'video'): ?>
                                             <i class="fa-solid fa-play" style="color: #ef4444; font-size: 0.68rem;"></i> Video <?php echo !empty($pItem['duration']) ? '(' . htmlspecialchars($pItem['duration']) . ')' : ''; ?>
+                                        <?php elseif (($pItem['media_type'] ?? 'photo') === 'project'): ?>
+                                            <i class="fa-solid fa-rocket" style="color: #a78bfa; font-size: 0.68rem;"></i> Project
                                         <?php else: ?>
                                             <i class="fa-solid fa-camera" style="color: #38bdf8; font-size: 0.68rem;"></i> Photo Album
                                         <?php endif; ?>
@@ -4932,8 +5608,8 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
 
                                     <!-- Top Right Featured Pill -->
                                     <?php if (!empty($pItem['featured'])): ?>
-                                        <div style="position: absolute; top: 10px; right: 10px; background: #dc2626; color: #ffffff; font-size: 0.7rem; font-weight: 800; padding: 3px 8px; border-radius: 6px; box-shadow: 0 2px 6px rgba(220,38,38,0.4);">
-                                            ★ FEATURED
+                                        <div style="position: absolute; top: 10px; right: 10px; background: #dc2626; color: #ffffff; font-size: 0.7rem; font-weight: 800; padding: 3px 8px; border-radius: 6px; box-shadow: 0 2px 6px rgba(220,38,38,0.4); display: flex; align-items: center; gap: 4px;">
+                                            <i class="fa-solid fa-star" style="color: #facc15;"></i> FEATURED
                                         </div>
                                     <?php endif; ?>
                                 </div>
@@ -4967,16 +5643,16 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                                 <?php echo htmlspecialchars($pItem['desc']); ?>
                                             </p>
                                         <?php endif; ?>
-                                    </div>
 
                                     <!-- Bottom Edit / Delete Action Buttons Bar -->
                                     <div style="display: flex; align-items: center; justify-content: space-between; border-top: 1px solid #f1f5f9; padding-top: 12px; margin-top: 10px;">
-                                        <a href="index.php?section=portfolio&edit_id=<?php echo $pItem['id']; ?>" style="color: #0f172a; font-size: 0.82rem; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 5px; background: #f1f5f9; padding: 5px 12px; border-radius: 6px;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='#f1f5f9'">
+                                        <a href="index.php?section=portfolio&type=<?php echo urlencode($typeFilter); ?>&edit_id=<?php echo $pItem['id']; ?>" style="color: #0f172a; font-size: 0.82rem; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 5px; background: #f1f5f9; padding: 5px 12px; border-radius: 6px;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='#f1f5f9'">
                                             <i class="fa-solid fa-pen-to-square" style="font-size: 0.75rem; color: #dc2626;"></i> Edit Item
                                         </a>
 
                                         <form action="index.php?section=portfolio" method="POST" onsubmit="return confirm('Are you sure you want to delete this portfolio item?');" style="margin: 0;">
                                             <input type="hidden" name="action" value="delete_portfolio_item">
+                                            <input type="hidden" name="type_filter" value="<?php echo htmlspecialchars($typeFilter); ?>">
                                             <input type="hidden" name="id" value="<?php echo $pItem['id']; ?>">
                                             <button type="submit" style="background: none; border: none; color: #94a3b8; font-size: 0.82rem; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; padding: 4px 8px;" onmouseover="this.style.color='#dc2626'" onmouseout="this.style.color='#94a3b8'">
                                                 <i class="fa-solid fa-trash-can" style="font-size: 0.75rem;"></i> Delete
@@ -5512,7 +6188,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                         <i class="fa-solid fa-pen-to-square" style="font-size: 0.75rem; color: #dc2626;"></i> Edit Brand
                                     </a>
 
-                                    <form action="index.php?section=brands" method="POST" onsubmit="return confirm('Are you sure you want to remove this brand logo?');" style="margin: 0;">
+                                    <form action="index.php?section=brands" method="POST" onsubmit="return promptConfirmModal(this, 'Remove Client Brand', 'Are you sure you want to remove <?php echo htmlspecialchars(addslashes($bItem['name'])); ?> from client brands?');" style="margin: 0;">
                                         <input type="hidden" name="action" value="delete_brand_logo">
                                         <input type="hidden" name="id" value="<?php echo $bItem['id']; ?>">
                                         <button type="submit" style="background: none; border: none; color: #94a3b8; font-size: 0.82rem; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; padding: 4px 8px;" onmouseover="this.style.color='#dc2626'" onmouseout="this.style.color='#94a3b8'">
@@ -5776,19 +6452,28 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                 <!-- Header Bar -->
                 <div class="section-header-bar" style="align-items: center; margin-bottom: 24px;">
                     <div>
-                        <h1 class="section-header-title" style="font-size: 1.75rem; font-weight: 800; color: #0f172a; margin-bottom: 4px;">Staff &amp; Admin Accounts</h1>
-                        <p class="section-header-desc" style="font-size: 0.88rem; color: #64748b; margin: 0; display: flex; align-items: center; gap: 8px;">
-                            <strong style="color: #0f172a;"><?php echo count($staffList); ?> Team Accounts</strong>
-                            <span>•</span>
-                            <span>Manage administrative team accounts, staff roles, credentials, and access status</span>
-                        </p>
+                        <h1 class="section-header-title" style="font-size: 1.75rem; font-weight: 800; color: #0f172a; margin: 0;">Staff &amp; Admin Accounts</h1>
                     </div>
                     <?php if ($subAction !== 'add' && $editingStaffId === null): ?>
-                        <a href="index.php?section=staff_accounts&sub_action=add" class="btn-save-primary" style="text-decoration: none; padding: 10px 22px; background-color: #dc2626;">
-                            <i class="fa-solid fa-user-plus"></i> Add New Staff Member
-                        </a>
+                        <div style="display: flex; gap: 10px;">
+                            <form action="index.php?section=staff_accounts" method="POST" style="margin: 0; display: inline;">
+                                <input type="hidden" name="action" value="sync_team_and_staff">
+                                <button type="submit" style="background: #ffffff; color: #0f172a; border: 1px solid #cbd5e1; border-radius: 10px; padding: 10px 16px; font-weight: 700; font-size: 0.85rem; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='#ffffff'" title="Synchronize Staff Accounts with Team Roster">
+                                    <i class="fa-solid fa-arrows-rotate" style="color: #dc2626;"></i> Sync with Team Roster
+                                </button>
+                            </form>
+                            <a href="index.php?section=staff_accounts&sub_action=add" class="btn-save-primary" style="text-decoration: none; padding: 10px 22px; background-color: #dc2626;">
+                                <i class="fa-solid fa-user-plus"></i> Add New Staff Member
+                            </a>
+                        </div>
                     <?php endif; ?>
                 </div>
+
+                <?php if (isset($_GET['synced'])): ?>
+                    <div style="background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; padding: 12px 18px; border-radius: 10px; font-weight: 700; font-size: 0.9rem; margin-bottom: 24px; display: flex; align-items: center; gap: 10px;">
+                        <i class="fa-solid fa-arrows-rotate" style="color: #22c55e;"></i> Team Roster &amp; Staff Accounts fully synchronized! (<?php echo (int)($_GET['added'] ?? 0); ?> added, <?php echo (int)($_GET['updated'] ?? 0); ?> updated)
+                    </div>
+                <?php endif; ?>
 
                 <?php if (isset($_GET['saved'])): ?>
                     <div style="background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; padding: 12px 18px; border-radius: 10px; font-weight: 700; font-size: 0.9rem; margin-bottom: 24px; display: flex; align-items: center; gap: 10px;">
@@ -5823,27 +6508,21 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                             <input type="hidden" name="existing_avatar" id="staff_existing_avatar" value="<?php echo htmlspecialchars($editingStaff['avatar'] ?? ''); ?>">
                             <input type="hidden" name="cropped_staff_avatar_data" id="cropped_staff_avatar_data" value="">
 
-                            <!-- Avatar Header -->
+                            <!-- Avatar Sync Header (Fetched directly from Team Content) -->
                             <div style="display: flex; align-items: center; gap: 20px; margin-bottom: 24px; background: #f8fafc; padding: 18px; border-radius: 12px; border: 1px solid #e2e8f0;">
                                 <div id="staff_avatar_preview_container">
                                     <?php if (!empty($editingStaff['avatar'])): ?>
-                                        <img id="staff_avatar_img" src="<?php echo htmlspecialchars(getCloudinaryUrl($editingStaff['avatar'])); ?>" style="width: 70px; height: 70px; border-radius: 50%; object-fit: cover; border: 2px solid #dc2626;">
+                                        <img id="staff_avatar_img" src="<?php echo htmlspecialchars(getCloudinaryUrl($editingStaff['avatar'])); ?>" style="width: 64px; height: 64px; border-radius: 50%; object-fit: cover; border: 2px solid #dc2626;">
                                     <?php else: ?>
-                                        <div id="staff_avatar_no_img" style="width: 70px; height: 70px; border-radius: 50%; background: #dc2626; color: #ffffff; display: flex; align-items: center; justify-content: center; font-size: 1.6rem; font-weight: 800;">
+                                        <div id="staff_avatar_no_img" style="width: 64px; height: 64px; border-radius: 50%; background: #dc2626; color: #ffffff; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: 800;">
                                             <?php echo strtoupper(substr($editingStaff['full_name'] ?? 'S', 0, 1)); ?>
                                         </div>
                                     <?php endif; ?>
                                 </div>
 
                                 <div>
-                                    <h4 style="margin: 0 0 4px 0; font-size: 0.95rem; font-weight: 800; color: #0f172a;">Staff Avatar Photo</h4>
-                                    <div id="staff_upload_status" style="display: none; margin-bottom: 8px; font-weight: 700; font-size: 0.82rem; color: #2563eb;">
-                                        <i class="fa-solid fa-spinner fa-spin"></i> Uploading to Cloudinary...
-                                    </div>
-                                    <label class="btn-save-primary" style="background-color: #0f172a; cursor: pointer; display: inline-flex; font-size: 0.8rem; padding: 6px 14px;">
-                                        <i class="fa-solid fa-camera"></i> Upload Photo
-                                        <input type="file" id="staff_file_input" accept="image/*" style="display: none;" onchange="handleStaffAvatarUpload(this)">
-                                    </label>
+                                    <h4 style="margin: 0 0 4px 0; font-size: 0.95rem; font-weight: 800; color: #0f172a;">Staff Avatar Photo (Synced from Team Menu)</h4>
+                                    <p style="margin: 0; font-size: 0.8rem; color: #64748b;">Avatar photos are automatically synchronized directly from the <strong>Team (Content)</strong> roster. Updating photos in the Team section instantly updates profile avatars across all staff accounts.</p>
                                 </div>
                             </div>
 
@@ -6007,12 +6686,13 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                         <i class="fa-solid fa-user-pen" style="font-size: 0.75rem; color: #dc2626;"></i> Edit Member
                                     </a>
 
-                                    <form action="index.php?section=staff_accounts" method="POST" onsubmit="return confirm('Are you sure you want to remove this staff account?');" style="margin: 0;">
+                                    <form action="index.php?section=staff_accounts" method="POST" onsubmit="return promptConfirmModal(this, 'Remove Staff Account', 'Are you sure you want to remove <?php echo htmlspecialchars(addslashes($stItem['full_name'])); ?> from staff accounts?');" style="margin: 0;">
                                         <input type="hidden" name="action" value="delete_staff_account">
                                         <input type="hidden" name="id" value="<?php echo $stItem['id']; ?>">
                                         <button type="submit" style="background: none; border: none; color: #94a3b8; font-size: 0.82rem; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; padding: 4px 8px;" onmouseover="this.style.color='#dc2626'" onmouseout="this.style.color='#94a3b8'">
                                             <i class="fa-solid fa-trash-can" style="font-size: 0.75rem;"></i> Remove
                                         </button>
+                                    </form>
                                 </div>
                             </div>
                         <?php endforeach; ?>
@@ -6265,13 +6945,15 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                     <?php 
                     $isEditingBank = isset($_GET['edit_bank']) && $_GET['edit_bank'] == '1';
                     $hasBankDetails = !empty($onboardingData['bank_details']['account_number']);
+                    $bankStatus = $onboardingData['bank_details']['status'] ?? ($hasBankDetails ? 'Submitted' : 'Pending');
+                    $isBankApproved = ($bankStatus === 'Approved');
                     ?>
                     <div class="dashboard-card" style="margin-bottom: 0; display: flex; flex-direction: column; justify-content: space-between;">
                         <div>
                             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                                 <h3 style="font-size: 1.1rem; font-weight: 800; color: #0f172a; margin: 0;">Bank Details</h3>
-                                <span style="font-size: 0.74rem; font-weight: 800; padding: 3px 10px; border-radius: 12px; <?php echo ($hasBankDetails && !$isEditingBank) ? 'background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0;' : 'background: #f1f5f9; color: #64748b; border: 1px solid #cbd5e1;'; ?>">
-                                    <?php echo ($hasBankDetails && !$isEditingBank) ? 'Submitted' : ($isEditingBank ? 'Editing' : 'Pending'); ?>
+                                <span style="font-size: 0.74rem; font-weight: 800; padding: 3px 10px; border-radius: 12px; <?php echo ($isBankApproved ? 'background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0;' : ($hasBankDetails && !$isEditingBank ? 'background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe;' : 'background: #f1f5f9; color: #64748b; border: 1px solid #cbd5e1;')); ?>">
+                                    <?php echo ($isBankApproved ? 'Approved' : ($hasBankDetails && !$isEditingBank ? 'Submitted' : ($isEditingBank ? 'Editing' : 'Pending'))); ?>
                                 </span>
                             </div>
                             <p style="font-size: 0.84rem; color: #64748b; margin-bottom: 16px;">Please provide your bank account information for payroll processing.</p>
@@ -6282,19 +6964,25 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                     <div style="color: #475569; margin-top: 4px;">Account No: <strong><?php echo htmlspecialchars($onboardingData['bank_details']['account_number']); ?></strong></div>
                                     <div style="color: #64748b; margin-top: 2px;">Account Name: <?php echo htmlspecialchars($onboardingData['bank_details']['account_name']); ?></div>
                                 </div>
-                                <a href="/admin/index.php?section=onboarding&edit_bank=1&target_user=<?php echo urlencode($activeOnboardingUser); ?>" class="btn-save-primary" style="width: 100%; justify-content: center; background: #ffffff; color: #0f172a; border: 1px solid #cbd5e1; text-decoration: none;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='#ffffff'">
-                                    <i class="fa-solid fa-pen-to-square" style="color: #dc2626;"></i> Edit Bank Details
-                                </a>
-                                <?php if ($isHRorAdmin): ?>
-                                    <form method="POST" action="/admin/index.php?section=onboarding" style="margin-top: 10px;">
-                                        <input type="hidden" name="action" value="admin_approve_onboarding_task">
-                                        <input type="hidden" name="target_user" value="<?php echo htmlspecialchars($activeOnboardingUser); ?>">
-                                        <input type="hidden" name="task_key" value="bank_details">
-                                        <input type="hidden" name="new_status" value="Approved">
-                                        <button type="submit" class="btn-save-primary" style="width: 100%; justify-content: center; background: #16a34a; border-color: #16a34a;">
-                                            <i class="fa-solid fa-check"></i> HR Approve Bank Details
-                                        </button>
-                                    </form>
+                                <?php if ($isBankApproved): ?>
+                                    <div style="padding: 12px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px; color: #166534; font-weight: 800; font-size: 0.86rem; text-align: center;">
+                                        <i class="fa-solid fa-check-circle" style="color: #16a34a;"></i> Bank Details Verified & Approved by HR
+                                    </div>
+                                <?php else: ?>
+                                    <a href="/admin/index.php?section=onboarding&edit_bank=1&target_user=<?php echo urlencode($activeOnboardingUser); ?>" class="btn-save-primary" style="width: 100%; justify-content: center; background: #ffffff; color: #0f172a; border: 1px solid #cbd5e1; text-decoration: none;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='#ffffff'">
+                                        <i class="fa-solid fa-pen-to-square" style="color: #dc2626;"></i> Edit Bank Details
+                                    </a>
+                                    <?php if ($isHRorAdmin): ?>
+                                        <form method="POST" action="/admin/index.php?section=onboarding" style="margin-top: 10px;">
+                                            <input type="hidden" name="action" value="admin_approve_onboarding_task">
+                                            <input type="hidden" name="target_user" value="<?php echo htmlspecialchars($activeOnboardingUser); ?>">
+                                            <input type="hidden" name="task_key" value="bank_details">
+                                            <input type="hidden" name="new_status" value="Approved">
+                                            <button type="submit" class="btn-save-primary" style="width: 100%; justify-content: center; background: #16a34a; border-color: #16a34a;">
+                                                <i class="fa-solid fa-check"></i> HR Approve Bank Details
+                                            </button>
+                                        </form>
+                                    <?php endif; ?>
                                 <?php endif; ?>
                             <?php else: ?>
                                 <form method="POST" action="/admin/index.php?section=onboarding" style="display: flex; flex-direction: column; gap: 10px;">
@@ -6325,33 +7013,58 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                     </div>
 
                     <!-- CARD 2: OFFER LETTER -->
+                    <?php 
+                        $offerInfo = $onboardingData['offer_letter'] ?? [];
+                        $offerStatus = $offerInfo['status'] ?? 'Pending';
+                        $offerIssued = !empty($offerInfo['issued']) || in_array($offerStatus, ['Approved', 'Issued']);
+                        $offerAccepted = !empty($offerInfo['accepted']) || $offerStatus === 'Approved';
+                    ?>
                     <div class="dashboard-card" style="margin-bottom: 0; display: flex; flex-direction: column; justify-content: space-between;">
                         <div>
                             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                                 <h3 style="font-size: 1.1rem; font-weight: 800; color: #0f172a; margin: 0;">Offer Letter</h3>
-                                <span style="font-size: 0.74rem; font-weight: 800; padding: 3px 10px; border-radius: 12px; background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0;">
-                                    Approved
+                                <span style="font-size: 0.74rem; font-weight: 800; padding: 3px 10px; border-radius: 12px; <?php echo ($offerAccepted ? 'background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0;' : ($offerIssued ? 'background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe;' : 'background: #f1f5f9; color: #64748b; border: 1px solid #cbd5e1;')); ?>">
+                                    <?php echo htmlspecialchars($offerAccepted ? 'Approved' : ($offerIssued ? 'Issued' : 'Pending')); ?>
                                 </span>
                             </div>
-                            <p style="font-size: 0.84rem; color: #64748b; margin-bottom: 16px;">Upload a signed copy of your offer letter.</p>
+                            <p style="font-size: 0.84rem; color: #64748b; margin-bottom: 14px;">Official employment offer letter and terms.</p>
 
-                            <div style="padding: 14px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px; text-align: center; color: #166534; font-weight: 800; font-size: 0.9rem; margin-bottom: 14px;">
-                                <i class="fa-solid fa-check-circle" style="color: #16a34a;"></i> Offer Letter Issued & Accepted
-                            </div>
+                            <?php if ($offerAccepted): ?>
+                                <div style="padding: 12px 14px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px; text-align: center; color: #166534; font-weight: 800; font-size: 0.88rem; margin-bottom: 12px;">
+                                    <i class="fa-solid fa-check-circle" style="color: #16a34a;"></i> Offer Letter Issued & Accepted
+                                </div>
+                            <?php elseif ($offerIssued): ?>
+                                <div style="padding: 12px 14px; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 10px; text-align: center; color: #1e40af; font-weight: 800; font-size: 0.88rem; margin-bottom: 12px;">
+                                    <i class="fa-solid fa-paper-plane" style="color: #2563eb;"></i> Offer Issued - Pending Acceptance
+                                </div>
+                            <?php else: ?>
+                                <div style="padding: 12px 14px; background: #fffbe6; border: 1px solid #fef08a; border-radius: 10px; text-align: center; color: #b45309; font-weight: 700; font-size: 0.84rem; margin-bottom: 12px;">
+                                    <i class="fa-solid fa-clock" style="color: #d97706;"></i> Awaiting Talent Manager Issuance
+                                </div>
+                            <?php endif; ?>
+
+                            <?php if (!empty($offerInfo['job_title'])): ?>
+                                <div style="font-size: 0.82rem; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px; margin-bottom: 12px;">
+                                    <div style="font-weight: 800; color: #0f172a;"><?php echo htmlspecialchars($offerInfo['job_title']); ?></div>
+                                    <div style="color: #64748b; font-size: 0.78rem; margin-top: 2px;">
+                                        <?php echo htmlspecialchars($offerInfo['department'] ?? 'Media Production Studio'); ?> • <?php echo htmlspecialchars($offerInfo['employment_type'] ?? 'Full-Time'); ?>
+                                    </div>
+                                    <?php if (!empty($offerInfo['salary'])): ?>
+                                        <div style="font-weight: 700; color: #166534; font-size: 0.8rem; margin-top: 4px;">
+                                            Salary: <?php echo htmlspecialchars($offerInfo['salary']); ?>
+                                        </div>
+                                    <?php endif; ?>
+                                </div>
+                            <?php endif; ?>
                         </div>
                         <div style="display: flex; flex-direction: column; gap: 8px;">
-                            <button type="button" class="btn-save-primary" style="width: 100%; justify-content: center; background: #0f172a;" onclick="alert('Opening official Offer Letter document...')">
+                            <button type="button" class="btn-save-primary" style="width: 100%; justify-content: center; background: #0f172a;" onclick="openOfferLetterViewModal()">
                                 <i class="fa-solid fa-eye"></i> View Offer Document
                             </button>
                             <?php if ($isHRorAdmin): ?>
-                                <form method="POST" action="/admin/index.php?section=onboarding" style="display: flex; flex-direction: column; gap: 6px; margin: 0;">
-                                    <input type="hidden" name="action" value="admin_provide_offer">
-                                    <input type="hidden" name="target_user" value="<?php echo htmlspecialchars($activeOnboardingUser); ?>">
-                                    <input type="text" name="document_url" value="<?php echo htmlspecialchars($onboardingData['offer_letter']['document_url'] ?? '/assets/docs/Offer_Letter.pdf'); ?>" placeholder="Offer Letter PDF Link" required style="padding: 8px; font-size: 0.8rem; border: 1px solid #cbd5e1; border-radius: 6px;">
-                                    <button type="submit" class="btn-save-primary" style="justify-content: center; background: #16a34a; border-color: #16a34a; font-size: 0.82rem;">
-                                        <i class="fa-solid fa-upload"></i> HR Re-Issue Offer Letter
-                                    </button>
-                                </form>
+                                <button type="button" class="btn-save-primary" style="width: 100%; justify-content: center; background: #16a34a; border-color: #16a34a; font-size: 0.82rem;" onclick="openIssueOfferModal()">
+                                    <i class="fa-solid fa-file-signature"></i> <?php echo ($offerIssued ? 'HR Re-Issue Offer Letter' : 'HR Issue Offer Letter'); ?>
+                                </button>
                             <?php endif; ?>
                         </div>
                     </div>
@@ -6393,13 +7106,15 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                     <?php 
                     $isEditingRef1 = isset($_GET['edit_ref1']) && $_GET['edit_ref1'] == '1';
                     $hasRef1Details = !empty($onboardingData['reference_1']['ref_name']);
+                    $ref1Status = $onboardingData['reference_1']['status'] ?? ($hasRef1Details ? 'Submitted' : 'Pending');
+                    $isRef1Approved = ($ref1Status === 'Approved');
                     ?>
                     <div class="dashboard-card" style="margin-bottom: 0; display: flex; flex-direction: column; justify-content: space-between;">
                         <div>
                             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                                 <h3 style="font-size: 1.1rem; font-weight: 800; color: #0f172a; margin: 0;">Reference 1</h3>
-                                <span style="font-size: 0.74rem; font-weight: 800; padding: 3px 10px; border-radius: 12px; <?php echo ($hasRef1Details && !$isEditingRef1) ? 'background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0;' : 'background: #f1f5f9; color: #64748b; border: 1px solid #cbd5e1;'; ?>">
-                                    <?php echo ($hasRef1Details && !$isEditingRef1) ? 'Submitted' : ($isEditingRef1 ? 'Editing' : 'Pending'); ?>
+                                <span style="font-size: 0.74rem; font-weight: 800; padding: 3px 10px; border-radius: 12px; <?php echo ($isRef1Approved ? 'background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0;' : ($hasRef1Details && !$isEditingRef1 ? 'background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe;' : 'background: #f1f5f9; color: #64748b; border: 1px solid #cbd5e1;')); ?>">
+                                    <?php echo ($isRef1Approved ? 'Approved' : ($hasRef1Details && !$isEditingRef1 ? 'Submitted' : ($isEditingRef1 ? 'Editing' : 'Pending'))); ?>
                                 </span>
                             </div>
                             <p style="font-size: 0.84rem; color: #64748b; margin-bottom: 16px;">Provide contact details for your first professional reference.</p>
@@ -6410,19 +7125,25 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                     <div style="color: #475569; margin-top: 3px;"><?php echo htmlspecialchars($onboardingData['reference_1']['relationship']); ?></div>
                                     <div style="color: #64748b; margin-top: 2px;"><?php echo htmlspecialchars($onboardingData['reference_1']['ref_contact']); ?></div>
                                 </div>
-                                <a href="/admin/index.php?section=onboarding&edit_ref1=1&target_user=<?php echo urlencode($activeOnboardingUser); ?>" class="btn-save-primary" style="width: 100%; justify-content: center; background: #ffffff; color: #0f172a; border: 1px solid #cbd5e1; text-decoration: none;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='#ffffff'">
-                                    <i class="fa-solid fa-pen-to-square" style="color: #dc2626;"></i> Edit Reference
-                                </a>
-                                <?php if ($isHRorAdmin): ?>
-                                    <form method="POST" action="/admin/index.php?section=onboarding" style="margin-top: 10px;">
-                                        <input type="hidden" name="action" value="admin_approve_onboarding_task">
-                                        <input type="hidden" name="target_user" value="<?php echo htmlspecialchars($activeOnboardingUser); ?>">
-                                        <input type="hidden" name="task_key" value="reference_1">
-                                        <input type="hidden" name="new_status" value="Approved">
-                                        <button type="submit" class="btn-save-primary" style="width: 100%; justify-content: center; background: #16a34a; border-color: #16a34a;">
-                                            <i class="fa-solid fa-check"></i> HR Verify Reference
-                                        </button>
-                                    </form>
+                                <?php if ($isRef1Approved): ?>
+                                    <div style="padding: 12px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px; color: #166534; font-weight: 800; font-size: 0.86rem; text-align: center;">
+                                        <i class="fa-solid fa-check-circle" style="color: #16a34a;"></i> Reference Verified & Approved by HR
+                                    </div>
+                                <?php else: ?>
+                                    <a href="/admin/index.php?section=onboarding&edit_ref1=1&target_user=<?php echo urlencode($activeOnboardingUser); ?>" class="btn-save-primary" style="width: 100%; justify-content: center; background: #ffffff; color: #0f172a; border: 1px solid #cbd5e1; text-decoration: none;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='#ffffff'">
+                                        <i class="fa-solid fa-pen-to-square" style="color: #dc2626;"></i> Edit Reference
+                                    </a>
+                                    <?php if ($isHRorAdmin): ?>
+                                        <form method="POST" action="/admin/index.php?section=onboarding" style="margin-top: 10px;">
+                                            <input type="hidden" name="action" value="admin_approve_onboarding_task">
+                                            <input type="hidden" name="target_user" value="<?php echo htmlspecialchars($activeOnboardingUser); ?>">
+                                            <input type="hidden" name="task_key" value="reference_1">
+                                            <input type="hidden" name="new_status" value="Approved">
+                                            <button type="submit" class="btn-save-primary" style="width: 100%; justify-content: center; background: #16a34a; border-color: #16a34a;">
+                                                <i class="fa-solid fa-check"></i> HR Verify Reference
+                                            </button>
+                                        </form>
+                                    <?php endif; ?>
                                 <?php endif; ?>
                             <?php else: ?>
                                 <form method="POST" action="/admin/index.php?section=onboarding" style="display: flex; flex-direction: column; gap: 10px;">
@@ -6494,30 +7215,41 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                     </div>
 
                     <!-- CARD 7: ID VERIFICATION -->
+                    <?php 
+                    $hasIdFile = !empty($onboardingData['id_verification']['file_url']);
+                    $idStatus = $onboardingData['id_verification']['status'] ?? ($hasIdFile ? 'Submitted' : 'Pending');
+                    $isIdApproved = ($idStatus === 'Approved');
+                    ?>
                     <div class="dashboard-card" style="margin-bottom: 0; display: flex; flex-direction: column; justify-content: space-between;">
                         <div>
                             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                                 <h3 style="font-size: 1.1rem; font-weight: 800; color: #0f172a; margin: 0;">ID Verification</h3>
-                                <span style="font-size: 0.74rem; font-weight: 800; padding: 3px 10px; border-radius: 12px; <?php echo (!empty($onboardingData['id_verification']['file_url'])) ? 'background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0;' : 'background: #f1f5f9; color: #64748b; border: 1px solid #cbd5e1;'; ?>">
-                                    <?php echo (!empty($onboardingData['id_verification']['file_url'])) ? 'Submitted' : 'Pending'; ?>
+                                <span style="font-size: 0.74rem; font-weight: 800; padding: 3px 10px; border-radius: 12px; <?php echo ($isIdApproved ? 'background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0;' : ($hasIdFile ? 'background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe;' : 'background: #f1f5f9; color: #64748b; border: 1px solid #cbd5e1;')); ?>">
+                                    <?php echo ($isIdApproved ? 'Approved' : ($hasIdFile ? 'Submitted' : 'Pending')); ?>
                                 </span>
                             </div>
                             <p style="font-size: 0.84rem; color: #64748b; margin-bottom: 16px;">Upload government-issued ID or Tax Identification document.</p>
 
-                            <?php if (!empty($onboardingData['id_verification']['file_url'])): ?>
-                                <div style="padding: 12px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px; color: #166534; font-weight: 800; font-size: 0.86rem; text-align: center;">
-                                    <i class="fa-solid fa-id-card"></i> ID Document Uploaded & Verified
-                                </div>
-                                <?php if ($isHRorAdmin): ?>
-                                    <form method="POST" action="/admin/index.php?section=onboarding" style="margin-top: 10px;">
-                                        <input type="hidden" name="action" value="admin_approve_onboarding_task">
-                                        <input type="hidden" name="target_user" value="<?php echo htmlspecialchars($activeOnboardingUser); ?>">
-                                        <input type="hidden" name="task_key" value="id_verification">
-                                        <input type="hidden" name="new_status" value="Approved">
-                                        <button type="submit" class="btn-save-primary" style="width: 100%; justify-content: center; background: #16a34a; border-color: #16a34a;">
-                                            <i class="fa-solid fa-check"></i> HR Approve ID Verification
-                                        </button>
-                                    </form>
+                            <?php if ($hasIdFile): ?>
+                                <?php if ($isIdApproved): ?>
+                                    <div style="padding: 12px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px; color: #166534; font-weight: 800; font-size: 0.86rem; text-align: center;">
+                                        <i class="fa-solid fa-check-circle" style="color: #16a34a;"></i> ID Verified & Approved by HR
+                                    </div>
+                                <?php else: ?>
+                                    <div style="padding: 12px; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 10px; color: #1e40af; font-weight: 800; font-size: 0.86rem; text-align: center; margin-bottom: 10px;">
+                                        <i class="fa-solid fa-id-card"></i> ID Document Uploaded (Pending HR Approval)
+                                    </div>
+                                    <?php if ($isHRorAdmin): ?>
+                                        <form method="POST" action="/admin/index.php?section=onboarding">
+                                            <input type="hidden" name="action" value="admin_approve_onboarding_task">
+                                            <input type="hidden" name="target_user" value="<?php echo htmlspecialchars($activeOnboardingUser); ?>">
+                                            <input type="hidden" name="task_key" value="id_verification">
+                                            <input type="hidden" name="new_status" value="Approved">
+                                            <button type="submit" class="btn-save-primary" style="width: 100%; justify-content: center; background: #16a34a; border-color: #16a34a;">
+                                                <i class="fa-solid fa-check"></i> HR Approve ID Verification
+                                            </button>
+                                        </form>
+                                    <?php endif; ?>
                                 <?php endif; ?>
                             <?php else: ?>
                                 <form method="POST" action="/admin/index.php?section=onboarding" style="display: flex; flex-direction: column; gap: 10px;">
@@ -6530,6 +7262,230 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                     </div>
 
                 </div>
+
+                <!-- ISSUE OFFER LETTER MODAL (TALENT MANAGER / HR) -->
+                <div id="issueOfferModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15, 23, 42, 0.75); backdrop-filter: blur(6px); z-index: 100000; align-items: center; justify-content: center; padding: 20px; animation: fadeInModal 0.2s ease;">
+                    <div style="background: #ffffff; border-radius: 20px; max-width: 620px; width: 100%; max-height: 90vh; overflow-y: auto; padding: 30px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.3); border: 1px solid #e2e8f0; position: relative;">
+                        
+                        <button type="button" onclick="closeIssueOfferModal()" style="position: absolute; top: 18px; right: 18px; background: #f1f5f9; border: none; width: 34px; height: 34px; border-radius: 50%; color: #64748b; font-size: 1rem; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.15s ease;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='#f1f5f9'">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+
+                        <div style="display: flex; align-items: center; gap: 14px; margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid #f1f5f9;">
+                            <div style="width: 50px; height: 50px; border-radius: 14px; background: #f0fdf4; border: 1px solid #bbf7d0; color: #16a34a; display: flex; align-items: center; justify-content: center; font-size: 1.4rem;">
+                                <i class="fa-solid fa-file-signature"></i>
+                            </div>
+                            <div>
+                                <h2 style="font-size: 1.3rem; font-weight: 800; color: #0f172a; margin: 0 0 2px 0;">Issue Official Offer Letter</h2>
+                                <p style="font-size: 0.84rem; color: #64748b; margin: 0;">Issuing offer documentation for candidate <strong style="color: #0f172a;">@<?php echo htmlspecialchars($activeOnboardingUser); ?></strong></p>
+                            </div>
+                        </div>
+
+                        <form method="POST" action="/admin/index.php?section=onboarding" style="display: flex; flex-direction: column; gap: 16px;">
+                            <input type="hidden" name="action" value="admin_provide_offer">
+                            <input type="hidden" name="target_user" value="<?php echo htmlspecialchars($activeOnboardingUser); ?>">
+
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+                                <div>
+                                    <label style="display: block; font-size: 0.8rem; font-weight: 700; color: #334155; margin-bottom: 6px;">Job Title / Position <span style="color: #ef4444;">*</span></label>
+                                    <input type="text" name="job_title" value="<?php echo htmlspecialchars($onboardingData['offer_letter']['job_title'] ?? 'Senior Video Editor & Cinematographer'); ?>" placeholder="e.g. Senior Video Editor" required style="width: 100%; padding: 10px 12px; font-size: 0.85rem; border: 1px solid #cbd5e1; border-radius: 8px; box-sizing: border-box;">
+                                </div>
+                                <div>
+                                    <label style="display: block; font-size: 0.8rem; font-weight: 700; color: #334155; margin-bottom: 6px;">Department <span style="color: #ef4444;">*</span></label>
+                                    <input type="text" name="department" value="<?php echo htmlspecialchars($onboardingData['offer_letter']['department'] ?? 'Media Production & Post Studio'); ?>" placeholder="e.g. Media Production" required style="width: 100%; padding: 10px 12px; font-size: 0.85rem; border: 1px solid #cbd5e1; border-radius: 8px; box-sizing: border-box;">
+                                </div>
+                            </div>
+
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+                                <div>
+                                    <label style="display: block; font-size: 0.8rem; font-weight: 700; color: #334155; margin-bottom: 6px;">Employment Type</label>
+                                    <select name="employment_type" style="width: 100%; padding: 10px 12px; font-size: 0.85rem; border: 1px solid #cbd5e1; border-radius: 8px; background: #ffffff; box-sizing: border-box;">
+                                        <?php 
+                                            $currEmpType = $onboardingData['offer_letter']['employment_type'] ?? 'Full-Time';
+                                            $empOptions = ['Full-Time', 'Part-Time', 'Contract', 'Hybrid', 'Remote'];
+                                            foreach ($empOptions as $opt):
+                                        ?>
+                                            <option value="<?php echo $opt; ?>" <?php echo ($currEmpType === $opt) ? 'selected' : ''; ?>><?php echo $opt; ?></option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label style="display: block; font-size: 0.8rem; font-weight: 700; color: #334155; margin-bottom: 6px;">Monthly Compensation <span style="color: #ef4444;">*</span></label>
+                                    <div style="display: flex; gap: 6px;">
+                                        <select name="currency" style="width: 98px; padding: 10px 8px; font-size: 0.84rem; border: 1px solid #cbd5e1; border-radius: 8px; background: #f8fafc; font-weight: 700; color: #0f172a; box-sizing: border-box;">
+                                            <?php 
+                                                $currSelected = $onboardingData['offer_letter']['currency'] ?? 'NGN';
+                                                $currencies = [
+                                                    'NGN' => '₦ (NGN)',
+                                                    'USD' => '$ (USD)',
+                                                    'EUR' => '€ (EUR)',
+                                                    'GBP' => '£ (GBP)'
+                                                ];
+                                                foreach ($currencies as $cCode => $cLabel):
+                                            ?>
+                                                <option value="<?php echo $cCode; ?>" <?php echo ($currSelected === $cCode) ? 'selected' : ''; ?>><?php echo $cLabel; ?></option>
+                                            <?php endforeach; ?>
+                                        </select>
+                                        <?php 
+                                            $rawSalaryVal = $onboardingData['offer_letter']['salary'] ?? '450,000 / month';
+                                            $cleanSalaryVal = preg_replace('/^[₦$€£\s]+/u', '', $rawSalaryVal);
+                                        ?>
+                                        <input type="text" name="salary" value="<?php echo htmlspecialchars($cleanSalaryVal); ?>" placeholder="e.g. 450,000 / month" required style="flex: 1; padding: 10px 12px; font-size: 0.85rem; border: 1px solid #cbd5e1; border-radius: 8px; box-sizing: border-box;">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px;">
+                                <div>
+                                    <label style="display: block; font-size: 0.78rem; font-weight: 700; color: #334155; margin-bottom: 6px;">Proposed Start Date</label>
+                                    <input type="date" name="start_date" value="<?php echo htmlspecialchars($onboardingData['offer_letter']['start_date'] ?? date('Y-m-d', strtotime('+7 days'))); ?>" style="width: 100%; padding: 9px 10px; font-size: 0.82rem; border: 1px solid #cbd5e1; border-radius: 8px; box-sizing: border-box;">
+                                </div>
+                                <div>
+                                    <label style="display: block; font-size: 0.78rem; font-weight: 700; color: #334155; margin-bottom: 6px;">Probation Period</label>
+                                    <select name="probation_period" style="width: 100%; padding: 9px 10px; font-size: 0.82rem; border: 1px solid #cbd5e1; border-radius: 8px; background: #ffffff; box-sizing: border-box;">
+                                        <?php 
+                                            $currProb = $onboardingData['offer_letter']['probation_period'] ?? '3 Months';
+                                            $probOptions = ['3 Months', '6 Months', '1 Month', 'None'];
+                                            foreach ($probOptions as $pOpt):
+                                        ?>
+                                            <option value="<?php echo $pOpt; ?>" <?php echo ($currProb === $pOpt) ? 'selected' : ''; ?>><?php echo $pOpt; ?></option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label style="display: block; font-size: 0.78rem; font-weight: 700; color: #334155; margin-bottom: 6px;">Response Deadline</label>
+                                    <input type="date" name="expiry_date" value="<?php echo htmlspecialchars($onboardingData['offer_letter']['expiry_date'] ?? date('Y-m-d', strtotime('+14 days'))); ?>" style="width: 100%; padding: 9px 10px; font-size: 0.82rem; border: 1px solid #cbd5e1; border-radius: 8px; box-sizing: border-box;">
+                                </div>
+                            </div>
+
+                            <div>
+                                <label style="display: block; font-size: 0.8rem; font-weight: 700; color: #334155; margin-bottom: 6px;">Official PDF Document Link</label>
+                                <input type="text" name="document_url" value="<?php echo htmlspecialchars($onboardingData['offer_letter']['document_url'] ?? '/assets/docs/Offer_Letter_Falhen.pdf'); ?>" placeholder="e.g. /assets/docs/Offer_Letter_Falhen.pdf" required style="width: 100%; padding: 10px 12px; font-size: 0.85rem; border: 1px solid #cbd5e1; border-radius: 8px; box-sizing: border-box;">
+                            </div>
+
+                            <div>
+                                <label style="display: block; font-size: 0.8rem; font-weight: 700; color: #334155; margin-bottom: 6px;">Welcome Message & Special Terms (Optional)</label>
+                                <textarea name="notes" rows="3" placeholder="Add custom greeting or details regarding allowances, work tools, equipment dispatch, etc..." style="width: 100%; padding: 10px 12px; font-size: 0.85rem; border: 1px solid #cbd5e1; border-radius: 8px; box-sizing: border-box; font-family: inherit; resize: vertical;"><?php echo htmlspecialchars($onboardingData['offer_letter']['notes'] ?? 'Welcome to Falhen Media! We are thrilled to invite you to join our creative production team.'); ?></textarea>
+                            </div>
+
+                            <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 10px; padding-top: 14px; border-top: 1px solid #f1f5f9;">
+                                <button type="button" onclick="closeIssueOfferModal()" style="padding: 10px 18px; background: #f1f5f9; color: #475569; border: none; border-radius: 8px; font-weight: 700; font-size: 0.85rem; cursor: pointer;">Cancel</button>
+                                <button type="submit" class="btn-save-primary" style="padding: 10px 22px; background: #16a34a; border-color: #16a34a; font-size: 0.85rem; font-weight: 700;">
+                                    <i class="fa-solid fa-paper-plane"></i> Generate & Issue Offer Letter
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- OFFER LETTER DOCUMENT VIEW MODAL -->
+                <div id="viewOfferModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15, 23, 42, 0.78); backdrop-filter: blur(6px); z-index: 100000; align-items: center; justify-content: center; padding: 20px; animation: fadeInModal 0.2s ease;">
+                    <div style="background: #ffffff; border-radius: 20px; max-width: 680px; width: 100%; max-height: 90vh; overflow-y: auto; padding: 32px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.3); border: 1px solid #e2e8f0; position: relative;">
+                        
+                        <button type="button" onclick="closeOfferLetterViewModal()" style="position: absolute; top: 18px; right: 18px; background: #f1f5f9; border: none; width: 34px; height: 34px; border-radius: 50%; color: #64748b; font-size: 1rem; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.15s ease;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='#f1f5f9'">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+
+                        <!-- BRANDING HEADER -->
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start; padding-bottom: 20px; margin-bottom: 20px; border-bottom: 2px solid #f1f5f9;">
+                            <div>
+                                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 6px;">
+                                    <div style="width: 38px; height: 38px; border-radius: 10px; background: #dc2626; color: #ffffff; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 1.2rem;">F</div>
+                                    <span style="font-size: 1.3rem; font-weight: 900; color: #0f172a;">Falhen <span style="color: #dc2626;">Media</span></span>
+                                </div>
+                                <div style="font-size: 0.8rem; color: #64748b;">Human Resources & Talent Acquisition Studio</div>
+                            </div>
+                            <div style="text-align: right;">
+                                <span style="font-size: 0.76rem; font-weight: 800; padding: 4px 12px; border-radius: 14px; <?php echo ($offerAccepted ? 'background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0;' : ($offerIssued ? 'background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe;' : 'background: #f1f5f9; color: #64748b; border: 1px solid #cbd5e1;')); ?>">
+                                    <i class="fa-solid <?php echo ($offerAccepted ? 'fa-check-circle' : ($offerIssued ? 'fa-paper-plane' : 'fa-clock')); ?>"></i>
+                                    <?php echo htmlspecialchars($offerAccepted ? 'Accepted & Signed' : ($offerIssued ? 'Official Offer Issued' : 'Draft / Pending')); ?>
+                                </span>
+                                <div style="font-size: 0.76rem; color: #94a3b8; margin-top: 6px;">Ref: FLH-OFFER-<?php echo strtoupper(substr(md5($activeOnboardingUser), 0, 6)); ?></div>
+                            </div>
+                        </div>
+
+                        <!-- OFFER CONTENT BODY -->
+                        <div style="display: flex; flex-direction: column; gap: 18px;">
+                            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 14px; padding: 18px;">
+                                <h3 style="font-size: 1.15rem; font-weight: 800; color: #0f172a; margin: 0 0 4px 0;">
+                                    <?php echo htmlspecialchars($onboardingData['offer_letter']['job_title'] ?? 'Senior Video Editor & Cinematographer'); ?>
+                                </h3>
+                                <div style="font-size: 0.84rem; color: #64748b; display: flex; gap: 14px; flex-wrap: wrap; margin-bottom: 14px;">
+                                    <span><i class="fa-solid fa-building" style="color: #2563eb;"></i> <?php echo htmlspecialchars($onboardingData['offer_letter']['department'] ?? 'Media Production & Post Studio'); ?></span>
+                                    <span><i class="fa-solid fa-briefcase" style="color: #16a34a;"></i> <?php echo htmlspecialchars($onboardingData['offer_letter']['employment_type'] ?? 'Full-Time'); ?></span>
+                                </div>
+
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; background: #ffffff; padding: 14px; border-radius: 10px; border: 1px solid #cbd5e1;">
+                                    <div>
+                                        <span style="display: block; font-size: 0.75rem; color: #64748b; font-weight: 700; text-transform: uppercase;">Monthly Compensation</span>
+                                        <strong style="font-size: 1rem; color: #166534; font-weight: 800;"><?php echo htmlspecialchars($onboardingData['offer_letter']['salary'] ?? '₦450,000 / month'); ?></strong>
+                                    </div>
+                                    <div>
+                                        <span style="display: block; font-size: 0.75rem; color: #64748b; font-weight: 700; text-transform: uppercase;">Start Date</span>
+                                        <strong style="font-size: 0.95rem; color: #0f172a; font-weight: 800;"><?php echo htmlspecialchars($onboardingData['offer_letter']['start_date'] ?? date('M d, Y', strtotime('+7 days'))); ?></strong>
+                                    </div>
+                                    <div>
+                                        <span style="display: block; font-size: 0.75rem; color: #64748b; font-weight: 700; text-transform: uppercase;">Probation Period</span>
+                                        <strong style="font-size: 0.9rem; color: #0f172a; font-weight: 700;"><?php echo htmlspecialchars($onboardingData['offer_letter']['probation_period'] ?? '3 Months'); ?></strong>
+                                    </div>
+                                    <div>
+                                        <span style="display: block; font-size: 0.75rem; color: #64748b; font-weight: 700; text-transform: uppercase;">Issued By</span>
+                                        <strong style="font-size: 0.9rem; color: #0f172a; font-weight: 700;"><?php echo htmlspecialchars($onboardingData['offer_letter']['issued_by'] ?? 'Talent Manager (Mojisola Emjay)'); ?></strong>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <?php if (!empty($onboardingData['offer_letter']['notes'])): ?>
+                                <div style="background: #fffbe6; border: 1px solid #fef08a; border-radius: 12px; padding: 16px; color: #92400e; font-size: 0.86rem; line-height: 1.5;">
+                                    <div style="font-weight: 800; margin-bottom: 4px; display: flex; align-items: center; gap: 6px;">
+                                        <i class="fa-solid fa-note-sticky" style="color: #d97706;"></i> Talent Manager Message & Terms:
+                                    </div>
+                                    <?php echo nl2br(htmlspecialchars($onboardingData['offer_letter']['notes'])); ?>
+                                </div>
+                            <?php endif; ?>
+
+                            <div style="display: flex; align-items: center; justify-content: space-between; background: #f8fafc; padding: 12px 16px; border-radius: 10px; border: 1px solid #e2e8f0;">
+                                <div style="display: flex; align-items: center; gap: 10px;">
+                                    <i class="fa-solid fa-file-pdf" style="font-size: 1.5rem; color: #dc2626;"></i>
+                                    <div>
+                                        <div style="font-size: 0.85rem; font-weight: 700; color: #0f172a;">Official Offer Document File</div>
+                                        <div style="font-size: 0.76rem; color: #64748b;"><?php echo htmlspecialchars($onboardingData['offer_letter']['document_url'] ?? '/assets/docs/Offer_Letter_Falhen.pdf'); ?></div>
+                                    </div>
+                                </div>
+                                <a href="<?php echo htmlspecialchars($onboardingData['offer_letter']['document_url'] ?? '/assets/docs/Offer_Letter_Falhen.pdf'); ?>" target="_blank" class="btn-save-primary" style="padding: 8px 14px; font-size: 0.8rem; background: #0f172a; text-decoration: none;">
+                                    <i class="fa-solid fa-download"></i> Open PDF
+                                </a>
+                            </div>
+                        </div>
+
+                        <!-- FOOTER ACTIONS -->
+                        <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 22px; padding-top: 16px; border-top: 1px solid #f1f5f9;">
+                            <button type="button" onclick="closeOfferLetterViewModal()" style="padding: 10px 20px; background: #f1f5f9; color: #475569; border: none; border-radius: 8px; font-weight: 700; font-size: 0.85rem; cursor: pointer;">Close</button>
+                        </div>
+                    </div>
+                </div>
+
+                <script>
+                function openIssueOfferModal() {
+                    var modal = document.getElementById('issueOfferModal');
+                    if (modal) modal.style.display = 'flex';
+                }
+
+                function closeIssueOfferModal() {
+                    var modal = document.getElementById('issueOfferModal');
+                    if (modal) modal.style.display = 'none';
+                }
+
+                function openOfferLetterViewModal() {
+                    var modal = document.getElementById('viewOfferModal');
+                    if (modal) modal.style.display = 'flex';
+                }
+
+                function closeOfferLetterViewModal() {
+                    var modal = document.getElementById('viewOfferModal');
+                    if (modal) modal.style.display = 'none';
+                }
+                </script>
 
             <?php elseif ($activeSection === 'directory'): ?>
                 <!-- SECTION: STAFF DIRECTORY -->
@@ -6806,11 +7762,9 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                         <h1 class="section-header-title">Company Announcements & Bulletins</h1>
                         <p class="section-header-desc">Official company broadcasts, policy updates, and studio news.</p>
                     </div>
-                    <?php if ($isHRorAdmin): ?>
-                        <button onclick="openPostAnnouncementModal()" class="btn-save-primary">
-                            <i class="fa-solid fa-plus"></i> Post Announcement
-                        </button>
-                    <?php endif; ?>
+                    <button onclick="openPostAnnouncementModal()" class="btn-save-primary">
+                        <i class="fa-solid fa-plus"></i> Post Announcement
+                    </button>
                 </div>
 
                 <!-- CATEGORY FILTER TABS (ALL UPDATES, GENERAL, IMPORTANT, EVENTS) -->
@@ -6869,88 +7823,105 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                     </div>
                 <?php endif; ?>
 
-                <!-- POST ANNOUNCEMENT MODAL (HR & ADMIN) -->
-                <?php if ($isHRorAdmin): ?>
-                    <div id="postAnnouncementModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15, 23, 42, 0.68); backdrop-filter: blur(5px); z-index: 99999; align-items: center; justify-content: center; padding: 20px; animation: fadeInModal 0.2s ease;">
-                        <div style="background: #ffffff; border-radius: 20px; max-width: 500px; width: 100%; padding: 32px 28px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); border: 1px solid #e2e8f0; position: relative;">
-                            
-                            <button onclick="closePostAnnouncementModal()" style="position: absolute; top: 16px; right: 16px; background: #f1f5f9; border: none; width: 32px; height: 32px; border-radius: 50%; color: #64748b; font-size: 1rem; cursor: pointer; display: flex; align-items: center; justify-content: center;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='#f1f5f9'">
-                                <i class="fa-solid fa-xmark"></i>
-                            </button>
+                <!-- POST ANNOUNCEMENT MODAL -->
+                <div id="postAnnouncementModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15, 23, 42, 0.68); backdrop-filter: blur(5px); z-index: 99999; align-items: center; justify-content: center; padding: 20px; animation: fadeInModal 0.2s ease;">
+                    <div style="background: #ffffff; border-radius: 20px; max-width: 500px; width: 100%; padding: 32px 28px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); border: 1px solid #e2e8f0; position: relative;">
+                        
+                        <button onclick="closePostAnnouncementModal()" style="position: absolute; top: 16px; right: 16px; background: #f1f5f9; border: none; width: 32px; height: 32px; border-radius: 50%; color: #64748b; font-size: 1rem; cursor: pointer; display: flex; align-items: center; justify-content: center;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='#f1f5f9'">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
 
-                            <div style="text-align: center; margin-bottom: 20px;">
-                                <div style="width: 54px; height: 54px; border-radius: 50%; background: #fef2f2; border: 1px solid #fecaca; color: #dc2626; display: flex; align-items: center; justify-content: center; margin: 0 auto 12px auto; font-size: 1.5rem;">
-                                    <i class="fa-solid fa-bullhorn"></i>
-                                </div>
-                                <h2 style="font-size: 1.3rem; font-weight: 800; color: #0f172a; margin: 0 0 4px 0;">Post Company Announcement</h2>
-                                <p style="font-size: 0.84rem; color: #64748b; margin: 0;">Broadcast news to all studio staff members.</p>
+                        <div style="text-align: center; margin-bottom: 20px;">
+                            <div style="width: 54px; height: 54px; border-radius: 50%; background: #fef2f2; border: 1px solid #fecaca; color: #dc2626; display: flex; align-items: center; justify-content: center; margin: 0 auto 12px auto; font-size: 1.5rem;">
+                                <i class="fa-solid fa-bullhorn"></i>
+                            </div>
+                            <h2 style="font-size: 1.3rem; font-weight: 800; color: #0f172a; margin: 0 0 4px 0;">Post Company Announcement</h2>
+                            <p style="font-size: 0.84rem; color: #64748b; margin: 0;">Broadcast news to all studio staff members.</p>
+                        </div>
+
+                        <form method="POST" action="/admin/index.php" style="display: flex; flex-direction: column; gap: 14px;">
+                            <input type="hidden" name="action" value="post_announcement">
+
+                            <div>
+                                <label style="font-size: 0.76rem; font-weight: 700; color: #475569; display: block; margin-bottom: 4px;">Announcement Title</label>
+                                <input type="text" name="title" placeholder="Announcement Title" required style="width: 100%; padding: 10px; font-size: 0.86rem; border: 1px solid #cbd5e1; border-radius: 8px;">
                             </div>
 
-                            <form method="POST" action="/admin/index.php" style="display: flex; flex-direction: column; gap: 14px;">
-                                <input type="hidden" name="action" value="post_announcement">
+                            <div>
+                                <label style="font-size: 0.76rem; font-weight: 700; color: #475569; display: block; margin-bottom: 4px;">Category</label>
+                                <select name="category" style="width: 100%; padding: 10px; font-size: 0.86rem; border: 1px solid #cbd5e1; border-radius: 8px;">
+                                    <option value="General">General</option>
+                                    <option value="Important">Important</option>
+                                    <option value="Events">Events</option>
+                                </select>
+                            </div>
 
-                                <div>
-                                    <label style="font-size: 0.76rem; font-weight: 700; color: #475569; display: block; margin-bottom: 4px;">Announcement Title</label>
-                                    <input type="text" name="title" placeholder="Announcement Title" required style="width: 100%; padding: 10px; font-size: 0.86rem; border: 1px solid #cbd5e1; border-radius: 8px;">
-                                </div>
+                            <div>
+                                <label style="font-size: 0.76rem; font-weight: 700; color: #475569; display: block; margin-bottom: 4px;">Content / Message</label>
+                                <textarea name="content" rows="4" placeholder="Write full announcement content..." required style="width: 100%; padding: 10px; font-size: 0.86rem; border: 1px solid #cbd5e1; border-radius: 8px; font-family: inherit;"></textarea>
+                            </div>
 
-                                <div>
-                                    <label style="font-size: 0.76rem; font-weight: 700; color: #475569; display: block; margin-bottom: 4px;">Category</label>
-                                    <select name="category" style="width: 100%; padding: 10px; font-size: 0.86rem; border: 1px solid #cbd5e1; border-radius: 8px;">
-                                        <option value="General">General</option>
-                                        <option value="Important">Important</option>
-                                        <option value="Events">Events</option>
-                                    </select>
-                                </div>
-
-                                <div>
-                                    <label style="font-size: 0.76rem; font-weight: 700; color: #475569; display: block; margin-bottom: 4px;">Content / Message</label>
-                                    <textarea name="content" rows="4" placeholder="Write full announcement content..." required style="width: 100%; padding: 10px; font-size: 0.86rem; border: 1px solid #cbd5e1; border-radius: 8px; font-family: inherit;"></textarea>
-                                </div>
-
-                                <div style="display: flex; gap: 8px; margin-top: 6px;">
-                                    <button type="submit" class="btn-save-primary" style="flex: 1; justify-content: center; background: #dc2626; border-color: #dc2626;">
-                                        <i class="fa-solid fa-paper-plane"></i> Publish Announcement
-                                    </button>
-                                    <button type="button" onclick="closePostAnnouncementModal()" style="padding: 10px 14px; background: #f1f5f9; color: #475569; border: none; border-radius: 8px; font-weight: 700; font-size: 0.84rem; cursor: pointer;">
-                                        Cancel
-                                    </button>
-                                </div>
-                            </form>
-                        </div>
+                            <div style="display: flex; gap: 8px; margin-top: 6px;">
+                                <button type="submit" class="btn-save-primary" style="flex: 1; justify-content: center; background: #dc2626; border-color: #dc2626;">
+                                    <i class="fa-solid fa-paper-plane"></i> Publish Announcement
+                                </button>
+                                <button type="button" onclick="closePostAnnouncementModal()" style="padding: 10px 14px; background: #f1f5f9; color: #475569; border: none; border-radius: 8px; font-weight: 700; font-size: 0.84rem; cursor: pointer;">
+                                    Cancel
+                                </button>
+                            </div>
+                        </form>
                     </div>
+                </div>
 
-                    <script>
-                    function openPostAnnouncementModal() {
-                        var m = document.getElementById('postAnnouncementModal');
-                        if (m) m.style.display = 'flex';
-                    }
-                    function closePostAnnouncementModal() {
-                        var m = document.getElementById('postAnnouncementModal');
-                        if (m) m.style.display = 'none';
-                    }
-                    </script>
-                <?php endif; ?>
+                <script>
+                function openPostAnnouncementModal() {
+                    var m = document.getElementById('postAnnouncementModal');
+                    if (m) m.style.display = 'flex';
+                }
+                function closePostAnnouncementModal() {
+                    var m = document.getElementById('postAnnouncementModal');
+                    if (m) m.style.display = 'none';
+                }
+                </script>
 
             <?php elseif ($activeSection === 'attendance'): ?>
                 <!-- SECTION: MY ATTENDANCE -->
                 <?php 
                 $todayAttendance = getUserTodayAttendance($username);
-                $userAttendanceLogs = getAttendanceLogs($username);
+                $allAttendanceLogs = getAttendanceLogs($username, $userRole, $userEmail);
+
+                // Tab selection for Talent Manager & Admin
+                $activeAttTab = trim($_GET['tab'] ?? 'my');
+                if (!in_array($activeAttTab, ['my', 'company'], true)) {
+                    $activeAttTab = 'my';
+                }
+
+                // Filter personal logs for user's own stats
+                $personalAttendanceLogs = array_values(array_filter($allAttendanceLogs, function($item) use ($username) {
+                    return strtolower(trim($item['username'] ?? '')) === strtolower(trim($username));
+                }));
+
+                // Determine display logs based on active tab
+                if (canViewAllAttendanceLogs($userRole, $userEmail, $username) && $activeAttTab === 'company') {
+                    $displayAttendanceLogs = $allAttendanceLogs;
+                } else {
+                    $displayAttendanceLogs = $personalAttendanceLogs;
+                }
+
                 $attWorkState = $todayAttendance['work_state'] ?? ($todayAttendance ? (empty($todayAttendance['clock_out']) ? (($todayAttendance['status'] ?? '') === 'On Break' ? 'on_break' : 'working') : 'completed') : 'not_clocked_in');
 
                 // Live timer calculation
                 $clockInTs = (!empty($todayAttendance['clock_in'])) ? strtotime(date('Y-m-d') . ' ' . $todayAttendance['clock_in']) : 0;
                 $initialElapsed = ($clockInTs > 0 && empty($todayAttendance['clock_out'])) ? max(0, time() - $clockInTs) : 0;
 
-                // Stats calculation for Hours This Week & Month
+                // Stats calculation for Hours This Week & Month based on personal logs
                 $dayMinsMap = ['Sun' => 0, 'Mon' => 0, 'Tue' => 0, 'Wed' => 0, 'Thu' => 0, 'Fri' => 0, 'Sat' => 0];
                 $totalWeekMins = 0;
                 $totalMonthMins = 0;
                 $currentMonthStr = date('Y-m');
                 $thisSundayTs = strtotime('last Sunday', strtotime('tomorrow'));
 
-                foreach ($userAttendanceLogs as $logItem) {
+                foreach ($personalAttendanceLogs as $logItem) {
                     $logDate = $logItem['date'] ?? '';
                     $dur = $logItem['duration'] ?? '';
                     $mins = 0;
@@ -7126,11 +8097,53 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                 </script>
 
                 <div class="dashboard-card">
-                    <div class="card-header-row">
-                        <div class="card-icon-badge"><i class="fa-solid fa-calendar-days"></i></div>
-                        <div class="card-title-text">Recent Attendance History</div>
+                    <div class="card-header-row" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <div class="card-icon-badge"><i class="fa-solid fa-calendar-days"></i></div>
+                            <div class="card-title-text">
+                                <?php echo (canViewAllAttendanceLogs($userRole, $userEmail, $username) && $activeAttTab === 'company') ? 'Company Attendance History' : 'Recent Attendance History'; ?>
+                            </div>
+                        </div>
+
+                        <?php if (canViewAllAttendanceLogs($userRole, $userEmail, $username)): ?>
+                            <div style="display: flex; align-items: center; gap: 6px; background: #f1f5f9; padding: 4px; border-radius: 10px; border: 1px solid #cbd5e1;">
+                                <a href="/admin/index.php?section=attendance&tab=my" style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; font-size: 0.82rem; font-weight: 700; text-decoration: none; border-radius: 7px; transition: all 0.15s ease; <?php echo ($activeAttTab === 'my') ? 'background: #ffffff; color: #dc2626; box-shadow: 0 1px 3px rgba(0,0,0,0.08);' : 'color: #475569;'; ?>">
+                                    <i class="fa-solid fa-user-clock" style="font-size: 0.8rem; <?php echo ($activeAttTab === 'my') ? 'color: #dc2626;' : 'color: #64748b;'; ?>"></i>
+                                    <span>My Attendance</span>
+                                </a>
+                                <a href="/admin/index.php?section=attendance&tab=company" style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; font-size: 0.82rem; font-weight: 700; text-decoration: none; border-radius: 7px; transition: all 0.15s ease; <?php echo ($activeAttTab === 'company') ? 'background: #ffffff; color: #dc2626; box-shadow: 0 1px 3px rgba(0,0,0,0.08);' : 'color: #475569;'; ?>">
+                                    <i class="fa-solid fa-building-user" style="font-size: 0.8rem; <?php echo ($activeAttTab === 'company') ? 'color: #dc2626;' : 'color: #64748b;'; ?>"></i>
+                                    <span>Company History</span>
+                                </a>
+                            </div>
+                        <?php endif; ?>
                     </div>
-                    <table style="width: 100%; border-collapse: collapse; margin-top: 14px; font-size: 0.88rem;">
+                    <!-- FILTER & SEARCH TOOLBAR -->
+                    <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-top: 18px; margin-bottom: 16px; background: #f8fafc; padding: 12px 16px; border-radius: 12px; border: 1px solid #e2e8f0;">
+                        
+                        <!-- SEARCH BY STAFF NAME -->
+                        <div style="position: relative; flex: 1; min-width: 220px;">
+                            <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 0.85rem;"></i>
+                            <input type="text" id="attSearchName" placeholder="Search by staff name..." onkeyup="filterAttendanceTable()" oninput="filterAttendanceTable()" style="width: 100%; padding: 9px 12px 9px 38px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.86rem; color: #0f172a; outline: none; background: #ffffff; transition: border-color 0.15s ease;" onfocus="this.style.borderColor='#dc2626'" onblur="this.style.borderColor='#cbd5e1'">
+                        </div>
+
+                        <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                            <!-- FILTER BY DATE -->
+                            <div style="display: flex; align-items: center; gap: 8px; background: #ffffff; padding: 4px 10px; border: 1px solid #cbd5e1; border-radius: 8px;">
+                                <i class="fa-solid fa-calendar-day" style="color: #64748b; font-size: 0.85rem;"></i>
+                                <span style="font-size: 0.8rem; font-weight: 700; color: #475569;">Date:</span>
+                                <input type="date" id="attFilterDate" onchange="filterAttendanceTable()" style="border: none; font-size: 0.86rem; color: #0f172a; outline: none; background: transparent; cursor: pointer;">
+                            </div>
+
+                            <!-- RESET FILTERS BUTTON -->
+                            <button type="button" onclick="resetAttendanceFilters()" style="display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; background: #ffffff; color: #475569; border: 1px solid #cbd5e1; border-radius: 8px; font-weight: 700; font-size: 0.82rem; cursor: pointer; transition: all 0.15s ease;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='#ffffff'">
+                                <i class="fa-solid fa-rotate-left" style="font-size: 0.78rem;"></i>
+                                <span>Reset</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <table style="width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 0.88rem;">
                         <thead>
                             <tr style="border-bottom: 2px solid #f1f5f9; text-align: left; color: #64748b;">
                                 <th style="padding: 10px;">Staff Member</th>
@@ -7142,28 +8155,93 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                             </tr>
                         </thead>
                         <tbody>
-                            <?php foreach ($userAttendanceLogs as $log): ?>
-                                <tr style="border-bottom: 1px solid #f8fafc;">
-                                    <td style="padding: 12px 10px; font-weight: 700; color: #0f172a;"><?php echo htmlspecialchars($log['full_name'] ?? $userFullName); ?></td>
-                                    <td style="padding: 12px 10px; font-weight: 700; color: #0f172a;"><?php echo date('M d, Y', strtotime($log['date'])); ?></td>
-                                    <td style="padding: 12px 10px; color: #16a34a; font-weight: 700;"><?php echo htmlspecialchars($log['clock_in'] ?? '--'); ?></td>
-                                    <td style="padding: 12px 10px; color: #475569;"><?php echo htmlspecialchars($log['clock_out'] ?? 'In Progress'); ?></td>
-                                    <td style="padding: 12px 10px; color: #0f172a; font-weight: 700;"><?php echo htmlspecialchars($log['duration'] ?? '--'); ?></td>
-                                    <td style="padding: 12px 10px;">
-                                        <?php if (($log['status'] ?? '') === 'Clocked In'): ?>
-                                            <span style="background: #eff6ff; color: #1d4ed8; padding: 2px 8px; border-radius: 10px; font-size: 0.75rem; font-weight: 800;">● Clocked In</span>
-                                        <?php else: ?>
-                                            <span style="background: #f0fdf4; color: #166534; padding: 2px 8px; border-radius: 10px; font-size: 0.75rem; font-weight: 800;">● <?php echo htmlspecialchars($log['status'] ?? 'Present'); ?></span>
-                                        <?php endif; ?>
-                                    </td>
-                                </tr>
-                            <?php endforeach; ?>
+                            <tr id="attNoRecordsRow" style="display: <?php echo empty($displayAttendanceLogs) ? '' : 'none'; ?>;">
+                                <td colspan="6" style="padding: 28px; text-align: center; color: #64748b; font-weight: 600;">
+                                    <i class="fa-solid fa-folder-open" style="font-size: 1.5rem; color: #cbd5e1; display: block; margin-bottom: 8px;"></i>
+                                    No matching attendance records found.
+                                </td>
+                            </tr>
+                            <?php if (!empty($displayAttendanceLogs)): ?>
+                                <?php foreach ($displayAttendanceLogs as $log): ?>
+                                    <tr class="att-log-row" style="border-bottom: 1px solid #f8fafc;" data-staff-name="<?php echo htmlspecialchars(strtolower(trim($log['full_name'] ?? $userFullName))); ?>" data-raw-date="<?php echo htmlspecialchars(date('Y-m-d', strtotime($log['date']))); ?>">
+                                        <td style="padding: 12px 10px; font-weight: 700; color: #0f172a;"><?php echo htmlspecialchars($log['full_name'] ?? $userFullName); ?></td>
+                                        <td style="padding: 12px 10px; font-weight: 700; color: #0f172a;"><?php echo date('M d, Y', strtotime($log['date'])); ?></td>
+                                        <td style="padding: 12px 10px; color: #16a34a; font-weight: 700;"><?php echo htmlspecialchars($log['clock_in'] ?? '--'); ?></td>
+                                        <td style="padding: 12px 10px; color: #475569;"><?php echo htmlspecialchars($log['clock_out'] ?? 'In Progress'); ?></td>
+                                        <td style="padding: 12px 10px; color: #0f172a; font-weight: 700;"><?php echo htmlspecialchars($log['duration'] ?? '--'); ?></td>
+                                        <td style="padding: 12px 10px;">
+                                            <?php if (($log['status'] ?? '') === 'Clocked In'): ?>
+                                                <span style="background: #eff6ff; color: #1d4ed8; padding: 2px 8px; border-radius: 10px; font-size: 0.75rem; font-weight: 800;">● Clocked In</span>
+                                            <?php else: ?>
+                                                <span style="background: #f0fdf4; color: #166534; padding: 2px 8px; border-radius: 10px; font-size: 0.75rem; font-weight: 800;">● <?php echo htmlspecialchars($log['status'] ?? 'Present'); ?></span>
+                                            <?php endif; ?>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
                         </tbody>
                     </table>
+
+                    <!-- LIVE TABLE FILTER SCRIPT -->
+                    <script>
+                    function filterAttendanceTable() {
+                        var searchVal = (document.getElementById('attSearchName').value || '').toLowerCase().trim();
+                        var dateVal = (document.getElementById('attFilterDate').value || '').trim();
+                        var rows = document.querySelectorAll('.att-log-row');
+                        var visibleCount = 0;
+
+                        rows.forEach(function(row) {
+                            var nameAttr = row.getAttribute('data-staff-name') || '';
+                            var dateAttr = row.getAttribute('data-raw-date') || '';
+
+                            var matchesName = !searchVal || nameAttr.indexOf(searchVal) !== -1;
+                            var matchesDate = !dateVal || dateAttr === dateVal;
+
+                            if (matchesName && matchesDate) {
+                                row.style.display = '';
+                                visibleCount++;
+                            } else {
+                                row.style.display = 'none';
+                            }
+                        });
+
+                        var noRecRow = document.getElementById('attNoRecordsRow');
+                        if (noRecRow) {
+                            noRecRow.style.display = (visibleCount === 0) ? '' : 'none';
+                        }
+                    }
+
+                    function resetAttendanceFilters() {
+                        var searchInput = document.getElementById('attSearchName');
+                        var dateInput = document.getElementById('attFilterDate');
+                        if (searchInput) searchInput.value = '';
+                        if (dateInput) dateInput.value = '';
+                        filterAttendanceTable();
+                    }
+                    </script>
                 </div>
 
             <?php elseif ($activeSection === 'leaves'): ?>
                 <!-- SECTION: TIME OFF (LEAVES) -->
+                <?php 
+                $activeLeaveTab = trim($_GET['tab'] ?? 'my');
+                if (!in_array($activeLeaveTab, ['my', 'company'], true)) {
+                    $activeLeaveTab = 'my';
+                }
+
+                // Fetch persistent leave requests dataset & user stats
+                $allLeaveRequests = getLeaveRequests();
+                $userLeaveStats = getUserLeaveStats($username);
+
+                // Filter leave requests based on tab selection
+                if (canViewAllAttendanceLogs($userRole, $userEmail, $username) && $activeLeaveTab === 'company') {
+                    $displayLeaveRequests = $allLeaveRequests;
+                } else {
+                    $displayLeaveRequests = array_values(array_filter($allLeaveRequests, function($req) use ($username) {
+                        return strtolower(trim($req['username'] ?? '')) === strtolower(trim($username));
+                    }));
+                }
+                ?>
                 <div class="section-header-bar">
                     <div>
                         <h1 class="section-header-title">Time Off & Leave Management</h1>
@@ -7174,22 +8252,28 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 18px; margin-bottom: 24px;">
                     <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px;">
                         <div style="font-size: 0.78rem; font-weight: 700; color: #64748b;">ANNUAL LEAVE</div>
-                        <div style="font-size: 1.5rem; font-weight: 800; color: #0284c7; margin-top: 4px;">14 / 20 Days</div>
+                        <div style="font-size: 1.5rem; font-weight: 800; color: #0284c7; margin-top: 4px;">
+                            <?php echo (int)$userLeaveStats['annual']['remaining']; ?> / <?php echo (int)$userLeaveStats['annual']['total']; ?> Days
+                        </div>
                     </div>
                     <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px;">
                         <div style="font-size: 0.78rem; font-weight: 700; color: #64748b;">SICK LEAVE</div>
-                        <div style="font-size: 1.5rem; font-weight: 800; color: #16a34a; margin-top: 4px;">5 / 7 Days</div>
+                        <div style="font-size: 1.5rem; font-weight: 800; color: #16a34a; margin-top: 4px;">
+                            <?php echo (int)$userLeaveStats['sick']['remaining']; ?> / <?php echo (int)$userLeaveStats['sick']['total']; ?> Days
+                        </div>
                     </div>
                     <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px;">
                         <div style="font-size: 0.78rem; font-weight: 700; color: #64748b;">CASUAL LEAVE</div>
-                        <div style="font-size: 1.5rem; font-weight: 800; color: #9333ea; margin-top: 4px;">3 / 5 Days</div>
+                        <div style="font-size: 1.5rem; font-weight: 800; color: #9333ea; margin-top: 4px;">
+                            <?php echo (int)$userLeaveStats['casual']['remaining']; ?> / <?php echo (int)$userLeaveStats['casual']['total']; ?> Days
+                        </div>
                     </div>
                 </div>
 
-                <!-- 2-COLUMN GRID: REQUEST TIME OFF & LEAVE HISTORY CARDS -->
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 24px;">
+                <!-- 2-COLUMN GRID: REQUEST TIME OFF (35%) & LEAVE HISTORY (65%) CARDS -->
+                <div class="leaves-layout-grid" style="display: grid; grid-template-columns: 35fr 65fr; gap: 24px;">
                     
-                    <!-- LEFT COLUMN CARD: REQUEST TIME OFF -->
+                    <!-- LEFT COLUMN CARD: REQUEST TIME OFF (35%) -->
                     <div class="dashboard-card" style="margin-bottom: 0;">
                         <div class="card-header-row">
                             <div class="card-icon-badge"><i class="fa-solid fa-paper-plane"></i></div>
@@ -7197,82 +8281,169 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                         </div>
                         <form method="POST" action="/admin/index.php?section=leaves">
                             <input type="hidden" name="action" value="submit_leave_request">
-                            <div class="form-grid-two" style="margin-top: 10px;">
+                            <div class="form-field" style="margin-top: 10px;">
+                                <label class="form-label-title">Leave Type</label>
+                                <select name="leave_type" class="form-text-input" required>
+                                    <option value="Annual Leave">Annual Leave</option>
+                                    <option value="Sick Leave">Sick Leave</option>
+                                    <option value="Casual Leave">Casual Leave</option>
+                                    <option value="Parental / Family Leave">Parental / Family Leave</option>
+                                </select>
+                            </div>
+
+                            <!-- START DATE & END DATE -->
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px;">
                                 <div class="form-field">
-                                    <label class="form-label-title">Leave Type</label>
-                                    <select name="leave_type" class="form-text-input" required>
-                                        <option value="Annual Leave">Annual Leave</option>
-                                        <option value="Sick Leave">Sick Leave</option>
-                                        <option value="Casual Leave">Casual Leave</option>
-                                        <option value="Parental / Family Leave">Parental / Family Leave</option>
-                                    </select>
+                                    <label class="form-label-title">Start Date</label>
+                                    <input type="date" id="leaveStartDate" name="start_date" class="form-text-input" value="<?php echo date('Y-m-d', strtotime('+1 day')); ?>" onchange="updateLeaveDatesAndDuration('start')" required>
                                 </div>
                                 <div class="form-field">
-                                    <label class="form-label-title">Duration (Days)</label>
-                                    <input type="number" name="duration" class="form-text-input" min="1" max="30" value="3" required>
+                                    <label class="form-label-title">End Date</label>
+                                    <input type="date" id="leaveEndDate" name="end_date" class="form-text-input" value="<?php echo date('Y-m-d', strtotime('+3 days')); ?>" onchange="updateLeaveDatesAndDuration('end')" required>
                                 </div>
                             </div>
-                            <div class="form-field">
+
+                            <div class="form-field" style="margin-top: 10px;">
+                                <label class="form-label-title">Duration (Days)</label>
+                                <input type="number" id="leaveDurationDays" name="duration" class="form-text-input" min="1" max="60" value="3" onchange="updateLeaveDatesAndDuration('duration')" onkeyup="updateLeaveDatesAndDuration('duration')" required>
+                            </div>
+                            <div class="form-field" style="margin-top: 10px;">
                                 <label class="form-label-title">Reason for Leave</label>
                                 <textarea name="reason" class="form-text-input" rows="3" placeholder="Brief explanation for your time off request..." required></textarea>
                             </div>
                             <button type="submit" class="btn-save-primary" style="margin-top: 14px; width: 100%; justify-content: center;">
-                                <i class="fa-solid fa-paper-plane"></i> Submit Leave Request
+                                <i class="fa-solid fa-paper-plane"></i> Submit Request
                             </button>
                         </form>
+
+                        <!-- SCRIPT: AUTO SYNC DATES AND DURATION -->
+                        <script>
+                        function updateLeaveDatesAndDuration(triggeredBy) {
+                            var startElem = document.getElementById('leaveStartDate');
+                            var endElem = document.getElementById('leaveEndDate');
+                            var durElem = document.getElementById('leaveDurationDays');
+
+                            if (!startElem || !endElem || !durElem) return;
+
+                            var startVal = startElem.value;
+                            var endVal = endElem.value;
+                            var durVal = parseInt(durElem.value) || 1;
+
+                            if (!startVal) return;
+
+                            var startDate = new Date(startVal + 'T00:00:00');
+
+                            if (triggeredBy === 'start' || triggeredBy === 'duration') {
+                                if (durVal < 1) durVal = 1;
+                                var endDate = new Date(startDate);
+                                endDate.setDate(startDate.getDate() + (durVal - 1));
+
+                                var yyyy = endDate.getFullYear();
+                                var mm = String(endDate.getMonth() + 1).padStart(2, '0');
+                                var dd = String(endDate.getDate()).padStart(2, '0');
+                                endElem.value = yyyy + '-' + mm + '-' + dd;
+                            } else if (triggeredBy === 'end') {
+                                if (endVal) {
+                                    var endDate = new Date(endVal + 'T00:00:00');
+                                    if (endDate >= startDate) {
+                                        var diffTime = Math.abs(endDate - startDate);
+                                        var diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+                                        durElem.value = diffDays;
+                                    } else {
+                                        endElem.value = startVal;
+                                        durElem.value = 1;
+                                    }
+                                }
+                            }
+                        }
+                        </script>
                     </div>
 
-                    <!-- RIGHT COLUMN CARD: LEAVE HISTORY -->
+                    <!-- RIGHT COLUMN CARD: LEAVE HISTORY (75%) -->
                     <div class="dashboard-card" style="margin-bottom: 0;">
-                        <div class="card-header-row" style="margin-bottom: 16px;">
-                            <div class="card-icon-badge" style="background: #eff6ff; color: #2563eb;"><i class="fa-solid fa-clock-rotate-left"></i></div>
-                            <div class="card-title-text">Leave History & Requests</div>
+                        <div class="card-header-row" style="margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <div class="card-icon-badge" style="background: #eff6ff; color: #2563eb;"><i class="fa-solid fa-clock-rotate-left"></i></div>
+                                <div class="card-title-text">History &amp; Requests</div>
+                            </div>
+
+                            <?php if (canViewAllAttendanceLogs($userRole, $userEmail, $username)): ?>
+                                <div style="display: flex; align-items: center; gap: 6px; background: #f1f5f9; padding: 4px; border-radius: 10px; border: 1px solid #cbd5e1;">
+                                    <a href="/admin/index.php?section=leaves&tab=my" style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; font-size: 0.82rem; font-weight: 700; text-decoration: none; border-radius: 7px; transition: all 0.15s ease; <?php echo ($activeLeaveTab === 'my') ? 'background: #ffffff; color: #dc2626; box-shadow: 0 1px 3px rgba(0,0,0,0.08);' : 'color: #475569;'; ?>">
+                                        <i class="fa-solid fa-user-clock" style="font-size: 0.8rem; <?php echo ($activeLeaveTab === 'my') ? 'color: #dc2626;' : 'color: #64748b;'; ?>"></i>
+                                        <span>My Leaves</span>
+                                    </a>
+                                    <a href="/admin/index.php?section=leaves&tab=company" style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; font-size: 0.82rem; font-weight: 700; text-decoration: none; border-radius: 7px; transition: all 0.15s ease; <?php echo ($activeLeaveTab === 'company') ? 'background: #ffffff; color: #dc2626; box-shadow: 0 1px 3px rgba(0,0,0,0.08);' : 'color: #475569;'; ?>">
+                                        <i class="fa-solid fa-building-user" style="font-size: 0.8rem; <?php echo ($activeLeaveTab === 'company') ? 'color: #dc2626;' : 'color: #64748b;'; ?>"></i>
+                                        <span>Company Leaves</span>
+                                    </a>
+                                </div>
+                            <?php endif; ?>
                         </div>
 
                         <div style="display: flex; flex-direction: column; gap: 12px;">
-                            <!-- ITEM 1: UPCOMING PENDING -->
-                            <div style="padding: 14px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px;">
-                                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px;">
-                                    <div>
-                                        <div style="font-size: 0.9rem; font-weight: 800; color: #0f172a;">Annual Leave</div>
-                                        <div style="font-size: 0.76rem; color: #64748b; margin-top: 2px;">Sep 01, 2026 &ndash; Sep 03, 2026 (3 Days)</div>
-                                    </div>
-                                    <span style="font-size: 0.72rem; font-weight: 800; background: #fffbe6; color: #b45309; border: 1px solid #fef08a; padding: 3px 10px; border-radius: 12px;">● Pending HR Approval</span>
+                            <?php if (empty($displayLeaveRequests)): ?>
+                                <div style="padding: 24px; text-align: center; color: #64748b; font-weight: 600; background: #f8fafc; border-radius: 12px; border: 1px dashed #cbd5e1;">
+                                    No leave requests found.
                                 </div>
-                                <div style="font-size: 0.78rem; color: #475569; background: #ffffff; padding: 8px 10px; border-radius: 6px; border: 1px solid #f1f5f9;">
-                                    Reason: End of Summer Studio Break
-                                </div>
-                            </div>
+                            <?php else: ?>
+                                <?php foreach ($displayLeaveRequests as $req): ?>
+                                    <div style="padding: 14px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px;">
+                                        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px; flex-wrap: wrap; gap: 8px;">
+                                            <div>
+                                                <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                                                    <span style="font-size: 0.9rem; font-weight: 800; color: #0f172a;"><?php echo htmlspecialchars($req['type']); ?></span>
+                                                    <?php if (canViewAllAttendanceLogs($userRole, $userEmail, $username) && $activeLeaveTab === 'company'): ?>
+                                                        <span style="font-size: 0.74rem; font-weight: 700; background: #ffffff; color: #475569; padding: 2px 8px; border-radius: 6px; border: 1px solid #cbd5e1; display: inline-flex; align-items: center;">
+                                                            <i class="fa-solid fa-user-circle" style="font-size: 0.72rem; margin-right: 4px; color: #dc2626;"></i>
+                                                            <?php echo htmlspecialchars($req['staff_name']); ?> (<?php echo htmlspecialchars($req['staff_role']); ?>)
+                                                        </span>
+                                                    <?php endif; ?>
+                                                </div>
+                                                <div style="font-size: 0.76rem; color: #64748b; margin-top: 3px;"><?php echo htmlspecialchars($req['dates']); ?></div>
+                                            </div>
+                                            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                                                <?php if ($req['status_type'] === 'pending'): ?>
+                                                    <span style="font-size: 0.72rem; font-weight: 800; background: #fffbe6; color: #b45309; border: 1px solid #fef08a; padding: 3px 10px; border-radius: 12px;">● <?php echo htmlspecialchars($req['status']); ?></span>
+                                                <?php elseif ($req['status_type'] === 'approved'): ?>
+                                                    <span style="font-size: 0.72rem; font-weight: 800; background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; padding: 3px 10px; border-radius: 12px;">✔ Approved</span>
+                                                <?php else: ?>
+                                                    <span style="font-size: 0.72rem; font-weight: 800; background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; padding: 3px 10px; border-radius: 12px;">✖ Rejected</span>
+                                                <?php endif; ?>
 
-                            <!-- ITEM 2: PAST APPROVED -->
-                            <div style="padding: 14px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px;">
-                                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px;">
-                                    <div>
-                                        <div style="font-size: 0.9rem; font-weight: 800; color: #0f172a;">Annual Leave</div>
-                                        <div style="font-size: 0.76rem; color: #64748b; margin-top: 2px;">Aug 10, 2026 &ndash; Aug 12, 2026 (3 Days)</div>
+                                                <?php if (canViewAllAttendanceLogs($userRole, $userEmail, $username) && $req['status_type'] === 'pending'): ?>
+                                                    <!-- HR ADMINISTER ACTIONS (APPROVE / REJECT) -->
+                                                    <div style="display: inline-flex; align-items: center; gap: 6px; margin-left: 4px;">
+                                                        <form method="POST" action="/admin/index.php?section=leaves" style="margin:0;">
+                                                            <input type="hidden" name="action" value="update_leave_status">
+                                                            <input type="hidden" name="leave_id" value="<?php echo htmlspecialchars($req['id']); ?>">
+                                                            <input type="hidden" name="new_status" value="Approved">
+                                                            <button type="submit" style="padding: 4px 10px; background: #16a34a; color: #ffffff; border: none; border-radius: 6px; font-weight: 800; font-size: 0.72rem; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; box-shadow: 0 1px 2px rgba(22,163,74,0.2);" title="Approve Leave Request">
+                                                                <i class="fa-solid fa-check"></i> Approve
+                                                            </button>
+                                                        </form>
+                                                        <form method="POST" action="/admin/index.php?section=leaves" style="margin:0;">
+                                                            <input type="hidden" name="action" value="update_leave_status">
+                                                            <input type="hidden" name="leave_id" value="<?php echo htmlspecialchars($req['id']); ?>">
+                                                            <input type="hidden" name="new_status" value="Rejected">
+                                                            <button type="submit" style="padding: 4px 10px; background: #ffffff; color: #dc2626; border: 1px solid #fecaca; border-radius: 6px; font-weight: 800; font-size: 0.72rem; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;" title="Reject Leave Request">
+                                                                <i class="fa-solid fa-xmark"></i> Reject
+                                                            </button>
+                                                        </form>
+                                                    </div>
+                                                <?php endif; ?>
+                                            </div>
+                                        </div>
+                                        <div style="font-size: 0.78rem; color: #475569; background: #ffffff; padding: 8px 10px; border-radius: 6px; border: 1px solid #f1f5f9;">
+                                            Reason: <?php echo htmlspecialchars($req['reason']); ?>
+                                        </div>
                                     </div>
-                                    <span style="font-size: 0.72rem; font-weight: 800; background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; padding: 3px 10px; border-radius: 12px;">✔ Approved</span>
-                                </div>
-                                <div style="font-size: 0.78rem; color: #475569; background: #ffffff; padding: 8px 10px; border-radius: 6px; border: 1px solid #f1f5f9;">
-                                    Reason: Family Vacation & Personal Time
-                                </div>
-                            </div>
-
-                            <!-- ITEM 3: PAST APPROVED -->
-                            <div style="padding: 14px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px;">
-                                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px;">
-                                    <div>
-                                        <div style="font-size: 0.9rem; font-weight: 800; color: #0f172a;">Sick Leave</div>
-                                        <div style="font-size: 0.76rem; color: #64748b; margin-top: 2px;">Jul 04, 2026 (1 Day)</div>
-                                    </div>
-                                    <span style="font-size: 0.72rem; font-weight: 800; background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; padding: 3px 10px; border-radius: 12px;">✔ Approved</span>
-                                </div>
-                                <div style="font-size: 0.78rem; color: #475569; background: #ffffff; padding: 8px 10px; border-radius: 6px; border: 1px solid #f1f5f9;">
-                                    Reason: Medical Checkup
-                                </div>
-                            </div>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
                         </div>
                     </div>
+
+                </div>
 
                 </div>
 
@@ -7469,34 +8640,679 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                 </div>
 
             <?php elseif ($activeSection === 'comms'): ?>
-                <!-- SECTION: COMMS -->
+                <!-- SECTION: COMMUNICATIONS HUB -->
+                <?php 
+                $activeTab = strtolower(trim($_GET['tab'] ?? 'nest'));
+                if (!in_array($activeTab, ['feeds', 'nest', 'tasks', 'channels', 'events'], true)) {
+                    $activeTab = 'nest';
+                }
+
+                $activeChannel = strtolower(trim($_GET['channel'] ?? 'general'));
+                $subChannels = [
+                    'general' => ['name' => '# general-discussion', 'desc' => 'Company-wide studio chat & announcements', 'badge' => 'General'],
+                    'production' => ['name' => '# production-crew', 'desc' => 'Camera gear, shoots & logistics', 'badge' => 'Production'],
+                    'hr-helpdesk' => ['name' => '# hr-helpdesk', 'desc' => 'HR inquiries, benefits & policies', 'badge' => 'HR'],
+                    'creative-team' => ['name' => '# creative-team', 'desc' => 'Design, editing & post-production', 'badge' => 'Creative']
+                ];
+                if (!isset($subChannels[$activeChannel])) {
+                    $activeChannel = 'general';
+                }
+
+                $nestContacts = array_slice(getSortedRecentDmContacts($username), 0, 7, true);
+                $rawDmParam = strtolower(trim($_GET['dm'] ?? ''));
+                $activeDmUser = '';
+
+                if (!empty($rawDmParam)) {
+                    foreach ($nestContacts as $uKey => $p) {
+                        $pUser = strtolower($p['username'] ?? '');
+                        if ($uKey === $rawDmParam || $pUser === $rawDmParam || getCanonicalUsername($pUser) === getCanonicalUsername($rawDmParam) || (is_numeric($rawDmParam) && intval($rawDmParam) === intval($uKey))) {
+                            $activeDmUser = $pUser;
+                            break;
+                        }
+                    }
+                }
+
+                $activeDmInfo = null;
+                foreach ($nestContacts as $p) {
+                    if (strtolower($p['username']) === strtolower($activeDmUser) || getCanonicalUsername($p['username']) === getCanonicalUsername($activeDmUser)) {
+                        $activeDmInfo = $p;
+                        break;
+                    }
+                }
+                if (!$activeDmInfo) {
+                    $activeDmInfo = reset($nestContacts) ?: ['first_name' => 'Staff', 'full_name' => 'Staff Member', 'role' => 'Staff'];
+                    $activeDmUser = $activeDmInfo['username'] ?? 'ligali.oluwatosin';
+                }
+                $activeDmChannelKey = getDmChannelKey($username, $activeDmUser);
+
+                $allMessages = getCommsMessages();
+                if ($activeTab === 'nest') {
+                    $channelMessages = array_values(array_filter($allMessages, function($m) use ($username, $activeDmUser) {
+                        $targetKey = getDmChannelKey($username, $activeDmUser);
+                        $msgChannel = strtolower(trim($m['channel'] ?? ''));
+                        if ($msgChannel === $targetKey) return true;
+                        
+                        $u1 = getCanonicalUsername($username);
+                        $u2 = getCanonicalUsername($activeDmUser);
+                        if (str_starts_with($msgChannel, 'dm_')) {
+                            $parts = explode('_', substr($msgChannel, 3));
+                            if (count($parts) === 2) {
+                                $c1 = getCanonicalUsername($parts[0]);
+                                $c2 = getCanonicalUsername($parts[1]);
+                                if (($c1 === $u1 && $c2 === $u2) || ($c1 === $u2 && $c2 === $u1)) {
+                                    return true;
+                                }
+                            }
+                        }
+                        return false;
+                    }));
+                } else {
+                    $channelMessages = array_values(array_filter($allMessages, function($m) use ($activeChannel) {
+                        return strtolower(trim($m['channel'] ?? 'general')) === $activeChannel;
+                    }));
+                }
+
+                $commsNavTabs = [
+                    'nest' => ['label' => 'The Nest (Chat)', 'icon' => 'fa-solid fa-comments', 'badge' => 'Live Chat', 'desc' => 'Real-time studio team discussions'],
+                    'feeds' => ['label' => 'Feeds', 'icon' => 'fa-solid fa-rss', 'badge' => 'Activity', 'desc' => 'Studio updates & announcements'],
+                    'tasks' => ['label' => 'Tasks', 'icon' => 'fa-solid fa-list-check', 'badge' => 'Studio', 'desc' => 'Action items & production assignments'],
+                    'channels' => ['label' => 'Channels', 'icon' => 'fa-solid fa-hashtag', 'badge' => '4 Groups', 'desc' => 'Specialized team chat channels'],
+                    'events' => ['label' => 'Events', 'icon' => 'fa-solid fa-calendar-days', 'badge' => 'Upcoming', 'desc' => 'Studio schedule & shoot calendar']
+                ];
+                ?>
                 <div class="section-header-bar">
                     <div>
-                        <h1 class="section-header-title">Internal Team Comms & Discussions</h1>
-                        <p class="section-header-desc">Real-time studio chat channels, team bulletins, and project discussions.</p>
+                        <h1 class="section-header-title">Studio Communications Hub</h1>
+                        <p class="section-header-desc">Internal team chat, studio activity feeds, tasks, channels, and event schedules.</p>
                     </div>
                 </div>
 
-                <div class="dashboard-card">
-                    <div class="card-header-row">
-                        <div class="card-icon-badge"><i class="fa-solid fa-comments"></i></div>
-                        <div class="card-title-text">Active Team Channels</div>
+                <!-- 2-COLUMN COMMS LAYOUT (COMMUNICATIONS TABS 280px + MAIN VIEW CONTENT) -->
+                <div style="display: grid; grid-template-columns: 280px minmax(0, 1fr); gap: 20px; min-height: 600px;">
+                    
+                    <!-- LEFT SIDEBAR: COMMUNICATIONS TABS -->
+                    <div class="dashboard-card" style="margin-bottom: 0; padding: 20px; display: flex; flex-direction: column;">
+                        <div style="font-size: 0.76rem; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 14px; display: flex; align-items: center; justify-content: space-between;">
+                            <span>COMMUNICATIONS</span>
+                            <span style="background: #f1f5f9; color: #475569; padding: 2px 8px; border-radius: 10px; font-size: 0.72rem; font-weight: 800;">5</span>
+                        </div>
+
+                        <div style="display: flex; flex-direction: column; gap: 6px;">
+                            <?php foreach ($commsNavTabs as $tKey => $tab): ?>
+                                <?php $isActive = ($tKey === $activeTab); ?>
+                                <a href="/admin/index.php?section=comms&tab=<?php echo urlencode($tKey); ?><?php echo ($tKey === 'channels') ? '&channel=' . urlencode($activeChannel) : (($tKey === 'nest') ? '&dm=' . urlencode($activeDmUser) : ''); ?>" style="display: flex; flex-direction: column; padding: 12px 14px; border-radius: 12px; text-decoration: none; transition: all 0.15s ease; <?php echo $isActive ? 'background: #fef2f2; border: 1px solid #fecaca; color: #dc2626;' : 'background: #ffffff; border: 1px solid #e2e8f0; color: #334155;'; ?>">
+                                    <div style="display: flex; align-items: center; justify-content: space-between;">
+                                        <span style="font-size: 0.88rem; font-weight: 800; display: inline-flex; align-items: center; gap: 8px; <?php echo $isActive ? 'color: #dc2626;' : 'color: #0f172a;'; ?>">
+                                            <i class="<?php echo $tab['icon']; ?>" style="font-size: 0.84rem; <?php echo $isActive ? 'color: #dc2626;' : 'color: #64748b;'; ?>"></i>
+                                            <span><?php echo htmlspecialchars($tab['label']); ?></span>
+                                        </span>
+                                        <span style="font-size: 0.68rem; font-weight: 700; padding: 2px 6px; border-radius: 6px; <?php echo $isActive ? 'background: #ffffff; color: #dc2626;' : 'background: #f1f5f9; color: #64748b;'; ?>">
+                                            <?php echo htmlspecialchars($tab['badge']); ?>
+                                        </span>
+                                    </div>
+                                    <span style="font-size: 0.74rem; color: #64748b; margin-top: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                        <?php echo htmlspecialchars($tab['desc']); ?>
+                                    </span>
+                                </a>
+                            <?php endforeach; ?>
+                        </div>
+
+                        <!-- ONLINE TEAM MEMBERS -->
+                        <div style="margin-top: 24px; padding-top: 16px; border-top: 1px solid #f1f5f9;">
+                            <div style="font-size: 0.74rem; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 10px;">
+                                ACTIVE TEAM
+                            </div>
+                            <div style="display: flex; flex-direction: column; gap: 8px;">
+                                <div style="display: flex; align-items: center; gap: 8px; font-size: 0.8rem; color: #334155; font-weight: 700;">
+                                    <span style="width: 8px; height: 8px; border-radius: 50%; background: #16a34a; display: inline-block;"></span>
+                                    <span>Henry Falonipe</span>
+                                </div>
+                                <div style="display: flex; align-items: center; gap: 8px; font-size: 0.8rem; color: #334155; font-weight: 700;">
+                                    <span style="width: 8px; height: 8px; border-radius: 50%; background: #16a34a; display: inline-block;"></span>
+                                    <span>Victoria Opemipo</span>
+                                </div>
+                                <div style="display: flex; align-items: center; gap: 8px; font-size: 0.8rem; color: #334155; font-weight: 700;">
+                                    <span style="width: 8px; height: 8px; border-radius: 50%; background: #16a34a; display: inline-block;"></span>
+                                    <span>Daniel Ifeoluwa</span>
+                                </div>
+                                <div style="display: flex; align-items: center; gap: 8px; font-size: 0.8rem; color: #334155; font-weight: 700;">
+                                    <span style="width: 8px; height: 8px; border-radius: 50%; background: #16a34a; display: inline-block;"></span>
+                                    <span>Mojisola Emjay</span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; margin-top: 14px;">
-                        <div style="padding: 16px; background: #fef2f2; border: 1px solid #fecaca; border-radius: 10px; cursor: pointer;">
-                            <div style="font-weight: 800; color: #991b1b; font-size: 0.94rem;"># general-announcements</div>
-                            <div style="font-size: 0.78rem; color: #475569; margin-top: 4px;">Studio news & updates &bull; 24 Members</div>
+
+                    <!-- RIGHT MAIN CONTENT PANEL -->
+                    <?php if ($activeTab === 'nest' || $activeTab === 'channels'): ?>
+                        <!-- CHAT VIEW: THE NEST & CHANNELS -->
+                        <div class="dashboard-card" style="margin-bottom: 0; padding: 0; display: flex; flex-direction: column; overflow: hidden; height: 600px;">
+                            
+                            <!-- SUB-CHANNEL / RECENT PEOPLE SELECTOR HEADER BAR -->
+                            <div style="padding: 14px 20px; background: #f8fafc; border-bottom: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: space-between; flex-wrap: nowrap; gap: 10px; overflow: hidden;">
+                                <div style="display: flex; align-items: center; gap: 6px; flex-wrap: nowrap; overflow: hidden; flex: 1;">
+                                    <?php if ($activeTab === 'nest'): ?>
+                                        <!-- DIRECT MESSAGES RECENT PEOPLE SELECTORS FOR THE NEST (TOP 7 IN SINGLE ROW) -->
+                                        <?php foreach ($nestContacts as $uKey => $person): ?>
+                                            <?php 
+                                            $stUser = strtolower($person['username'] ?? '');
+                                            $isDmActive = ($uKey === $activeDmUser || $stUser === $activeDmUser || getCanonicalUsername($stUser) === getCanonicalUsername($activeDmUser)); 
+                                            ?>
+                                            <a href="/admin/index.php?section=comms&tab=nest&dm=<?php echo urlencode($stUser); ?>" style="padding: 5px 10px; border-radius: 8px; font-size: 0.78rem; font-weight: 800; text-decoration: none; transition: all 0.15s ease; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 105px; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 1; <?php echo $isDmActive ? 'background: #ffffff; color: #dc2626; border: 1px solid #fecaca; box-shadow: 0 1px 3px rgba(0,0,0,0.05);' : 'background: #f1f5f9; color: #64748b; border: 1px solid #e2e8f0;'; ?>" title="<?php echo htmlspecialchars($person['full_name']); ?>">
+                                                <i class="fa-solid fa-user-circle" style="font-size: 0.74rem; margin-right: 3px; flex-shrink: 0;"></i>
+                                                <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"><?php echo htmlspecialchars($person['first_name']); ?></span>
+                                            </a>
+                                        <?php endforeach; ?>
+                                    <?php else: ?>
+                                        <!-- GROUP CHANNELS SELECTORS FOR CHANNELS TAB -->
+                                        <?php foreach ($subChannels as $cKey => $subCh): ?>
+                                            <?php $isSubActive = ($cKey === $activeChannel); ?>
+                                            <a href="/admin/index.php?section=comms&tab=channels&channel=<?php echo urlencode($cKey); ?>" style="padding: 5px 12px; border-radius: 8px; font-size: 0.8rem; font-weight: 800; text-decoration: none; transition: all 0.15s ease; <?php echo $isSubActive ? 'background: #ffffff; color: #dc2626; border: 1px solid #fecaca; box-shadow: 0 1px 3px rgba(0,0,0,0.05);' : 'background: #f1f5f9; color: #64748b; border: 1px solid #e2e8f0;'; ?>">
+                                                <?php echo htmlspecialchars($subCh['name']); ?>
+                                            </a>
+                                        <?php endforeach; ?>
+                                    <?php endif; ?>
+                                </div>
+                                <?php if ($activeTab === 'nest' && !empty($activeDmInfo)): ?>
+                                    <div style="display: flex; align-items: center; gap: 6px; flex-shrink: 0; margin-left: 6px;">
+                                        <button type="button" onclick="startStudioCall('audio', '<?php echo htmlspecialchars(addslashes($activeDmInfo['full_name'])); ?>', '<?php echo htmlspecialchars(addslashes(getCloudinaryUrl($activeDmInfo['avatar'] ?? ''))); ?>')" style="width: 32px; height: 32px; border-radius: 50%; background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; transition: all 0.15s ease;" onmouseover="this.style.background='#dcfce7'" onmouseout="this.style.background='#f0fdf4'" title="Audio Call with <?php echo htmlspecialchars($activeDmInfo['full_name']); ?>">
+                                            <i class="fa-solid fa-phone" style="color: #22c55e; font-size: 0.85rem;"></i>
+                                        </button>
+                                        <button type="button" onclick="startStudioCall('video', '<?php echo htmlspecialchars(addslashes($activeDmInfo['full_name'])); ?>', '<?php echo htmlspecialchars(addslashes(getCloudinaryUrl($activeDmInfo['avatar'] ?? ''))); ?>')" style="width: 32px; height: 32px; border-radius: 50%; background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; transition: all 0.15s ease;" onmouseover="this.style.background='#fee2e2'" onmouseout="this.style.background='#fef2f2'" title="Video Call with <?php echo htmlspecialchars($activeDmInfo['full_name']); ?>">
+                                            <i class="fa-solid fa-video" style="color: #dc2626; font-size: 0.85rem;"></i>
+                                        </button>
+                                    </div>
+                                <?php endif; ?>
+                                <?php if ($activeTab === 'channels'): ?>
+                                    <div style="display: flex; align-items: center; gap: 6px; background: #ffffff; padding: 4px 10px; border-radius: 20px; border: 1px solid #cbd5e1; font-size: 0.75rem; font-weight: 700; color: #166534;">
+                                        <span style="width: 7px; height: 7px; border-radius: 50%; background: #16a34a;"></span>
+                                        <span>4 Online</span>
+                                    </div>
+                                <?php endif; ?>
+                            </div>
+
+                            <!-- CHAT MESSAGES STREAM BODY -->
+                            <div style="flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 16px; background: #ffffff;" id="commsChatContainer">
+                                <?php if (empty($channelMessages)): ?>
+                                    <div style="text-align: center; color: #64748b; margin: auto; font-size: 0.88rem; font-weight: 600;">
+                                        <?php echo ($activeTab === 'nest') ? 'No messages with ' . htmlspecialchars($activeDmInfo['full_name']) . ' yet. Send a private message below!' : 'No messages in ' . htmlspecialchars($subChannels[$activeChannel]['name']) . ' yet. Start the conversation below!'; ?>
+                                    </div>
+                                <?php else: ?>
+                                    <?php 
+                                    $commsAvatarMap = [];
+                                    $teamForComms = getTeamMembers();
+                                    foreach ($teamForComms as $tm) {
+                                        if (!empty($tm['name']) && !empty($tm['image'])) {
+                                            $fLower = strtolower(trim($tm['name']));
+                                            $fFirst = strtolower(explode(' ', $fLower)[0]);
+                                            $commsAvatarMap[$fLower] = $tm['image'];
+                                            $commsAvatarMap[$fFirst] = $tm['image'];
+                                        }
+                                    }
+                                    $staffForComms = getStaffAccountsRepo();
+                                    foreach ($staffForComms as $st) {
+                                        if (!empty($st['full_name']) && !empty($st['avatar'])) {
+                                            $fLower = strtolower(trim($st['full_name']));
+                                            $fFirst = strtolower(explode(' ', $fLower)[0]);
+                                            $uLower = strtolower(trim($st['username'] ?? ''));
+                                            $commsAvatarMap[$fLower] = $st['avatar'];
+                                            $commsAvatarMap[$fFirst] = $st['avatar'];
+                                            if (!empty($uLower)) {
+                                                $commsAvatarMap[$uLower] = $st['avatar'];
+                                            }
+                                        }
+                                    }
+                                    ?>
+                                    <?php foreach ($channelMessages as $msg): ?>
+                                        <?php 
+                                        $msgUserRaw = strtolower(trim($msg['username'] ?? ''));
+                                        $msgSenderNameRaw = strtolower(trim($msg['sender_name'] ?? ''));
+                                        
+                                        $msgUserCanon = getCanonicalUsername($msgUserRaw);
+                                        if ($msgUserCanon === 'admin' || empty($msgUserCanon)) {
+                                            if (str_contains($msgSenderNameRaw, 'oluwatosin') || str_contains($msgSenderNameRaw, 'ligali')) {
+                                                $msgUserCanon = 'oluwatosin';
+                                            } else if (str_contains($msgSenderNameRaw, 'mojisola')) {
+                                                $msgUserCanon = 'mojisola';
+                                            } else if (str_contains($msgSenderNameRaw, 'kingsley')) {
+                                                $msgUserCanon = 'kingsley';
+                                            } else if (str_contains($msgSenderNameRaw, 'daniel')) {
+                                                $msgUserCanon = 'daniel';
+                                            } else if (str_contains($msgSenderNameRaw, 'victoria')) {
+                                                $msgUserCanon = 'victoria';
+                                            } else if (str_contains($msgSenderNameRaw, 'lisa')) {
+                                                $msgUserCanon = 'lisa';
+                                            } else if (str_contains($msgSenderNameRaw, 'henry')) {
+                                                $msgUserCanon = 'henry';
+                                            }
+                                        }
+
+                                        $currUserCanon = getCanonicalUsername($username);
+                                        if ($currUserCanon === 'admin') {
+                                            $sessNameLower = strtolower($_SESSION['admin_full_name'] ?? $_SESSION['admin_name'] ?? '');
+                                            $sessEmailLower = strtolower($_SESSION['admin_email'] ?? '');
+                                            if (str_contains($sessNameLower, 'oluwatosin') || str_contains($sessNameLower, 'ligali') || str_contains($sessEmailLower, 'ligali') || str_contains($sessEmailLower, 'oluwatosin')) {
+                                                $currUserCanon = 'oluwatosin';
+                                            } else if (str_contains($sessNameLower, 'mojisola') || str_contains($sessEmailLower, 'mojisola')) {
+                                                $currUserCanon = 'mojisola';
+                                            } else if (str_contains($sessNameLower, 'kingsley') || str_contains($sessEmailLower, 'kingsley')) {
+                                                $currUserCanon = 'kingsley';
+                                            } else if (str_contains($sessNameLower, 'daniel') || str_contains($sessEmailLower, 'daniel')) {
+                                                $currUserCanon = 'daniel';
+                                            } else if (str_contains($sessNameLower, 'victoria') || str_contains($sessEmailLower, 'victoria')) {
+                                                $currUserCanon = 'victoria';
+                                            } else if (str_contains($sessNameLower, 'lisa') || str_contains($sessEmailLower, 'lisa')) {
+                                                $currUserCanon = 'lisa';
+                                            } else if (str_contains($sessNameLower, 'henry') || str_contains($sessEmailLower, 'henry')) {
+                                                $currUserCanon = 'henry';
+                                            }
+                                        }
+
+                                        $isMe = (!empty($msgUserCanon) && !empty($currUserCanon) && $msgUserCanon === $currUserCanon);
+                                        $msgAvatarUrl = $commsAvatarMap[$msgUserCanon] ?? ($commsAvatarMap[$msgUserRaw] ?? ($commsAvatarMap[$msgSenderNameRaw] ?? ''));
+                                        ?>
+                                        <div style="display: flex; gap: 12px; max-width: 80%; <?php echo $isMe ? 'align-self: flex-end; flex-direction: row-reverse;' : 'align-self: flex-start; flex-direction: row;'; ?>">
+                                            <div style="width: 36px; height: 36px; border-radius: 50%; overflow: hidden; flex-shrink: 0;">
+                                                <?php if (!empty($msgAvatarUrl)): ?>
+                                                    <img src="<?php echo htmlspecialchars(getCloudinaryUrl($msgAvatarUrl)); ?>" alt="<?php echo htmlspecialchars($msg['sender_name']); ?>" style="width: 36px; height: 36px; border-radius: 50%; object-fit: cover; border: 2px solid <?php echo $isMe ? '#dc2626' : '#0284c7'; ?>;" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                                    <div style="display: none; width: 36px; height: 36px; border-radius: 50%; background: <?php echo $isMe ? '#dc2626' : '#0284c7'; ?>; color: #ffffff; align-items: center; justify-content: center; font-weight: 800; font-size: 0.85rem;">
+                                                        <?php echo strtoupper(substr($msg['sender_name'] ?? 'U', 0, 1)); ?>
+                                                    </div>
+                                                <?php else: ?>
+                                                    <div style="width: 36px; height: 36px; border-radius: 50%; background: <?php echo $isMe ? '#dc2626' : '#0284c7'; ?>; color: #ffffff; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.85rem;">
+                                                        <?php echo strtoupper(substr($msg['sender_name'] ?? 'U', 0, 1)); ?>
+                                                    </div>
+                                                <?php endif; ?>
+                                            </div>
+                                            <div style="display: flex; flex-direction: column; <?php echo $isMe ? 'align-items: flex-end;' : 'align-items: flex-start;'; ?>">
+                                                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px; <?php echo $isMe ? 'flex-direction: row-reverse;' : ''; ?>">
+                                                    <span style="font-size: 0.82rem; font-weight: 800; color: #0f172a;"><?php echo $isMe ? 'You' : htmlspecialchars($msg['sender_name']); ?></span>
+                                                    <span style="font-size: 0.7rem; color: #94a3b8;"><?php echo htmlspecialchars($msg['time_str']); ?></span>
+                                                </div>
+                                                <div style="padding: 12px 16px; border-radius: 14px; font-size: 0.88rem; line-height: 1.5; text-align: left; <?php echo $isMe ? 'background: #dc2626; color: #ffffff; border-bottom-right-radius: 2px;' : 'background: #f8fafc; color: #1e293b; border: 1px solid #e2e8f0; border-bottom-left-radius: 2px;'; ?>">
+                                                    <?php echo nl2br(htmlspecialchars($msg['message'])); ?>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    <?php endforeach; ?>
+                                <?php endif; ?>
+                            </div>
+
+                            <!-- CHAT INPUT FORM FOOTER -->
+                            <div style="padding: 16px 20px; background: #f8fafc; border-top: 1px solid #e2e8f0;">
+                                <form method="POST" action="/admin/index.php?section=comms&tab=<?php echo $activeTab; ?><?php echo ($activeTab === 'nest') ? '&dm=' . urlencode($activeDmUser) : '&channel=' . urlencode($activeChannel); ?>" style="display: flex; gap: 10px; margin: 0;">
+                                    <input type="hidden" name="action" value="send_comms_message">
+                                    <input type="hidden" name="channel" value="<?php echo htmlspecialchars(($activeTab === 'nest') ? $activeDmChannelKey : $activeChannel); ?>">
+                                    
+                                    <input type="text" name="message" placeholder="<?php echo ($activeTab === 'nest') ? 'Type a private message to ' . htmlspecialchars($activeDmInfo['full_name']) . '...' : 'Type a message in ' . htmlspecialchars($subChannels[$activeChannel]['name']) . '...'; ?>" required style="flex: 1; padding: 12px 16px; font-size: 0.88rem; border: 1px solid #cbd5e1; border-radius: 10px; background: #ffffff; color: #0f172a; font-family: inherit;" autocomplete="off">
+                                    
+                                    <button type="submit" class="btn-save-primary" style="padding: 0 20px; justify-content: center; background: #dc2626; border-color: #dc2626; border-radius: 10px;">
+                                        <i class="fa-solid fa-paper-plane"></i> Send
+                                    </button>
+                                </form>
+                            </div>
+
                         </div>
-                        <div style="padding: 16px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; cursor: pointer;">
-                            <div style="font-weight: 800; color: #0f172a; font-size: 0.94rem;"># production-sprints</div>
-                            <div style="font-size: 0.78rem; color: #64748b; margin-top: 4px;">Camera gear & logistics &bull; 12 Members</div>
+
+                    <?php elseif ($activeTab === 'feeds'): ?>
+                        <!-- FEEDS VIEW -->
+                        <?php 
+                        $activeFeedCat = strtolower(trim($_GET['cat'] ?? 'all'));
+                        if (!in_array($activeFeedCat, ['all', 'general', 'important', 'events'], true)) {
+                            $activeFeedCat = 'all';
+                        }
+                        $feedCategories = [
+                            'all' => 'All Updates',
+                            'general' => 'General',
+                            'important' => 'Important',
+                            'events' => 'Events'
+                        ];
+                        ?>
+                        <div class="dashboard-card" style="margin-bottom: 0; padding: 0; display: flex; flex-direction: column; overflow: hidden; height: 600px;">
+                            
+                            <!-- SUB-CHANNEL SELECTOR HEADER BAR FOR FEEDS -->
+                            <div style="padding: 14px 20px; background: #f8fafc; border-bottom: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+                                <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                                    <?php foreach ($feedCategories as $fcKey => $fcLabel): ?>
+                                        <?php $isFcActive = ($fcKey === $activeFeedCat); ?>
+                                        <a href="/admin/index.php?section=comms&tab=feeds&cat=<?php echo urlencode($fcKey); ?>" style="padding: 5px 14px; border-radius: 8px; font-size: 0.8rem; font-weight: 800; text-decoration: none; transition: all 0.15s ease; <?php echo $isFcActive ? 'background: #ffffff; color: #dc2626; border: 1px solid #fecaca; box-shadow: 0 1px 3px rgba(0,0,0,0.05);' : 'background: #f1f5f9; color: #64748b; border: 1px solid #e2e8f0;'; ?>">
+                                            <?php echo htmlspecialchars($fcLabel); ?>
+                                        </a>
+                                    <?php endforeach; ?>
+                                </div>
+                                <button type="button" onclick="openPostAnnouncementModal()" style="display: inline-flex; align-items: center; gap: 6px; background: #dc2626; color: #ffffff; padding: 6px 14px; border-radius: 8px; border: none; font-size: 0.78rem; font-weight: 800; cursor: pointer; transition: all 0.15s ease; box-shadow: 0 2px 6px rgba(220, 38, 38, 0.25);" onmouseover="this.style.background='#b91c1c'" onmouseout="this.style.background='#dc2626'">
+                                    <i class="fa-solid fa-plus" style="font-size: 0.74rem;"></i>
+                                    <span>Post Announcement</span>
+                                </button>
+                            </div>
+
+                            <!-- FEED ITEMS STREAM -->
+                            <?php 
+                            $announcementsList = getSiteAnnouncements($activeFeedCat);
+                            ?>
+                            <div style="flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 16px; background: #ffffff;">
+                                <?php if (empty($announcementsList)): ?>
+                                    <div style="text-align: center; color: #64748b; margin: auto; font-size: 0.88rem; font-weight: 600;">
+                                        No announcements found in this category.
+                                    </div>
+                                <?php else: ?>
+                                    <?php foreach ($announcementsList as $ann): ?>
+                                        <?php 
+                                        $catStr = strtolower($ann['category'] ?? 'general');
+                                        $borderColor = ($catStr === 'important') ? '#dc2626' : (($catStr === 'events') ? '#ec4899' : '#0284c7');
+                                        $badgeStyle = ($catStr === 'important') ? 'background: #fef2f2; color: #dc2626; border: 1px solid #fecaca;' : (($catStr === 'events') ? 'background: #fdf2f8; color: #be185d; border: 1px solid #fbcfe8;' : 'background: #f0f9ff; color: #0369a1; border: 1px solid #bae6fd;');
+                                        ?>
+                                        <div style="padding: 18px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; border-left: 4px solid <?php echo $borderColor; ?>;">
+                                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                                                <span style="font-size: 0.74rem; font-weight: 800; <?php echo $badgeStyle; ?> padding: 2px 8px; border-radius: 6px; text-transform: uppercase;">
+                                                    <?php echo htmlspecialchars($ann['category']); ?>
+                                                </span>
+                                                <span style="font-size: 0.76rem; color: #94a3b8; font-weight: 600;">
+                                                    <?php echo htmlspecialchars($ann['date_str']); ?>
+                                                </span>
+                                            </div>
+                                            <h3 style="font-size: 1.05rem; font-weight: 800; color: #0f172a; margin: 0 0 6px 0;">
+                                                <?php echo htmlspecialchars($ann['title']); ?>
+                                            </h3>
+                                            <p style="font-size: 0.86rem; color: #475569; margin: 0 0 10px 0; line-height: 1.6;">
+                                                <?php echo nl2br(htmlspecialchars($ann['content'])); ?>
+                                            </p>
+                                            <div style="font-size: 0.76rem; color: #64748b; font-weight: 700;">
+                                                By: <?php echo htmlspecialchars($ann['posted_by']); ?>
+                                            </div>
+                                        </div>
+                                    <?php endforeach; ?>
+                                <?php endif; ?>
+                            </div>
                         </div>
-                        <div style="padding: 16px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; cursor: pointer;">
-                            <div style="font-weight: 800; color: #0f172a; font-size: 0.94rem;"># creative-direction</div>
-                            <div style="font-size: 0.78rem; color: #64748b; margin-top: 4px;">Brand assets & guidelines &bull; 8 Members</div>
+
+                    <?php elseif ($activeTab === 'tasks'): ?>
+                        <!-- TASKS VIEW (ZOHO PROJECTS KANBAN BOARD) -->
+                        <?php 
+                        $taskSubView = strtolower(trim($_GET['view'] ?? 'all'));
+                        if (!in_array($taskSubView, ['all', 'my'], true)) {
+                            $taskSubView = 'all';
+                        }
+                        $allStudioTasks = getStudioTasksRepo();
+                        
+                        $activeUserCanon = getCanonicalUsername($username);
+                        if ($activeUserCanon === 'admin') {
+                            $sessNameLower = strtolower($_SESSION['admin_full_name'] ?? $_SESSION['admin_name'] ?? '');
+                            $sessEmailLower = strtolower($_SESSION['admin_email'] ?? '');
+                            if (str_contains($sessNameLower, 'oluwatosin') || str_contains($sessNameLower, 'ligali') || str_contains($sessEmailLower, 'ligali') || str_contains($sessEmailLower, 'oluwatosin')) {
+                                $activeUserCanon = 'oluwatosin';
+                            } else if (str_contains($sessNameLower, 'mojisola') || str_contains($sessEmailLower, 'mojisola')) {
+                                $activeUserCanon = 'mojisola';
+                            } else if (str_contains($sessNameLower, 'kingsley') || str_contains($sessNameLower, 'kingsley')) {
+                                $activeUserCanon = 'kingsley';
+                            } else if (str_contains($sessNameLower, 'daniel') || str_contains($sessNameLower, 'daniel')) {
+                                $activeUserCanon = 'daniel';
+                            } else if (str_contains($sessNameLower, 'victoria') || str_contains($sessNameLower, 'victoria')) {
+                                $activeUserCanon = 'victoria';
+                            }
+                        }
+
+                        if ($taskSubView === 'my') {
+                            $filteredTasks = array_filter($allStudioTasks, function($t) use ($activeUserCanon) {
+                                $tCanon = getCanonicalUsername($t['assignee_username'] ?? '');
+                                if (empty($tCanon)) {
+                                    $tNameLower = strtolower($t['assignee_name'] ?? '');
+                                    if (str_contains($tNameLower, 'oluwatosin') || str_contains($tNameLower, 'ligali')) $tCanon = 'oluwatosin';
+                                    else if (str_contains($tNameLower, 'mojisola')) $tCanon = 'mojisola';
+                                    else if (str_contains($tNameLower, 'kingsley')) $tCanon = 'kingsley';
+                                    else if (str_contains($tNameLower, 'daniel')) $tCanon = 'daniel';
+                                    else if (str_contains($tNameLower, 'victoria')) $tCanon = 'victoria';
+                                }
+                                return ($tCanon === $activeUserCanon);
+                            });
+                        } else {
+                            $filteredTasks = $allStudioTasks;
+                        }
+
+                        $rawStages = getStudioTaskStagesRepo();
+                        $stagesConfig = [];
+                        foreach ($rawStages as $stg) {
+                            $k = $stg['key'];
+                            $stagesConfig[$k] = [
+                                'title' => $stg['title'],
+                                'color' => $stg['color'] ?? '#3b82f6',
+                                'is_default' => !empty($stg['is_default'])
+                            ];
+                        }
+
+                        $tasksByStage = [];
+                        foreach ($stagesConfig as $stKey => $stConf) {
+                            $tasksByStage[$stKey] = [];
+                        }
+                        foreach ($filteredTasks as $t) {
+                            $stg = strtolower(trim($t['stage'] ?? 'ideas'));
+                            if (!isset($tasksByStage[$stg])) {
+                                $stg = 'ideas';
+                            }
+                            $tasksByStage[$stg][] = $t;
+                        }
+                        ?>
+
+                        <div class="dashboard-card" style="margin-bottom: 0; padding: 20px; background: #0f172a; color: #f8fafc; border-radius: 16px;">
+                            
+                            <!-- KANBAN TOP TOOLBAR HEADER -->
+                            <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid rgba(255, 255, 255, 0.08);">
+                                
+                                <!-- LEFT SUB-NAVIGATION TABS (My Tasks vs All Tasks) -->
+                                <div style="display: flex; align-items: center; gap: 18px;">
+                                    <a href="/admin/index.php?section=comms&tab=tasks&view=my" style="font-size: 0.92rem; font-weight: 800; text-decoration: none; padding-bottom: 6px; display: inline-flex; align-items: center; gap: 6px; transition: all 0.15s ease; <?php echo ($taskSubView === 'my') ? 'color: #ef4444; border-bottom: 2px solid #ef4444;' : 'color: #94a3b8; border-bottom: 2px solid transparent;'; ?>">
+                                        <i class="fa-solid fa-user-check" style="font-size: 0.85rem;"></i>
+                                        <span>My Tasks</span>
+                                    </a>
+                                    <a href="/admin/index.php?section=comms&tab=tasks&view=all" style="font-size: 0.92rem; font-weight: 800; text-decoration: none; padding-bottom: 6px; display: inline-flex; align-items: center; gap: 6px; transition: all 0.15s ease; <?php echo ($taskSubView === 'all') ? 'color: #ef4444; border-bottom: 2px solid #ef4444;' : 'color: #94a3b8; border-bottom: 2px solid transparent;'; ?>">
+                                        <i class="fa-solid fa-users-gear" style="font-size: 0.85rem;"></i>
+                                        <span>All Tasks</span>
+                                    </a>
+                                </div>
+
+                                <!-- RIGHT ACTIONS: SEARCH INPUT & + CREATE TASK BUTTON -->
+                                <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+                                    <div style="position: relative; width: 220px;">
+                                        <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #64748b; font-size: 0.8rem;"></i>
+                                        <input type="text" id="taskSearchInput" onkeyup="filterTasksKanban()" placeholder="Search tasks..." style="width: 100%; padding: 8px 12px 8px 34px; font-size: 0.82rem; background: #1e293b; border: 1px solid #334155; border-radius: 8px; color: #ffffff; outline: none;">
+                                    </div>
+                                    <?php if (isSuperAdminUser($userRole, $userEmail, $username)): ?>
+                                        <button type="button" onclick="openCreateStageModal()" style="background: #16a34a; color: #ffffff; border: none; padding: 8px 14px; border-radius: 8px; font-size: 0.84rem; font-weight: 800; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 4px 12px rgba(22, 163, 74, 0.3); transition: all 0.15s ease;" onmouseover="this.style.background='#15803d'" onmouseout="this.style.background='#16a34a'">
+                                            <i class="fa-solid fa-tags"></i> Add Section Label
+                                        </button>
+                                    <?php endif; ?>
+                                    <button type="button" onclick="openCreateTaskModal()" style="background: #dc2626; color: #ffffff; border: none; padding: 8px 16px; border-radius: 8px; font-size: 0.84rem; font-weight: 800; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3); transition: all 0.15s ease;" onmouseover="this.style.background='#b91c1c'" onmouseout="this.style.background='#dc2626'">
+                                        <i class="fa-solid fa-plus"></i> Create Task
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- HORIZONTAL SCROLLABLE KANBAN PIPELINE COLUMNS -->
+                            <div style="display: flex; gap: 16px; overflow-x: auto; padding-bottom: 14px; scrollbar-width: thin;" id="kanbanBoardContainer">
+                                <?php foreach ($stagesConfig as $stgKey => $stgConf): ?>
+                                    <?php 
+                                    $colTasks = $tasksByStage[$stgKey] ?? [];
+                                    $colCount = count($colTasks);
+                                    ?>
+                                    <div class="kanban-column" data-stage="<?php echo $stgKey; ?>" ondragover="allowTaskDrop(event)" ondrop="handleTaskDrop(event, '<?php echo $stgKey; ?>')" style="flex: 0 0 280px; width: 280px; background: #1e293b; border-radius: 14px; border: 1px solid #334155; display: flex; flex-direction: column; max-height: 520px;">
+                                        
+                                        <!-- Column Header -->
+                                        <div style="padding: 14px 16px; border-bottom: 1px solid #334155; border-top: 3px solid <?php echo $stgConf['color']; ?>; border-top-left-radius: 14px; border-top-right-radius: 14px; display: flex; align-items: center; justify-content: space-between; background: rgba(15, 23, 42, 0.4);">
+                                            <div style="display: flex; align-items: center; gap: 8px; overflow: hidden;">
+                                                <span style="font-size: 0.88rem; font-weight: 800; color: #ffffff; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"><?php echo htmlspecialchars($stgConf['title']); ?></span>
+                                                <?php if (isSuperAdminUser($userRole, $userEmail, $username)): ?>
+                                                    <button type="button" onclick="openEditStageModal('<?php echo htmlspecialchars($stgKey); ?>', '<?php echo htmlspecialchars(addslashes($stgConf['title'])); ?>', '<?php echo htmlspecialchars($stgConf['color']); ?>')" style="background: none; border: none; color: #64748b; cursor: pointer; padding: 0; font-size: 0.76rem;" onmouseover="this.style.color='#38bdf8'" onmouseout="this.style.color='#64748b'" title="Rename Section Label">
+                                                        <i class="fa-solid fa-pen-to-square"></i>
+                                                    </button>
+                                                    <?php if (empty($stgConf['is_default'])): ?>
+                                                        <form method="POST" action="/admin/index.php?section=comms&tab=tasks" style="display: inline;" onsubmit="return confirm('Delete this section label?');">
+                                                            <input type="hidden" name="action" value="delete_studio_task_stage">
+                                                            <input type="hidden" name="stage_key" value="<?php echo htmlspecialchars($stgKey); ?>">
+                                                            <button type="submit" style="background: none; border: none; color: #64748b; cursor: pointer; padding: 0; font-size: 0.76rem;" onmouseover="this.style.color='#ef4444'" onmouseout="this.style.color='#64748b'" title="Delete Section Label">
+                                                                <i class="fa-solid fa-trash-can"></i>
+                                                            </button>
+                                                        </form>
+                                                    <?php endif; ?>
+                                                <?php endif; ?>
+                                            </div>
+                                            <span style="font-size: 0.72rem; font-weight: 800; background: rgba(255,255,255,0.1); color: #94a3b8; padding: 2px 8px; border-radius: 12px; min-width: 20px; text-align: center;"><?php echo $colCount; ?></span>
+                                        </div>
+
+                                        <!-- Column Cards List Container -->
+                                        <div style="padding: 12px; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 12px;" class="kanban-card-list">
+                                            <?php if (empty($colTasks)): ?>
+                                                <div style="text-align: center; padding: 24px 10px; color: #64748b; font-size: 0.78rem; font-weight: 600; border: 1px dashed #334155; border-radius: 10px;">
+                                                    No tasks in this stage
+                                                </div>
+                                            <?php else: ?>
+                                                <?php foreach ($colTasks as $tsk): ?>
+                                                    <div class="task-card-item" id="card_<?php echo $tsk['id']; ?>" draggable="true" ondragstart="handleTaskDragStart(event, '<?php echo $tsk['id']; ?>')" onclick="openEditTaskModal(event, <?php echo htmlspecialchars(json_encode($tsk)); ?>)" style="background: #0f172a; border: 1px solid #334155; border-radius: 12px; padding: 14px; transition: all 0.15s ease; cursor: pointer;" onmouseover="this.style.borderColor='#64748b'" onmouseout="this.style.borderColor='#334155'">
+                                                        
+                                                        <!-- Client / Organization Badge -->
+                                                        <?php if (!empty($tsk['client_org'])): ?>
+                                                            <div style="font-size: 0.70rem; font-weight: 800; color: #38bdf8; margin-bottom: 6px; display: inline-flex; align-items: center; gap: 4px; background: rgba(56, 189, 248, 0.1); padding: 2px 8px; border-radius: 12px; border: 1px solid rgba(56, 189, 248, 0.25);">
+                                                                <i class="fa-solid fa-building" style="font-size: 0.65rem;"></i>
+                                                                <span><?php echo htmlspecialchars($tsk['client_org']); ?></span>
+                                                            </div>
+                                                        <?php endif; ?>
+
+                                                        <!-- Task Title -->
+                                                        <h4 style="font-size: 0.92rem; font-weight: 800; color: #f8fafc; margin: 0 0 6px 0; line-height: 1.3;">
+                                                            <?php echo htmlspecialchars($tsk['title']); ?>
+                                                        </h4>
+
+                                                        <!-- Task Description -->
+                                                        <?php if (!empty($tsk['description'])): ?>
+                                                            <p style="font-size: 0.78rem; color: #94a3b8; margin: 0 0 10px 0; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+                                                                <?php echo htmlspecialchars($tsk['description']); ?>
+                                                            </p>
+                                                        <?php endif; ?>
+
+                                                        <!-- Tags Row -->
+                                                        <?php if (!empty($tsk['tags']) && is_array($tsk['tags'])): ?>
+                                                            <div style="display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 10px;">
+                                                                <?php foreach ($tsk['tags'] as $tg): ?>
+                                                                    <span style="font-size: 0.66rem; font-weight: 700; background: #1e293b; color: #cbd5e1; border: 1px solid #334155; padding: 2px 7px; border-radius: 6px;">
+                                                                        #<?php echo htmlspecialchars($tg); ?>
+                                                                    </span>
+                                                                <?php endforeach; ?>
+                                                            </div>
+                                                        <?php endif; ?>
+
+                                                        <!-- Attachments Section -->
+                                                        <?php if (!empty($tsk['attachments']) && is_array($tsk['attachments'])): ?>
+                                                            <div style="margin-bottom: 10px; display: flex; flex-direction: column; gap: 4px;" onclick="event.stopPropagation()">
+                                                                <?php foreach ($tsk['attachments'] as $att): ?>
+                                                                    <a href="<?php echo htmlspecialchars($att['url']); ?>" target="_blank" style="font-size: 0.72rem; font-weight: 700; color: #a855f7; text-decoration: none; display: inline-flex; align-items: center; gap: 5px; background: rgba(168, 85, 247, 0.1); padding: 3px 8px; border-radius: 6px; border: 1px solid rgba(168, 85, 247, 0.25);" title="Download/View Attachment">
+                                                                        <i class="fa-solid fa-paperclip"></i>
+                                                                        <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 180px;"><?php echo htmlspecialchars($att['name']); ?></span>
+                                                                    </a>
+                                                                <?php endforeach; ?>
+                                                            </div>
+                                                        <?php endif; ?>
+
+                                                        <!-- Card Footer Row -->
+                                                        <div style="display: flex; align-items: center; justify-content: space-between; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 10px; margin-top: 4px;">
+                                                            <!-- Assignee Avatar Stack -->
+                                                            <div style="display: flex; align-items: center; gap: 6px;">
+                                                                <?php 
+                                                                $taskAssignees = $tsk['assignees'] ?? [];
+                                                                if (empty($taskAssignees) && !empty($tsk['assignee_name'])) {
+                                                                    $taskAssignees = [[
+                                                                        'username' => $tsk['assignee_username'] ?? '',
+                                                                        'name' => $tsk['assignee_name'] ?? 'Unassigned',
+                                                                        'avatar' => $tsk['assignee_avatar'] ?? ''
+                                                                    ]];
+                                                                }
+                                                                ?>
+                                                                <?php if (!empty($taskAssignees)): ?>
+                                                                    <div style="display: flex; align-items: center;">
+                                                                        <?php foreach (array_slice($taskAssignees, 0, 4) as $aIdx => $assg): ?>
+                                                                            <?php if (!empty($assg['avatar'])): ?>
+                                                                                <img src="<?php echo htmlspecialchars(getCloudinaryUrl($assg['avatar'])); ?>" alt="<?php echo htmlspecialchars($assg['name']); ?>" style="width: 24px; height: 24px; border-radius: 50%; object-fit: cover; border: 2px solid #0f172a; margin-left: <?php echo ($aIdx > 0) ? '-8px' : '0'; ?>; z-index: <?php echo (10 - $aIdx); ?>;" title="Assigned to <?php echo htmlspecialchars($assg['name']); ?>">
+                                                                            <?php else: ?>
+                                                                                <div style="width: 24px; height: 24px; border-radius: 50%; background: #dc2626; color: #ffffff; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.65rem; border: 2px solid #0f172a; margin-left: <?php echo ($aIdx > 0) ? '-8px' : '0'; ?>; z-index: <?php echo (10 - $aIdx); ?>;" title="Assigned to <?php echo htmlspecialchars($assg['name']); ?>">
+                                                                                    <?php echo strtoupper(substr($assg['name'], 0, 2)); ?>
+                                                                                </div>
+                                                                            <?php endif; ?>
+                                                                        <?php endforeach; ?>
+                                                                        <?php if (count($taskAssignees) > 4): ?>
+                                                                            <div style="width: 22px; height: 22px; border-radius: 50%; background: #334155; color: #cbd5e1; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.6rem; border: 2px solid #0f172a; margin-left: -8px; z-index: 5;" title="<?php echo (count($taskAssignees) - 4); ?> more assignees">
+                                                                                +<?php echo (count($taskAssignees) - 4); ?>
+                                                                            </div>
+                                                                        <?php endif; ?>
+                                                                    </div>
+                                                                <?php endif; ?>
+                                                                <span style="font-size: 0.72rem; color: #ef4444; font-weight: 800; display: inline-flex; align-items: center; gap: 3px;">
+                                                                    <i class="fa-regular fa-clock" style="font-size: 0.68rem;"></i>
+                                                                    <?php echo htmlspecialchars($tsk['due_date_str']); ?>
+                                                                </span>
+                                                            </div>
+
+                                                            <!-- Comments & Attachments Counters -->
+                                                            <div style="display: flex; align-items: center; gap: 8px; font-size: 0.72rem; color: #64748b; font-weight: 700;">
+                                                                <span><i class="fa-regular fa-comment"></i> <?php echo (int)($tsk['comments_count'] ?? 0); ?></span>
+                                                                <span><i class="fa-paperclip"></i> <?php echo (int)($tsk['attachments_count'] ?? 0); ?></span>
+                                                                <button type="button" onclick="event.stopPropagation(); deleteTaskItem('<?php echo $tsk['id']; ?>')" style="background: none; border: none; color: #64748b; cursor: pointer; padding: 0; font-size: 0.76rem;" onmouseover="this.style.color='#ef4444'" onmouseout="this.style.color='#64748b'" title="Delete Task">
+                                                                    <i class="fa-solid fa-trash"></i>
+                                                                </button>
+                                                            </div>
+                                                        </div>
+
+                                                    </div>
+                                                <?php endforeach; ?>
+                                            <?php endif; ?>
+                                        </div>
+
+                                    </div>
+                                <?php endforeach; ?>
+                            </div>
+
                         </div>
-                    </div>
+
+                    <?php elseif ($activeTab === 'events'): ?>
+                        <!-- EVENTS VIEW -->
+                        <div class="dashboard-card" style="margin-bottom: 0; padding: 24px;">
+                            <div class="card-header-row" style="margin-bottom: 18px;">
+                                <div class="card-icon-badge" style="background: #fdf2f8; color: #be185d;"><i class="fa-solid fa-calendar-days"></i></div>
+                                <div class="card-title-text">Studio Calendar & Production Events</div>
+                            </div>
+
+                            <div style="display: flex; flex-direction: column; gap: 14px;">
+                                <div style="padding: 16px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; display: flex; gap: 16px; align-items: center;">
+                                    <div style="padding: 12px 18px; background: #dc2626; color: #ffffff; border-radius: 10px; text-align: center; font-weight: 800;">
+                                        <div style="font-size: 0.72rem; text-transform: uppercase;">AUG</div>
+                                        <div style="font-size: 1.4rem;">28</div>
+                                    </div>
+                                    <div>
+                                        <h4 style="font-size: 1rem; font-weight: 800; color: #0f172a; margin: 0 0 4px 0;">Lagos Commercial Shoot & Directing Briefing</h4>
+                                        <div style="font-size: 0.8rem; color: #64748b;">10:00 AM &ndash; 04:00 PM &bull; Main Soundstage</div>
+                                    </div>
+                                </div>
+
+                                <div style="padding: 16px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; display: flex; gap: 16px; align-items: center;">
+                                    <div style="padding: 12px 18px; background: #0284c7; color: #ffffff; border-radius: 10px; text-align: center; font-weight: 800;">
+                                        <div style="font-size: 0.72rem; text-transform: uppercase;">SEP</div>
+                                        <div style="font-size: 1.4rem;">02</div>
+                                    </div>
+                                    <div>
+                                        <h4 style="font-size: 1rem; font-weight: 800; color: #0f172a; margin: 0 0 4px 0;">Monthly Studio All-Hands & Townhall Meeting</h4>
+                                        <div style="font-size: 0.8rem; color: #64748b;">02:00 PM &ndash; 03:30 PM &bull; Virtual & Conference Room A</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    <?php endif; ?>
+
                 </div>
+
+                <script>
+                // Auto scroll chat box to bottom on page load
+                var commsContainer = document.getElementById('commsChatContainer');
+                if (commsContainer) {
+                    commsContainer.scrollTop = commsContainer.scrollHeight;
+                }
+                </script>
 
             <?php elseif ($activeSection === 'assets'): ?>
                 <!-- SECTION: ASSETS -->
@@ -8600,6 +10416,79 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
             }
         }
 
+        function handlePortfolioImageFileSelect(input) {
+            if (input.files && input.files[0]) {
+                const file = input.files[0];
+                const preview = document.getElementById('portfolio_image_preview');
+                const urlInput = document.getElementById('portfolio_image_url_input');
+                const statusBadge = document.getElementById('portfolio_upload_status_badge');
+                const btn = document.getElementById('portfolio_upload_btn');
+
+                // Instant local preview
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    if (preview) preview.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+
+                if (statusBadge) {
+                    statusBadge.style.display = 'inline-flex';
+                    statusBadge.style.background = '#eff6ff';
+                    statusBadge.style.color = '#1d4ed8';
+                    statusBadge.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Uploading to Cloudinary...';
+                }
+
+                if (btn) {
+                    btn.disabled = true;
+                    btn.style.opacity = '0.7';
+                    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Uploading...';
+                }
+
+                // Immediate AJAX upload to Cloudinary CDN
+                const formData = new FormData();
+                formData.append('action', 'upload_cloudinary_ajax');
+                formData.append('folder', 'falhen/portfolio');
+                formData.append('file', file);
+
+                fetch('/admin/index.php', { method: 'POST', body: formData })
+                .then(res => res.json())
+                .then(data => {
+                    if (btn) {
+                        btn.disabled = false;
+                        btn.style.opacity = '1';
+                        btn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Upload Custom Cover';
+                    }
+                    if (data.success && data.url) {
+                        if (preview) preview.src = data.url;
+                        if (urlInput) urlInput.value = data.url;
+                        if (statusBadge) {
+                            statusBadge.style.background = '#f0fdf4';
+                            statusBadge.style.color = '#166534';
+                            statusBadge.innerHTML = '<i class="fa-solid fa-circle-check" style="color:#22c55e;"></i> Uploaded to Cloudinary!';
+                        }
+                    } else {
+                        if (statusBadge) {
+                            statusBadge.style.background = '#fef2f2';
+                            statusBadge.style.color = '#b91c1c';
+                            statusBadge.innerHTML = '<i class="fa-solid fa-circle-exclamation"></i> Upload failed: ' + (data.message || 'Unknown error');
+                        }
+                    }
+                })
+                .catch(() => {
+                    if (btn) {
+                        btn.disabled = false;
+                        btn.style.opacity = '1';
+                        btn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Upload Custom Cover';
+                    }
+                    if (statusBadge) {
+                        statusBadge.style.background = '#fef2f2';
+                        statusBadge.style.color = '#b91c1c';
+                        statusBadge.innerHTML = '<i class="fa-solid fa-circle-exclamation"></i> Network upload error';
+                    }
+                });
+            }
+        }
+
         function moveBlogCard(btn, direction) {
             const card = btn.closest('.blog-card-admin-item');
             const grid = document.getElementById('blogPostsGrid');
@@ -8754,6 +10643,573 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
         });
     </script>
 
+    <!-- CREATE NEW TASK MODAL OVERLAY (ZOHO KANBAN BOARD) -->
+    <div id="createTaskModal" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.75); backdrop-filter: blur(6px); z-index: 100000; align-items: center; justify-content: center; padding: 20px; animation: fadeInModal 0.2s ease;">
+        <div style="background: #ffffff; border-radius: 20px; max-width: 540px; width: 100%; padding: 32px 28px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.3); border: 1px solid #e2e8f0; position: relative; max-height: 90vh; overflow-y: auto;">
+            
+            <button type="button" onclick="closeCreateTaskModal()" style="position: absolute; top: 16px; right: 16px; background: #f1f5f9; border: none; width: 32px; height: 32px; border-radius: 50%; color: #64748b; font-size: 1rem; cursor: pointer; display: flex; align-items: center; justify-content: center;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='#f1f5f9'">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+
+            <div style="text-align: center; margin-bottom: 20px;">
+                <div style="width: 54px; height: 54px; border-radius: 50%; background: #fef2f2; border: 1px solid #fecaca; color: #dc2626; display: flex; align-items: center; justify-content: center; margin: 0 auto 12px auto; font-size: 1.4rem;">
+                    <i class="fa-solid fa-list-check"></i>
+                </div>
+                <h2 style="font-size: 1.3rem; font-weight: 800; color: #0f172a; margin: 0 0 4px 0;">Create New Task</h2>
+                <p style="font-size: 0.84rem; color: #64748b; margin: 0;">Add a new task with checklist items, tags, and priority level.</p>
+            </div>
+
+            <form method="POST" action="/admin/index.php?section=comms&tab=tasks" enctype="multipart/form-data" style="display: flex; flex-direction: column; gap: 14px;">
+                <input type="hidden" name="action" value="create_studio_task">
+
+                <div style="display: flex; gap: 12px;">
+                    <div style="flex: 1.2;">
+                        <label style="font-size: 0.76rem; font-weight: 700; color: #475569; display: block; margin-bottom: 4px;">Task Title *</label>
+                        <input type="text" name="title" placeholder="e.g. Scout Indoor Locations" required style="width: 100%; padding: 10px; font-size: 0.86rem; border: 1px solid #cbd5e1; border-radius: 8px;">
+                    </div>
+                    <div style="flex: 1;">
+                        <label style="font-size: 0.76rem; font-weight: 700; color: #475569; display: block; margin-bottom: 4px;">Client / Organization</label>
+                        <input type="text" name="client_org" placeholder="e.g. Netflix, Red Bull, Nike" style="width: 100%; padding: 10px; font-size: 0.86rem; border: 1px solid #cbd5e1; border-radius: 8px;">
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 12px;">
+                    <div style="flex: 1;">
+                        <label style="font-size: 0.76rem; font-weight: 700; color: #475569; display: block; margin-bottom: 4px;">Priority Level</label>
+                        <select name="priority" style="width: 100%; padding: 10px; font-size: 0.86rem; border: 1px solid #cbd5e1; border-radius: 8px; background: #ffffff;">
+                            <option value="Low">Low Priority</option>
+                            <option value="Medium" selected>Medium Priority</option>
+                            <option value="High">High Priority</option>
+                            <option value="Urgent">Urgent Priority</option>
+                        </select>
+                    </div>
+                    <div style="flex: 1;">
+                        <label style="font-size: 0.76rem; font-weight: 700; color: #475569; display: block; margin-bottom: 4px;">Section</label>
+                        <select name="stage" style="width: 100%; padding: 10px; font-size: 0.86rem; border: 1px solid #cbd5e1; border-radius: 8px; background: #ffffff;">
+                            <?php foreach ($stagesConfig as $stKey => $stConf): ?>
+                                <option value="<?php echo htmlspecialchars($stKey); ?>">
+                                    <?php echo htmlspecialchars($stConf['title']); ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 12px;">
+                    <div style="flex: 1;">
+                        <label style="font-size: 0.76rem; font-weight: 700; color: #475569; display: block; margin-bottom: 4px;">Assign To Staff</label>
+                        <div style="max-height: 110px; overflow-y: auto; border: 1px solid #cbd5e1; border-radius: 8px; padding: 6px 10px; background: #ffffff; display: flex; flex-direction: column; gap: 6px;">
+                            <?php $allStaffMembers = getStaffAccountsRepo(); ?>
+                            <?php foreach ($allStaffMembers as $sm): ?>
+                                <label style="display: flex; align-items: center; gap: 8px; font-size: 0.82rem; font-weight: 600; color: #334155; cursor: pointer; user-select: none;">
+                                    <input type="checkbox" name="assignees[]" value="<?php echo htmlspecialchars($sm['username']); ?>" style="accent-color: #dc2626; cursor: pointer;">
+                                    <?php if (!empty($sm['avatar'])): ?>
+                                        <img src="<?php echo htmlspecialchars(getCloudinaryUrl($sm['avatar'])); ?>" style="width: 20px; height: 20px; border-radius: 50%; object-fit: cover;">
+                                    <?php endif; ?>
+                                    <span><?php echo htmlspecialchars($sm['full_name']); ?></span>
+                                </label>
+                            <?php endforeach; ?>
+                        </div>
+                    </div>
+                    <div style="flex: 1;">
+                        <label style="font-size: 0.76rem; font-weight: 700; color: #475569; display: block; margin-bottom: 4px;">Due Date</label>
+                        <input type="date" name="due_date" value="<?php echo date('Y-m-d', strtotime('+3 days')); ?>" style="width: 100%; padding: 10px; font-size: 0.86rem; border: 1px solid #cbd5e1; border-radius: 8px;">
+                    </div>
+                </div>
+
+                <div>
+                    <label style="font-size: 0.76rem; font-weight: 700; color: #475569; display: block; margin-bottom: 4px;">Tags (comma separated)</label>
+                    <input type="text" name="tags" placeholder="e.g. Studio, 4K, Color Grade, Rigging" style="width: 100%; padding: 10px; font-size: 0.86rem; border: 1px solid #cbd5e1; border-radius: 8px;">
+                </div>
+
+                <div>
+                    <label style="font-size: 0.76rem; font-weight: 700; color: #475569; display: block; margin-bottom: 6px;">Checklist Sub-tasks</label>
+                    <div id="create_checklist_container" style="display: flex; flex-direction: column; gap: 6px; margin-bottom: 8px;"></div>
+                    <div style="display: flex; gap: 8px;">
+                        <input type="text" id="create_new_checklist_input" placeholder="Type a sub-task and press Enter..." style="flex: 1; padding: 8px 12px; font-size: 0.84rem; border: 1px solid #cbd5e1; border-radius: 8px; outline: none;" onkeydown="if(event.key === 'Enter'){ event.preventDefault(); addChecklistItemFromInput('create'); }">
+                        <button type="button" onclick="addChecklistItemFromInput('create')" style="background: #f1f5f9; color: #334155; border: 1px solid #cbd5e1; padding: 8px 14px; border-radius: 8px; font-size: 0.8rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; white-space: nowrap;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='#f1f5f9'">
+                            <i class="fa-solid fa-plus"></i> Add Item
+                        </button>
+                    </div>
+                </div>
+
+                <div>
+                    <label style="font-size: 0.76rem; font-weight: 700; color: #475569; display: block; margin-bottom: 4px;">Task Attachment (PDF, Image, Doc, Zip)</label>
+                    <input type="file" name="task_attachment" accept=".pdf,.doc,.docx,.png,.jpg,.jpeg,.zip,.mp4,.mov" style="width: 100%; padding: 8px; font-size: 0.82rem; border: 1px solid #cbd5e1; border-radius: 8px; background: #f8fafc;">
+                </div>
+
+                <div>
+                    <label style="font-size: 0.76rem; font-weight: 700; color: #475569; display: block; margin-bottom: 4px;">Task Description</label>
+                    <textarea name="description" rows="2" placeholder="Provide details, scope, or background context..." style="width: 100%; padding: 10px; font-size: 0.86rem; border: 1px solid #cbd5e1; border-radius: 8px; font-family: inherit;"></textarea>
+                </div>
+
+                <div style="display: flex; gap: 12px; margin-top: 10px;">
+                    <button type="button" onclick="closeCreateTaskModal()" style="flex: 1; padding: 11px; background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 10px; font-weight: 700; color: #475569; cursor: pointer;">
+                        Cancel
+                    </button>
+                    <button type="submit" style="flex: 1; padding: 11px; background: #dc2626; border: 1px solid #dc2626; border-radius: 10px; font-weight: 800; color: #ffffff; cursor: pointer; box-shadow: 0 4px 12px rgba(220,38,38,0.3);">
+                        Create New Task
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- EDIT TASK MODAL OVERLAY -->
+    <div id="editTaskModal" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.75); backdrop-filter: blur(6px); z-index: 100000; align-items: center; justify-content: center; padding: 20px; animation: fadeInModal 0.2s ease;">
+        <div style="background: #ffffff; border-radius: 20px; max-width: 540px; width: 100%; padding: 32px 28px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.3); border: 1px solid #e2e8f0; position: relative; max-height: 90vh; overflow-y: auto;">
+            
+            <button type="button" onclick="closeEditTaskModal()" style="position: absolute; top: 16px; right: 16px; background: #f1f5f9; border: none; width: 32px; height: 32px; border-radius: 50%; color: #64748b; font-size: 1rem; cursor: pointer; display: flex; align-items: center; justify-content: center;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='#f1f5f9'">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+
+            <div style="text-align: center; margin-bottom: 20px;">
+                <div style="width: 54px; height: 54px; border-radius: 50%; background: #fef2f2; border: 1px solid #fecaca; color: #dc2626; display: flex; align-items: center; justify-content: center; margin: 0 auto 12px auto; font-size: 1.4rem;">
+                    <i class="fa-solid fa-pen-to-square"></i>
+                </div>
+                <h2 style="font-size: 1.3rem; font-weight: 800; color: #0f172a; margin: 0 0 4px 0;">Edit Task</h2>
+                <p style="font-size: 0.84rem; color: #64748b; margin: 0;">Modify task details, priority, checklist, assignees, or stage.</p>
+            </div>
+
+            <form method="POST" action="/admin/index.php?section=comms&tab=tasks" enctype="multipart/form-data" style="display: flex; flex-direction: column; gap: 14px;">
+                <input type="hidden" name="action" value="update_studio_task">
+                <input type="hidden" name="task_id" id="edit_task_id" value="">
+
+                <div style="display: flex; gap: 12px;">
+                    <div style="flex: 1.2;">
+                        <label style="font-size: 0.76rem; font-weight: 700; color: #475569; display: block; margin-bottom: 4px;">Task Title *</label>
+                        <input type="text" name="title" id="edit_task_title" required style="width: 100%; padding: 10px; font-size: 0.86rem; border: 1px solid #cbd5e1; border-radius: 8px;">
+                    </div>
+                    <div style="flex: 1;">
+                        <label style="font-size: 0.76rem; font-weight: 700; color: #475569; display: block; margin-bottom: 4px;">Client / Organization</label>
+                        <input type="text" name="client_org" id="edit_task_client_org" placeholder="e.g. Netflix, Red Bull, Nike" style="width: 100%; padding: 10px; font-size: 0.86rem; border: 1px solid #cbd5e1; border-radius: 8px;">
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 12px;">
+                    <div style="flex: 1;">
+                        <label style="font-size: 0.76rem; font-weight: 700; color: #475569; display: block; margin-bottom: 4px;">Priority Level</label>
+                        <select name="priority" id="edit_task_priority" style="width: 100%; padding: 10px; font-size: 0.86rem; border: 1px solid #cbd5e1; border-radius: 8px; background: #ffffff;">
+                            <option value="Low">Low Priority</option>
+                            <option value="Medium">Medium Priority</option>
+                            <option value="High">High Priority</option>
+                            <option value="Urgent">Urgent Priority</option>
+                        </select>
+                    </div>
+                    <div style="flex: 1;">
+                        <label style="font-size: 0.76rem; font-weight: 700; color: #475569; display: block; margin-bottom: 4px;">Section</label>
+                        <select name="stage" id="edit_task_stage" style="width: 100%; padding: 10px; font-size: 0.86rem; border: 1px solid #cbd5e1; border-radius: 8px; background: #ffffff;">
+                            <?php foreach ($stagesConfig as $stKey => $stConf): ?>
+                                <option value="<?php echo htmlspecialchars($stKey); ?>">
+                                    <?php echo htmlspecialchars($stConf['title']); ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 12px;">
+                    <div style="flex: 1;">
+                        <label style="font-size: 0.76rem; font-weight: 700; color: #475569; display: block; margin-bottom: 4px;">Assign To Staff</label>
+                        <div style="max-height: 110px; overflow-y: auto; border: 1px solid #cbd5e1; border-radius: 8px; padding: 6px 10px; background: #ffffff; display: flex; flex-direction: column; gap: 6px;">
+                            <?php foreach ($allStaffMembers as $sm): ?>
+                                <label style="display: flex; align-items: center; gap: 8px; font-size: 0.82rem; font-weight: 600; color: #334155; cursor: pointer; user-select: none;">
+                                    <input type="checkbox" name="assignees[]" value="<?php echo htmlspecialchars($sm['username']); ?>" style="accent-color: #dc2626; cursor: pointer;">
+                                    <?php if (!empty($sm['avatar'])): ?>
+                                        <img src="<?php echo htmlspecialchars(getCloudinaryUrl($sm['avatar'])); ?>" style="width: 20px; height: 20px; border-radius: 50%; object-fit: cover;">
+                                    <?php endif; ?>
+                                    <span><?php echo htmlspecialchars($sm['full_name']); ?></span>
+                                </label>
+                            <?php endforeach; ?>
+                        </div>
+                    </div>
+                    <div style="flex: 1;">
+                        <label style="font-size: 0.76rem; font-weight: 700; color: #475569; display: block; margin-bottom: 4px;">Due Date</label>
+                        <input type="date" name="due_date" id="edit_task_due_date" style="width: 100%; padding: 10px; font-size: 0.86rem; border: 1px solid #cbd5e1; border-radius: 8px;">
+                    </div>
+                </div>
+
+                <div>
+                    <label style="font-size: 0.76rem; font-weight: 700; color: #475569; display: block; margin-bottom: 4px;">Tags (comma separated)</label>
+                    <input type="text" name="tags" id="edit_task_tags" style="width: 100%; padding: 10px; font-size: 0.86rem; border: 1px solid #cbd5e1; border-radius: 8px;">
+                </div>
+
+                <div>
+                    <label style="font-size: 0.76rem; font-weight: 700; color: #475569; display: block; margin-bottom: 6px;">Checklist Sub-tasks</label>
+                    <div id="edit_checklist_container" style="display: flex; flex-direction: column; gap: 6px; margin-bottom: 8px;"></div>
+                    <div style="display: flex; gap: 8px;">
+                        <input type="text" id="edit_new_checklist_input" placeholder="Type a sub-task and press Enter..." style="flex: 1; padding: 8px 12px; font-size: 0.84rem; border: 1px solid #cbd5e1; border-radius: 8px; outline: none;" onkeydown="if(event.key === 'Enter'){ event.preventDefault(); addChecklistItemFromInput('edit'); }">
+                        <button type="button" onclick="addChecklistItemFromInput('edit')" style="background: #f1f5f9; color: #334155; border: 1px solid #cbd5e1; padding: 8px 14px; border-radius: 8px; font-size: 0.8rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; white-space: nowrap;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='#f1f5f9'">
+                            <i class="fa-solid fa-plus"></i> Add Item
+                        </button>
+                    </div>
+                </div>
+
+                <div>
+                    <label style="font-size: 0.76rem; font-weight: 700; color: #475569; display: block; margin-bottom: 4px;">Upload New Attachment (PDF, Image, Doc, Zip)</label>
+                    <input type="file" name="task_attachment" accept=".pdf,.doc,.docx,.png,.jpg,.jpeg,.zip,.mp4,.mov" style="width: 100%; padding: 8px; font-size: 0.82rem; border: 1px solid #cbd5e1; border-radius: 8px; background: #f8fafc;">
+                    <div id="edit_task_attachments_list" style="margin-top: 6px; display: flex; flex-direction: column; gap: 4px;"></div>
+                </div>
+
+                <div>
+                    <label style="font-size: 0.76rem; font-weight: 700; color: #475569; display: block; margin-bottom: 4px;">Task Description</label>
+                    <textarea name="description" id="edit_task_description" rows="2" style="width: 100%; padding: 10px; font-size: 0.86rem; border: 1px solid #cbd5e1; border-radius: 8px; font-family: inherit;"></textarea>
+                </div>
+
+                <div style="display: flex; gap: 12px; margin-top: 10px;">
+                    <button type="button" onclick="closeEditTaskModal()" style="flex: 1; padding: 11px; background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 10px; font-weight: 700; color: #475569; cursor: pointer;">
+                        Cancel
+                    </button>
+                    <button type="submit" style="flex: 1; padding: 11px; background: #dc2626; border: 1px solid #dc2626; border-radius: 10px; font-weight: 800; color: #ffffff; cursor: pointer; box-shadow: 0 4px 12px rgba(220,38,38,0.3);">
+                        Save Task Changes
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- CREATE NEW STAGE / SECTION LABEL MODAL OVERLAY (SUPER ADMIN ONLY) -->
+    <div id="createStageModal" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.75); backdrop-filter: blur(6px); z-index: 100000; align-items: center; justify-content: center; padding: 20px; animation: fadeInModal 0.2s ease;">
+        <div style="background: #ffffff; border-radius: 20px; max-width: 440px; width: 100%; padding: 32px 28px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.3); border: 1px solid #e2e8f0; position: relative;">
+            
+            <button type="button" onclick="closeCreateStageModal()" style="position: absolute; top: 16px; right: 16px; background: #f1f5f9; border: none; width: 32px; height: 32px; border-radius: 50%; color: #64748b; font-size: 1rem; cursor: pointer; display: flex; align-items: center; justify-content: center;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='#f1f5f9'">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+
+            <div style="text-align: center; margin-bottom: 20px;">
+                <div style="width: 54px; height: 54px; border-radius: 50%; background: #f0fdf4; border: 1px solid #bbf7d0; color: #16a34a; display: flex; align-items: center; justify-content: center; margin: 0 auto 12px auto; font-size: 1.4rem;">
+                    <i class="fa-solid fa-tags"></i>
+                </div>
+                <h2 style="font-size: 1.3rem; font-weight: 800; color: #0f172a; margin: 0 0 4px 0;">Create Section Label</h2>
+                <p style="font-size: 0.84rem; color: #64748b; margin: 0;">Add a new stage column to the task board (Super Admin only).</p>
+            </div>
+
+            <form method="POST" action="/admin/index.php?section=comms&tab=tasks" style="display: flex; flex-direction: column; gap: 14px;">
+                <input type="hidden" name="action" value="create_studio_task_stage">
+
+                <div>
+                    <label style="font-size: 0.76rem; font-weight: 700; color: #475569; display: block; margin-bottom: 4px;">Section Title *</label>
+                    <input type="text" name="stage_title" placeholder="e.g. Post Production, Quality Control, VFX" required style="width: 100%; padding: 10px; font-size: 0.86rem; border: 1px solid #cbd5e1; border-radius: 8px;">
+                </div>
+
+                <div>
+                    <label style="font-size: 0.76rem; font-weight: 700; color: #475569; display: block; margin-bottom: 4px;">Accent Badge Color</label>
+                    <input type="color" name="stage_color" value="#a855f7" style="width: 100%; height: 42px; padding: 4px; border: 1px solid #cbd5e1; border-radius: 8px; cursor: pointer; background: #ffffff;">
+                </div>
+
+                <div style="display: flex; gap: 12px; margin-top: 10px;">
+                    <button type="button" onclick="closeCreateStageModal()" style="flex: 1; padding: 11px; background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 10px; font-weight: 700; color: #475569; cursor: pointer;">
+                        Cancel
+                    </button>
+                    <button type="submit" style="flex: 1; padding: 11px; background: #16a34a; border: 1px solid #16a34a; border-radius: 10px; font-weight: 800; color: #ffffff; cursor: pointer; box-shadow: 0 4px 12px rgba(22,163,74,0.3);">
+                        Create Section
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- EDIT STAGE / SECTION LABEL MODAL OVERLAY (SUPER ADMIN ONLY) -->
+    <div id="editStageModal" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.75); backdrop-filter: blur(6px); z-index: 100000; align-items: center; justify-content: center; padding: 20px; animation: fadeInModal 0.2s ease;">
+        <div style="background: #ffffff; border-radius: 20px; max-width: 440px; width: 100%; padding: 32px 28px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.3); border: 1px solid #e2e8f0; position: relative;">
+            
+            <button type="button" onclick="closeEditStageModal()" style="position: absolute; top: 16px; right: 16px; background: #f1f5f9; border: none; width: 32px; height: 32px; border-radius: 50%; color: #64748b; font-size: 1rem; cursor: pointer; display: flex; align-items: center; justify-content: center;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='#f1f5f9'">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+
+            <div style="text-align: center; margin-bottom: 20px;">
+                <div style="width: 54px; height: 54px; border-radius: 50%; background: #f0f9ff; border: 1px solid #bae6fd; color: #0284c7; display: flex; align-items: center; justify-content: center; margin: 0 auto 12px auto; font-size: 1.4rem;">
+                    <i class="fa-solid fa-pen-to-square"></i>
+                </div>
+                <h2 style="font-size: 1.3rem; font-weight: 800; color: #0f172a; margin: 0 0 4px 0;">Rename Section Label</h2>
+                <p style="font-size: 0.84rem; color: #64748b; margin: 0;">Update stage title or accent color (Super Admin only).</p>
+            </div>
+
+            <form method="POST" action="/admin/index.php?section=comms&tab=tasks" style="display: flex; flex-direction: column; gap: 14px;">
+                <input type="hidden" name="action" value="update_studio_task_stage_label">
+                <input type="hidden" name="stage_key" id="edit_stage_key" value="">
+
+                <div>
+                    <label style="font-size: 0.76rem; font-weight: 700; color: #475569; display: block; margin-bottom: 4px;">Section Title *</label>
+                    <input type="text" name="stage_title" id="edit_stage_title" required style="width: 100%; padding: 10px; font-size: 0.86rem; border: 1px solid #cbd5e1; border-radius: 8px;">
+                </div>
+
+                <div>
+                    <label style="font-size: 0.76rem; font-weight: 700; color: #475569; display: block; margin-bottom: 4px;">Accent Badge Color</label>
+                    <input type="color" name="stage_color" id="edit_stage_color" value="#3b82f6" style="width: 100%; height: 42px; padding: 4px; border: 1px solid #cbd5e1; border-radius: 8px; cursor: pointer; background: #ffffff;">
+                </div>
+
+                <div style="display: flex; gap: 12px; margin-top: 10px;">
+                    <button type="button" onclick="closeEditStageModal()" style="flex: 1; padding: 11px; background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 10px; font-weight: 700; color: #475569; cursor: pointer;">
+                        Cancel
+                    </button>
+                    <button type="submit" style="flex: 1; padding: 11px; background: #0284c7; border: 1px solid #0284c7; border-radius: 10px; font-weight: 800; color: #ffffff; cursor: pointer; box-shadow: 0 4px 12px rgba(2,132,199,0.3);">
+                        Save Changes
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- DELETE TASK CONFIRMATION MODAL OVERLAY -->
+    <div id="deleteTaskModal" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.75); backdrop-filter: blur(6px); z-index: 100000; align-items: center; justify-content: center; padding: 20px; animation: fadeInModal 0.2s ease;">
+        <div style="background: #ffffff; border-radius: 20px; max-width: 440px; width: 100%; padding: 32px 28px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.3); border: 1px solid #e2e8f0; position: relative; text-align: center;">
+            
+            <button type="button" onclick="closeDeleteTaskModal()" style="position: absolute; top: 16px; right: 16px; background: #f1f5f9; border: none; width: 32px; height: 32px; border-radius: 50%; color: #64748b; font-size: 1rem; cursor: pointer; display: flex; align-items: center; justify-content: center;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='#f1f5f9'">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+
+            <div style="width: 56px; height: 56px; border-radius: 50%; background: #fef2f2; border: 1px solid #fecaca; color: #dc2626; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px auto; font-size: 1.5rem;">
+                <i class="fa-solid fa-trash-can"></i>
+            </div>
+            
+            <h3 style="font-size: 1.25rem; font-weight: 800; color: #0f172a; margin: 0 0 8px 0;">Delete Task Card?</h3>
+            <p style="font-size: 0.86rem; color: #64748b; margin: 0 0 24px 0; line-height: 1.5;">Are you sure you want to delete this task card from your team's board? This action cannot be undone.</p>
+
+            <div style="display: flex; gap: 12px;">
+                <button type="button" onclick="closeDeleteTaskModal()" style="flex: 1; padding: 12px; background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 10px; font-weight: 700; color: #475569; cursor: pointer; transition: all 0.15s ease;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='#f1f5f9'">
+                    Cancel
+                </button>
+                <button type="button" onclick="confirmTaskDeleteAction()" style="flex: 1; padding: 12px; background: #dc2626; border: 1px solid #dc2626; border-radius: 10px; font-weight: 800; color: #ffffff; cursor: pointer; box-shadow: 0 4px 12px rgba(220,38,38,0.3); transition: all 0.15s ease;" onmouseover="this.style.background='#b91c1c'" onmouseout="this.style.background='#dc2626'">
+                    Yes, Delete Task
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    var createChecklistCounter = 0;
+    var editChecklistCounter = 0;
+
+    function addChecklistItemRow(type, text, completed) {
+        var containerId = (type === 'edit') ? 'edit_checklist_container' : 'create_checklist_container';
+        var container = document.getElementById(containerId);
+        if (!container) return;
+
+        var idx = (type === 'edit') ? editChecklistCounter++ : createChecklistCounter++;
+        var row = document.createElement('div');
+        row.className = 'checklist-builder-row';
+        row.style.cssText = 'display: flex; align-items: center; gap: 8px; background: #f8fafc; padding: 6px 10px; border-radius: 8px; border: 1px solid #e2e8f0;';
+
+        var checkedAttr = completed ? 'checked' : '';
+        var isDoneClass = completed ? 'text-decoration: line-through; color: #64748b;' : 'color: #0f172a;';
+
+        row.innerHTML = 
+            '<input type="hidden" name="checklist_status[' + idx + ']" value="0">' +
+            '<input type="checkbox" name="checklist_status[' + idx + ']" value="1" ' + checkedAttr + ' onchange="toggleChecklistRowStyle(this)" style="accent-color: #dc2626; cursor: pointer; width: 16px; height: 16px; flex-shrink: 0;">' +
+            '<input type="text" name="checklist_items[' + idx + ']" value="' + escapeHtmlAttr(text || '') + '" placeholder="Sub-task item..." style="flex: 1; border: none; background: transparent; font-size: 0.84rem; font-weight: 600; outline: none; ' + isDoneClass + '">' +
+            '<button type="button" onclick="this.closest(\'.checklist-builder-row\').remove()" style="background: none; border: none; color: #94a3b8; cursor: pointer; font-size: 0.85rem; padding: 2px 4px;" onmouseover="this.style.color=\'#ef4444\'" onmouseout="this.style.color=\'#94a3b8\'" title="Remove Item">' +
+                '<i class="fa-solid fa-trash-can"></i>' +
+            '</button>';
+
+        container.appendChild(row);
+    }
+
+    function addChecklistItemFromInput(type) {
+        var inputId = (type === 'edit') ? 'edit_new_checklist_input' : 'create_new_checklist_input';
+        var input = document.getElementById(inputId);
+        if (!input) return;
+        var val = (input.value || '').trim();
+        if (!val) return;
+        addChecklistItemRow(type, val, false);
+        input.value = '';
+        input.focus();
+    }
+
+    function toggleChecklistRowStyle(checkbox) {
+        var textInput = checkbox.closest('.checklist-builder-row').querySelector('input[type="text"]');
+        if (textInput) {
+            if (checkbox.checked) {
+                textInput.style.textDecoration = 'line-through';
+                textInput.style.color = '#64748b';
+            } else {
+                textInput.style.textDecoration = 'none';
+                textInput.style.color = '#0f172a';
+            }
+        }
+    }
+
+    function escapeHtmlAttr(str) {
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;');
+    }
+
+    function openCreateStageModal() {
+        var m = document.getElementById('createStageModal');
+        if (m) m.style.display = 'flex';
+    }
+    function closeCreateStageModal() {
+        var m = document.getElementById('createStageModal');
+        if (m) m.style.display = 'none';
+    }
+
+    function openEditStageModal(key, title, color) {
+        document.getElementById('edit_stage_key').value = key || '';
+        document.getElementById('edit_stage_title').value = title || '';
+        document.getElementById('edit_stage_color').value = color || '#3b82f6';
+        var m = document.getElementById('editStageModal');
+        if (m) m.style.display = 'flex';
+    }
+    function closeEditStageModal() {
+        var m = document.getElementById('editStageModal');
+        if (m) m.style.display = 'none';
+    }
+
+    function openCreateTaskModal() {
+        var createContainer = document.getElementById('create_checklist_container');
+        if (createContainer && createContainer.children.length === 0) {
+            createChecklistCounter = 0;
+            addChecklistItemRow('create', '', false);
+        }
+        var cbs = document.querySelectorAll('#createTaskModal input[name="assignees[]"]');
+        cbs.forEach(function(cb) { cb.checked = false; });
+
+        var m = document.getElementById('createTaskModal');
+        if (m) m.style.display = 'flex';
+    }
+    function closeCreateTaskModal() {
+        var m = document.getElementById('createTaskModal');
+        if (m) m.style.display = 'none';
+    }
+
+    function openEditTaskModal(ev, tsk) {
+        if (ev) ev.stopPropagation();
+        document.getElementById('edit_task_id').value = tsk.id || '';
+        document.getElementById('edit_task_title').value = tsk.title || '';
+        document.getElementById('edit_task_client_org').value = tsk.client_org || '';
+        document.getElementById('edit_task_priority').value = tsk.priority || 'Medium';
+        document.getElementById('edit_task_stage').value = tsk.stage || 'ideas';
+        document.getElementById('edit_task_due_date').value = tsk.due_date || '';
+        document.getElementById('edit_task_description').value = tsk.description || '';
+
+        var assignedUsernames = [];
+        if (tsk.assignees && Array.isArray(tsk.assignees)) {
+            assignedUsernames = tsk.assignees.map(function(a) { return (a.username || '').toLowerCase(); });
+        } else if (tsk.assignee_username) {
+            assignedUsernames = tsk.assignee_username.toLowerCase().split(',');
+        }
+
+        var checkboxes = document.querySelectorAll('#editTaskModal input[name="assignees[]"]');
+        checkboxes.forEach(function(cb) {
+            cb.checked = assignedUsernames.indexOf(cb.value.toLowerCase()) !== -1;
+        });
+        
+        var tagsStr = (tsk.tags && Array.isArray(tsk.tags)) ? tsk.tags.join(', ') : '';
+        document.getElementById('edit_task_tags').value = tagsStr;
+
+        var editContainer = document.getElementById('edit_checklist_container');
+        if (editContainer) {
+            editContainer.innerHTML = '';
+            editChecklistCounter = 0;
+            if (tsk.checklist && Array.isArray(tsk.checklist) && tsk.checklist.length > 0) {
+                tsk.checklist.forEach(function(item) {
+                    addChecklistItemRow('edit', item.text || '', !!item.completed);
+                });
+            } else {
+                addChecklistItemRow('edit', '', false);
+            }
+        }
+
+        var attContainer = document.getElementById('edit_task_attachments_list');
+        if (attContainer) {
+            attContainer.innerHTML = '';
+            if (tsk.attachments && Array.isArray(tsk.attachments) && tsk.attachments.length > 0) {
+                var html = '<div style="font-size: 0.72rem; font-weight: 700; color: #64748b; margin-bottom: 2px;">Existing Attachments:</div>';
+                tsk.attachments.forEach(function(att) {
+                    html += '<a href="' + att.url + '" target="_blank" style="font-size: 0.76rem; font-weight: 700; color: #2563eb; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;"><i class="fa-solid fa-paperclip"></i> ' + (att.name || 'Attachment') + '</a>';
+                });
+                attContainer.innerHTML = html;
+            }
+        }
+
+        var m = document.getElementById('editTaskModal');
+        if (m) m.style.display = 'flex';
+    }
+
+    function closeEditTaskModal() {
+        var m = document.getElementById('editTaskModal');
+        if (m) m.style.display = 'none';
+    }
+
+    function filterTasksKanban() {
+        var q = (document.getElementById('taskSearchInput').value || '').toLowerCase();
+        var cards = document.querySelectorAll('.task-card-item');
+        cards.forEach(function(card) {
+            var txt = card.innerText.toLowerCase();
+            card.style.display = (txt.indexOf(q) !== -1) ? 'block' : 'none';
+        });
+    }
+
+    function changeTaskStageQuick(taskId, newStage) {
+        var fd = new FormData();
+        fd.append('action', 'update_task_stage');
+        fd.append('task_id', taskId);
+        fd.append('new_stage', newStage);
+        fetch('/admin/index.php?section=comms&tab=tasks', {
+            method: 'POST',
+            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+            body: fd
+        }).then(function() {
+            window.location.reload();
+        });
+    }
+
+    function toggleChecklistItem(taskId, itemId) {
+        var fd = new FormData();
+        fd.append('action', 'toggle_task_checklist_item');
+        fd.append('task_id', taskId);
+        fd.append('item_id', itemId);
+        fetch('/admin/index.php?section=comms&tab=tasks', {
+            method: 'POST',
+            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+            body: fd
+        });
+    }
+
+    var pendingDeleteTaskId = null;
+
+    function deleteTaskItem(taskId) {
+        pendingDeleteTaskId = taskId;
+        var m = document.getElementById('deleteTaskModal');
+        if (m) m.style.display = 'flex';
+    }
+
+    function closeDeleteTaskModal() {
+        pendingDeleteTaskId = null;
+        var m = document.getElementById('deleteTaskModal');
+        if (m) m.style.display = 'none';
+    }
+
+    function confirmTaskDeleteAction() {
+        if (!pendingDeleteTaskId) return;
+        var fd = new FormData();
+        fd.append('action', 'delete_studio_task');
+        fd.append('task_id', pendingDeleteTaskId);
+        fetch('/admin/index.php?section=comms&tab=tasks', { method: 'POST', body: fd })
+        .then(function() {
+            window.location.reload();
+        });
+    }
+
+    function handleTaskDragStart(ev, taskId) {
+        ev.dataTransfer.setData('text/plain', taskId);
+    }
+    function allowTaskDrop(ev) {
+        ev.preventDefault();
+    }
+    function handleTaskDrop(ev, newStage) {
+        ev.preventDefault();
+        var taskId = ev.dataTransfer.getData('text/plain');
+        if (taskId) {
+            changeTaskStageQuick(taskId, newStage);
+        }
+    }
+    </script>
+
     <!-- CLOCK IN REMINDER MODAL POPUP FOR EMPLOYEES WHO HAVEN'T CLOCKED IN TODAY -->
     <?php 
     $reminderUserAttendance = getUserTodayAttendance($username);
@@ -8770,7 +11226,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
 
                 <!-- GLOWING ALARM CLOCK BADGE -->
                 <div style="width: 68px; height: 68px; border-radius: 50%; background: #f0fdf4; border: 2px solid #bbf7d0; display: flex; align-items: center; justify-content: center; margin: 0 auto 18px auto; color: #16a34a; font-size: 2rem; box-shadow: 0 0 20px rgba(34, 197, 94, 0.2);">
-                    <i class="fa-solid fa-clock-pulse" style="animation: pulseClock 2s infinite;"></i>
+                    <i class="fa-solid fa-user-clock" style="animation: pulseClock 2s infinite;"></i>
                 </div>
 
                 <h2 style="font-size: 1.35rem; font-weight: 800; color: #0f172a; margin: 0 0 8px 0;">Don't Forget to Clock In!</h2>
@@ -8811,5 +11267,525 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
         }
         </script>
     <?php endif; ?>
+
+    <!-- GLOBAL POST ANNOUNCEMENT MODAL -->
+    <div id="postAnnouncementModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15, 23, 42, 0.68); backdrop-filter: blur(5px); z-index: 99999; align-items: center; justify-content: center; padding: 20px; animation: fadeInModal 0.2s ease;">
+        <div style="background: #ffffff; border-radius: 20px; max-width: 500px; width: 100%; padding: 32px 28px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); border: 1px solid #e2e8f0; position: relative;">
+            
+            <button type="button" onclick="closePostAnnouncementModal()" style="position: absolute; top: 16px; right: 16px; background: #f1f5f9; border: none; width: 32px; height: 32px; border-radius: 50%; color: #64748b; font-size: 1rem; cursor: pointer; display: flex; align-items: center; justify-content: center;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='#f1f5f9'">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+
+            <div style="text-align: center; margin-bottom: 20px;">
+                <div style="width: 54px; height: 54px; border-radius: 50%; background: #fef2f2; border: 1px solid #fecaca; color: #dc2626; display: flex; align-items: center; justify-content: center; margin: 0 auto 12px auto; font-size: 1.5rem;">
+                    <i class="fa-solid fa-bullhorn"></i>
+                </div>
+                <h2 style="font-size: 1.3rem; font-weight: 800; color: #0f172a; margin: 0 0 4px 0;">Post Studio Announcement</h2>
+                <p style="font-size: 0.84rem; color: #64748b; margin: 0;">Broadcast news & updates to all studio staff members.</p>
+            </div>
+
+            <form method="POST" action="/admin/index.php" style="display: flex; flex-direction: column; gap: 14px;">
+                <input type="hidden" name="action" value="post_announcement">
+                <input type="hidden" name="redirect_section" value="comms">
+                <input type="hidden" name="redirect_tab" value="feeds">
+
+                <div>
+                    <label style="font-size: 0.76rem; font-weight: 700; color: #475569; display: block; margin-bottom: 4px;">Announcement Title</label>
+                    <input type="text" name="title" placeholder="Announcement Title" required style="width: 100%; padding: 10px; font-size: 0.86rem; border: 1px solid #cbd5e1; border-radius: 8px;">
+                </div>
+
+                <div>
+                    <label style="font-size: 0.76rem; font-weight: 700; color: #475569; display: block; margin-bottom: 4px;">Category</label>
+                    <select name="category" style="width: 100%; padding: 10px; font-size: 0.86rem; border: 1px solid #cbd5e1; border-radius: 8px;">
+                        <option value="General">General</option>
+                        <option value="Important">Important</option>
+                        <option value="Events">Events</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label style="font-size: 0.76rem; font-weight: 700; color: #475569; display: block; margin-bottom: 4px;">Content / Message</label>
+                    <textarea name="content" rows="4" placeholder="Write full announcement content..." required style="width: 100%; padding: 10px; font-size: 0.86rem; border: 1px solid #cbd5e1; border-radius: 8px; font-family: inherit;"></textarea>
+                </div>
+
+                <div style="display: flex; gap: 8px; margin-top: 6px;">
+                    <button type="submit" class="btn-save-primary" style="flex: 1; justify-content: center; background: #dc2626; border-color: #dc2626;">
+                        <i class="fa-solid fa-paper-plane"></i> Publish Announcement
+                    </button>
+                    <button type="button" onclick="closePostAnnouncementModal()" style="padding: 10px 14px; background: #f1f5f9; color: #475569; border: none; border-radius: 8px; font-weight: 700; font-size: 0.84rem; cursor: pointer;">
+                        Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+    function openPostAnnouncementModal() {
+        var m = document.getElementById('postAnnouncementModal');
+        if (m) m.style.display = 'flex';
+    }
+    function closePostAnnouncementModal() {
+        var m = document.getElementById('postAnnouncementModal');
+        if (m) m.style.display = 'none';
+    }
+    </script>
+
+    <!-- GLOBAL SIDEBAR COLLAPSE SCRIPT -->
+    <script>
+    function toggleNavCategory(header) {
+        if (!header) return;
+        header.classList.toggle('collapsed');
+        var list = header.nextElementSibling;
+        if (list && list.classList.contains('nav-list')) {
+            if (header.classList.contains('collapsed')) {
+                list.style.display = 'none';
+            } else {
+                list.style.display = 'block';
+            }
+        }
+    }
+    </script>
+
+    <!-- GLOBAL CUSTOM CONFIRMATION MODAL POPUP -->
+    <div id="globalConfirmModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15, 23, 42, 0.68); backdrop-filter: blur(5px); z-index: 100000; align-items: center; justify-content: center; padding: 20px; animation: fadeInModal 0.2s ease;">
+        <div style="background: #ffffff; border-radius: 20px; width: 100%; max-width: 440px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); overflow: hidden; border: 1px solid #e2e8f0; animation: slideUpModal 0.2s ease;">
+            <div style="padding: 28px 28px 18px 28px; text-align: center;">
+                <div style="width: 58px; height: 58px; border-radius: 50%; background: #fef2f2; color: #dc2626; display: inline-flex; align-items: center; justify-content: center; font-size: 1.5rem; margin-bottom: 16px; border: 1px solid #fecaca; box-shadow: 0 4px 12px rgba(220, 38, 38, 0.12);">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                </div>
+                <h3 id="confirmModalTitle" style="font-size: 1.2rem; font-weight: 800; color: #0f172a; margin-bottom: 8px;">Confirm Action</h3>
+                <p id="confirmModalMessage" style="font-size: 0.88rem; color: #64748b; line-height: 1.5; margin: 0;">Are you sure you want to proceed with this action?</p>
+            </div>
+            <div style="padding: 16px 28px 24px 28px; display: flex; gap: 12px; justify-content: center; background: #f8fafc; border-top: 1px solid #f1f5f9;">
+                <button type="button" onclick="closeConfirmModal()" style="flex: 1; padding: 11px 18px; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 10px; font-weight: 700; color: #475569; font-size: 0.88rem; cursor: pointer; transition: all 0.15s ease;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='#ffffff'">
+                    Cancel
+                </button>
+                <button type="button" id="confirmModalProceedBtn" onclick="executeConfirmAction()" style="flex: 1; padding: 11px 18px; background: #dc2626; border: 1px solid #dc2626; border-radius: 10px; font-weight: 700; color: #ffffff; font-size: 0.88rem; cursor: pointer; transition: all 0.15s ease; box-shadow: 0 4px 12px rgba(220,38,38,0.25);" onmouseover="this.style.background='#b91c1c'" onmouseout="this.style.background='#dc2626'">
+                    Confirm &amp; Remove
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- INCOMING CALL POPUP MODAL (TOP-CENTERED FACETIME / TEAMS BANNER) -->
+    <div id="incomingCallModal" style="display: none; position: fixed; top: 24px; left: 50%; transform: translateX(-50%); background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border-radius: 24px; width: 440px; max-width: 90vw; box-shadow: 0 20px 50px rgba(0,0,0,0.5), 0 0 25px rgba(239, 68, 68, 0.25); border: 1px solid rgba(239, 68, 68, 0.4); z-index: 300000; padding: 14px 20px; animation: slideDownNotification 0.35s cubic-bezier(0.16, 1, 0.3, 1);">
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 14px;">
+            <!-- Left: Caller Avatar & Name -->
+            <div style="display: flex; align-items: center; gap: 12px; min-width: 0; flex: 1;">
+                <div style="position: relative; width: 48px; height: 48px; flex-shrink: 0;">
+                    <div style="position: absolute; inset: -4px; border-radius: 50%; border: 2px dashed #ef4444; animation: spinRing 4s linear infinite;"></div>
+                    <img id="incomingCallerAvatar" src="/assets/img/team/team_henry.png" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">
+                </div>
+                <div style="overflow: hidden; min-width: 0;">
+                    <div style="font-size: 0.68rem; font-weight: 800; color: #ef4444; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 2px;" id="incomingCallBadge">
+                        INCOMING AUDIO CALL
+                    </div>
+                    <h4 id="incomingCallerName" style="font-size: 0.96rem; font-weight: 800; color: #ffffff; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                        Mojisola Emjay
+                    </h4>
+                    <p style="font-size: 0.74rem; color: #94a3b8; margin: 0; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Ringing studio line...</p>
+                </div>
+            </div>
+            <!-- Right: Action Buttons (Decline & Accept) -->
+            <div style="display: flex; align-items: center; gap: 8px; flex-shrink: 0;">
+                <button type="button" onclick="declineIncomingCall()" style="padding: 9px 14px; border-radius: 12px; background: #334155; color: #f8fafc; border: none; font-weight: 700; font-size: 0.8rem; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: all 0.15s ease;" onmouseover="this.style.background='#ef4444'; this.style.color='#ffffff';" onmouseout="this.style.background='#334155'; this.style.color='#f8fafc';">
+                    <i class="fa-solid fa-phone-slash"></i> Decline
+                </button>
+                <button type="button" onclick="acceptIncomingCall()" style="padding: 9px 16px; border-radius: 12px; background: #22c55e; color: #ffffff; border: none; font-weight: 800; font-size: 0.8rem; cursor: pointer; display: flex; align-items: center; gap: 6px; box-shadow: 0 4px 14px rgba(34, 197, 94, 0.4); transition: all 0.15s ease;" onmouseover="this.style.background='#16a34a'" onmouseout="this.style.background='#22c55e'">
+                    <i class="fa-solid fa-phone"></i> Accept
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- STUDIO AUDIO / VIDEO CALL OVERLAY MODAL -->
+    <div id="studioCallModal" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.92); backdrop-filter: blur(12px); z-index: 200000; align-items: center; justify-content: center; padding: 20px; animation: fadeInModal 0.25s ease;">
+        <div style="background: #1e293b; border-radius: 24px; width: 100%; max-width: 520px; box-shadow: 0 25px 60px rgba(0, 0, 0, 0.5); overflow: hidden; border: 1px solid rgba(255, 255, 255, 0.1); position: relative;">
+            
+            <!-- Header Bar -->
+            <div style="padding: 16px 20px; background: rgba(15, 23, 42, 0.6); display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(255, 255, 255, 0.08);">
+                <div style="display: flex; align-items: center; gap: 8px; font-size: 0.82rem; font-weight: 800; color: #f8fafc; text-transform: uppercase; letter-spacing: 0.05em;">
+                    <span id="callTypeBadgeIcon"><i class="fa-solid fa-phone" style="color: #22c55e;"></i></span>
+                    <span id="callTypeTitle">Studio Audio Call</span>
+                </div>
+                <div id="callTimerContainer" style="display: none; background: rgba(34, 197, 94, 0.15); color: #4ade80; border: 1px solid rgba(74, 222, 128, 0.3); font-size: 0.76rem; font-weight: 800; padding: 3px 10px; border-radius: 20px; font-family: monospace;">
+                    ● <span id="callTimerText">00:00</span>
+                </div>
+            </div>
+
+            <!-- Call Body Area -->
+            <div style="padding: 36px 24px; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; min-height: 280px;">
+                
+                <!-- Video Display Container (For Video Mode) -->
+                <div id="callVideoFrame" style="display: none; position: absolute; inset: 0; background: #0f172a; overflow: hidden;">
+                    <img id="callVideoBgAvatar" src="" style="width: 100%; height: 100%; object-fit: cover; filter: blur(12px) opacity(0.35); transform: scale(1.1);">
+                    <div style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;">
+                        <div style="position: relative; width: 140px; height: 140px; border-radius: 50%; padding: 4px; background: linear-gradient(135deg, #dc2626, #ef4444); box-shadow: 0 10px 30px rgba(220, 38, 38, 0.4);">
+                            <img id="callVideoCenterAvatar" src="" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">
+                            <span style="position: absolute; bottom: 8px; right: 8px; width: 18px; height: 18px; border-radius: 50%; background: #22c55e; border: 3px solid #0f172a;" title="Studio Stream Active"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Avatar & Ringing Animation Container (Audio & Connecting Mode) -->
+                <div id="callAvatarSection" style="position: relative; margin-bottom: 24px;">
+                    <div id="callRingingPulse" style="position: absolute; inset: -16px; border-radius: 50%; border: 2px dashed rgba(239, 68, 68, 0.4); animation: spinRing 6s linear infinite;"></div>
+                    <div style="width: 108px; height: 108px; border-radius: 50%; padding: 4px; background: linear-gradient(135deg, #dc2626, #ef4444); box-shadow: 0 12px 32px rgba(220, 38, 38, 0.35); position: relative; z-index: 2;">
+                        <img id="callTargetAvatar" src="" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">
+                    </div>
+                </div>
+
+                <!-- Target User Details -->
+                <div style="position: relative; z-index: 5;">
+                    <h3 id="callTargetName" style="font-size: 1.35rem; font-weight: 800; color: #ffffff; margin: 0 0 6px 0;">Staff Member</h3>
+                    <p id="callStatusText" style="font-size: 0.88rem; color: #94a3b8; margin: 0; font-weight: 600;">Initiating Studio Connection...</p>
+                </div>
+
+                <!-- Audio Waveform Visualizer -->
+                <div id="callAudioWave" style="display: none; align-items: center; justify-content: center; gap: 4px; height: 28px; margin-top: 18px; position: relative; z-index: 5;">
+                    <span style="width: 4px; height: 12px; background: #22c55e; border-radius: 2px; animation: waveBar 1.2s infinite ease-in-out 0.1s;"></span>
+                    <span style="width: 4px; height: 24px; background: #22c55e; border-radius: 2px; animation: waveBar 1.2s infinite ease-in-out 0.3s;"></span>
+                    <span style="width: 4px; height: 18px; background: #22c55e; border-radius: 2px; animation: waveBar 1.2s infinite ease-in-out 0.2s;"></span>
+                    <span style="width: 4px; height: 28px; background: #22c55e; border-radius: 2px; animation: waveBar 1.2s infinite ease-in-out 0.4s;"></span>
+                    <span style="width: 4px; height: 14px; background: #22c55e; border-radius: 2px; animation: waveBar 1.2s infinite ease-in-out 0.15s;"></span>
+                </div>
+            </div>
+
+            <!-- Controls Action Footer Bar -->
+            <div style="padding: 20px 24px; background: rgba(15, 23, 42, 0.8); border-top: 1px solid rgba(255, 255, 255, 0.08); display: flex; align-items: center; justify-content: center; gap: 20px;">
+                <button type="button" id="btnToggleMuteMic" onclick="toggleCallMuteMic()" style="width: 48px; height: 48px; border-radius: 50%; background: #334155; color: #ffffff; border: none; font-size: 1.1rem; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.15s ease;" title="Mute Microphone">
+                    <i class="fa-solid fa-microphone"></i>
+                </button>
+
+                <button type="button" onclick="endStudioCall()" style="width: 58px; height: 58px; border-radius: 50%; background: #dc2626; color: #ffffff; border: none; font-size: 1.3rem; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 8px 24px rgba(220, 38, 38, 0.4); transition: all 0.15s ease;" title="End Call">
+                    <i class="fa-solid fa-phone-slash"></i>
+                </button>
+
+                <button type="button" id="btnToggleCam" onclick="toggleCallCamera()" style="width: 48px; height: 48px; border-radius: 50%; background: #334155; color: #ffffff; border: none; font-size: 1.1rem; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.15s ease;" title="Toggle Camera">
+                    <i class="fa-solid fa-video"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <style>
+    @keyframes spinRing { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    @keyframes waveBar { 0%, 100% { height: 8px; } 50% { height: 28px; } }
+    @keyframes slideInUp { from { transform: translateY(30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    @keyframes slideDownNotification { from { transform: translate(-50%, -40px); opacity: 0; } to { transform: translate(-50%, 0); opacity: 1; } }
+    </style>
+
+    <script>
+    var currentCallId = null;
+    var activeCallTimer = null;
+    var activeCallSeconds = 0;
+    var activeCallType = 'audio';
+    var activeCallTargetName = '';
+    var activeCallTargetAvatar = '';
+    var audioCtx = null;
+    var ringOsc = null;
+
+    function playRingtone() {
+        try {
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            
+            ringOsc = audioCtx.createOscillator();
+            var gainNode = audioCtx.createGain();
+            ringOsc.type = 'sine';
+            ringOsc.frequency.setValueAtTime(440, audioCtx.currentTime);
+            gainNode.gain.setValueAtTime(0.06, audioCtx.currentTime);
+            
+            ringOsc.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            ringOsc.start();
+        } catch(e){}
+    }
+
+    function stopRingtone() {
+        try {
+            if (ringOsc) {
+                ringOsc.stop();
+                ringOsc.disconnect();
+                ringOsc = null;
+            }
+        } catch(e){}
+    }
+
+    function startStudioCall(type, name, avatarUrl, targetUsername) {
+        activeCallType = type || 'audio';
+        activeCallTargetName = name || 'Staff Member';
+        activeCallTargetAvatar = avatarUrl || '';
+        activeCallSeconds = 0;
+
+        var targetUser = targetUsername || '<?php echo htmlspecialchars($activeDmUser ?? ""); ?>';
+
+        var fd = new FormData();
+        fd.append('action', 'initiate_studio_call_ajax');
+        fd.append('target_user', targetUser);
+        fd.append('target_name', activeCallTargetName);
+        fd.append('target_avatar', activeCallTargetAvatar);
+        fd.append('call_type', activeCallType);
+
+        fetch('/admin/index.php', { method: 'POST', body: fd })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success && data.call) {
+                currentCallId = data.call.call_id;
+            }
+        });
+
+        document.getElementById('callTypeTitle').innerText = (activeCallType === 'video') ? 'Studio Video Call' : 'Studio Audio Call';
+        document.getElementById('callTypeBadgeIcon').innerHTML = (activeCallType === 'video') ? '<i class="fa-solid fa-video" style="color: #ef4444;"></i>' : '<i class="fa-solid fa-phone" style="color: #22c55e;"></i>';
+        document.getElementById('callTargetName').innerText = activeCallTargetName;
+        document.getElementById('callStatusText').innerText = 'Ringing studio line for ' + activeCallTargetName + '...';
+
+        var fallbackImg = '/assets/img/team/team_henry.png';
+        var finalAvatar = (activeCallTargetAvatar && activeCallTargetAvatar.length > 5) ? activeCallTargetAvatar : fallbackImg;
+
+        document.getElementById('callTargetAvatar').src = finalAvatar;
+        document.getElementById('callVideoBgAvatar').src = finalAvatar;
+        document.getElementById('callVideoCenterAvatar').src = finalAvatar;
+
+        document.getElementById('callTimerContainer').style.display = 'none';
+        document.getElementById('callAudioWave').style.display = 'none';
+        document.getElementById('callVideoFrame').style.display = 'none';
+        document.getElementById('callAvatarSection').style.display = 'block';
+
+        var modal = document.getElementById('studioCallModal');
+        if (modal) modal.style.display = 'flex';
+
+        playRingtone();
+    }
+
+    function pollCallSignals() {
+        var fd = new FormData();
+        fd.append('action', 'check_studio_call_signal_ajax');
+        fetch('/admin/index.php', { method: 'POST', body: fd })
+        .then(r => r.json())
+        .then(data => {
+            if (!data.success || !data.state) return;
+            var st = data.state;
+            
+            // Receiver receives incoming call
+            if (st.role === 'receiver' && st.call && st.call.status === 'ringing') {
+                if (currentCallId !== st.call.call_id && document.getElementById('incomingCallModal').style.display !== 'flex') {
+                    currentCallId = st.call.call_id;
+                    activeCallType = st.call.type;
+                    activeCallTargetName = st.call.caller_name;
+                    activeCallTargetAvatar = st.call.caller_avatar || '';
+                    
+                    document.getElementById('incomingCallBadge').innerText = 'INCOMING ' + st.call.type.toUpperCase() + ' CALL';
+                    document.getElementById('incomingCallerName').innerText = st.call.caller_name;
+                    
+                    var fallbackImg = '/assets/img/team/team_henry.png';
+                    var finalAvatar = (activeCallTargetAvatar && activeCallTargetAvatar.length > 5) ? activeCallTargetAvatar : fallbackImg;
+                    document.getElementById('incomingCallerAvatar').src = finalAvatar;
+
+                    document.getElementById('incomingCallModal').style.display = 'flex';
+                    playRingtone();
+                }
+            }
+
+            // Caller detects acceptance
+            if (st.role === 'caller' && st.call && st.call.call_id === currentCallId) {
+                if (st.call.status === 'accepted' && activeCallSeconds === 0 && !activeCallTimer) {
+                    stopRingtone();
+                    document.getElementById('callStatusText').innerText = 'Connected • Studio ' + (activeCallType === 'video' ? '1080p Video Feed' : 'Audio Stream') + ' Live';
+                    document.getElementById('callTimerContainer').style.display = 'inline-flex';
+                    document.getElementById('callAudioWave').style.display = 'flex';
+                    if (activeCallType === 'video') {
+                        document.getElementById('callVideoFrame').style.display = 'block';
+                        document.getElementById('callAvatarSection').style.display = 'none';
+                    }
+                    startCallTimer();
+                } else if (st.call.status === 'ended' || st.call.status === 'declined') {
+                    endStudioCallLocal();
+                }
+            }
+
+            // Receiver detects caller end
+            if (st.role === 'receiver' && st.call && st.call.call_id === currentCallId) {
+                if (st.call.status === 'ended' || st.call.status === 'declined') {
+                    endStudioCallLocal();
+                }
+            }
+        })
+        .catch(e => {});
+    }
+
+    setInterval(pollCallSignals, 2000);
+
+    function acceptIncomingCall() {
+        stopRingtone();
+        document.getElementById('incomingCallModal').style.display = 'none';
+
+        if (currentCallId) {
+            var fd = new FormData();
+            fd.append('action', 'update_studio_call_status_ajax');
+            fd.append('call_id', currentCallId);
+            fd.append('status', 'accepted');
+            fetch('/admin/index.php', { method: 'POST', body: fd });
+        }
+
+        document.getElementById('callTypeTitle').innerText = (activeCallType === 'video') ? 'Studio Video Call' : 'Studio Audio Call';
+        document.getElementById('callTypeBadgeIcon').innerHTML = (activeCallType === 'video') ? '<i class="fa-solid fa-video" style="color: #ef4444;"></i>' : '<i class="fa-solid fa-phone" style="color: #22c55e;"></i>';
+        document.getElementById('callTargetName').innerText = activeCallTargetName;
+        document.getElementById('callStatusText').innerText = 'Connected • Studio Audio Stream Live';
+
+        var fallbackImg = '/assets/img/team/team_henry.png';
+        var finalAvatar = (activeCallTargetAvatar && activeCallTargetAvatar.length > 5) ? activeCallTargetAvatar : fallbackImg;
+
+        document.getElementById('callTargetAvatar').src = finalAvatar;
+        document.getElementById('callVideoBgAvatar').src = finalAvatar;
+        document.getElementById('callVideoCenterAvatar').src = finalAvatar;
+
+        document.getElementById('callTimerContainer').style.display = 'inline-flex';
+        document.getElementById('callAudioWave').style.display = 'flex';
+        document.getElementById('callAvatarSection').style.display = 'block';
+
+        if (activeCallType === 'video') {
+            document.getElementById('callVideoFrame').style.display = 'block';
+            document.getElementById('callAvatarSection').style.display = 'none';
+            document.getElementById('callStatusText').innerText = 'Connected • 1080p Studio Video Feed Live';
+        }
+
+        var modal = document.getElementById('studioCallModal');
+        if (modal) modal.style.display = 'flex';
+
+        startCallTimer();
+    }
+
+    function declineIncomingCall() {
+        stopRingtone();
+        document.getElementById('incomingCallModal').style.display = 'none';
+        if (currentCallId) {
+            var fd = new FormData();
+            fd.append('action', 'update_studio_call_status_ajax');
+            fd.append('call_id', currentCallId);
+            fd.append('status', 'declined');
+            fetch('/admin/index.php', { method: 'POST', body: fd });
+        }
+    }
+
+    function endStudioCall() {
+        if (currentCallId) {
+            var fd = new FormData();
+            fd.append('action', 'update_studio_call_status_ajax');
+            fd.append('call_id', currentCallId);
+            fd.append('status', 'ended');
+            fetch('/admin/index.php', { method: 'POST', body: fd });
+        }
+        endStudioCallLocal();
+    }
+
+    function endStudioCallLocal() {
+        stopRingtone();
+        clearInterval(activeCallTimer);
+        activeCallTimer = null;
+
+        var statusElem = document.getElementById('callStatusText');
+        if (statusElem) statusElem.innerText = 'Call Ended';
+
+        setTimeout(function() {
+            var modal = document.getElementById('studioCallModal');
+            if (modal) modal.style.display = 'none';
+            var incModal = document.getElementById('incomingCallModal');
+            if (incModal) incModal.style.display = 'none';
+
+            if (activeCallSeconds > 0) {
+                var mins = Math.floor(activeCallSeconds / 60);
+                var secs = activeCallSeconds % 60;
+                var timeFormatted = (mins > 0 ? mins + ' min ' : '') + secs + ' sec';
+                var msgInput = document.querySelector('#commsChatContainer + div form input[name="message"]');
+                var form = document.querySelector('#commsChatContainer + div form');
+                if (msgInput && form) {
+                    msgInput.value = '📞 Studio ' + (activeCallType === 'video' ? 'Video' : 'Audio') + ' Call ended • ' + timeFormatted;
+                    form.submit();
+                }
+            }
+            activeCallSeconds = 0;
+            currentCallId = null;
+        }, 600);
+    }
+
+    function startCallTimer() {
+        clearInterval(activeCallTimer);
+        activeCallSeconds = 0;
+        updateCallTimerDisplay();
+        activeCallTimer = setInterval(function() {
+            activeCallSeconds++;
+            updateCallTimerDisplay();
+        }, 1000);
+    }
+
+    function updateCallTimerDisplay() {
+        var mins = Math.floor(activeCallSeconds / 60);
+        var secs = activeCallSeconds % 60;
+        var str = (mins < 10 ? '0' + mins : mins) + ':' + (secs < 10 ? '0' + secs : secs);
+        var elem = document.getElementById('callTimerText');
+        if (elem) elem.innerText = str;
+    }
+
+    function toggleCallMuteMic() {
+        var btn = document.getElementById('btnToggleMuteMic');
+        if (!btn) return;
+        if (btn.style.background === 'rgb(220, 38, 38)' || btn.style.background === '#dc2626') {
+            btn.style.background = '#334155';
+            btn.innerHTML = '<i class="fa-solid fa-microphone"></i>';
+        } else {
+            btn.style.background = '#dc2626';
+            btn.innerHTML = '<i class="fa-solid fa-microphone-slash"></i>';
+        }
+    }
+
+    function toggleCallCamera() {
+        var btn = document.getElementById('btnToggleCam');
+        if (!btn) return;
+        var videoFrame = document.getElementById('callVideoFrame');
+        var avatarSec = document.getElementById('callAvatarSection');
+        
+        if (videoFrame.style.display === 'block') {
+            videoFrame.style.display = 'none';
+            avatarSec.style.display = 'block';
+            btn.style.background = '#dc2626';
+            btn.innerHTML = '<i class="fa-solid fa-video-slash"></i>';
+        } else {
+            videoFrame.style.display = 'block';
+            avatarSec.style.display = 'none';
+            btn.style.background = '#334155';
+            btn.innerHTML = '<i class="fa-solid fa-video"></i>';
+        }
+    }
+
+    var pendingConfirmForm = null;
+
+    function promptConfirmModal(formElement, title, message) {
+        pendingConfirmForm = formElement;
+        var titleElem = document.getElementById('confirmModalTitle');
+        var msgElem = document.getElementById('confirmModalMessage');
+        if (titleElem) titleElem.innerText = title || 'Confirm Action';
+        if (msgElem) msgElem.innerText = message || 'Are you sure you want to proceed with this action?';
+        var modal = document.getElementById('globalConfirmModal');
+        if (modal) modal.style.display = 'flex';
+        return false;
+    }
+
+    function closeConfirmModal() {
+        pendingConfirmForm = null;
+        var modal = document.getElementById('globalConfirmModal');
+        if (modal) modal.style.display = 'none';
+    }
+
+    function executeConfirmAction() {
+        if (pendingConfirmForm) {
+            var f = pendingConfirmForm;
+            pendingConfirmForm = null;
+            closeConfirmModal();
+            f.submit();
+        }
+    }
+    </script>
 </body>
 </html>

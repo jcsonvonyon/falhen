@@ -355,21 +355,13 @@ $heroVideoUrl = 'https://www.youtube.com/embed/' . $heroYtId;
                                     <div class="author-role"><?php echo htmlspecialchars(($tCard['role'] ?? '') . (!empty($tCard['company']) ? ', ' . $tCard['company'] : '')); ?></div>
                                 </div>
                             </div>
-                            <div class="rating-stars">
-                                <?php 
-                                $ratingCount = (int)($tCard['rating'] ?? 5);
-                                for ($s = 0; $s < $ratingCount; $s++) {
-                                    echo '<i class="fa-solid fa-star"></i>';
-                                }
-                                ?>
-                            </div>
                         </div>
                     </div>
                 <?php endforeach; ?>
             </div>
         </div>
 
-        <!-- Carousel Navigation & Rating Footer -->
+        <!-- Carousel Navigation Bar -->
         <div class="testimonial-controls-bar">
             <div class="testimonial-nav-btns">
                 <button class="nav-arrow-btn" id="testi-prev-btn" aria-label="Previous Testimonial"><i class="fa-solid fa-chevron-left"></i></button>
@@ -381,13 +373,7 @@ $heroVideoUrl = 'https://www.youtube.com/embed/' . $heroYtId;
                 </div>
                 <button class="nav-arrow-btn" id="testi-next-btn" aria-label="Next Testimonial"><i class="fa-solid fa-chevron-right"></i></button>
             </div>
-            
-            <div class="testimonial-rating-footer">
-                <div class="rating-stars-inline">
-                    <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i>
-                </div>
-                <span class="rating-score">5.0</span> — Rated 5 stars by 100+ clients
-            </div>
+        </div>
 </section>
 
 <!-- The People Section (Replicated from falhen.com screenshots) -->
@@ -638,9 +624,6 @@ $btsItems = $settings['bts_items'] ?? [
                     <div class="discovery-proof-text">
                         <strong>250+ calls booked</strong>
                         <small>with brands across country</small>
-                    </div>
-                    <div class="rating-stars" style="margin-left: auto;">
-                        <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i>
                     </div>
                 </div>
             </div>

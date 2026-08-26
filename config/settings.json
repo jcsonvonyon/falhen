@@ -660,18 +660,52 @@
             "photosCount": 30
         },
         {
-            "id": 17,
-            "title": "Wedding Celebration",
+            "id": 18,
+            "title": "Wedding Reels",
             "category": "Wedding Film",
             "media_type": "video",
-            "duration": "1:49",
             "featured": true,
-            "client": "Dian\u00e9 and Max",
+            "client": "Wedding",
             "location": "Chicago",
-            "image": "https://i.ytimg.com/vi/AXqylP5AENQ/hqdefault.jpg",
-            "video_url": "AXqylP5AENQ",
+            "duration": "1:28",
+            "video_url": "ezAGweXeQOw",
+            "gdrive_url": "",
+            "image": "https://i.ytimg.com/vi/ezAGweXeQOw/hqdefault.jpg",
             "desc": "",
-            "gdrive_url": ""
+            "photosCount": 30
+        },
+        {
+            "id": 20,
+            "title": "Wedding Reels",
+            "category": "Wedding Film",
+            "media_type": "video",
+            "featured": true,
+            "client": "Wedding",
+            "location": "Chicago",
+            "duration": "1:28",
+            "video_url": "ezAGweXeQOw",
+            "gdrive_url": "",
+            "image": "https://i.ytimg.com/vi/ezAGweXeQOw/hqdefault.jpg",
+            "desc": "",
+            "photosCount": 30
+        },
+        {
+            "id": 19,
+            "title": "Tech Innovation Summit 2024",
+            "category": "Corporate",
+            "media_type": "project",
+            "featured": true,
+            "client": "TechCorp International",
+            "location": "London",
+            "duration": "",
+            "video_url": "",
+            "gdrive_url": "https://drive.google.com/drive/folders/test2",
+            "image": "https://res.cloudinary.com/pnabfi91/image/upload/v1787701843/falhen/portfolio/r5hb7qhaccfrv8seybd3.jpg",
+            "desc": "Full-scale video production for a major technology conference featuring keynote speeches, panel discussions, and product launches with multi-camera setup and live streaming capabilities.",
+            "photosCount": 30,
+            "year": "",
+            "project_date": "",
+            "services": "Video Production, Live Streaming, Post Production"
         }
     ],
     "team_items": [
@@ -785,22 +819,6 @@
                 "Social Strategy",
                 "Audience Engagement Specialist",
                 "Visual Storytelling for Social"
-            ]
-        },
-        {
-            "id": 2,
-            "number": "08",
-            "name": "Oluwatosin King",
-            "role": "Operations Specialist",
-            "department": "Creative",
-            "location": "Lagos",
-            "experience": "4+ years at Falhen",
-            "image": "/assets/img/portfolio/portfolio_halima.png",
-            "bio": "Bridging the gap between creative vision and seamless execution. With a proactive and friendly approach, Oluwatosin ensures that complex production workflows run with precision.",
-            "skills": [
-                "Productions",
-                "Operational Management",
-                "Client Relations"
             ]
         }
     ],
@@ -1106,9 +1124,9 @@
         },
         {
             "id": 2,
-            "full_name": "Oluwatosin King",
-            "username": "oluwatosin.king",
-            "email": "oluwatosin@falhen.com",
+            "full_name": "Kingsley Falonipe",
+            "username": "kingsley.falonipe",
+            "email": "kingsley@falhen.com",
             "role": "Operations Specialist",
             "status": "active",
             "avatar": "https://res.cloudinary.com/pnabfi91/image/upload/v1786713360/falhen/team/ftmzlwwv1szlyurijyno.png",
@@ -1120,7 +1138,7 @@
             "full_name": "Lisa Okoli",
             "username": "lisa.okoli",
             "email": "lisa@falhen.com",
-            "role": "Head of Marketing & Client Partnerships",
+            "role": "Content Editor",
             "status": "active",
             "avatar": "https://res.cloudinary.com/pnabfi91/image/upload/v1786713962/falhen/team/b5v6o8oirs95xihokmgc.jpg",
             "created_at": "2024-02-15",
@@ -1135,7 +1153,7 @@
             "status": "active",
             "avatar": "https://res.cloudinary.com/pnabfi91/image/upload/v1786714006/falhen/team/ini79za7jvbjokrf1dup.jpg",
             "created_at": "2024-03-01",
-            "password_hash": "$2y$10$h8hiRkyw9dJSmV3.6Y22Y.s5yZdczEtVYLU4H./gUQ/f8uwqwdU2q"
+            "password_hash": "$2y$10$Q7Esv78DED/3yH6hcjV4lOJgZm8eOeNK6NkgpoM.3Oh9HISuUeMY."
         },
         {
             "id": 5,
@@ -1153,21 +1171,10 @@
             "full_name": "Victoria Opemipo",
             "username": "victoria.opemipo",
             "email": "victoria@falhen.com",
-            "role": "Social Media Manager",
+            "role": "Content Editor",
             "status": "active",
             "avatar": "https://res.cloudinary.com/pnabfi91/image/upload/v1786714208/falhen/team/ri0fc0rdmjfvyzx1lihn.jpg",
             "created_at": "2024-04-05",
-            "password_hash": "$2y$10$JXpfSKp9kdnpy8wSqB2iX.sNB2VlRi6.iKose61vMIL131MPHtkny"
-        },
-        {
-            "id": 7,
-            "full_name": "Micheal Otuwho",
-            "username": "micheal.otuwho",
-            "email": "micheal@falhen.com",
-            "role": "Content Manager",
-            "status": "active",
-            "avatar": "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=600&auto=format&fit=crop",
-            "created_at": "2024-04-18",
             "password_hash": "$2y$10$JXpfSKp9kdnpy8wSqB2iX.sNB2VlRi6.iKose61vMIL131MPHtkny"
         },
         {
@@ -1177,24 +1184,91 @@
             "email": "oluwatosin.ligali@falhenmedia.com",
             "role": "Super Admin",
             "status": "active",
-            "avatar": "https://res.cloudinary.com/pnabfi91/image/upload/v1786753671/falhen/team/sptg6oyc6wudqirgzqxc.png",
+            "avatar": "https://res.cloudinary.com/pnabfi91/image/upload/v1786714111/falhen/team/q4atws8zhxaogyzm8bgw.png",
             "created_at": "2024-05-01",
             "password_hash": "$2y$10$t7bfxh0MFRPZfR3q0yYzFepwVAxwWLrlbYWEhE1DpfFVJmyGvwuZi"
         }
     ],
     "attendance_logs": [
         {
-            "id": 2,
-            "username": "daniel.ifeoluwa",
-            "full_name": "Daniel Ifeoluwa",
-            "date": "2026-08-15",
-            "clock_in": "10:00 AM",
+            "id": 7,
+            "username": "mojisola.emjay",
+            "full_name": "Mojisola Emjay",
+            "date": "2026-08-26",
+            "clock_in": "01:33 AM",
             "clock_out": null,
             "break_start": null,
             "break_end": null,
             "duration": "In Progress",
             "status": "Clocked In",
             "work_state": "working"
+        },
+        {
+            "id": 6,
+            "username": "victoria.opemipo",
+            "full_name": "Victoria Opemipo",
+            "date": "2026-08-26",
+            "clock_in": "01:11 AM",
+            "clock_out": null,
+            "break_start": null,
+            "break_end": null,
+            "duration": "In Progress",
+            "status": "Clocked In",
+            "work_state": "working"
+        },
+        {
+            "id": 5,
+            "username": "admin",
+            "full_name": "Oluwatosin Ligali",
+            "date": "2026-08-26",
+            "clock_in": "12:53 AM",
+            "clock_out": null,
+            "break_start": null,
+            "break_end": null,
+            "duration": "In Progress",
+            "status": "Clocked In",
+            "work_state": "working"
+        },
+        {
+            "id": 4,
+            "username": "daniel.ifeoluwa",
+            "full_name": "Daniel Ifeoluwa",
+            "date": "2026-08-26",
+            "clock_in": "12:33 AM",
+            "clock_out": null,
+            "break_start": null,
+            "break_end": null,
+            "duration": "In Progress",
+            "status": "Clocked In",
+            "work_state": "working"
+        },
+        {
+            "id": 3,
+            "username": "admin",
+            "full_name": "Oluwatosin Ligali",
+            "date": "2026-08-25",
+            "clock_in": "09:26 PM",
+            "clock_out": "11:59 PM",
+            "break_start": null,
+            "break_end": null,
+            "duration": "2 hrs 33 mins",
+            "status": "Present",
+            "work_state": "completed",
+            "auto_clocked_out": true
+        },
+        {
+            "id": 2,
+            "username": "daniel.ifeoluwa",
+            "full_name": "Daniel Ifeoluwa",
+            "date": "2026-08-15",
+            "clock_in": "10:00 AM",
+            "clock_out": "11:59 PM",
+            "break_start": null,
+            "break_end": null,
+            "duration": "13 hrs 59 mins",
+            "status": "Present",
+            "work_state": "completed",
+            "auto_clocked_out": true
         },
         {
             "id": 1,
@@ -1216,9 +1290,21 @@
                 "account_name": "Daniel Ifeoluwa"
             },
             "offer_letter": {
-                "status": "Approved",
+                "status": "Issued",
                 "accepted": true,
-                "document_url": "/assets/docs/Offer_Letter_Falhen.pdf"
+                "document_url": "/assets/docs/Offer_Letter_Falhen.pdf",
+                "issued": true,
+                "issued_at": "2026-08-26 17:04:21",
+                "issued_by": "Mojisola Emjay",
+                "job_title": "Senior Video Editor & Cinematographer",
+                "department": "Media Production & Post Studio",
+                "employment_type": "Full-Time",
+                "currency": "NGN",
+                "salary": "\u20a6300,000 / month",
+                "start_date": "2026-09-02",
+                "probation_period": "3 Months",
+                "expiry_date": "2026-09-09",
+                "notes": "Welcome to Falhen Media! We are thrilled to invite you to join our creative production team."
             },
             "employment_agreement": {
                 "status": "Approved",
@@ -1245,5 +1331,39 @@
                 "file_url": ""
             }
         }
-    }
+    },
+    "site_announcements": [
+        {
+            "id": 4,
+            "title": "NEWEST",
+            "category": "Events",
+            "posted_by": "daniel.ifeoluwa (Staff)",
+            "date_str": "Posted Today at 02:03 AM",
+            "content": "pARTY TOMOROW"
+        },
+        {
+            "id": 1,
+            "title": "Falhen Q3 Production Roadmap & 8K Cinema Gear Launch",
+            "category": "Important",
+            "posted_by": "Henry Falonipe (Creative Director)",
+            "date_str": "Posted Today at 09:00 AM",
+            "content": "We are excited to announce the arrival of our new RED V-Raptor and ARRI Alexa Mini LF camera packages. All cinematographers and production crews are requested to complete the gear orientation briefing before booking equipment for upcoming commercial shoots."
+        },
+        {
+            "id": 2,
+            "title": "Updated Hybrid Work Policy & Health Stipend",
+            "category": "General",
+            "posted_by": "Resource & HR Management",
+            "date_str": "Posted Yesterday",
+            "content": "The monthly health & wellness reimbursement portal is now open for August submissions. Please ensure all receipts are uploaded under your profile before the 25th of the month."
+        },
+        {
+            "id": 3,
+            "title": "Annual Studio End-of-Summer Gala & Awards",
+            "category": "Events",
+            "posted_by": "Studio Operations",
+            "date_str": "Posted 3 days ago",
+            "content": "Save the date! Falhen Media will host our annual End-of-Summer Gala on August 30th at the Main Soundstage. Details and RSVP forms will be shared shortly."
+        }
+    ]
 }
