@@ -9,6 +9,9 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 
 require_once __DIR__ . '/cloudinary_helper.php';
+if (file_exists(__DIR__ . '/../config/gdrive.php')) {
+    require_once __DIR__ . '/../config/gdrive.php';
+}
 
 /**
  * Sanitize string input for XSS prevention
