@@ -48,14 +48,77 @@ $currentPage = basename($_SERVER['PHP_SELF']);
         <nav class="nav-center">
             <ul class="nav-menu">
                 <li class="nav-item">
-                    <a href="/" class="nav-link <?php echo ($currentPage == 'index.php' || $currentPage == '') ? 'active' : ''; ?>">Home</a>
+                    <a href="/" class="nav-link <?php echo ($currentPage == 'index.php' || $currentPage == '') ? 'active' : ''; ?>">
+                        <span class="mobile-nav-icon"><i class="fa-solid fa-house"></i></span>
+                        <span class="nav-text">Home</span>
+                        <?php if ($currentPage == 'index.php' || $currentPage == ''): ?>
+                            <span class="mobile-nav-badge"><i class="fa-solid fa-circle-check"></i></span>
+                        <?php endif; ?>
+                    </a>
                 </li>
                 
                 <!-- Services Mega Dropdown -->
                 <li class="nav-item dropdown">
                     <a href="/services.php" class="nav-link <?php echo ($currentPage == 'services.php') ? 'active' : ''; ?>">
-                        Services <i class="fa-solid fa-chevron-down dropdown-arrow"></i>
+                        <span class="mobile-nav-icon"><i class="fa-solid fa-briefcase"></i></span>
+                        <span class="nav-text">Services</span>
+                        <i class="fa-solid fa-chevron-down dropdown-arrow"></i>
+                        <?php if ($currentPage == 'services.php'): ?>
+                            <span class="mobile-nav-badge"><i class="fa-solid fa-circle-check"></i></span>
+                        <?php endif; ?>
                     </a>
+                    
+                    <!-- Mobile Services Accordion Sub-List -->
+                    <ul class="mobile-sub-menu">
+                        <li>
+                            <a href="/services.php" class="mobile-sub-link" style="font-weight: 700; color: #ef4444;">
+                                <i class="fa-solid fa-list-check mobile-sub-icon" style="color: #ef4444;"></i>
+                                <span>All Services Overview</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="/services.php#video-production" class="mobile-sub-link">
+                                <i class="fa-solid fa-play mobile-sub-icon"></i>
+                                <span>Video Production</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="/services.php#live-streaming" class="mobile-sub-link">
+                                <i class="fa-solid fa-video mobile-sub-icon"></i>
+                                <span>Live Streaming</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="/services.php#post-production" class="mobile-sub-link">
+                                <i class="fa-solid fa-pen mobile-sub-icon"></i>
+                                <span>Post Production</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="/services.php#animation" class="mobile-sub-link">
+                                <i class="fa-solid fa-star mobile-sub-icon"></i>
+                                <span>Animation & Motion Graphics</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="/services.php#content-strategy" class="mobile-sub-link">
+                                <i class="fa-solid fa-newspaper mobile-sub-icon"></i>
+                                <span>Content Strategy</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="/services.php#photography" class="mobile-sub-link">
+                                <i class="fa-solid fa-camera mobile-sub-icon"></i>
+                                <span>Photography</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="/services.php#weddings" class="mobile-sub-link">
+                                <i class="fa-solid fa-heart mobile-sub-icon"></i>
+                                <span>Wedding & Events</span>
+                            </a>
+                        </li>
+                    </ul>
                     
                     <div class="mega-dropdown-menu">
                         <div class="mega-dropdown-grid">
@@ -131,18 +194,49 @@ $currentPage = basename($_SERVER['PHP_SELF']);
                 </li>
                 
                 <li class="nav-item">
-                    <a href="/portfolio.php" class="nav-link <?php echo ($currentPage == 'portfolio.php') ? 'active' : ''; ?>">Portfolio</a>
+                    <a href="/portfolio.php" class="nav-link <?php echo ($currentPage == 'portfolio.php') ? 'active' : ''; ?>">
+                        <span class="mobile-nav-icon"><i class="fa-solid fa-images"></i></span>
+                        <span class="nav-text">Portfolio</span>
+                        <?php if ($currentPage == 'portfolio.php'): ?>
+                            <span class="mobile-nav-badge"><i class="fa-solid fa-circle-check"></i></span>
+                        <?php endif; ?>
+                    </a>
                 </li>
                 <li class="nav-item">
-                    <a href="/blog.php" class="nav-link <?php echo ($currentPage == 'blog.php') ? 'active' : ''; ?>">Blog</a>
+                    <a href="/blog.php" class="nav-link <?php echo ($currentPage == 'blog.php') ? 'active' : ''; ?>">
+                        <span class="mobile-nav-icon"><i class="fa-solid fa-newspaper"></i></span>
+                        <span class="nav-text">Blog</span>
+                        <?php if ($currentPage == 'blog.php'): ?>
+                            <span class="mobile-nav-badge"><i class="fa-solid fa-circle-check"></i></span>
+                        <?php endif; ?>
+                    </a>
                 </li>
                 <li class="nav-item">
-                    <a href="/about.php" class="nav-link <?php echo ($currentPage == 'about.php') ? 'active' : ''; ?>">About</a>
+                    <a href="/about.php" class="nav-link <?php echo ($currentPage == 'about.php') ? 'active' : ''; ?>">
+                        <span class="mobile-nav-icon"><i class="fa-solid fa-user"></i></span>
+                        <span class="nav-text">About</span>
+                        <?php if ($currentPage == 'about.php'): ?>
+                            <span class="mobile-nav-badge"><i class="fa-solid fa-circle-check"></i></span>
+                        <?php endif; ?>
+                    </a>
                 </li>
                 <li class="nav-item">
-                    <a href="/contact.php" class="nav-link <?php echo ($currentPage == 'contact.php') ? 'active' : ''; ?>">Contact</a>
+                    <a href="/contact.php" class="nav-link <?php echo ($currentPage == 'contact.php') ? 'active' : ''; ?>">
+                        <span class="mobile-nav-icon"><i class="fa-solid fa-envelope"></i></span>
+                        <span class="nav-text">Contact</span>
+                        <?php if ($currentPage == 'contact.php'): ?>
+                            <span class="mobile-nav-badge"><i class="fa-solid fa-circle-check"></i></span>
+                        <?php endif; ?>
+                    </a>
                 </li>
             </ul>
+
+            <!-- Mobile Drawer Bottom CTA -->
+            <div class="mobile-menu-cta">
+                <a href="/contact.php" class="btn btn-mobile-cta">
+                    <i class="fa-solid fa-envelope"></i> Contact Us
+                </a>
+            </div>
         </nav>
         
         <!-- Header Right CTA Button -->

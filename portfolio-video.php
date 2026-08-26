@@ -327,8 +327,28 @@ if (empty($youtubeId)) {
                 </div>
             </div>
 
-        </div>
-    </div>
-
+    <!-- Fixed Mobile Floating Bottom Dock Navigation Widget -->
+    <nav class="mobile-bottom-dock">
+        <a href="/" class="dock-item">
+            <div class="dock-icon-box"><i class="fa-solid fa-house"></i></div>
+            <span class="dock-label">HOME</span>
+        </a>
+        <a href="/services.php" class="dock-item">
+            <div class="dock-icon-box"><i class="fa-solid fa-briefcase"></i></div>
+            <span class="dock-label">SERVICES</span>
+        </a>
+        <a href="/portfolio.php" class="dock-item active">
+            <div class="dock-icon-box"><i class="fa-solid fa-film"></i></div>
+            <span class="dock-label">WORK</span>
+        </a>
+        <a href="/contact.php" class="dock-item">
+            <div class="dock-icon-box"><i class="fa-solid fa-envelope"></i></div>
+            <span class="dock-label">CONTACT</span>
+        </a>
+        <button type="button" class="dock-item dock-top-btn" onclick="window.scrollTo({top: 0, behavior: 'smooth'})">
+            <div class="dock-icon-box"><i class="fa-solid fa-arrow-up"></i></div>
+            <span class="dock-label">TOP</span>
+        </button>
+    </nav>
 </body>
 </html>

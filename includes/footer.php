@@ -81,6 +81,34 @@
     <i class="fa-solid fa-arrow-up"></i>
 </button>
 
+<!-- Fixed Mobile Floating Bottom Dock Navigation Widget -->
+<nav class="mobile-bottom-dock">
+    <a href="/" class="dock-item <?php echo ($currentPage == 'index.php' || $currentPage == '') ? 'active' : ''; ?>">
+        <div class="dock-icon-box"><i class="fa-solid fa-house"></i></div>
+        <span class="dock-label">HOME</span>
+    </a>
+    
+    <a href="/services.php" class="dock-item <?php echo ($currentPage == 'services.php') ? 'active' : ''; ?>">
+        <div class="dock-icon-box"><i class="fa-solid fa-briefcase"></i></div>
+        <span class="dock-label">SERVICES</span>
+    </a>
+    
+    <a href="/portfolio.php" class="dock-item <?php echo ($currentPage == 'portfolio.php') ? 'active' : ''; ?>">
+        <div class="dock-icon-box"><i class="fa-solid fa-film"></i></div>
+        <span class="dock-label">WORK</span>
+    </a>
+    
+    <a href="/contact.php" class="dock-item <?php echo ($currentPage == 'contact.php') ? 'active' : ''; ?>">
+        <div class="dock-icon-box"><i class="fa-solid fa-envelope"></i></div>
+        <span class="dock-label">CONTACT</span>
+    </a>
+    
+    <button type="button" class="dock-item dock-top-btn" id="dockScrollTop">
+        <div class="dock-icon-box"><i class="fa-solid fa-arrow-up"></i></div>
+        <span class="dock-label">TOP</span>
+    </button>
+</nav>
+
 <!-- Cookie Consent Banner & Preferences Modal (Replicated from falhen.com screenshot) -->
 <div class="cookie-banner" id="cookieBanner">
     <!-- View 1: Default Banner View -->

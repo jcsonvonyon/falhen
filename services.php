@@ -236,15 +236,36 @@ if (!empty($dynamicServices)) {
         box-shadow: 0 4px 15px rgba(220, 38, 38, 0.5);
     }
 
-    @media (max-width: 992px) {
-        .services-pro-grid {
-            grid-template-columns: repeat(2, 1fr);
+    @media (max-width: 768px) {
+        .services-hero-wrapper {
+            padding-top: 100px !important;
+            padding-bottom: 30px !important;
         }
-    }
-
-    @media (max-width: 600px) {
         .services-pro-grid {
-            grid-template-columns: 1fr;
+            grid-template-columns: 1fr !important;
+            gap: 16px !important;
+            margin-top: 24px !important;
+        }
+        .pro-card-image-wrap {
+            height: 160px !important;
+        }
+        .pro-card-body {
+            padding: 24px 18px 18px 18px !important;
+        }
+        .pro-card-title {
+            font-size: 1.2rem !important;
+        }
+        .pro-card-desc {
+            font-size: 0.85rem !important;
+            display: -webkit-box !important;
+            -webkit-line-clamp: 2 !important;
+            -webkit-box-orient: vertical !important;
+            overflow: hidden !important;
+            text-overflow: ellipsis !important;
+            margin-bottom: 14px !important;
+        }
+        .section-subtitle {
+            display: none !important;
         }
     }
 </style>

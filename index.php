@@ -141,6 +141,24 @@ $heroDirectVideo = $settings['hero_direct_video_url'] ?? '';
                 </div>
             <?php endforeach; ?>
         </div>
+
+        <!-- Mobile Carousel Navigation Controls -->
+        <div class="services-mobile-controls">
+            <button type="button" class="services-carousel-btn" id="servicesPrevBtn" aria-label="Previous Service">
+                <i class="fa-solid fa-chevron-left"></i>
+            </button>
+
+            <div class="services-carousel-dots" id="servicesDots">
+                <?php foreach ($homepageServices as $idx => $sItem): ?>
+                    <span class="services-dot <?php echo ($idx === 0) ? 'active' : ''; ?>" data-index="<?php echo $idx; ?>"></span>
+                <?php endforeach; ?>
+            </div>
+
+            <button type="button" class="services-carousel-btn" id="servicesNextBtn" aria-label="Next Service">
+                <i class="fa-solid fa-chevron-right"></i>
+            </button>
+        </div>
+    </div>
 </section>
 
 <!-- By the Numbers Section (Dynamic Admin Settings Integration) -->
@@ -447,6 +465,23 @@ $heroVideoUrl = 'https://www.youtube.com/embed/' . $heroYtId;
             <?php endforeach; ?>
         </div>
 
+        <!-- Mobile Team Carousel Navigation Controls -->
+        <div class="team-mobile-controls">
+            <button type="button" class="team-carousel-btn" id="teamPrevBtn" aria-label="Previous Team Member">
+                <i class="fa-solid fa-chevron-left"></i>
+            </button>
+
+            <div class="team-carousel-dots" id="teamDots">
+                <?php foreach ($homepageTeamMembers as $idx => $tm): ?>
+                    <span class="team-dot <?php echo ($idx === 0) ? 'active' : ''; ?>" data-index="<?php echo $idx; ?>"></span>
+                <?php endforeach; ?>
+            </div>
+
+            <button type="button" class="team-carousel-btn" id="teamNextBtn" aria-label="Next Team Member">
+                <i class="fa-solid fa-chevron-right"></i>
+            </button>
+        </div>
+
         <!-- Talent Recruitment Banner -->
         <div class="team-talent-banner">
             <div class="talent-banner-text">
@@ -521,8 +556,8 @@ $btsItems = $settings['bts_items'] ?? [
 <section class="section" id="blog" style="background: #000000; border-top: 1px solid rgba(255, 255, 255, 0.08);">
     <div class="container">
         <!-- Section Header Flex -->
-        <div class="team-header-flex" style="margin-bottom: 40px; align-items: center;">
-            <div class="team-header-left">
+        <div class="insights-header-flex">
+            <div class="insights-header-left">
                 <div class="section-badge-pill">Insights</div>
                 <h2 class="section-title" style="font-size: 2.75rem; font-weight: 800;">Latest from the <span style="color: #ff4d4d;">Blog</span></h2>
             </div>

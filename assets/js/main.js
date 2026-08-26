@@ -15,17 +15,51 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // 2. Mobile Nav Toggle
   const navToggle = document.querySelector('.nav-toggle');
+  const navCenter = document.querySelector('.nav-center');
   const navMenu = document.querySelector('.nav-menu');
 
-  if (navToggle && navMenu) {
+  if (navToggle) {
     navToggle.addEventListener('click', () => {
-      navMenu.classList.toggle('active');
+      const isActive = navCenter ? navCenter.classList.toggle('active') : navMenu?.classList.toggle('active');
+      if (navMenu) navMenu.classList.toggle('active', isActive);
+      document.body.classList.toggle('mobile-menu-open', isActive);
       const icon = navToggle.querySelector('i');
       if (icon) {
-        icon.className = navMenu.classList.contains('active') ? 'fa-solid fa-xmark' : 'fa-solid fa-bars';
+        icon.className = isActive ? 'fa-solid fa-xmark' : 'fa-solid fa-bars';
       }
     });
   }
+
+  // 2b. Mobile Services Dropdown Accordion Toggle
+  const dropdownNavItems = document.querySelectorAll('.nav-item.dropdown');
+  dropdownNavItems.forEach(item => {
+    const link = item.querySelector('.nav-link');
+    if (link) {
+      const handleMobileDropdownToggle = (e) => {
+        if (window.innerWidth <= 768) {
+          e.preventDefault();
+          e.stopPropagation();
+          item.classList.toggle('open');
+        }
+      };
+
+      link.addEventListener('click', handleMobileDropdownToggle);
+      
+      // Also close mobile drawer menu when any sub-link inside mobile-sub-menu is clicked
+      const subLinks = item.querySelectorAll('.mobile-sub-link');
+      subLinks.forEach(subLink => {
+        subLink.addEventListener('click', () => {
+          if (window.innerWidth <= 768) {
+            navCenter?.classList.remove('active');
+            navMenu?.classList.remove('active');
+            document.body.classList.remove('mobile-menu-open');
+            const toggleIcon = navToggle?.querySelector('i');
+            if (toggleIcon) toggleIcon.className = 'fa-solid fa-bars';
+          }
+        });
+      });
+    }
+  });
 
   // 3. Video Modal Lightbox
   const modal = document.getElementById('videoModal');
@@ -504,6 +538,166 @@ document.addEventListener('DOMContentLoaded', () => {
     testiCards.forEach((card, idx) => {
       card.addEventListener('click', () => {
         activateTestimonial(idx);
+      });
+    });
+
+    testiWrapper.addEventListener('scroll', () => {
+      if (window.innerWidth <= 768) {
+        const scrollPos = testiWrapper.scrollLeft;
+        const cardWidth = testiWrapper.clientWidth;
+        if (cardWidth > 0) {
+          const newIndex = Math.round(scrollPos / cardWidth);
+          if (newIndex !== currentTestiIndex && newIndex >= 0 && newIndex < testiCards.length) {
+            currentTestiIndex = newIndex;
+            testiCards.forEach((card, idx) => {
+              card.classList.toggle('active', idx === currentTestiIndex);
+            });
+            testiDots.forEach((dot, idx) => {
+              dot.classList.toggle('active', idx === currentTestiIndex);
+            });
+          }
+        }
+      }
+    });
+  }
+
+  // 12. Mobile Services Swiping Carousel Handler
+  const servicesGrid = document.querySelector('.services-grid');
+  const servicesPrevBtn = document.getElementById('servicesPrevBtn');
+  const servicesNextBtn = document.getElementById('servicesNextBtn');
+  const servicesDots = document.querySelectorAll('.services-dot');
+  const serviceCards = document.querySelectorAll('.services-grid .service-card');
+
+  if (servicesGrid && serviceCards.length > 0) {
+    let activeServiceIndex = 0;
+
+    const updateActiveServicesDot = (index) => {
+      if (index < 0) index = 0;
+      if (index >= serviceCards.length) index = serviceCards.length - 1;
+      activeServiceIndex = index;
+
+      servicesDots.forEach((dot, idx) => {
+        if (idx === activeServiceIndex) {
+          dot.classList.add('active');
+        } else {
+          dot.classList.remove('active');
+        }
+      });
+    };
+
+    const scrollToServiceCard = (index) => {
+      if (index < 0) index = serviceCards.length - 1;
+      if (index >= serviceCards.length) index = 0;
+      const targetCard = serviceCards[index];
+      if (targetCard && servicesGrid) {
+        servicesGrid.scrollTo({
+          left: targetCard.offsetLeft,
+          behavior: 'smooth'
+        });
+        updateActiveServicesDot(index);
+      }
+    };
+
+    if (servicesPrevBtn) {
+      servicesPrevBtn.addEventListener('click', () => {
+        scrollToServiceCard(activeServiceIndex - 1);
+      });
+    }
+
+    if (servicesNextBtn) {
+      servicesNextBtn.addEventListener('click', () => {
+        scrollToServiceCard(activeServiceIndex + 1);
+      });
+    }
+
+    servicesDots.forEach((dot, idx) => {
+      dot.addEventListener('click', () => {
+        scrollToServiceCard(idx);
+      });
+    });
+
+    servicesGrid.addEventListener('scroll', () => {
+      if (window.innerWidth <= 768) {
+        const scrollPos = servicesGrid.scrollLeft;
+        const cardWidth = servicesGrid.clientWidth;
+        if (cardWidth > 0) {
+          const newIndex = Math.round(scrollPos / cardWidth);
+          updateActiveServicesDot(newIndex);
+        }
+      }
+    });
+  }
+
+  // 13. Mobile Team Swiping Carousel Handler
+  const teamGrid = document.querySelector('.team-grid');
+  const teamPrevBtn = document.getElementById('teamPrevBtn');
+  const teamNextBtn = document.getElementById('teamNextBtn');
+  const teamDots = document.querySelectorAll('.team-dot');
+  const teamCards = document.querySelectorAll('.team-grid .team-card');
+
+  if (teamGrid && teamCards.length > 0) {
+    let activeTeamIndex = 0;
+
+    const updateActiveTeamDot = (index) => {
+      if (index < 0) index = 0;
+      if (index >= teamCards.length) index = teamCards.length - 1;
+      activeTeamIndex = index;
+
+      teamDots.forEach((dot, idx) => {
+        dot.classList.toggle('active', idx === activeTeamIndex);
+      });
+    };
+
+    const scrollToTeamCard = (index) => {
+      if (index < 0) index = teamCards.length - 1;
+      if (index >= teamCards.length) index = 0;
+      const targetCard = teamCards[index];
+      if (targetCard && teamGrid) {
+        teamGrid.scrollTo({
+          left: targetCard.offsetLeft,
+          behavior: 'smooth'
+        });
+        updateActiveTeamDot(index);
+      }
+    };
+
+    if (teamPrevBtn) {
+      teamPrevBtn.addEventListener('click', () => {
+        scrollToTeamCard(activeTeamIndex - 1);
+      });
+    }
+
+    if (teamNextBtn) {
+      teamNextBtn.addEventListener('click', () => {
+        scrollToTeamCard(activeTeamIndex + 1);
+      });
+    }
+
+    teamDots.forEach((dot, idx) => {
+      dot.addEventListener('click', () => {
+        scrollToTeamCard(idx);
+      });
+    });
+
+    teamGrid.addEventListener('scroll', () => {
+      if (window.innerWidth <= 768) {
+        const scrollPos = teamGrid.scrollLeft;
+        const cardWidth = teamGrid.clientWidth;
+        if (cardWidth > 0) {
+          const newIndex = Math.round(scrollPos / cardWidth);
+          updateActiveTeamDot(newIndex);
+        }
+      }
+    });
+  }
+
+  // 14. Mobile Bottom Dock Scroll Top Button
+  const dockScrollTop = document.getElementById('dockScrollTop');
+  if (dockScrollTop) {
+    dockScrollTop.addEventListener('click', () => {
+      window.scrollTo({
+        top: 0,
+        behavior: 'smooth'
       });
     });
   }
