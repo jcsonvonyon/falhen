@@ -1,0 +1,20 @@
+# Environment configuration
+.env
+.env.local
+
+# Logs and temporary files
+*.log
+error_log
+logs/
+
+# OS / IDE generated files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.bak
+
+# Temporary storage / uploads
+scratch/
+tmp/
