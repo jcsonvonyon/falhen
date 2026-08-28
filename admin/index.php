@@ -6799,7 +6799,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
 
                                     <label class="btn-save-primary" style="background-color: #0f172a; cursor: pointer; display: inline-flex; font-size: 0.82rem; padding: 8px 18px;">
                                         <i class="fa-solid fa-camera"></i> Change Avatar Photo
-                                        <input type="file" id="avatar_file_input" accept="image/*" style="display: none;" onchange="handleAvatarFileUpload(this)">
+                                        <input type="file" id="avatar_file_input" name="avatar_file" accept="image/*" style="display: none;" onchange="handleAvatarFileUpload(this)">
                                     </label>
                                 </div>
                             </div>

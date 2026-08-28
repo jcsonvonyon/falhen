@@ -1240,10 +1240,27 @@ function getAdminUserProfile() {
  * Save Admin User Profile & Sync Active Session
  */
 function saveAdminUserProfile($data) {
+    $settings = getSiteSettings();
     $current = getAdminUserProfile();
     $updated = array_merge($current, $data);
 
-    saveSiteSettings(['admin_profile' => $updated]);
+    $settings['admin_profile'] = $updated;
+
+    if (!empty($data['avatar'])) {
+        $teamMembers = $settings['team_members'] ?? [];
+        if (is_array($teamMembers)) {
+            foreach ($teamMembers as &$tm) {
+                $tmNameLower = strtolower(trim($tm['name'] ?? ''));
+                if (strpos($tmNameLower, 'henry') !== false || strpos($tmNameLower, 'falonipe') !== false || strpos($tmNameLower, 'admin') !== false) {
+                    $tm['image'] = $data['avatar'];
+                }
+            }
+            unset($tm);
+            $settings['team_members'] = $teamMembers;
+        }
+    }
+
+    saveSiteSettings($settings);
 
     // Sync session variables
     $_SESSION['admin_username']  = $updated['username'];
@@ -1443,6 +1460,7 @@ function saveStaffAccountByUsername($username, $data) {
     $updated = false;
 
     $uLower = strtolower(trim($username));
+    $matchedFullName = '';
 
     foreach ($items as &$st) {
         $stUser = strtolower(trim($st['username'] ?? ''));
@@ -1453,12 +1471,33 @@ function saveStaffAccountByUsername($username, $data) {
                     $st[$k] = $v;
                 }
             }
+            if (!empty($st['full_name'])) {
+                $matchedFullName = $st['full_name'];
+            }
             $updated = true;
         }
     }
     unset($st);
 
     if ($updated) {
+        // Sync avatar photo to team_members array if present
+        if (!empty($data['avatar'])) {
+            $teamMembers = $settings['team_members'] ?? [];
+            if (is_array($teamMembers)) {
+                $targetNameLower = strtolower(trim($matchedFullName ?: $username));
+                $targetUserLower = strtolower(trim($username));
+
+                foreach ($teamMembers as &$tm) {
+                    $tmNameLower = strtolower(trim($tm['name'] ?? ''));
+                    if ($tmNameLower === $targetNameLower || $tmNameLower === $targetUserLower || strpos($targetNameLower, $tmNameLower) !== false || strpos($tmNameLower, $targetNameLower) !== false) {
+                        $tm['image'] = $data['avatar'];
+                    }
+                }
+                unset($tm);
+                $settings['team_members'] = $teamMembers;
+            }
+        }
+
         $settings['staff_accounts'] = array_values($items);
         saveSiteSettings($settings);
     }
@@ -1558,7 +1597,7 @@ function syncTeamAndStaffAccounts() {
         if (isset($staffByName[$tmNameLower])) {
             $stId = $staffByName[$tmNameLower];
             if (isset($staffAccounts[$stId])) {
-                if (($staffAccounts[$stId]['avatar'] ?? '') !== $tmImage && !empty($tmImage)) {
+                if (empty($staffAccounts[$stId]['avatar']) && !empty($tmImage)) {
                     $staffAccounts[$stId]['avatar'] = $tmImage;
                     $updatedCount++;
                 }
@@ -1566,7 +1605,7 @@ function syncTeamAndStaffAccounts() {
         } else if (isset($staffByName[$tmFirstLower])) {
             $stId = $staffByName[$tmFirstLower];
             if (isset($staffAccounts[$stId])) {
-                if (($staffAccounts[$stId]['avatar'] ?? '') !== $tmImage && !empty($tmImage)) {
+                if (empty($staffAccounts[$stId]['avatar']) && !empty($tmImage)) {
                     $staffAccounts[$stId]['avatar'] = $tmImage;
                     $updatedCount++;
                 }
