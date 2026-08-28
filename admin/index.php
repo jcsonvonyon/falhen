@@ -1947,7 +1947,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $isTargetAdmin = (strtolower($targetUser) === 'admin' || strtolower($targetUser) === 'oluwatosin.ligali');
 
         if ($isTargetAdmin) {
-            saveAdminUserProfile([
+            $adminData = [
                 'full_name'         => $fullName,
                 'username'          => $targetUser,
                 'email'             => $email,
@@ -1960,7 +1960,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'phone'             => $phone,
                 'address'           => $address,
                 'location'          => $address
-            ]);
+            ];
+            saveAdminUserProfile($adminData);
+            saveStaffAccountByUsername($targetUser, $adminData);
+            saveStaffAccountByUsername('admin', $adminData);
+            saveStaffAccountByUsername('oluwatosin.ligali', $adminData);
         } else {
             saveStaffAccountByUsername($targetUser, [
                 'full_name'         => $fullName,
@@ -7224,13 +7228,27 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                 $allPeopleList = $allStaffAccounts;
                 if (!empty($adminProfileItem) && is_array($adminProfileItem)) {
                     $adminInRepo = false;
-                    foreach ($allStaffAccounts as $sa) {
-                        if (strtolower($sa['username'] ?? '') === strtolower($adminProfileItem['username'] ?? 'admin') ||
-                            strtolower($sa['email'] ?? '') === strtolower($adminProfileItem['email'] ?? '')) {
+                    foreach ($allPeopleList as &$sa) {
+                        $saUser = strtolower($sa['username'] ?? '');
+                        $saEmail = strtolower($sa['email'] ?? '');
+                        $admUser = strtolower($adminProfileItem['username'] ?? 'admin');
+                        $admEmail = strtolower($adminProfileItem['email'] ?? '');
+
+                        if ($saUser === 'admin' || $saUser === 'oluwatosin.ligali' || $saUser === $admUser || (!empty($admEmail) && $saEmail === $admEmail)) {
                             $adminInRepo = true;
-                            break;
+                            if (!empty($adminProfileItem['dob'])) {
+                                $sa['dob'] = $adminProfileItem['dob'];
+                            }
+                            if (!empty($adminProfileItem['full_name'])) {
+                                $sa['full_name'] = $adminProfileItem['full_name'];
+                            }
+                            if (!empty($adminProfileItem['avatar'])) {
+                                $sa['avatar'] = $adminProfileItem['avatar'];
+                            }
                         }
                     }
+                    unset($sa);
+
                     if (!$adminInRepo) {
                         $allPeopleList[] = $adminProfileItem;
                     }
