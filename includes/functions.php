@@ -1328,12 +1328,6 @@ function getStaffAccountsRepo() {
                 'role'          => 'Social Media Manager',
                 'status'        => 'active',
                 'avatar'        => 'https://res.cloudinary.com/pnabfi91/image/upload/v1786714208/falhen/team/ri0fc0rdmjfvyzx1lihn.jpg',
-                'created_at'    => '2024-04-05',
-                'password_hash' => $defaultPasswordHash
-            ],
-            [
-                'id'            => 7,
-                'full_name'     => 'Micheal Otuwho',
                 'username'      => 'micheal.otuwho',
                 'email'         => 'micheal@falhen.com',
                 'role'          => 'Content Manager',
@@ -1359,7 +1353,7 @@ function getStaffAccountsRepo() {
         saveSiteSettings($settings);
     }
 
-    // Direct synchronization of avatars from Team (Content) menu
+    // Fallback sync of initial avatars from Team (Content) menu if empty
     $teamMembers = getTeamMembers();
     $teamAvatarMap = [];
     foreach ($teamMembers as $tm) {
@@ -1381,16 +1375,19 @@ function getStaffAccountsRepo() {
         $nameLower = strtolower(trim($item['full_name'] ?? ''));
         $firstNameLower = strtolower(explode(' ', $nameLower)[0]);
 
-        // Always sync avatar photo directly from Team (Content) roster
-        $syncedAvatar = $teamAvatarMap[$nameLower] ?? ($teamAvatarMap[$firstNameLower] ?? ($item['avatar'] ?? ''));
-        if (!empty($syncedAvatar) && $syncedAvatar !== ($item['avatar'] ?? '')) {
-            $item['avatar'] = $syncedAvatar;
-            $items[$idx]['avatar'] = $syncedAvatar;
-            $modified = true;
+        if (empty($item['avatar'])) {
+            $syncedAvatar = $teamAvatarMap[$nameLower] ?? ($teamAvatarMap[$firstNameLower] ?? '');
+            if (!empty($syncedAvatar)) {
+                $item['avatar'] = $syncedAvatar;
+                $items[$idx]['avatar'] = $syncedAvatar;
+                $modified = true;
+            }
         }
 
         if ($id > 0) {
             $keyed[$id] = $item;
+        } else if (!empty($item['username'])) {
+            $keyed[$item['username']] = $item;
         }
     }
 
@@ -1417,14 +1414,24 @@ function getStaffAccountById($id) {
 function getStaffAccountByUsername($username) {
     $repo = getStaffAccountsRepo();
     $uLower = strtolower(trim($username));
+    $matched = null;
+
     foreach ($repo as $st) {
         $stUser = strtolower(trim($st['username'] ?? ''));
         $stEmail = strtolower(trim($st['email'] ?? ''));
         if ($uLower === $stUser || $uLower === $stEmail) {
-            return $st;
+            if ($matched === null) {
+                $matched = $st;
+            } else {
+                foreach ($st as $k => $v) {
+                    if ($v !== null && $v !== '') {
+                        $matched[$k] = $v;
+                    }
+                }
+            }
         }
     }
-    return null;
+    return $matched;
 }
 
 /**
@@ -1447,13 +1454,12 @@ function saveStaffAccountByUsername($username, $data) {
                 }
             }
             $updated = true;
-            break;
         }
     }
     unset($st);
 
     if ($updated) {
-        $settings['staff_accounts'] = $items;
+        $settings['staff_accounts'] = array_values($items);
         saveSiteSettings($settings);
     }
     return $updated;
