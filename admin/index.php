@@ -7065,7 +7065,6 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                 // Default realistic fallback team celebrations if none set
                 if (empty($celebrationsList)) {
                     $celebrationsList = [
-                        ['name' => 'Tomiwa Anjorin', 'role' => 'Staff Member', 'avatar' => '', 'date_str' => 'Aug 29', 'is_today' => false],
                         ['name' => 'Henry Falonipe', 'role' => 'Super Admin', 'avatar' => 'https://res.cloudinary.com/pnabfi91/image/upload/v1786712075/falhen/team/ctxjp9mymgqdh2ecg2hu.jpg', 'date_str' => 'Sep 15', 'is_today' => false],
                         ['name' => 'Kingsley Falonipe', 'role' => 'Operations Specialist', 'avatar' => 'https://res.cloudinary.com/pnabfi91/image/upload/v1786713360/falhen/team/ftmzlwwv1szlyurijyno.png', 'date_str' => 'Oct 08', 'is_today' => false]
                     ];
