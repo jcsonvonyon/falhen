@@ -7205,7 +7205,25 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                 $currentMonth = (int)date('m');
                 $currentDay = (int)date('d');
 
-                foreach ($allStaffList as $stMember) {
+                $allStaffAccounts = array_values(getStaffAccountsRepo());
+                $adminProfileItem = getAdminUserProfile();
+
+                $allPeopleList = $allStaffAccounts;
+                if (!empty($adminProfileItem) && is_array($adminProfileItem)) {
+                    $adminInRepo = false;
+                    foreach ($allStaffAccounts as $sa) {
+                        if (strtolower($sa['username'] ?? '') === strtolower($adminProfileItem['username'] ?? 'admin') ||
+                            strtolower($sa['email'] ?? '') === strtolower($adminProfileItem['email'] ?? '')) {
+                            $adminInRepo = true;
+                            break;
+                        }
+                    }
+                    if (!$adminInRepo) {
+                        $allPeopleList[] = $adminProfileItem;
+                    }
+                }
+
+                foreach ($allPeopleList as $stMember) {
                     $stName = $stMember['full_name'] ?? $stMember['username'];
                     $stRole = $stMember['role'] ?? 'Staff Member';
                     $stAvatar = $stMember['avatar'] ?? '';
@@ -7231,6 +7249,17 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                         }
                     }
                 }
+
+                // Sort birthdays so Today's birthdays and upcoming birthdays appear at top
+                usort($celebrationsList, function($a, $b) use ($currentMonth, $currentDay) {
+                    if (!empty($a['is_today']) && empty($b['is_today'])) return -1;
+                    if (empty($a['is_today']) && !empty($b['is_today'])) return 1;
+                    
+                    if ($a['month'] === $b['month']) {
+                        return $a['day'] <=> $b['day'];
+                    }
+                    return $a['month'] <=> $b['month'];
+                });
 
                 // Default realistic fallback team celebrations if none set
                 if (empty($celebrationsList)) {
