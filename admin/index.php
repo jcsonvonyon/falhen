@@ -7237,15 +7237,17 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                 }
 
                 // Also include team members if available
-                $siteTeamMembers = array_values(getTeamRepo());
-                foreach ($siteTeamMembers as $tm) {
-                    if (!empty($tm['dob'])) {
-                        $allPeopleList[] = [
-                            'full_name' => $tm['name'] ?? '',
-                            'role'      => $tm['title'] ?? 'Team Member',
-                            'avatar'    => $tm['image'] ?? '',
-                            'dob'       => $tm['dob']
-                        ];
+                if (function_exists('getTeamMembers')) {
+                    $siteTeamMembers = array_values(getTeamMembers());
+                    foreach ($siteTeamMembers as $tm) {
+                        if (!empty($tm['dob'])) {
+                            $allPeopleList[] = [
+                                'full_name' => $tm['name'] ?? '',
+                                'role'      => $tm['role'] ?? ($tm['title'] ?? 'Team Member'),
+                                'avatar'    => $tm['image'] ?? '',
+                                'dob'       => $tm['dob']
+                            ];
+                        }
                     }
                 }
 
@@ -7278,15 +7280,22 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                 }
 
                 // Sort birthdays so Today's birthdays and upcoming birthdays appear at top
-                usort($celebrationsList, function($a, $b) use ($currentMonth, $currentDay) {
-                    if (!empty($a['is_today']) && empty($b['is_today'])) return -1;
-                    if (empty($a['is_today']) && !empty($b['is_today'])) return 1;
-                    
-                    if ($a['month'] === $b['month']) {
-                        return $a['day'] <=> $b['day'];
-                    }
-                    return $a['month'] <=> $b['month'];
-                });
+                if (!empty($celebrationsList)) {
+                    usort($celebrationsList, function($a, $b) {
+                        if (!empty($a['is_today']) && empty($b['is_today'])) return -1;
+                        if (empty($a['is_today']) && !empty($b['is_today'])) return 1;
+                        
+                        $mA = (int)($a['month'] ?? 0);
+                        $mB = (int)($b['month'] ?? 0);
+                        $dA = (int)($a['day'] ?? 0);
+                        $dB = (int)($b['day'] ?? 0);
+
+                        if ($mA === $mB) {
+                            return $dA <=> $dB;
+                        }
+                        return $mA <=> $mB;
+                    });
+                }
 
                 // Fetch Real Leave Applications
                 $allLeaves = $siteSettings['leave_applications'] ?? [];
