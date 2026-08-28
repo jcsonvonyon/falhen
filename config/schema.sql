@@ -20,8 +20,10 @@ CREATE TABLE IF NOT EXISTS `staff_accounts` (
     `dob` DATE DEFAULT NULL,
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    `deleted_at` DATETIME DEFAULT NULL,
     INDEX `idx_staff_email` (`email`),
-    INDEX `idx_staff_status` (`status`)
+    INDEX `idx_staff_status` (`status`),
+    INDEX `idx_staff_deleted` (`deleted_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- 2. Staff Attendance Logs Table
@@ -50,8 +52,10 @@ CREATE TABLE IF NOT EXISTS `leave_requests` (
     `status` ENUM('pending', 'approved', 'rejected') NOT NULL DEFAULT 'pending',
     `reviewed_by` VARCHAR(80) DEFAULT NULL,
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    `deleted_at` DATETIME DEFAULT NULL,
     INDEX `idx_leave_username` (`username`),
-    INDEX `idx_leave_status_dates` (`status`, `start_date`, `end_date`)
+    INDEX `idx_leave_status_dates` (`status`, `start_date`, `end_date`),
+    INDEX `idx_leave_deleted` (`deleted_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- 4. Onboarding Checklist Progress Table
@@ -75,5 +79,22 @@ CREATE TABLE IF NOT EXISTS `announcements` (
     `category` VARCHAR(50) NOT NULL DEFAULT 'General',
     `created_by` VARCHAR(80) DEFAULT 'Admin',
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    INDEX `idx_announcements_category` (`category`)
+    `deleted_at` DATETIME DEFAULT NULL,
+    INDEX `idx_announcements_category` (`category`),
+    INDEX `idx_announcements_deleted` (`deleted_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 6. Structured Database Audit Logs Table
+CREATE TABLE IF NOT EXISTS `audit_logs` (
+    `id` BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    `actor_username` VARCHAR(80) NOT NULL,
+    `action_type` VARCHAR(100) NOT NULL,
+    `entity_type` VARCHAR(80) NOT NULL,
+    `entity_id` VARCHAR(100) DEFAULT NULL,
+    `details` TEXT DEFAULT NULL,
+    `ip_address` VARCHAR(45) DEFAULT NULL,
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    INDEX `idx_audit_actor` (`actor_username`),
+    INDEX `idx_audit_action` (`action_type`),
+    INDEX `idx_audit_created` (`created_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

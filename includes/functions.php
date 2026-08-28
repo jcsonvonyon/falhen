@@ -53,6 +53,22 @@ function sendJSONResponse($success, $message, $extra = []) {
 }
 
 /**
+ * Log Database Audit Event
+ */
+function logDatabaseAudit($actorUsername, $actionType, $entityType, $entityId = null, $details = '') {
+    $pdo = getDBConnection();
+    $ip = $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1';
+    if ($pdo) {
+        try {
+            $stmt = $pdo->prepare("INSERT INTO `audit_logs` (`actor_username`, `action_type`, `entity_type`, `entity_id`, `details`, `ip_address`) VALUES (?, ?, ?, ?, ?, ?)");
+            $stmt->execute([$actorUsername, $actionType, $entityType, (string)$entityId, (string)$details, $ip]);
+            return true;
+        } catch (Exception $e) {}
+    }
+    return false;
+}
+
+/**
  * Check if Admin/Staff is Logged In
  */
 function isAdminLoggedIn() {
