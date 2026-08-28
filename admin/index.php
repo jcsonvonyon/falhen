@@ -1900,14 +1900,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $address = trim(strip_tags($_POST['address'] ?? $_POST['location'] ?? ''));
 
         // Lock email editing to Super Admin users only
-        if (!isSuperAdminUser($currentRole, $currentEmail, $currentUsername)) {
+        if (!isSuperAdminUser()) {
             $isTargetAdmin = (strtolower($targetUser) === 'admin' || strtolower($targetUser) === 'oluwatosin.ligali');
             if ($isTargetAdmin) {
                 $existingAdmin = getAdminUserProfile();
-                $email = $existingAdmin['email'] ?? $currentEmail;
+                $email = $existingAdmin['email'] ?? ($_SESSION['admin_email'] ?? '');
             } else {
                 $existingStaff = getStaffAccountByUsername($targetUser);
-                $email = $existingStaff['email'] ?? $currentEmail;
+                $email = $existingStaff['email'] ?? ($_SESSION['admin_email'] ?? '');
             }
         }
 
@@ -6696,7 +6696,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                 </div>
 
                                 <div class="form-field">
-                                    <?php $canEditStaffEmail = isSuperAdminUser($currentRole, $currentEmail, $currentUsername); ?>
+                                    <?php $canEditStaffEmail = isSuperAdminUser(); ?>
                                     <label class="form-label-title">
                                         Staff Email Address <span style="color: #ef4444;">*</span>
                                         <?php if (!$canEditStaffEmail): ?>
