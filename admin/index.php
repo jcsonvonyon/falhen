@@ -6566,7 +6566,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                     $profileData = getAdminUserProfile();
                     if (!isset($profileData['phone'])) $profileData['phone'] = $profileData['phone'] ?? '';
                     if (!isset($profileData['address'])) $profileData['address'] = $profileData['address'] ?? ($profileData['location'] ?? '');
-                    if (!isset($profileData['alt_email'])) $profileData['alt_email'] = $profileData['alt_email'] ?? ($profileData['alternative_email'] ?? ($profileData['recovery_email'] ?? ''));
+                    if (empty($profileData['alt_email'])) $profileData['alt_email'] = $profileData['alt_email'] ?? ($profileData['alternative_email'] ?? ($_SESSION['admin_alt_email'] ?? ($_SESSION['alt_email'] ?? '')));
                 } else {
                     $staffObj = getStaffAccountByUsername($targetProfileUser);
                     if ($staffObj) {

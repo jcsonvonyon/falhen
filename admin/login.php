@@ -286,6 +286,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $_SESSION['admin_role']      = $st['role'] ?? 'Staff';
                         $_SESSION['admin_avatar']    = $st['avatar'] ?? '';
                         $_SESSION['admin_full_name'] = $st['full_name'] ?? $st['username'];
+                        $_SESSION['admin_alt_email'] = $st['alt_email'] ?? ($st['alternative_email'] ?? '');
                         $_SESSION['must_change_password'] = true;
 
                         header('Location: /admin/index.php?section=my_profile&force_password_change=1');
