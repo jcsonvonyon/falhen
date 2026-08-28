@@ -54,10 +54,11 @@ function uploadToCloudinary($fileOrUrl, $folder = 'falhen') {
 
     // Auto-detect PDF or raw documents to prevent Cloudinary image 401 error
     $ext = strtolower(pathinfo((string)$fileOrUrl, PATHINFO_EXTENSION));
-    if ($ext === 'pdf' || $ext === 'doc' || $ext === 'docx' || $resourceType === 'raw' || strpos((string)$fileOrUrl, '.pdf') !== false) {
+    $resourceType = 'image';
+    if ($ext === 'pdf' || $ext === 'doc' || $ext === 'docx' || strpos((string)$fileOrUrl, '.pdf') !== false) {
         $resourceType = 'raw';
-    } else if ($resourceType !== 'video') {
-        $resourceType = 'image';
+    } else if ($ext === 'mp4' || $ext === 'mov' || $ext === 'avi' || $ext === 'webm') {
+        $resourceType = 'video';
     }
 
     $timestamp = time();
