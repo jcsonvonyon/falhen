@@ -201,6 +201,64 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 
+    if ($action === 'admin_reissue_sop') {
+        if (!isAdminUser($currentRole, $currentEmail, $currentUsername)) {
+            header('Location: /admin/index.php?section=onboarding&denied=1');
+            exit;
+        }
+
+        $targetUser = trim($_POST['target_user'] ?? '');
+        $sopTitle = trim(strip_tags($_POST['sop_title'] ?? 'Studio Standard Operating Procedures (19 Sections)'));
+        $sopVersion = trim(strip_tags($_POST['sop_version'] ?? 'v2.0 - 2026 Official Studio Regulations'));
+        $issuerName = trim(strip_tags($_POST['issuer_name'] ?? 'Oluwatosin Ligali'));
+        $sopScope = trim(strip_tags($_POST['sop_scope'] ?? 'All Studio Departments & Staff'));
+        $reissueNotes = trim(strip_tags($_POST['reissue_notes'] ?? ''));
+
+        updateUserOnboardingTaskStatus($targetUser, 'sop', 'Issued', [
+            'issued' => true,
+            'acknowledged' => false,
+            'signed' => false,
+            'sop_title' => $sopTitle,
+            'sop_version' => $sopVersion,
+            'issuer_name' => $issuerName,
+            'sop_scope' => $sopScope,
+            'reissue_notes' => $reissueNotes,
+            'reissued_at' => date('Y-m-d H:i:s'),
+            'reissued_by' => $currentUsername
+        ]);
+
+        $_SESSION['saved_message'] = 'SOP terms saved and document re-issued for @' . $targetUser . '! Candidate re-acknowledgment requested.';
+        header('Location: /admin/index.php?section=onboarding&target_user=' . urlencode($targetUser) . '&saved=1');
+        exit;
+    }
+
+    if ($action === 'admin_reissue_handbook') {
+        if (!isAdminUser($currentRole, $currentEmail, $currentUsername)) {
+            header('Location: /admin/index.php?section=onboarding&denied=1');
+            exit;
+        }
+
+        $targetUser = trim($_POST['target_user'] ?? '');
+        $hbTitle = trim(strip_tags($_POST['handbook_title'] ?? 'Falhen Media Staff Handbook (30 Sections)'));
+        $hbVersion = trim(strip_tags($_POST['handbook_version'] ?? '2026 Edition'));
+        $reissueNotes = trim(strip_tags($_POST['reissue_notes'] ?? ''));
+
+        updateUserOnboardingTaskStatus($targetUser, 'staff_handbook', 'Issued', [
+            'issued' => true,
+            'acknowledged' => false,
+            'signed' => false,
+            'handbook_title' => $hbTitle,
+            'handbook_version' => $hbVersion,
+            'reissue_notes' => $reissueNotes,
+            'reissued_at' => date('Y-m-d H:i:s'),
+            'reissued_by' => $currentUsername
+        ]);
+
+        $_SESSION['saved_message'] = 'Staff Handbook terms saved and document re-issued for @' . $targetUser . '! Candidate re-acknowledgment requested.';
+        header('Location: /admin/index.php?section=onboarding&target_user=' . urlencode($targetUser) . '&saved=1');
+        exit;
+    }
+
     if ($action === 'admin_provide_agreement') {
         if (!isAdminUser($currentRole, $currentEmail, $currentUsername)) {
             header('Location: /admin/index.php?section=onboarding&denied=1');
@@ -239,6 +297,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($action === 'sign_employment_agreement') {
         $username = $_SESSION['admin_username'] ?? $adminProfile['username'] ?? 'staff';
         $sigData = trim($_POST['signature_data'] ?? '');
+
+        if (empty($sigData) || strlen($sigData) < 100) {
+            $_SESSION['saved_message'] = 'Digital Signature Required: Please draw your signature on the signature pad before submitting the Employment Agreement.';
+            header('Location: /admin/index.php?section=onboarding');
+            exit;
+        }
+
         saveUserOnboardingSection($username, 'employment_agreement', [
             'status' => 'Submitted',
             'signed' => true,
@@ -783,6 +848,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($action === 'acknowledge_sop') {
         $username = $_SESSION['admin_username'] ?? $adminProfile['username'] ?? 'staff';
         $sigData = trim($_POST['signature_data'] ?? '');
+        if (empty($sigData)) {
+            $_SESSION['saved_error'] = 'Digital signature is required. Please draw your signature on the signature pad before acknowledging the SOP.';
+            header('Location: /admin/index.php?section=onboarding&sop_error=missing_signature');
+            exit;
+        }
         saveUserOnboardingSection($username, 'sop', [
             'status' => 'Submitted',
             'acknowledged' => true,
@@ -797,6 +867,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($action === 'acknowledge_handbook') {
         $username = $_SESSION['admin_username'] ?? $adminProfile['username'] ?? 'staff';
         $sigData = trim($_POST['signature_data'] ?? '');
+        if (empty($sigData)) {
+            $_SESSION['saved_error'] = 'Digital signature is required. Please draw your signature on the signature pad before acknowledging the Staff Handbook.';
+            header('Location: /admin/index.php?section=onboarding&handbook_error=missing_signature');
+            exit;
+        }
         saveUserOnboardingSection($username, 'staff_handbook', [
             'status' => 'Submitted',
             'acknowledged' => true,
@@ -1821,6 +1896,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $bio = trim($_POST['bio'] ?? '');
         $dob = trim(strip_tags($_POST['dob'] ?? ''));
         $altEmail = trim(strip_tags($_POST['alt_email'] ?? $_POST['alternative_email'] ?? ''));
+        $phone = trim(strip_tags($_POST['phone'] ?? ''));
+        $address = trim(strip_tags($_POST['address'] ?? $_POST['location'] ?? ''));
 
         $avatar = trim($_POST['existing_avatar'] ?? '');
         $croppedData = trim($_POST['cropped_avatar_image_data'] ?? '');
@@ -1853,7 +1930,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'avatar'    => $avatar,
                 'bio'       => $bio,
                 'dob'       => $dob,
-                'alt_email' => $altEmail
+                'alt_email' => $altEmail,
+                'phone'     => $phone,
+                'address'   => $address,
+                'location'  => $address
             ]);
         } else {
             saveStaffAccountByUsername($targetUser, [
@@ -1863,7 +1943,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'avatar'    => $avatar,
                 'bio'       => $bio,
                 'dob'       => $dob,
-                'alt_email' => $altEmail
+                'alt_email' => $altEmail,
+                'phone'     => $phone,
+                'address'   => $address,
+                'location'  => $address
             ]);
             if (strtolower($username) === strtolower($targetUser)) {
                 $_SESSION['admin_full_name'] = $fullName;
@@ -1878,7 +1961,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $currentPassword = $_POST['current_password'] ?? '';
         $newPassword = $_POST['new_password'] ?? '';
         $confirmPassword = $_POST['confirm_password'] ?? '';
+        $phone = trim(strip_tags($_POST['phone'] ?? ''));
+        $address = trim(strip_tags($_POST['address'] ?? $_POST['location'] ?? ''));
         $isFirstTime = !empty($_SESSION['must_change_password']) || isset($_GET['force_password_change']);
+
+        if ($isFirstTime) {
+            if (empty($phone) || empty($address)) {
+                header('Location: index.php?section=my_profile&pwd_error=missing_phone_location&force_password_change=1');
+                exit;
+            }
+        }
 
         if (!$isFirstTime) {
             $profile = getAdminUserProfile();
@@ -1920,7 +2012,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         $newHash = password_hash($newPassword, PASSWORD_DEFAULT);
 
-        // Save password hash to Staff Account Repository
+        // Save password hash & profile details to Staff Account Repository
         $staffRepo = array_values(getStaffAccountsRepo());
         $foundSt = false;
         foreach ($staffRepo as &$st) {
@@ -1930,6 +2022,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $st['password_hash'] = $newHash;
                 $st['status'] = 'active';
                 $st['activation_status'] = 'activated';
+                if (!empty($phone)) {
+                    $st['phone'] = $phone;
+                }
+                if (!empty($address)) {
+                    $st['address'] = $address;
+                    $st['location'] = $address;
+                }
                 $foundSt = true;
                 break;
             }
@@ -1941,7 +2040,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         if (isAdminUser($userRole, $userEmail, $username)) {
-            saveAdminUserProfile(['password_hash' => $newHash]);
+            $adminSaveData = ['password_hash' => $newHash];
+            if (!empty($phone)) $adminSaveData['phone'] = $phone;
+            if (!empty($address)) {
+                $adminSaveData['address'] = $address;
+                $adminSaveData['location'] = $address;
+            }
+            saveAdminUserProfile($adminSaveData);
         }
 
         unset($_SESSION['must_change_password']);
@@ -6445,6 +6550,8 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
 
                 if ($isViewingAdmin) {
                     $profileData = getAdminUserProfile();
+                    if (!isset($profileData['phone'])) $profileData['phone'] = $profileData['phone'] ?? '';
+                    if (!isset($profileData['address'])) $profileData['address'] = $profileData['address'] ?? ($profileData['location'] ?? '');
                 } else {
                     $staffObj = getStaffAccountByUsername($targetProfileUser);
                     if ($staffObj) {
@@ -6454,7 +6561,11 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                             'email'     => $staffObj['email'] ?? ($targetProfileUser . '@falhen.com'),
                             'role'      => $staffObj['role'] ?? 'Staff',
                             'avatar'    => $staffObj['avatar'] ?? '/assets/img/avatar.png',
-                            'bio'       => $staffObj['bio'] ?? ''
+                            'bio'       => $staffObj['bio'] ?? '',
+                            'dob'       => $staffObj['dob'] ?? '',
+                            'alt_email' => $staffObj['alt_email'] ?? '',
+                            'phone'     => $staffObj['phone'] ?? '',
+                            'address'   => $staffObj['address'] ?? ($staffObj['location'] ?? '')
                         ];
                     } else {
                         $profileData = getAdminUserProfile();
@@ -6511,6 +6622,8 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                 echo "For security reasons, you cannot use the default temporary password ('Password123#'). Please choose a unique personal password.";
                             } else if ($pwdError === 'mismatch') {
                                 echo "New password and Confirm Password do not match.";
+                            } else if ($pwdError === 'missing_phone_location') {
+                                echo "Phone Number and Residential Location / Address are compulsory upon initial account sign in. Please fill in both fields.";
                             } else {
                                 echo "Failed to update password. Please try again.";
                             }
@@ -6588,6 +6701,18 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                 </div>
                             </div>
 
+                            <div class="form-grid-two" style="margin-top: 18px;">
+                                <div class="form-field">
+                                    <label class="form-label-title"><i class="fa-solid fa-phone" style="color: #16a34a;"></i> Phone Number</label>
+                                    <input type="tel" name="phone" class="form-text-input" value="<?php echo htmlspecialchars($profileData['phone'] ?? ''); ?>" placeholder="e.g. 08012345678">
+                                </div>
+
+                                <div class="form-field">
+                                    <label class="form-label-title"><i class="fa-solid fa-location-dot" style="color: #dc2626;"></i> Residential Address / Location</label>
+                                    <input type="text" name="address" class="form-text-input" value="<?php echo htmlspecialchars($profileData['address'] ?? ''); ?>" placeholder="e.g. 12 Allen Avenue, Ikeja, Lagos">
+                                </div>
+                            </div>
+
                             <div class="form-field" style="margin-top: 18px;">
                                 <label class="form-label-title">Role &amp; Title</label>
                                 <input type="text" name="role" class="form-text-input" value="<?php echo htmlspecialchars($profileData['role'] ?? ''); ?>" placeholder="e.g. Creative Director & Administrator">
@@ -6622,6 +6747,25 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                             <input type="hidden" name="action" value="change_profile_password">
 
                             <div style="max-width: 540px;">
+                                <?php if (isset($_GET['force_password_change']) || !empty($_SESSION['must_change_password'])): ?>
+                                    <div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 12px; padding: 14px 16px; margin-bottom: 20px; font-size: 0.84rem; color: #1e40af; display: flex; align-items: flex-start; gap: 10px;">
+                                        <i class="fa-solid fa-circle-info" style="font-size: 1.1rem; margin-top: 2px; color: #2563eb;"></i>
+                                        <div>
+                                            <strong>Compulsory Profile Setup:</strong> Please fill in your official contact Phone Number and Residential Location along with your new password to complete account activation.
+                                        </div>
+                                    </div>
+
+                                    <div class="form-field" style="margin-bottom: 16px;">
+                                        <label class="form-label-title"><i class="fa-solid fa-phone" style="color: #16a34a;"></i> Phone Number <span style="color: #ef4444;">*</span></label>
+                                        <input type="tel" name="phone" required class="form-text-input" value="<?php echo htmlspecialchars($profileData['phone'] ?? ''); ?>" placeholder="e.g. 08012345678">
+                                    </div>
+
+                                    <div class="form-field" style="margin-bottom: 16px;">
+                                        <label class="form-label-title"><i class="fa-solid fa-location-dot" style="color: #dc2626;"></i> Residential Address / Location <span style="color: #ef4444;">*</span></label>
+                                        <input type="text" name="address" required class="form-text-input" value="<?php echo htmlspecialchars($profileData['address'] ?? ''); ?>" placeholder="e.g. 12 Allen Avenue, Ikeja, Lagos">
+                                    </div>
+                                <?php endif; ?>
+
                                 <?php if (!isset($_GET['force_password_change']) && empty($_SESSION['must_change_password'])): ?>
                                     <div class="form-field">
                                         <label class="form-label-title">Current Password <span style="color: #ef4444;">*</span></label>
@@ -7600,7 +7744,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                     </form>
                                 <?php endif; ?>
                                 <button type="button" class="btn-save-primary" style="width: 100%; justify-content: center; background: #ffffff; color: #0f172a; border: 1px solid #cbd5e1; font-size: 0.82rem;" onclick="openIssueOfferModal()">
-                                    <i class="fa-solid fa-file-signature" style="color: #dc2626;"></i> <?php echo ($offerIsIssued || $offerIsAccepted || $offerIsApproved ? 'HR Re-Issue Offer Letter' : 'HR Issue Offer Letter'); ?>
+                                    <i class="fa-solid fa-file-signature" style="color: #dc2626;"></i> <?php echo ($offerIsIssued || $offerIsAccepted || $offerIsApproved ? 'Re-Issue Offer Letter' : 'Issue Offer Letter'); ?>
                                 </button>
                             <?php endif; ?>
                         </div>
@@ -7657,12 +7801,9 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                             </button>
 
                             <?php if (!$isAgrApproved && $isOwnProfile): ?>
-                                <form method="POST" action="/admin/index.php?section=onboarding" style="margin: 0;">
-                                    <input type="hidden" name="action" value="sign_employment_agreement">
-                                    <button type="submit" class="btn-save-primary" style="width: 100%; justify-content: center; background: #16a34a; border-color: #16a34a; font-weight: 800; font-size: 0.84rem;">
-                                        <i class="fa-solid fa-signature"></i> <?php echo ($isAgrSubmitted || $isAgrRejected ? 'Re-Sign & Resubmit Agreement' : 'Sign & Accept Agreement'); ?>
-                                    </button>
-                                </form>
+                                <button type="button" class="btn-save-primary" style="width: 100%; justify-content: center; background: #16a34a; border-color: #16a34a; font-weight: 800; font-size: 0.84rem;" onclick="openAgreementViewModal(); setTimeout(function(){ var el = document.getElementById('agrSigCanvas'); if(el) el.scrollIntoView({behavior:'smooth', block:'center'}); }, 350);">
+                                    <i class="fa-solid fa-signature"></i> <?php echo ($isAgrSubmitted || $isAgrRejected ? 'Re-Sign & Resubmit Agreement' : 'Sign & Accept Agreement'); ?>
+                                </button>
                             <?php endif; ?>
 
                             <?php if ($isHRorAdmin): ?>
@@ -7683,7 +7824,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                     </div>
                                 <?php endif; ?>
                                 <button type="button" class="btn-save-primary" style="width: 100%; justify-content: center; background: #ffffff; color: #0f172a; border: 1px solid #cbd5e1; font-size: 0.82rem;" onclick="openIssueAgreementModal()">
-                                    <i class="fa-solid fa-pen-to-square" style="color: #dc2626;"></i> HR Edit Terms
+                                    <i class="fa-solid fa-pen-to-square" style="color: #dc2626;"></i> Edit Agreement
                                 </button>
                             <?php endif; ?>
                         </div>
@@ -7953,8 +8094,8 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                         </button>
                                     </div>
                                 <?php endif; ?>
-                                <button type="button" class="btn-save-primary" style="width: 100%; justify-content: center; background: #ffffff; color: #0f172a; border: 1px solid #cbd5e1; font-size: 0.82rem;" onclick="openSopViewModal()">
-                                    <i class="fa-solid fa-file-shield" style="color: #dc2626;"></i> HR Inspect SOP Record
+                                <button type="button" class="btn-save-primary" style="width: 100%; justify-content: center; background: #ffffff; color: #0f172a; border: 1px solid #cbd5e1; font-size: 0.82rem;" onclick="openIssueSopModal()">
+                                    <i class="fa-solid fa-rotate-right" style="color: #dc2626;"></i> Re-Issue SOP
                                 </button>
                             <?php endif; ?>
                         </div>
@@ -8034,8 +8175,8 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                         </button>
                                     </div>
                                 <?php endif; ?>
-                                <button type="button" class="btn-save-primary" style="width: 100%; justify-content: center; background: #ffffff; color: #0f172a; border: 1px solid #cbd5e1; font-size: 0.82rem;" onclick="openHandbookViewModal()">
-                                    <i class="fa-solid fa-file-shield" style="color: #dc2626;"></i> HR Inspect Handbook Record
+                                <button type="button" class="btn-save-primary" style="width: 100%; justify-content: center; background: #ffffff; color: #0f172a; border: 1px solid #cbd5e1; font-size: 0.82rem;" onclick="openIssueHandbookModal()">
+                                    <i class="fa-solid fa-rotate-right" style="color: #dc2626;"></i> Re-Issue Staff Handbook
                                 </button>
                             <?php endif; ?>
                         </div>
@@ -8471,6 +8612,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
 
                     $agrSigned = !empty($agrData['signed']);
                     $agrSignedAt = $agrData['signed_at'] ?? date('Y-m-d H:i:s');
+                    $targetUserEmail = $activeTargetObj['email'] ?? ($activeOnboardingUser . '@falhenmedia.com');
                 ?>
                 <div id="viewAgreementModal" class="modal-overlay" style="display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.75); backdrop-filter: blur(4px); z-index: 9999; align-items: center; justify-content: center; padding: 20px;">
                     <div style="background: #ffffff; width: 100%; max-width: 860px; max-height: 90vh; border-radius: 16px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); display: flex; flex-direction: column; overflow: hidden; border: 1px solid #e2e8f0;">
@@ -8504,7 +8646,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                     <div><strong>Employee Name:</strong> <?php echo htmlspecialchars($userFullName); ?></div>
                                     <div><strong>Address:</strong> <?php echo htmlspecialchars($agrAddress); ?></div>
                                     <div><strong>Phone Number:</strong> <?php echo htmlspecialchars($agrPhone); ?></div>
-                                    <div><strong>Email Address:</strong> <?php echo htmlspecialchars($userEmail); ?></div>
+                                    <div><strong>Email Address:</strong> <?php echo htmlspecialchars($targetUserEmail); ?></div>
                                 </div>
                                 <p style="margin: 12px 0 0 0; font-style: italic; color: #64748b;">Hereinafter referred to as "the Employee."</p>
                             </div>
@@ -8750,8 +8892,24 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                     function captureAgrSigData(form) {
                                         var c = document.getElementById('agrSigCanvas');
                                         if (c) {
+                                            var ctx = c.getContext('2d');
+                                            var pixelData = ctx.getImageData(0, 0, c.width, c.height).data;
+                                            var hasDrawn = false;
+                                            for (var i = 3; i < pixelData.length; i += 4) {
+                                                if (pixelData[i] > 0) {
+                                                    hasDrawn = true;
+                                                    break;
+                                                }
+                                            }
+                                            if (!hasDrawn) {
+                                                showSignatureRequiredModal('Please draw your digital signature on the signature pad before submitting the Employment Agreement.', 'agrSigCanvas', 'Digital Signature Required');
+                                                return false;
+                                            }
                                             var sigData = c.toDataURL('image/png');
                                             document.getElementById('agr_sig_data_input').value = sigData;
+                                        } else {
+                                            showSignatureRequiredModal('Digital signature pad not found. Please review and sign the agreement document.', null, 'Digital Signature Required');
+                                            return false;
                                         }
                                         return true;
                                     }
@@ -8855,6 +9013,97 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                     </div>
                 </div>
 
+                <!-- MODAL 4B: HR RE-ISSUE SOP TERMS MODAL -->
+                <div id="issueSopModal" class="modal-overlay" style="display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.75); backdrop-filter: blur(4px); z-index: 9999; align-items: center; justify-content: center; padding: 20px;">
+                    <div style="background: #ffffff; width: 100%; max-width: 650px; border-radius: 16px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); display: flex; flex-direction: column; overflow: hidden; border: 1px solid #e2e8f0;">
+                        <div style="background: #0f172a; padding: 18px 24px; color: #ffffff; display: flex; align-items: center; justify-content: space-between; border-bottom: 3px solid #dc2626;">
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <i class="fa-solid fa-rotate-right" style="color: #ef4444; font-size: 1.2rem;"></i>
+                                <h3 style="margin: 0; font-size: 1.1rem; font-weight: 800; color: #ffffff;">HR Re-Issue SOP &amp; Regulations</h3>
+                            </div>
+                            <button type="button" onclick="closeIssueSopModal()" style="background: transparent; border: none; color: #94a3b8; font-size: 1.3rem; cursor: pointer;">&times;</button>
+                        </div>
+                        <form method="POST" action="/admin/index.php?section=onboarding" style="padding: 24px; display: flex; flex-direction: column; gap: 14px;">
+                            <input type="hidden" name="action" value="admin_reissue_sop">
+                            <input type="hidden" name="target_user" value="<?php echo htmlspecialchars($activeOnboardingUser); ?>">
+
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                                <div>
+                                    <label style="display: block; font-size: 0.78rem; font-weight: 700; color: #334155; margin-bottom: 4px;">SOP Document Title</label>
+                                    <input type="text" name="sop_title" value="<?php echo htmlspecialchars($onboardingData['sop']['sop_title'] ?? 'Studio Standard Operating Procedures (19 Sections)'); ?>" placeholder="Standard Operating Procedures" required style="width: 100%; padding: 9px 10px; font-size: 0.84rem; border: 1px solid #cbd5e1; border-radius: 8px; box-sizing: border-box;">
+                                </div>
+                                <div>
+                                    <label style="display: block; font-size: 0.78rem; font-weight: 700; color: #334155; margin-bottom: 4px;">Document Version / Revision</label>
+                                    <input type="text" name="sop_version" value="<?php echo htmlspecialchars($onboardingData['sop']['sop_version'] ?? 'v2.0 - 2026 Official Studio Regulations'); ?>" placeholder="v2.0 Revision" required style="width: 100%; padding: 9px 10px; font-size: 0.84rem; border: 1px solid #cbd5e1; border-radius: 8px; box-sizing: border-box;">
+                                </div>
+                            </div>
+
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                                <div>
+                                    <label style="display: block; font-size: 0.78rem; font-weight: 700; color: #334155; margin-bottom: 4px;">Issuing Supervisor / Manager</label>
+                                    <input type="text" name="issuer_name" value="<?php echo htmlspecialchars($onboardingData['sop']['issuer_name'] ?? $agrSupervisorName ?? 'Oluwatosin Ligali'); ?>" placeholder="Oluwatosin Ligali" required style="width: 100%; padding: 9px 10px; font-size: 0.84rem; border: 1px solid #cbd5e1; border-radius: 8px; box-sizing: border-box;">
+                                </div>
+                                <div>
+                                    <label style="display: block; font-size: 0.78rem; font-weight: 700; color: #334155; margin-bottom: 4px;">Applicable Department / Scope</label>
+                                    <input type="text" name="sop_scope" value="<?php echo htmlspecialchars($onboardingData['sop']['sop_scope'] ?? 'All Studio Departments & Staff'); ?>" placeholder="All Staff" required style="width: 100%; padding: 9px 10px; font-size: 0.84rem; border: 1px solid #cbd5e1; border-radius: 8px; box-sizing: border-box;">
+                                </div>
+                            </div>
+
+                            <div>
+                                <label style="display: block; font-size: 0.78rem; font-weight: 700; color: #334155; margin-bottom: 4px;">Re-Issue Reason / Notes for Candidate</label>
+                                <textarea name="reissue_notes" rows="2" style="width: 100%; padding: 9px 10px; font-size: 0.84rem; border: 1px solid #cbd5e1; border-radius: 8px; box-sizing: border-box; resize: vertical; font-family: inherit;" placeholder="Please review and re-acknowledge the updated studio operating procedures."><?php echo htmlspecialchars($onboardingData['sop']['reissue_notes'] ?? 'Updated studio policies and code of conduct. Please review and re-acknowledge.'); ?></textarea>
+                            </div>
+
+                            <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 10px; padding-top: 14px; border-top: 1px solid #f1f5f9;">
+                                <button type="button" onclick="closeIssueSopModal()" style="padding: 10px 18px; background: #f1f5f9; color: #475569; border: none; border-radius: 8px; font-weight: 700; font-size: 0.85rem; cursor: pointer;">Cancel</button>
+                                <button type="submit" class="btn-save-primary" style="padding: 10px 22px; background: #dc2626; border-color: #dc2626; font-weight: 800; font-size: 0.85rem;">
+                                    <i class="fa-solid fa-rotate-right"></i> Save Terms &amp; Re-Issue SOP
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- MODAL 4C: HR RE-ISSUE HANDBOOK TERMS MODAL -->
+                <div id="issueHandbookModal" class="modal-overlay" style="display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.75); backdrop-filter: blur(4px); z-index: 9999; align-items: center; justify-content: center; padding: 20px;">
+                    <div style="background: #ffffff; width: 100%; max-width: 650px; border-radius: 16px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); display: flex; flex-direction: column; overflow: hidden; border: 1px solid #e2e8f0;">
+                        <div style="background: #0f172a; padding: 18px 24px; color: #ffffff; display: flex; align-items: center; justify-content: space-between; border-bottom: 3px solid #dc2626;">
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <i class="fa-solid fa-rotate-right" style="color: #ef4444; font-size: 1.2rem;"></i>
+                                <h3 style="margin: 0; font-size: 1.1rem; font-weight: 800; color: #ffffff;">HR Re-Issue Staff Handbook</h3>
+                            </div>
+                            <button type="button" onclick="closeIssueHandbookModal()" style="background: transparent; border: none; color: #94a3b8; font-size: 1.3rem; cursor: pointer;">&times;</button>
+                        </div>
+                        <form method="POST" action="/admin/index.php?section=onboarding" style="padding: 24px; display: flex; flex-direction: column; gap: 14px;">
+                            <input type="hidden" name="action" value="admin_reissue_handbook">
+                            <input type="hidden" name="target_user" value="<?php echo htmlspecialchars($activeOnboardingUser); ?>">
+
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                                <div>
+                                    <label style="display: block; font-size: 0.78rem; font-weight: 700; color: #334155; margin-bottom: 4px;">Handbook Document Title</label>
+                                    <input type="text" name="handbook_title" value="<?php echo htmlspecialchars($onboardingData['staff_handbook']['handbook_title'] ?? 'Falhen Media Staff Handbook (30 Sections)'); ?>" placeholder="Staff Handbook" required style="width: 100%; padding: 9px 10px; font-size: 0.84rem; border: 1px solid #cbd5e1; border-radius: 8px; box-sizing: border-box;">
+                                </div>
+                                <div>
+                                    <label style="display: block; font-size: 0.78rem; font-weight: 700; color: #334155; margin-bottom: 4px;">Handbook Edition / Version</label>
+                                    <input type="text" name="handbook_version" value="<?php echo htmlspecialchars($onboardingData['staff_handbook']['handbook_version'] ?? '2026 Edition'); ?>" placeholder="2026 Edition" required style="width: 100%; padding: 9px 10px; font-size: 0.84rem; border: 1px solid #cbd5e1; border-radius: 8px; box-sizing: border-box;">
+                                </div>
+                            </div>
+
+                            <div>
+                                <label style="display: block; font-size: 0.78rem; font-weight: 700; color: #334155; margin-bottom: 4px;">Re-Issue Reason / Notes for Candidate</label>
+                                <textarea name="reissue_notes" rows="2" style="width: 100%; padding: 9px 10px; font-size: 0.84rem; border: 1px solid #cbd5e1; border-radius: 8px; box-sizing: border-box; resize: vertical; font-family: inherit;" placeholder="Please review and re-acknowledge the updated Staff Handbook."><?php echo htmlspecialchars($onboardingData['staff_handbook']['reissue_notes'] ?? 'Updated company handbook and policies. Please review and re-acknowledge.'); ?></textarea>
+                            </div>
+
+                            <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 10px; padding-top: 14px; border-top: 1px solid #f1f5f9;">
+                                <button type="button" onclick="closeIssueHandbookModal()" style="padding: 10px 18px; background: #f1f5f9; color: #475569; border: none; border-radius: 8px; font-weight: 700; font-size: 0.85rem; cursor: pointer;">Cancel</button>
+                                <button type="submit" class="btn-save-primary" style="padding: 10px 22px; background: #dc2626; border-color: #dc2626; font-weight: 800; font-size: 0.85rem;">
+                                    <i class="fa-solid fa-floppy-disk"></i> Save Terms &amp; Re-Issue Handbook
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
                 <!-- REJECT TASK WITH REASON MODAL (HR / ADMIN) -->
                 <div id="rejectTaskModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15, 23, 42, 0.75); backdrop-filter: blur(6px); z-index: 100000; align-items: center; justify-content: center; padding: 20px;">
                     <div style="background: #ffffff; border-radius: 20px; max-width: 500px; width: 100%; padding: 28px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.3); border: 1px solid #e2e8f0; position: relative;">
@@ -8905,6 +9154,52 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                     }
                     function closeRejectTaskModal() {
                         document.getElementById('rejectTaskModal').style.display = 'none';
+                    }
+                </script>
+
+                <!-- DIGITAL SIGNATURE REQUIRED POPUP MODAL -->
+                <div id="signatureRequiredModal" class="modal-overlay" style="display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.8); backdrop-filter: blur(6px); z-index: 200000; align-items: center; justify-content: center; padding: 20px; animation: fadeInModal 0.2s ease;">
+                    <div style="background: #ffffff; width: 100%; max-width: 440px; border-radius: 20px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.35); overflow: hidden; border: 1px solid #e2e8f0; text-align: center; padding: 28px;">
+                        <div style="width: 56px; height: 56px; border-radius: 50%; background: #fef2f2; border: 2px solid #fecaca; color: #dc2626; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; margin: 0 auto 16px auto; box-shadow: 0 4px 12px rgba(220, 38, 38, 0.15);">
+                            <i class="fa-solid fa-pen-nib"></i>
+                        </div>
+                        <h3 id="sigModalTitle" style="font-size: 1.2rem; font-weight: 800; color: #0f172a; margin: 0 0 8px 0;">Digital Signature Required</h3>
+                        <p id="sigModalMessage" style="font-size: 0.86rem; color: #64748b; margin: 0 0 24px 0; line-height: 1.55;">
+                            Please draw your signature on the signature pad before submitting this document.
+                        </p>
+                        <button type="button" onclick="closeSignatureRequiredModal()" style="width: 100%; padding: 12px 24px; background: #dc2626; color: #ffffff; border: none; border-radius: 12px; font-weight: 800; font-size: 0.9rem; cursor: pointer; transition: all 0.15s ease; box-shadow: 0 4px 14px rgba(220, 38, 38, 0.25);" onmouseover="this.style.background='#b91c1c'" onmouseout="this.style.background='#dc2626'">
+                            <i class="fa-solid fa-signature"></i> Go to Signature Pad
+                        </button>
+                    </div>
+                </div>
+
+                <script>
+                    var activeSigTargetCanvasId = null;
+
+                    function showSignatureRequiredModal(message, targetCanvasId, modalTitle) {
+                        activeSigTargetCanvasId = targetCanvasId || null;
+                        var modal = document.getElementById('signatureRequiredModal');
+                        var titleEl = document.getElementById('sigModalTitle');
+                        var msgEl = document.getElementById('sigModalMessage');
+                        
+                        if (titleEl && modalTitle) titleEl.innerText = modalTitle;
+                        else if (titleEl) titleEl.innerText = 'Digital Signature Required';
+                        
+                        if (msgEl && message) msgEl.innerText = message;
+                        
+                        if (modal) modal.style.display = 'flex';
+                    }
+
+                    function closeSignatureRequiredModal() {
+                        var modal = document.getElementById('signatureRequiredModal');
+                        if (modal) modal.style.display = 'none';
+                        
+                        if (activeSigTargetCanvasId) {
+                            var canvas = document.getElementById(activeSigTargetCanvasId);
+                            if (canvas) {
+                                canvas.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            }
+                        }
                     }
                 </script>
 
@@ -9108,8 +9403,24 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                 function captureSopSigData(form) {
                                     var c = document.getElementById('sopSigCanvas');
                                     if (c) {
+                                        var ctx = c.getContext('2d');
+                                        var pixelData = ctx.getImageData(0, 0, c.width, c.height).data;
+                                        var hasDrawn = false;
+                                        for (var i = 3; i < pixelData.length; i += 4) {
+                                            if (pixelData[i] > 0) {
+                                                hasDrawn = true;
+                                                break;
+                                            }
+                                        }
+                                        if (!hasDrawn) {
+                                            showSignatureRequiredModal('Please draw your digital signature on the signature pad before acknowledging the SOP.', 'sopSigCanvas', 'Digital Signature Required');
+                                            return false;
+                                        }
                                         var sigData = c.toDataURL('image/png');
                                         document.getElementById('sop_sig_data_input').value = sigData;
+                                    } else {
+                                        showSignatureRequiredModal('Digital signature pad not found. Please review and sign the SOP document.', null, 'Digital Signature Required');
+                                        return false;
                                     }
                                     return true;
                                 }
@@ -9598,8 +9909,24 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                 function captureHandbookSigData(form) {
                                     var c = document.getElementById('handbookSigCanvas');
                                     if (c) {
+                                        var ctx = c.getContext('2d');
+                                        var pixelData = ctx.getImageData(0, 0, c.width, c.height).data;
+                                        var hasDrawn = false;
+                                        for (var i = 3; i < pixelData.length; i += 4) {
+                                            if (pixelData[i] > 0) {
+                                                hasDrawn = true;
+                                                break;
+                                            }
+                                        }
+                                        if (!hasDrawn) {
+                                            showSignatureRequiredModal('Please draw your digital signature on the signature pad before acknowledging the Staff Handbook.', 'handbookSigCanvas', 'Digital Signature Required');
+                                            return false;
+                                        }
                                         var sigData = c.toDataURL('image/png');
                                         document.getElementById('handbook_sig_data_input').value = sigData;
+                                    } else {
+                                        showSignatureRequiredModal('Digital signature pad not found. Please review and sign the Staff Handbook.', null, 'Digital Signature Required');
+                                        return false;
                                     }
                                     return true;
                                 }
@@ -9671,6 +9998,26 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
 
                 function closeIssueAgreementModal() {
                     var modal = document.getElementById('issueAgreementModal');
+                    if (modal) modal.style.display = 'none';
+                }
+
+                function openIssueSopModal() {
+                    var modal = document.getElementById('issueSopModal');
+                    if (modal) modal.style.display = 'flex';
+                }
+
+                function closeIssueSopModal() {
+                    var modal = document.getElementById('issueSopModal');
+                    if (modal) modal.style.display = 'none';
+                }
+
+                function openIssueHandbookModal() {
+                    var modal = document.getElementById('issueHandbookModal');
+                    if (modal) modal.style.display = 'flex';
+                }
+
+                function closeIssueHandbookModal() {
+                    var modal = document.getElementById('issueHandbookModal');
                     if (modal) modal.style.display = 'none';
                 }
 

@@ -2223,42 +2223,42 @@ function getOnboardingProgress($username) {
     $completedCount = 0;
     $totalTasks = 8;
 
-    // 1. Bank Details (Requires HR Approval)
+    // 1. Bank Details (Strictly Approved by HR)
     if (($data['bank_details']['status'] ?? '') === 'Approved') {
         $completedCount++;
     }
 
-    // 2. Offer Letter (Accepted & Approved)
-    if (($data['offer_letter']['status'] ?? '') === 'Approved' || (!empty($data['offer_letter']['accepted']) && ($data['offer_letter']['status'] ?? '') !== 'Rejected')) {
+    // 2. Offer Letter (Strictly Approved by HR)
+    if (($data['offer_letter']['status'] ?? '') === 'Approved') {
         $completedCount++;
     }
 
-    // 3. Employment Agreement (Signed & Approved)
-    if (($data['employment_agreement']['status'] ?? '') === 'Approved' || (!empty($data['employment_agreement']['signed']) && ($data['employment_agreement']['status'] ?? '') !== 'Rejected')) {
+    // 3. Employment Agreement (Strictly Approved by HR)
+    if (($data['employment_agreement']['status'] ?? '') === 'Approved') {
         $completedCount++;
     }
 
-    // 4. Reference 1 (Requires HR Approval)
+    // 4. Reference 1 (Strictly Approved by HR)
     if (($data['reference_1']['status'] ?? '') === 'Approved') {
         $completedCount++;
     }
 
-    // 5. Reference 2 (Requires HR Approval)
+    // 5. Reference 2 (Strictly Approved by HR)
     if (($data['reference_2']['status'] ?? '') === 'Approved') {
         $completedCount++;
     }
 
-    // 6. Studio SOP (Acknowledged & Approved)
-    if (($data['sop']['status'] ?? '') === 'Approved' || (!empty($data['sop']['acknowledged']) && ($data['sop']['status'] ?? '') !== 'Rejected')) {
+    // 6. Studio SOP (Strictly Approved by HR)
+    if (($data['sop']['status'] ?? '') === 'Approved') {
         $completedCount++;
     }
 
-    // 7. Staff Handbook (Acknowledged & Approved)
-    if (($data['staff_handbook']['status'] ?? '') === 'Approved' || (!empty($data['staff_handbook']['acknowledged']) && ($data['staff_handbook']['status'] ?? '') !== 'Rejected')) {
+    // 7. Staff Handbook (Strictly Approved by HR)
+    if (($data['staff_handbook']['status'] ?? '') === 'Approved') {
         $completedCount++;
     }
 
-    // 8. ID Verification (Requires HR Approval)
+    // 8. ID Verification (Strictly Approved by HR)
     if (($data['id_verification']['status'] ?? '') === 'Approved') {
         $completedCount++;
     }
