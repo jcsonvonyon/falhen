@@ -1935,30 +1935,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         if ($isTargetAdmin) {
             saveAdminUserProfile([
-                'full_name' => $fullName,
-                'username'  => $targetUser,
-                'email'     => $email,
-                'role'      => $role,
-                'avatar'    => $avatar,
-                'bio'       => $bio,
-                'dob'       => $dob,
-                'alt_email' => $altEmail,
-                'phone'     => $phone,
-                'address'   => $address,
-                'location'  => $address
+                'full_name'         => $fullName,
+                'username'          => $targetUser,
+                'email'             => $email,
+                'role'              => $role,
+                'avatar'            => $avatar,
+                'bio'               => $bio,
+                'dob'               => $dob,
+                'alt_email'         => $altEmail,
+                'alternative_email' => $altEmail,
+                'phone'             => $phone,
+                'address'           => $address,
+                'location'          => $address
             ]);
         } else {
             saveStaffAccountByUsername($targetUser, [
-                'full_name' => $fullName,
-                'email'     => $email,
-                'role'      => $role,
-                'avatar'    => $avatar,
-                'bio'       => $bio,
-                'dob'       => $dob,
-                'alt_email' => $altEmail,
-                'phone'     => $phone,
-                'address'   => $address,
-                'location'  => $address
+                'full_name'         => $fullName,
+                'email'             => $email,
+                'role'              => $role,
+                'avatar'            => $avatar,
+                'bio'               => $bio,
+                'dob'               => $dob,
+                'alt_email'         => $altEmail,
+                'alternative_email' => $altEmail,
+                'phone'             => $phone,
+                'address'           => $address,
+                'location'          => $address
             ]);
             if (strtolower($username) === strtolower($targetUser)) {
                 $_SESSION['admin_full_name'] = $fullName;
@@ -6564,6 +6566,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                     $profileData = getAdminUserProfile();
                     if (!isset($profileData['phone'])) $profileData['phone'] = $profileData['phone'] ?? '';
                     if (!isset($profileData['address'])) $profileData['address'] = $profileData['address'] ?? ($profileData['location'] ?? '');
+                    if (!isset($profileData['alt_email'])) $profileData['alt_email'] = $profileData['alt_email'] ?? ($profileData['alternative_email'] ?? ($profileData['recovery_email'] ?? ''));
                 } else {
                     $staffObj = getStaffAccountByUsername($targetProfileUser);
                     if ($staffObj) {
@@ -6575,12 +6578,13 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                             'avatar'    => $staffObj['avatar'] ?? '/assets/img/avatar.png',
                             'bio'       => $staffObj['bio'] ?? '',
                             'dob'       => $staffObj['dob'] ?? '',
-                            'alt_email' => $staffObj['alt_email'] ?? '',
+                            'alt_email' => $staffObj['alt_email'] ?? ($staffObj['alternative_email'] ?? ($staffObj['recovery_email'] ?? ($staffObj['personal_email'] ?? ''))),
                             'phone'     => $staffObj['phone'] ?? '',
                             'address'   => $staffObj['address'] ?? ($staffObj['location'] ?? '')
                         ];
                     } else {
                         $profileData = getAdminUserProfile();
+                        if (!isset($profileData['alt_email'])) $profileData['alt_email'] = $profileData['alt_email'] ?? ($profileData['alternative_email'] ?? ($profileData['recovery_email'] ?? ''));
                     }
                 }
                 $pwdError = $_GET['pwd_error'] ?? '';
@@ -6710,7 +6714,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                             <div class="form-grid-two" style="margin-top: 18px;">
                                 <div class="form-field">
                                     <label class="form-label-title"><i class="fa-solid fa-envelope-open-text" style="color: #2563eb;"></i> Alternative Email Address <span style="font-size: 0.74rem; font-weight: 600; color: #2563eb;">(Personal/Recovery Email)</span></label>
-                                    <input type="email" name="alt_email" class="form-text-input" value="<?php echo htmlspecialchars($profileData['alt_email'] ?? ''); ?>" placeholder="personal@gmail.com">
+                                    <input type="email" name="alt_email" class="form-text-input" value="<?php echo htmlspecialchars($profileData['alt_email'] ?? ''); ?>" placeholder="e.g. yourpersonal@gmail.com">
                                 </div>
 
                                 <div class="form-field">
