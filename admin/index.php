@@ -6677,7 +6677,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                     }
                     if ($staffFallback) {
                         foreach ($staffFallback as $fk => $fv) {
-                            if (!empty($fv)) {
+                            if (empty($profileData[$fk]) && !empty($fv)) {
                                 $profileData[$fk] = $fv;
                             }
                         }
