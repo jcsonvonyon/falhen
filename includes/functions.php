@@ -331,7 +331,7 @@ function saveSiteSettings($newSettings) {
     $file = __DIR__ . '/../config/settings.json';
     $current = getSiteSettings();
     $updated = array_merge($current, $newSettings);
-    file_put_contents($file, json_encode($updated, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
+    file_put_contents($file, json_encode($updated, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES), LOCK_EX);
     return $updated;
 }
 
@@ -2471,7 +2471,7 @@ function getLeaveRequests() {
                 'created_at' => date('Y-m-d H:i:s')
             ]
         ];
-        @file_put_contents($filePath, json_encode($initialData, JSON_PRETTY_PRINT));
+        @file_put_contents($filePath, json_encode($initialData, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES), LOCK_EX);
         return $initialData;
     }
 
@@ -2527,7 +2527,7 @@ function submitLeaveRequest($username, $fullName, $role, $type, $startDateInput 
     array_unshift($requests, $newRequest);
 
     $filePath = __DIR__ . '/../config/leave_requests.json';
-    @file_put_contents($filePath, json_encode($requests, JSON_PRETTY_PRINT));
+    @file_put_contents($filePath, json_encode($requests, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES), LOCK_EX);
     return $newRequest;
 }
 
@@ -2560,7 +2560,7 @@ function updateLeaveRequestStatus($requestId, $newStatus) {
 
     if ($updated) {
         $filePath = __DIR__ . '/../config/leave_requests.json';
-        @file_put_contents($filePath, json_encode($requests, JSON_PRETTY_PRINT));
+        @file_put_contents($filePath, json_encode($requests, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES), LOCK_EX);
     }
 
     return $updated;
@@ -2691,7 +2691,7 @@ function getCommsMessages($channel = 'general') {
         if (!is_dir($dir)) {
             @mkdir($dir, 0777, true);
         }
-        @file_put_contents($filePath, json_encode($initialData, JSON_PRETTY_PRINT));
+        @file_put_contents($filePath, json_encode($initialData, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES), LOCK_EX);
         return $initialData;
     }
 
@@ -2718,7 +2718,7 @@ function sendCommsMessage($username, $senderName, $senderRole, $channel, $messag
     $messages[] = $newMsg;
 
     $filePath = __DIR__ . '/../config/comms_messages.json';
-    @file_put_contents($filePath, json_encode($messages, JSON_PRETTY_PRINT));
+    @file_put_contents($filePath, json_encode($messages, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES), LOCK_EX);
     return $newMsg;
 }
 
@@ -2738,7 +2738,7 @@ function getActiveStudioCalls() {
 
 function saveActiveStudioCalls($calls) {
     $file = getStudioCallsFile();
-    @file_put_contents($file, json_encode(array_values($calls), JSON_PRETTY_PRINT));
+    @file_put_contents($file, json_encode(array_values($calls), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES), LOCK_EX);
 }
 
 function initiateStudioCallState($callerUser, $callerName, $callerAvatar, $receiverUser, $receiverName, $receiverAvatar, $callType = 'audio') {
@@ -3095,7 +3095,7 @@ function getStudioTasksRepo() {
         ];
         $dir = dirname($filePath);
         if (!is_dir($dir)) @mkdir($dir, 0777, true);
-        @file_put_contents($filePath, json_encode($initialTasks, JSON_PRETTY_PRINT));
+        @file_put_contents($filePath, json_encode($initialTasks, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES), LOCK_EX);
         return $initialTasks;
     }
     $content = @file_get_contents($filePath);
@@ -3105,7 +3105,7 @@ function getStudioTasksRepo() {
 
 function saveStudioTasksRepo($tasks) {
     $filePath = getStudioTasksFile();
-    @file_put_contents($filePath, json_encode(array_values($tasks), JSON_PRETTY_PRINT));
+    @file_put_contents($filePath, json_encode(array_values($tasks), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES), LOCK_EX);
 }
 
 function createStudioTask($data) {
@@ -3328,7 +3328,7 @@ function getStudioTaskStagesRepo() {
 
 function saveStudioTaskStagesRepo($stages) {
     $filePath = getStudioTaskStagesFile();
-    @file_put_contents($filePath, json_encode(array_values($stages), JSON_PRETTY_PRINT));
+    @file_put_contents($filePath, json_encode(array_values($stages), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES), LOCK_EX);
 }
 
 function createStudioTaskStage($title, $color = '#3b82f6') {

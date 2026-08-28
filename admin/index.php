@@ -1908,6 +1908,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             exit;
         }
 
+        if (strtolower($newPassword) === 'password123#') {
+            header('Location: index.php?section=my_profile&pwd_error=default_forbidden' . ($isFirstTime ? '&force_password_change=1' : ''));
+            exit;
+        }
+
         if ($newPassword !== $confirmPassword) {
             header('Location: index.php?section=my_profile&pwd_error=mismatch' . ($isFirstTime ? '&force_password_change=1' : ''));
             exit;
@@ -6502,6 +6507,8 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                 echo "Current password is incorrect. Please check and try again.";
                             } else if ($pwdError === 'too_short') {
                                 echo "New password must be at least 6 characters long.";
+                            } else if ($pwdError === 'default_forbidden') {
+                                echo "For security reasons, you cannot use the default temporary password ('Password123#'). Please choose a unique personal password.";
                             } else if ($pwdError === 'mismatch') {
                                 echo "New password and Confirm Password do not match.";
                             } else {

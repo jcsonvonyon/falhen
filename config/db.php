@@ -21,6 +21,7 @@ function getDBConnection() {
                 PDO::ATTR_EMULATE_PREPARES   => false,
             ];
             $pdo = new PDO($dsn, DB_USER, DB_PASS, $options);
+            initDatabaseSchema($pdo);
         } catch (PDOException $e) {
             // In development, return graceful fallback object or raise clear message
             error_log("Database Connection Error: " . $e->getMessage());
@@ -28,4 +29,23 @@ function getDBConnection() {
         }
     }
     return $pdo;
+}
+
+function initDatabaseSchema($pdo) {
+    if (!$pdo) return;
+    static $initialized = false;
+    if ($initialized) return;
+
+    try {
+        $schemaFile = __DIR__ . '/schema.sql';
+        if (file_exists($schemaFile)) {
+            $sql = file_get_contents($schemaFile);
+            if (!empty($sql)) {
+                $pdo->exec($sql);
+            }
+        }
+        $initialized = true;
+    } catch (Exception $e) {
+        error_log("Schema Init Warning: " . $e->getMessage());
+    }
 }
