@@ -29,6 +29,37 @@ if (isset($_GET['logged_out'])) {
 
 // Default view is 'choice' landing screen when clicking dashboard from website
 $view = $_GET['view'] ?? 'choice'; 
+if (isset($_GET['action']) && $_GET['action'] === 'activate') {
+    $view = 'activation';
+}
+
+$pendingActivationUser = sanitizeInput($_GET['user'] ?? $_GET['activation_user'] ?? $_GET['email'] ?? '');
+$pendingCode = sanitizeInput($_GET['code'] ?? $_GET['activation_code'] ?? '');
+
+if (($view === 'activation' || (isset($_GET['action']) && $_GET['action'] === 'activate')) && !empty($pendingActivationUser) && !empty($pendingCode)) {
+    if (activateStaffAccountWithCode($pendingActivationUser, $pendingCode)) {
+        $staffAccounts = getStaffAccountsRepo();
+        foreach ($staffAccounts as $st) {
+            $uName = strtolower($st['username'] ?? '');
+            $uEmail = strtolower($st['email'] ?? '');
+            if (strtolower($pendingActivationUser) === $uName || strtolower($pendingActivationUser) === $uEmail) {
+                $_SESSION['admin_logged_in'] = true;
+                $_SESSION['admin_user_id']   = $st['id'];
+                $_SESSION['admin_username']  = $st['username'];
+                $_SESSION['admin_email']     = $st['email'];
+                $_SESSION['admin_role']      = $st['role'] ?? 'Staff';
+                $_SESSION['admin_avatar']    = $st['avatar'] ?? '';
+                $_SESSION['admin_full_name'] = $st['full_name'] ?? $st['username'];
+                $_SESSION['admin_alt_email'] = $st['alt_email'] ?? ($st['alternative_email'] ?? '');
+                $_SESSION['must_change_password'] = true;
+
+                header('Location: /admin/index.php?section=my_profile&force_password_change=1');
+                exit;
+            }
+        }
+    }
+}
+
 $csrfToken = generateCSRFToken();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -139,10 +170,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 $passValid = true;
                             }
 
+                            $stStatus = $st['status'] ?? 'active';
+                            $actStatus = $st['activation_status'] ?? 'activated';
+                            $stCode = trim($st['activation_code'] ?? '');
+
+                            // If user entered their 6-digit activation code in the password field:
+                            if (!$passValid && !empty($stCode) && trim($password) === $stCode && ($stStatus === 'pending_activation' || $actStatus === 'pending')) {
+                                if (activateStaffAccountWithCode($st['email'], $stCode)) {
+                                    $_SESSION['admin_logged_in'] = true;
+                                    $_SESSION['admin_user_id']   = $st['id'];
+                                    $_SESSION['admin_username']  = $st['username'];
+                                    $_SESSION['admin_email']     = $st['email'];
+                                    $_SESSION['admin_role']      = $st['role'] ?? 'Staff';
+                                    $_SESSION['admin_avatar']    = $st['avatar'] ?? '';
+                                    $_SESSION['admin_full_name'] = $st['full_name'] ?? $st['username'];
+                                    $_SESSION['admin_alt_email'] = $st['alt_email'] ?? ($st['alternative_email'] ?? '');
+                                    $_SESSION['must_change_password'] = true;
+
+                                    header('Location: /admin/index.php?section=my_profile&force_password_change=1');
+                                    exit;
+                                }
+                            }
+
                             if ($passValid) {
                                 // Check if staff account requires 6-digit activation code verification
-                                $stStatus = $st['status'] ?? 'active';
-                                $actStatus = $st['activation_status'] ?? 'activated';
                                 if ($stStatus === 'pending_activation' || $actStatus === 'pending') {
                                     $view = 'activation';
                                     $pendingActivationUser = $st['email'];

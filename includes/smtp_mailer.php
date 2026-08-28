@@ -202,7 +202,12 @@ function sendStaffActivationEmail($toEmail, $code, $recipientName = '', $staffEm
             <p>Your Falhen Staff Portal account has been created. Use your assigned staff email address and the 6-digit activation code below to activate your account:</p>
             ' . $loginEmailSection . '
             <div class="code-box">' . htmlspecialchars($code) . '</div>
-            <p>Go to <a href="https://falhen.com/admin/login.php" style="color: #ef4444; font-weight: 700; text-decoration: none;">falhen.com/admin/login.php</a> and sign in with your staff email address and password to complete activation.</p>
+            <div style="margin: 24px 0 20px 0;">
+                <a href="https://falhen.com/admin/login.php?action=activate&user=' . urlencode($staffEmail) . '&code=' . urlencode($code) . '" style="background-color: #ef4444; color: #ffffff; text-decoration: none; padding: 16px 32px; border-radius: 12px; font-weight: 800; font-size: 15px; display: inline-block; box-shadow: 0 4px 16px rgba(239, 68, 68, 0.4); text-transform: uppercase; letter-spacing: 0.5px;">
+                    🚀 Click Here to Activate Your Account &rarr;
+                </a>
+            </div>
+            <p style="font-size: 13px; color: #94a3b8; margin-top: 10px;">Or visit <a href="https://falhen.com/admin/login.php?action=activate&user=' . urlencode($staffEmail) . '&code=' . urlencode($code) . '" style="color: #ef4444; font-weight: 700; text-decoration: underline;">falhen.com/admin/login.php</a> to verify your 6-digit code.</p>
             <div class="notice-box">
                 <strong>Security Notice:</strong> Keep this activation code confidential. Do not share it with anyone outside Falhen Media.
             </div>
