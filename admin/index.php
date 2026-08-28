@@ -7297,6 +7297,18 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                     }
                 }
 
+                // Deduplicate celebrationsList so each employee is displayed only once
+                $dedupCelebrations = [];
+                $seenCelebs = [];
+                foreach ($celebrationsList as $cItem) {
+                    $key = strtolower(trim($cItem['name']));
+                    if (!empty($key) && !isset($seenCelebs[$key])) {
+                        $seenCelebs[$key] = true;
+                        $dedupCelebrations[] = $cItem;
+                    }
+                }
+                $celebrationsList = $dedupCelebrations;
+
                 // Sort birthdays so Today's birthdays and upcoming birthdays appear at top
                 if (!empty($celebrationsList)) {
                     usort($celebrationsList, function($a, $b) {
