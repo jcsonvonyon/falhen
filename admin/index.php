@@ -322,6 +322,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $meetingTime = trim(strip_tags($_POST['meeting_time'] ?? '10:00 AM'));
         $meetingDesc = trim(strip_tags($_POST['meeting_desc'] ?? ''));
 
+        $meetings = $siteSettings['scheduled_meetings'] ?? [];
+        $meetings[] = [
+            'id'           => count($meetings) + 1,
+            'organizer'    => $currentUsername,
+            'target_user'  => $targetUser,
+            'subject'      => $subject,
+            'meeting_date' => $meetingDate,
+            'meeting_time' => $meetingTime,
+            'description'  => $meetingDesc,
+            'created_at'   => date('Y-m-d H:i:s')
+        ];
+        saveSiteSettings(['scheduled_meetings' => $meetings]);
+
         $_SESSION['saved_message'] = 'Meeting invite "' . htmlspecialchars($subject) . '" successfully scheduled with @' . htmlspecialchars($targetUser) . ' for ' . htmlspecialchars($meetingDate) . ' at ' . htmlspecialchars($meetingTime) . '!';
         header('Location: /admin/index.php?section=directory&scheduled=1');
         exit;
@@ -7223,8 +7236,22 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                     }
                 }
 
+                // Also include team members if available
+                $siteTeamMembers = array_values(getTeamRepo());
+                foreach ($siteTeamMembers as $tm) {
+                    if (!empty($tm['dob'])) {
+                        $allPeopleList[] = [
+                            'full_name' => $tm['name'] ?? '',
+                            'role'      => $tm['title'] ?? 'Team Member',
+                            'avatar'    => $tm['image'] ?? '',
+                            'dob'       => $tm['dob']
+                        ];
+                    }
+                }
+
                 foreach ($allPeopleList as $stMember) {
-                    $stName = $stMember['full_name'] ?? $stMember['username'];
+                    $stName = $stMember['full_name'] ?? ($stMember['username'] ?? '');
+                    if (empty($stName)) continue;
                     $stRole = $stMember['role'] ?? 'Staff Member';
                     $stAvatar = $stMember['avatar'] ?? '';
                     $dobVal = $stMember['dob'] ?? '';
@@ -7260,14 +7287,6 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                     }
                     return $a['month'] <=> $b['month'];
                 });
-
-                // Default realistic fallback team celebrations if none set
-                if (empty($celebrationsList)) {
-                    $celebrationsList = [
-                        ['name' => 'Henry Falonipe', 'role' => 'Super Admin', 'avatar' => 'https://res.cloudinary.com/pnabfi91/image/upload/v1786712075/falhen/team/ctxjp9mymgqdh2ecg2hu.jpg', 'date_str' => 'Sep 15', 'is_today' => false],
-                        ['name' => 'Kingsley Falonipe', 'role' => 'Operations Specialist', 'avatar' => 'https://res.cloudinary.com/pnabfi91/image/upload/v1786713360/falhen/team/ftmzlwwv1szlyurijyno.png', 'date_str' => 'Oct 08', 'is_today' => false]
-                    ];
-                }
 
                 // Fetch Real Leave Applications
                 $allLeaves = $siteSettings['leave_applications'] ?? [];
@@ -7344,32 +7363,44 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                             </div>
 
                             <div style="display: flex; flex-direction: column; gap: 12px;">
-                                <div style="padding: 14px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; border-left: 4px solid #2563eb; display: flex; align-items: center; justify-content: space-between;">
-                                    <div>
-                                        <div style="font-size: 0.76rem; font-weight: 800; color: #2563eb; text-transform: uppercase;">09:30 AM &ndash; 10:15 AM</div>
-                                        <div style="font-size: 0.92rem; font-weight: 800; color: #0f172a; margin-top: 2px;">Morning Creative &amp; Production Standup</div>
-                                        <div style="font-size: 0.78rem; color: #64748b; margin-top: 2px;"><i class="fa-solid fa-location-dot"></i> Main Studio A / Virtual Sync</div>
+                                <?php 
+                                $realMeetings = $siteSettings['scheduled_meetings'] ?? [];
+                                $todayStr = date('Y-m-d');
+                                $userMeetings = array_filter($realMeetings, function($m) use ($todayStr, $username) {
+                                    $mDate = $m['meeting_date'] ?? '';
+                                    $organizer = strtolower($m['organizer'] ?? '');
+                                    $targetUser = strtolower($m['target_user'] ?? '');
+                                    $uLower = strtolower($username);
+                                    return ($mDate >= $todayStr) && (empty($targetUser) || $targetUser === 'all' || $targetUser === $uLower || $organizer === $uLower);
+                                });
+                                ?>
+                                <?php if (!empty($userMeetings)): ?>
+                                    <?php foreach (array_slice($userMeetings, 0, 3) as $mIdx => $mItem): ?>
+                                        <div style="padding: 14px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; border-left: 4px solid <?php echo ($mIdx === 0) ? '#2563eb' : (($mIdx === 1) ? '#dc2626' : '#16a34a'); ?>; display: flex; align-items: center; justify-content: space-between;">
+                                            <div>
+                                                <div style="font-size: 0.76rem; font-weight: 800; color: <?php echo ($mIdx === 0) ? '#2563eb' : (($mIdx === 1) ? '#dc2626' : '#16a34a'); ?>; text-transform: uppercase;">
+                                                    <?php echo htmlspecialchars($mItem['meeting_date'] ?? date('Y-m-d')); ?> &bull; <?php echo htmlspecialchars($mItem['meeting_time'] ?? '10:00 AM'); ?>
+                                                </div>
+                                                <div style="font-size: 0.92rem; font-weight: 800; color: #0f172a; margin-top: 2px;">
+                                                    <?php echo htmlspecialchars($mItem['subject'] ?? 'Scheduled Team Meeting'); ?>
+                                                </div>
+                                                <div style="font-size: 0.78rem; color: #64748b; margin-top: 2px;">
+                                                    <i class="fa-solid fa-user"></i> With @<?php echo htmlspecialchars($mItem['target_user'] ?? 'Team'); ?>
+                                                </div>
+                                            </div>
+                                            <span style="background: #eff6ff; color: #1d4ed8; font-size: 0.72rem; font-weight: 800; padding: 3px 10px; border-radius: 12px; border: 1px solid #bfdbfe;">Scheduled</span>
+                                        </div>
+                                    <?php endforeach; ?>
+                                <?php else: ?>
+                                    <div style="padding: 20px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; text-align: center;">
+                                        <i class="fa-solid fa-calendar-day" style="font-size: 1.6rem; color: #2563eb; margin-bottom: 8px; display: block;"></i>
+                                        <div style="font-size: 0.9rem; font-weight: 800; color: #0f172a;">No Scheduled Meetings for Today</div>
+                                        <div style="font-size: 0.78rem; color: #64748b; margin-top: 4px; margin-bottom: 12px;">Your operational schedule is clear. Connect with your team or schedule a meeting.</div>
+                                        <a href="/admin/index.php?section=directory" class="btn-save-primary" style="text-decoration: none; padding: 6px 16px; font-size: 0.78rem; display: inline-flex;">
+                                            <i class="fa-solid fa-calendar-plus"></i> Schedule Meeting
+                                        </a>
                                     </div>
-                                    <span style="background: #eff6ff; color: #1d4ed8; font-size: 0.72rem; font-weight: 800; padding: 3px 10px; border-radius: 12px; border: 1px solid #bfdbfe;">Active</span>
-                                </div>
-
-                                <div style="padding: 14px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; border-left: 4px solid #dc2626; display: flex; align-items: center; justify-content: space-between;">
-                                    <div>
-                                        <div style="font-size: 0.76rem; font-weight: 800; color: #dc2626; text-transform: uppercase;">01:30 PM &ndash; 02:45 PM</div>
-                                        <div style="font-size: 0.92rem; font-weight: 800; color: #0f172a; margin-top: 2px;">Client Video Post-Production Review</div>
-                                        <div style="font-size: 0.78rem; color: #64748b; margin-top: 2px;"><i class="fa-solid fa-film"></i> Edit Suite 1 &bull; High Priority</div>
-                                    </div>
-                                    <span style="background: #fef2f2; color: #b91c1c; font-size: 0.72rem; font-weight: 800; padding: 3px 10px; border-radius: 12px; border: 1px solid #fecaca;">Upcoming</span>
-                                </div>
-
-                                <div style="padding: 14px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; border-left: 4px solid #16a34a; display: flex; align-items: center; justify-content: space-between;">
-                                    <div>
-                                        <div style="font-size: 0.76rem; font-weight: 800; color: #16a34a; text-transform: uppercase;">04:00 PM &ndash; 05:00 PM</div>
-                                        <div style="font-size: 0.92rem; font-weight: 800; color: #0f172a; margin-top: 2px;">Falhen Q3 Sprint &amp; Team Wrap-up</div>
-                                        <div style="font-size: 0.78rem; color: #64748b; margin-top: 2px;"><i class="fa-solid fa-users"></i> Operations Lounge</div>
-                                    </div>
-                                    <span style="background: #f0fdf4; color: #15803d; font-size: 0.72rem; font-weight: 800; padding: 3px 10px; border-radius: 12px; border: 1px solid #bbf7d0;">Scheduled</span>
-                                </div>
+                                <?php endif; ?>
                             </div>
                         </div>
 
@@ -7483,23 +7514,34 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                 </h3>
                             </div>
                             <div style="display: flex; flex-direction: column; gap: 10px;">
-                                <?php foreach (array_slice($celebrationsList, 0, 3) as $cItem): ?>
-                                    <div style="display: flex; align-items: center; gap: 12px; padding: 12px 16px; background: <?php echo !empty($cItem['is_today']) ? '#f0fdf4' : '#fdf2f8'; ?>; border: 1px solid <?php echo !empty($cItem['is_today']) ? '#bbf7d0' : '#fbcfe8'; ?>; border-radius: 12px;">
-                                        <?php if (!empty($cItem['avatar'])): ?>
-                                            <img src="<?php echo htmlspecialchars(getCloudinaryUrl($cItem['avatar'])); ?>" alt="<?php echo htmlspecialchars($cItem['name']); ?>" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid #ec4899; flex-shrink: 0;">
-                                        <?php else: ?>
-                                            <div style="width: 40px; height: 40px; border-radius: 50%; background: #ec4899; color: #ffffff; display: flex; align-items: center; justify-content: center; font-size: 1rem; font-weight: 800; flex-shrink: 0;">
-                                                <?php echo strtoupper(substr($cItem['name'], 0, 1)); ?>
-                                            </div>
-                                        <?php endif; ?>
-                                        <div>
-                                            <div style="font-size: 0.88rem; font-weight: 800; color: #0f172a;"><?php echo htmlspecialchars($cItem['name']); ?></div>
-                                            <div style="font-size: 0.76rem; color: <?php echo !empty($cItem['is_today']) ? '#15803d' : '#be185d'; ?>; font-weight: 700;">
-                                                <?php echo !empty($cItem['is_today']) ? '🎂 Birthday Today!' : 'Birthday on ' . $cItem['date_str']; ?>
+                                <?php if (!empty($celebrationsList)): ?>
+                                    <?php foreach (array_slice($celebrationsList, 0, 3) as $cItem): ?>
+                                        <div style="display: flex; align-items: center; gap: 12px; padding: 12px 16px; background: <?php echo !empty($cItem['is_today']) ? '#f0fdf4' : '#fdf2f8'; ?>; border: 1px solid <?php echo !empty($cItem['is_today']) ? '#bbf7d0' : '#fbcfe8'; ?>; border-radius: 12px;">
+                                            <?php if (!empty($cItem['avatar'])): ?>
+                                                <img src="<?php echo htmlspecialchars(getCloudinaryUrl($cItem['avatar'])); ?>" alt="<?php echo htmlspecialchars($cItem['name']); ?>" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid #ec4899; flex-shrink: 0;">
+                                            <?php else: ?>
+                                                <div style="width: 40px; height: 40px; border-radius: 50%; background: #ec4899; color: #ffffff; display: flex; align-items: center; justify-content: center; font-size: 1rem; font-weight: 800; flex-shrink: 0;">
+                                                    <?php echo strtoupper(substr($cItem['name'], 0, 1)); ?>
+                                                </div>
+                                            <?php endif; ?>
+                                            <div>
+                                                <div style="font-size: 0.88rem; font-weight: 800; color: #0f172a;"><?php echo htmlspecialchars($cItem['name']); ?></div>
+                                                <div style="font-size: 0.76rem; color: <?php echo !empty($cItem['is_today']) ? '#15803d' : '#be185d'; ?>; font-weight: 700;">
+                                                    <?php echo !empty($cItem['is_today']) ? '🎂 Birthday Today!' : 'Birthday on ' . $cItem['date_str']; ?>
+                                                </div>
                                             </div>
                                         </div>
+                                    <?php endforeach; ?>
+                                <?php else: ?>
+                                    <div style="padding: 20px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; text-align: center;">
+                                        <i class="fa-solid fa-cake-candles" style="font-size: 1.6rem; color: #ec4899; margin-bottom: 8px; display: block;"></i>
+                                        <div style="font-size: 0.9rem; font-weight: 800; color: #0f172a;">No Upcoming Team Birthdays</div>
+                                        <div style="font-size: 0.78rem; color: #64748b; margin-top: 4px; margin-bottom: 12px;">Set your Date of Birth in My Profile to display your birthday celebration here!</div>
+                                        <a href="/admin/index.php?section=my_profile" class="btn-save-primary" style="text-decoration: none; padding: 6px 14px; font-size: 0.78rem; background: #ec4899; border-color: #ec4899; display: inline-flex;">
+                                            <i class="fa-solid fa-user-gear"></i> Set Your Birthday
+                                        </a>
                                     </div>
-                                <?php endforeach; ?>
+                                <?php endif; ?>
                             </div>
                         </div>
 
