@@ -6910,6 +6910,22 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                             break;
                         }
                     }
+                    if ($editingStaff !== null) {
+                        $stUser = strtolower($editingStaff['username'] ?? '');
+                        $stEmail = strtolower($editingStaff['email'] ?? '');
+                        $curUser = strtolower($username);
+                        $curEmail = strtolower($userEmail);
+
+                        $isSelf = ($stUser === $curUser || 
+                                   $stEmail === $curEmail || 
+                                   (($stUser === 'admin' || $stUser === 'oluwatosin.ligali' || $stUser === 'ligali.oluwatosin') && 
+                                    ($curUser === 'admin' || $curUser === 'oluwatosin.ligali' || $curUser === 'ligali.oluwatosin')));
+
+                        if ($isSelf) {
+                            header('Location: index.php?section=my_profile');
+                            exit;
+                        }
+                    }
                 }
             ?>
                 <!-- Header Bar -->
@@ -7180,9 +7196,22 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                 </div>
 
                                 <div style="display: flex; align-items: center; justify-content: space-between; border-top: 1px solid #f1f5f9; padding-top: 14px; margin-top: 14px;">
-                                    <a href="index.php?section=staff_accounts&edit_id=<?php echo $stItem['id']; ?>" style="color: #0f172a; font-size: 0.82rem; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 5px; background: #f1f5f9; padding: 6px 14px; border-radius: 8px;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='#f1f5f9'">
-                                        <i class="fa-solid fa-user-pen" style="font-size: 0.75rem; color: #dc2626;"></i> Edit Member
-                                    </a>
+                                    <?php 
+                                     $stUser = strtolower($stItem['username'] ?? '');
+                                     $stEmail = strtolower($stItem['email'] ?? '');
+                                     $curUser = strtolower($username);
+                                     $curEmail = strtolower($userEmail);
+
+                                     $isSelfAccount = ($stUser === $curUser || 
+                                                       $stEmail === $curEmail || 
+                                                       (($stUser === 'admin' || $stUser === 'oluwatosin.ligali' || $stUser === 'ligali.oluwatosin') && 
+                                                        ($curUser === 'admin' || $curUser === 'oluwatosin.ligali' || $curUser === 'ligali.oluwatosin')));
+
+                                     $editUrl = $isSelfAccount ? 'index.php?section=my_profile' : ('index.php?section=staff_accounts&edit_id=' . $stItem['id']);
+                                     ?>
+                                     <a href="<?php echo $editUrl; ?>" style="color: #0f172a; font-size: 0.82rem; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 5px; background: #f1f5f9; padding: 6px 14px; border-radius: 8px;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='#f1f5f9'">
+                                         <i class="fa-solid fa-user-pen" style="font-size: 0.75rem; color: #dc2626;"></i> <?php echo $isSelfAccount ? 'Edit My Profile' : 'Edit Member'; ?>
+                                     </a>
 
                                     <form action="index.php?section=staff_accounts" method="POST" onsubmit="return promptConfirmModal(this, 'Remove Staff Account', 'Are you sure you want to remove <?php echo htmlspecialchars(addslashes($stItem['full_name'])); ?> from staff accounts?');" style="margin: 0;">
                                         <input type="hidden" name="action" value="delete_staff_account">
