@@ -3425,3 +3425,173 @@ function updateStudioTaskStageLabel($stageKey, $title, $color = null) {
     saveStudioTaskStagesRepo($stages);
     return $updated;
 }
+
+/**
+ * Get Payroll Disbursements Repository
+ */
+function getPayrollDisbursements($username = null, $month = null, $year = null) {
+    $settings = getSiteSettings();
+    $items = $settings['payroll_disbursements'] ?? [];
+
+    if (empty($items) || !is_array($items)) {
+        // Default initial realistic disbursements for demonstration
+        $items = [
+            [
+                'id'            => 1,
+                'username'      => 'mojisola.emjay',
+                'full_name'     => 'Mojisola Emjay',
+                'email'         => 'mojisola.emjay@falhenmedia.com',
+                'role'          => 'HR Manager',
+                'pay_period'    => 'April 2026',
+                'period_month'  => '04',
+                'period_year'   => '2026',
+                'base_salary'   => 140000,
+                'allowances'    => 10000,
+                'deductions'    => 10000,
+                'net_pay'       => 140000,
+                'currency'      => 'NGN',
+                'status'        => 'Paid',
+                'payment_method'=> 'Direct Bank Transfer',
+                'tx_ref'        => 'FAL-PAY-202604-001',
+                'processed_at'  => '2026-04-28 10:30:00',
+                'processed_by'  => 'Super Admin'
+            ],
+            [
+                'id'            => 2,
+                'username'      => 'mojisola.emjay',
+                'full_name'     => 'Mojisola Emjay',
+                'email'         => 'mojisola.emjay@falhenmedia.com',
+                'role'          => 'HR Manager',
+                'pay_period'    => 'March 2026',
+                'period_month'  => '03',
+                'period_year'   => '2026',
+                'base_salary'   => 140000,
+                'allowances'    => 10000,
+                'deductions'    => 10000,
+                'net_pay'       => 140000,
+                'currency'      => 'NGN',
+                'status'        => 'Paid',
+                'payment_method'=> 'Direct Bank Transfer',
+                'tx_ref'        => 'FAL-PAY-202603-002',
+                'processed_at'  => '2026-03-28 11:15:00',
+                'processed_by'  => 'Super Admin'
+            ],
+            [
+                'id'            => 3,
+                'username'      => 'daniel.ifeoluwa',
+                'full_name'     => 'Daniel Ifeoluwa',
+                'email'         => 'daniel.ifeoluwa@falhenmedia.com',
+                'role'          => 'Staff',
+                'pay_period'    => 'April 2026',
+                'period_month'  => '04',
+                'period_year'   => '2026',
+                'base_salary'   => 250000,
+                'allowances'    => 20000,
+                'deductions'    => 20000,
+                'net_pay'       => 250000,
+                'currency'      => 'NGN',
+                'status'        => 'Paid',
+                'payment_method'=> 'Direct Bank Transfer',
+                'tx_ref'        => 'FAL-PAY-202604-003',
+                'processed_at'  => '2026-04-28 14:20:00',
+                'processed_by'  => 'Mojisola Emjay'
+            ]
+        ];
+        $settings['payroll_disbursements'] = $items;
+        saveSiteSettings($settings);
+    }
+
+    if (!empty($username)) {
+        $uLower = strtolower(trim($username));
+        $items = array_values(array_filter($items, function($it) use ($uLower) {
+            return (strtolower($it['username'] ?? '') === $uLower || strtolower($it['email'] ?? '') === $uLower);
+        }));
+    }
+
+    if (!empty($month)) {
+        $mStr = sprintf('%02d', (int)$month);
+        $items = array_values(array_filter($items, function($it) use ($mStr) {
+            return (($it['period_month'] ?? '') === $mStr);
+        }));
+    }
+
+    if (!empty($year)) {
+        $yStr = (string)$year;
+        $items = array_values(array_filter($items, function($it) use ($yStr) {
+            return (($it['period_year'] ?? '') === $yStr);
+        }));
+    }
+
+    return $items;
+}
+
+/**
+ * Process Employee Payment & Persist Disbursement Record
+ */
+function processEmployeePayment($data) {
+    $settings = getSiteSettings();
+    $items = $settings['payroll_disbursements'] ?? getPayrollDisbursements();
+
+    $newId = count($items) + 1;
+    $payPeriod = trim($data['pay_period'] ?? date('F Y'));
+    $periodMonth = trim($data['period_month'] ?? date('m'));
+    $periodYear = trim($data['period_year'] ?? date('Y'));
+
+    $disbursement = [
+        'id'            => $newId,
+        'username'      => trim($data['username'] ?? ''),
+        'full_name'     => trim($data['full_name'] ?? ''),
+        'email'         => trim($data['email'] ?? ''),
+        'role'          => trim($data['role'] ?? 'Staff'),
+        'pay_period'    => $payPeriod,
+        'period_month'  => $periodMonth,
+        'period_year'   => $periodYear,
+        'base_salary'   => (float)($data['base_salary'] ?? 0),
+        'allowances'    => (float)($data['allowances'] ?? 0),
+        'deductions'    => (float)($data['deductions'] ?? 0),
+        'net_pay'       => (float)($data['net_pay'] ?? 0),
+        'currency'      => trim($data['currency'] ?? 'NGN'),
+        'status'        => trim($data['status'] ?? 'Paid'),
+        'payment_method'=> trim($data['payment_method'] ?? 'Direct Bank Transfer'),
+        'tx_ref'        => trim($data['tx_ref'] ?? ('FAL-PAY-' . date('Ym') . '-' . sprintf('%03d', $newId))),
+        'note'          => trim($data['note'] ?? ''),
+        'processed_at'  => date('Y-m-d H:i:s'),
+        'processed_by'  => trim($data['processed_by'] ?? 'HR Manager')
+    ];
+
+    // Prepend new disbursement record
+    array_unshift($items, $disbursement);
+    $settings['payroll_disbursements'] = array_values($items);
+    saveSiteSettings($settings);
+
+    return $disbursement;
+}
+
+/**
+ * Calculate Employee YTD Metrics (Earnings, Taxes, Pension)
+ */
+function calculateEmployeeYTDMetrics($username = null, $year = '2026') {
+    $disbursements = getPayrollDisbursements($username, null, $year);
+
+    $ytdNetEarnings = 0;
+    $ytdTaxes = 0;
+    $ytdPension = 0;
+
+    foreach ($disbursements as $d) {
+        if (($d['status'] ?? '') === 'Paid') {
+            $net = (float)($d['net_pay'] ?? 0);
+            $ded = (float)($d['deductions'] ?? 0);
+
+            $ytdNetEarnings += $net;
+            // 50% of deductions estimated as tax withholding, 50% pension
+            $ytdTaxes += ($ded * 0.5);
+            $ytdPension += ($ded * 0.5);
+        }
+    }
+
+    return [
+        'net_earnings' => $ytdNetEarnings,
+        'taxes'        => $ytdTaxes,
+        'pension'      => $ytdPension
+    ];
+}

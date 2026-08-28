@@ -225,3 +225,74 @@ function sendStaffActivationEmail($toEmail, $code, $recipientName = '', $staffEm
         return false;
     }
 }
+
+/**
+ * Dispatch Salary Payout Notification Email to Employee
+ */
+function sendSalaryPayoutNotificationEmail($toEmail, $recipientName, $payPeriod, $netPay, $txRef = '') {
+    if (empty($toEmail)) return false;
+
+    $mailer = new FalhenSMTPMailer();
+    $subject = "Falhen Media — Salary Payout Advice (" . htmlspecialchars($payPeriod) . ")";
+
+    $html = '
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="UTF-8">
+        <style>
+            body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: #080b11; color: #f8fafc; margin: 0; padding: 40px 20px; }
+            .email-card { max-width: 540px; margin: 0 auto; background-color: #111723; border: 1px solid #1e293b; border-radius: 16px; padding: 36px 32px; text-align: center; }
+            .brand-logo { margin-bottom: 24px; }
+            h2 { color: #ffffff; font-size: 22px; font-weight: 800; margin-top: 0; margin-bottom: 12px; }
+            p { color: #94a3b8; font-size: 15px; line-height: 1.6; margin: 0 0 16px 0; }
+            .payout-box { background-color: #0d121d; border: 2px solid #22c55e; color: #22c55e; font-size: 32px; font-weight: 800; padding: 18px 24px; border-radius: 14px; margin: 20px 0; box-shadow: 0 4px 20px rgba(34, 197, 94, 0.2); }
+            .details-table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 14px; text-align: left; }
+            .details-table td { padding: 10px 14px; border-bottom: 1px solid #1e293b; color: #cbd5e1; }
+            .details-table td strong { color: #ffffff; }
+            .footer { font-size: 12px; color: #64748b; margin-top: 32px; border-top: 1px solid #1e293b; padding-top: 16px; }
+        </style>
+    </head>
+    <body>
+        <div class="email-card">
+            <div class="brand-logo">
+                <img src="https://falhen.com/assets/img/icons/logo.png" alt="Falhen Media" style="height: 36px;">
+            </div>
+            <h2>Salary Payment Advice</h2>
+            <p>Dear ' . htmlspecialchars($recipientName ?: 'Team Member') . ',</p>
+            <p>Your monthly remuneration for <strong>' . htmlspecialchars($payPeriod) . '</strong> has been processed successfully. Below is your payment disbursement advice:</p>
+            
+            <div class="payout-box">' . htmlspecialchars($netPay) . '</div>
+
+            <table class="details-table">
+                <tr>
+                    <td>Pay Period:</td>
+                    <td style="text-align: right;"><strong>' . htmlspecialchars($payPeriod) . '</strong></td>
+                </tr>
+                <tr>
+                    <td>Status:</td>
+                    <td style="text-align: right;"><strong style="color: #22c55e;">Paid / Processed</strong></td>
+                </tr>
+                ' . (!empty($txRef) ? '<tr><td>Transaction Ref:</td><td style="text-align: right;"><strong>' . htmlspecialchars($txRef) . '</strong></td></tr>' : '') . '
+            </table>
+
+            <div style="margin: 24px 0 16px 0;">
+                <a href="https://falhen.com/admin/index.php?section=payslips" style="background-color: #dc2626; color: #ffffff; text-decoration: none; padding: 14px 28px; border-radius: 12px; font-weight: 800; font-size: 14px; display: inline-block; box-shadow: 0 4px 16px rgba(220, 38, 38, 0.35);">
+                    📄 View & Download Payslip Stub &rarr;
+                </a>
+            </div>
+
+            <div class="footer">
+                &copy; ' . date('Y') . ' Falhen Media Ltd. All rights reserved.
+            </div>
+        </div>
+    </body>
+    </html>';
+
+    try {
+        return $mailer->sendMail($toEmail, $subject, $html, $recipientName);
+    } catch (Exception $e) {
+        error_log("Failed to send Salary Payout SMTP email: " . $e->getMessage());
+        return false;
+    }
+}
