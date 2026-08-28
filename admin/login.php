@@ -241,11 +241,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $setupEmail = sanitizeInput($_POST['setup_email'] ?? '');
         if ($setupEmail && $inviteCode) {
             if (activateStaffAccountWithCode($setupEmail, $inviteCode)) {
-                $success = 'Account for ' . htmlspecialchars($setupEmail) . ' activated successfully! Please sign in below to access your portal.';
+                $staffAccounts = getStaffAccountsRepo();
+                foreach ($staffAccounts as $st) {
+                    $uName = strtolower($st['username'] ?? '');
+                    $uEmail = strtolower($st['email'] ?? '');
+                    if (strtolower($setupEmail) === $uName || strtolower($setupEmail) === $uEmail) {
+                        $_SESSION['admin_logged_in'] = true;
+                        $_SESSION['admin_user_id']   = $st['id'];
+                        $_SESSION['admin_username']  = $st['username'];
+                        $_SESSION['admin_email']     = $st['email'];
+                        $_SESSION['admin_role']      = $st['role'] ?? 'Staff';
+                        $_SESSION['admin_avatar']    = $st['avatar'] ?? '';
+                        $_SESSION['admin_full_name'] = $st['full_name'] ?? $st['username'];
+                        $_SESSION['must_change_password'] = true;
+
+                        header('Location: /admin/index.php?section=my_profile&force_password_change=1');
+                        exit;
+                    }
+                }
             } else {
-                $success = 'Your account setup request for ' . htmlspecialchars($setupEmail) . ' has been recorded. Please sign in below to continue.';
+                $error = 'Invalid email address or 6-digit activation code. Please verify details.';
+                $view = 'setup';
             }
-            $view = 'staff';
         } else {
             $view = 'setup';
             $error = 'Please provide both staff email and invitation/activation code.';
@@ -256,7 +273,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         if (!empty($activationUser) && !empty($submittedCode)) {
             if (activateStaffAccountWithCode($activationUser, $submittedCode)) {
-                // Account successfully activated! Log staff member in.
+                // Account successfully activated! Log staff member in & force password creation
                 $staffAccounts = getStaffAccountsRepo();
                 foreach ($staffAccounts as $st) {
                     $uName = strtolower($st['username'] ?? '');
@@ -269,16 +286,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $_SESSION['admin_role']      = $st['role'] ?? 'Staff';
                         $_SESSION['admin_avatar']    = $st['avatar'] ?? '';
                         $_SESSION['admin_full_name'] = $st['full_name'] ?? $st['username'];
+                        $_SESSION['must_change_password'] = true;
 
-                        // Redirect to onboarding page for code activation completion
-                        $isHRorAdminUser = (strtolower($st['role'] ?? '') === 'super admin' || strtolower($st['role'] ?? '') === 'hr manager');
-                        $onbProgressVal = getOnboardingProgress($st['username']);
-
-                        if (!$isHRorAdminUser && ($onbProgressVal['percent'] ?? 0) < 100) {
-                            header('Location: /admin/index.php?section=onboarding&onboarding_required=1');
-                        } else {
-                            header('Location: /admin/index.php');
-                        }
+                        header('Location: /admin/index.php?section=my_profile&force_password_change=1');
                         exit;
                     }
                 }

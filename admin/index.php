@@ -1878,37 +1878,76 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $currentPassword = $_POST['current_password'] ?? '';
         $newPassword = $_POST['new_password'] ?? '';
         $confirmPassword = $_POST['confirm_password'] ?? '';
+        $isFirstTime = !empty($_SESSION['must_change_password']) || isset($_GET['force_password_change']);
 
-        $profile = getAdminUserProfile();
-        $storedHash = $profile['password_hash'] ?? '';
+        if (!$isFirstTime) {
+            $profile = getAdminUserProfile();
+            $storedHash = $profile['password_hash'] ?? '';
 
-        $currentValid = false;
-        if (!empty($storedHash) && password_verify($currentPassword, $storedHash)) {
-            $currentValid = true;
-        } else if ($currentPassword === 'Password123#') {
-            $currentValid = true;
-        }
+            // Check staff account hash if available
+            $stAccount = getStaffAccountByUsername($username);
+            if (!empty($stAccount['password_hash'])) {
+                $storedHash = $stAccount['password_hash'];
+            }
 
-        if (!$currentValid) {
-            header('Location: index.php?section=profile&pwd_error=invalid_current');
-            exit;
+            $currentValid = false;
+            if (!empty($storedHash) && password_verify($currentPassword, $storedHash)) {
+                $currentValid = true;
+            } else if (strtolower($currentPassword) === 'password123#') {
+                $currentValid = true;
+            }
+
+            if (!$currentValid) {
+                header('Location: index.php?section=my_profile&pwd_error=invalid_current');
+                exit;
+            }
         }
 
         if (empty($newPassword) || strlen($newPassword) < 6) {
-            header('Location: index.php?section=profile&pwd_error=too_short');
+            header('Location: index.php?section=my_profile&pwd_error=too_short' . ($isFirstTime ? '&force_password_change=1' : ''));
             exit;
         }
 
         if ($newPassword !== $confirmPassword) {
-            header('Location: index.php?section=profile&pwd_error=mismatch');
+            header('Location: index.php?section=my_profile&pwd_error=mismatch' . ($isFirstTime ? '&force_password_change=1' : ''));
             exit;
         }
 
-        saveAdminUserProfile([
-            'password_hash' => password_hash($newPassword, PASSWORD_DEFAULT)
-        ]);
+        $newHash = password_hash($newPassword, PASSWORD_DEFAULT);
 
-        header('Location: index.php?section=profile&pwd_saved=1');
+        // Save password hash to Staff Account Repository
+        $staffRepo = array_values(getStaffAccountsRepo());
+        $foundSt = false;
+        foreach ($staffRepo as &$st) {
+            $uName = strtolower($st['username'] ?? '');
+            $uEmail = strtolower($st['email'] ?? '');
+            if (strtolower($username) === $uName || strtolower($userEmail) === $uEmail) {
+                $st['password_hash'] = $newHash;
+                $st['status'] = 'active';
+                $st['activation_status'] = 'activated';
+                $foundSt = true;
+                break;
+            }
+        }
+        unset($st);
+
+        if ($foundSt) {
+            saveSiteSettings(['staff_accounts' => $staffRepo]);
+        }
+
+        if (isAdminUser($userRole, $userEmail, $username)) {
+            saveAdminUserProfile(['password_hash' => $newHash]);
+        }
+
+        unset($_SESSION['must_change_password']);
+
+        // Check if onboarding checklist is completed
+        $userOnbProg = getOnboardingProgress($username);
+        if ($userOnbProg['percent'] < 100) {
+            header('Location: index.php?section=onboarding&onboarding_required=1&password_set=1');
+        } else {
+            header('Location: index.php?section=my_profile&pwd_saved=1');
+        }
         exit;
     } else if ($action === 'save_staff_account') {
         $sId = (int)($_POST['id'] ?? 0);
@@ -2124,6 +2163,15 @@ if ($rawSection === null) {
     $activeSection = getUserFirstAllowedSection($userRole, $userEmail, $username);
 } else {
     $activeSection = $rawSection;
+}
+
+// Check Initial Password Setup Gatekeeper for Activated Accounts
+$mustChangePassword = !empty($_SESSION['must_change_password']) || isset($_GET['force_password_change']);
+if ($mustChangePassword) {
+    if (!in_array($activeSection, ['my_profile', 'profile', 'logout'], true)) {
+        header('Location: /admin/index.php?section=my_profile&force_password_change=1');
+        exit;
+    }
 }
 
 // Check Onboarding Completion Gatekeeper for Staff Members
@@ -6420,6 +6468,18 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                 </div>
 
                 <!-- Alert Banners -->
+                <?php if (isset($_GET['force_password_change']) || !empty($_SESSION['must_change_password'])): ?>
+                    <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-left: 4px solid #16a34a; padding: 18px 24px; border-radius: 14px; margin-bottom: 24px; color: #166534; font-size: 0.92rem; font-weight: 600; display: flex; align-items: center; gap: 14px; box-shadow: 0 4px 14px rgba(22, 163, 74, 0.1);">
+                        <div style="width: 44px; height: 44px; border-radius: 12px; background: #dcfce7; border: 1px solid #bbf7d0; display: flex; align-items: center; justify-content: center; color: #16a34a; font-size: 1.3rem; flex-shrink: 0;">
+                            <i class="fa-solid fa-key"></i>
+                        </div>
+                        <div>
+                            <strong style="color: #14532d; font-size: 1.02rem; display: block; margin-bottom: 2px;">Account Activated! Create Your Portal Password</strong>
+                            Congratulations, your account has been verified! Please set your new secure password below. Going forward, you will sign in using your official staff email (<code><?php echo htmlspecialchars($userEmail); ?></code>) and this password.
+                        </div>
+                    </div>
+                <?php endif; ?>
+
                 <?php if (isset($_GET['saved'])): ?>
                     <div style="background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; padding: 14px 20px; border-radius: 12px; font-weight: 700; font-size: 0.92rem; margin-bottom: 24px; display: flex; align-items: center; gap: 10px; box-shadow: 0 2px 6px rgba(0,0,0,0.02);">
                         <i class="fa-solid fa-circle-check" style="color: #22c55e; font-size: 1.1rem;"></i>
@@ -6551,19 +6611,21 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                             </div>
                         </div>
 
-                        <form action="index.php?section=profile" method="POST">
+                        <form action="index.php?section=my_profile" method="POST">
                             <input type="hidden" name="action" value="change_profile_password">
 
                             <div style="max-width: 540px;">
-                                <div class="form-field">
-                                    <label class="form-label-title">Current Password <span style="color: #ef4444;">*</span></label>
-                                    <div style="position: relative;">
-                                        <input type="password" id="current_pwd_input" name="current_password" required class="form-text-input" placeholder="Enter current password">
-                                        <button type="button" onclick="togglePasswordVisibility('current_pwd_input', this)" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #64748b; cursor: pointer;">
-                                            <i class="fa-regular fa-eye"></i>
-                                        </button>
+                                <?php if (!isset($_GET['force_password_change']) && empty($_SESSION['must_change_password'])): ?>
+                                    <div class="form-field">
+                                        <label class="form-label-title">Current Password <span style="color: #ef4444;">*</span></label>
+                                        <div style="position: relative;">
+                                            <input type="password" id="current_pwd_input" name="current_password" required class="form-text-input" placeholder="Enter current password">
+                                            <button type="button" onclick="togglePasswordVisibility('current_pwd_input', this)" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #64748b; cursor: pointer;">
+                                                <i class="fa-regular fa-eye"></i>
+                                            </button>
+                                        </div>
                                     </div>
-                                </div>
+                                <?php endif; ?>
 
                                 <div class="form-field" style="margin-top: 16px;">
                                     <label class="form-label-title">New Password <span style="color: #ef4444;">*</span></label>
@@ -6586,8 +6648,8 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                 </div>
 
                                 <div style="margin-top: 24px; padding-top: 20px; border-top: 1px solid #f1f5f9;">
-                                    <button type="submit" class="btn-save-primary" style="background-color: #0f172a; padding: 12px 28px;">
-                                        <i class="fa-solid fa-key"></i> Update Account Password
+                                    <button type="submit" class="btn-save-primary" style="background-color: #dc2626; padding: 12px 28px; font-weight: 800;">
+                                        <i class="fa-solid fa-key"></i> <?php echo (isset($_GET['force_password_change']) || !empty($_SESSION['must_change_password'])) ? 'Save & Set Password' : 'Update Account Password'; ?>
                                     </button>
                                 </div>
                             </div>
