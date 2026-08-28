@@ -2141,9 +2141,9 @@ function getUserOnboardingData($username) {
                 'account_name' => $empFullName
             ],
             'offer_letter' => [
-                'status' => 'Approved',
-                'accepted' => true,
-                'document_url' => '/assets/docs/Offer_Letter_Falhen.pdf',
+                'status' => 'Pending',
+                'accepted' => false,
+                'document_url' => '',
                 'currency' => 'NGN',
                 'job_title' => $empRole,
                 'salary' => '₦300,000 / month',
@@ -2153,10 +2153,10 @@ function getUserOnboardingData($username) {
                 'total_earnings' => '₦300,000'
             ],
             'employment_agreement' => [
-                'status' => 'Approved',
-                'signed' => true,
-                'signed_at' => '2026-07-03 10:00:00',
-                'document_url' => '/assets/docs/Employment_Agreement.pdf',
+                'status' => 'Pending',
+                'signed' => false,
+                'signed_at' => null,
+                'document_url' => '',
                 'supervisor_name' => $isMainAdmin ? 'Oluwatosin Ligali' : ($_SESSION['admin_full_name'] ?? $_SESSION['admin_name'] ?? 'Mojisola Emjay'),
                 'supervisor_role' => $isMainAdmin ? 'Admin' : ($_SESSION['admin_role'] ?? 'HR Manager'),
                 'work_location' => 'Remote',
@@ -2223,28 +2223,43 @@ function getOnboardingProgress($username) {
     $completedCount = 0;
     $totalTasks = 8;
 
-    if (($data['bank_details']['status'] ?? '') === 'Approved' || ($data['bank_details']['status'] ?? '') === 'Submitted' || !empty($data['bank_details']['account_number'])) {
+    // 1. Bank Details (Requires HR Approval)
+    if (($data['bank_details']['status'] ?? '') === 'Approved') {
         $completedCount++;
     }
-    if (!empty($data['offer_letter']['accepted']) || ($data['offer_letter']['status'] ?? '') === 'Approved') {
+
+    // 2. Offer Letter (Accepted & Approved)
+    if (($data['offer_letter']['status'] ?? '') === 'Approved' || (!empty($data['offer_letter']['accepted']) && ($data['offer_letter']['status'] ?? '') !== 'Rejected')) {
         $completedCount++;
     }
-    if (!empty($data['employment_agreement']['signed']) || ($data['employment_agreement']['status'] ?? '') === 'Approved') {
+
+    // 3. Employment Agreement (Signed & Approved)
+    if (($data['employment_agreement']['status'] ?? '') === 'Approved' || (!empty($data['employment_agreement']['signed']) && ($data['employment_agreement']['status'] ?? '') !== 'Rejected')) {
         $completedCount++;
     }
-    if (($data['reference_1']['status'] ?? '') === 'Approved' || ($data['reference_1']['status'] ?? '') === 'Submitted' || !empty($data['reference_1']['ref_name'])) {
+
+    // 4. Reference 1 (Requires HR Approval)
+    if (($data['reference_1']['status'] ?? '') === 'Approved') {
         $completedCount++;
     }
-    if (($data['reference_2']['status'] ?? '') === 'Approved' || ($data['reference_2']['status'] ?? '') === 'Submitted' || !empty($data['reference_2']['ref_name'])) {
+
+    // 5. Reference 2 (Requires HR Approval)
+    if (($data['reference_2']['status'] ?? '') === 'Approved') {
         $completedCount++;
     }
-    if (!empty($data['sop']['acknowledged']) || ($data['sop']['status'] ?? '') === 'Approved') {
+
+    // 6. Studio SOP (Acknowledged & Approved)
+    if (($data['sop']['status'] ?? '') === 'Approved' || (!empty($data['sop']['acknowledged']) && ($data['sop']['status'] ?? '') !== 'Rejected')) {
         $completedCount++;
     }
-    if (!empty($data['staff_handbook']['acknowledged']) || ($data['staff_handbook']['status'] ?? '') === 'Approved') {
+
+    // 7. Staff Handbook (Acknowledged & Approved)
+    if (($data['staff_handbook']['status'] ?? '') === 'Approved' || (!empty($data['staff_handbook']['acknowledged']) && ($data['staff_handbook']['status'] ?? '') !== 'Rejected')) {
         $completedCount++;
     }
-    if (!empty($data['id_verification']['file_url']) || ($data['id_verification']['status'] ?? '') === 'Approved' || ($data['id_verification']['status'] ?? '') === 'Submitted') {
+
+    // 8. ID Verification (Requires HR Approval)
+    if (($data['id_verification']['status'] ?? '') === 'Approved') {
         $completedCount++;
     }
 
