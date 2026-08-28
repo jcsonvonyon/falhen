@@ -1416,8 +1416,11 @@ function getStaffAccountById($id) {
  */
 function getStaffAccountByUsername($username) {
     $repo = getStaffAccountsRepo();
+    $uLower = strtolower(trim($username));
     foreach ($repo as $st) {
-        if (strtolower($st['username'] ?? '') === strtolower($username)) {
+        $stUser = strtolower(trim($st['username'] ?? ''));
+        $stEmail = strtolower(trim($st['email'] ?? ''));
+        if ($uLower === $stUser || $uLower === $stEmail) {
             return $st;
         }
     }
@@ -1425,17 +1428,23 @@ function getStaffAccountByUsername($username) {
 }
 
 /**
- * Update Staff Account Details By Username
+ * Update Staff Account Details By Username or Email
  */
 function saveStaffAccountByUsername($username, $data) {
     $settings = getSiteSettings();
     $items = $settings['staff_accounts'] ?? getStaffAccountsRepo();
     $updated = false;
 
+    $uLower = strtolower(trim($username));
+
     foreach ($items as &$st) {
-        if (strtolower($st['username'] ?? '') === strtolower($username)) {
+        $stUser = strtolower(trim($st['username'] ?? ''));
+        $stEmail = strtolower(trim($st['email'] ?? ''));
+        if ($uLower === $stUser || $uLower === $stEmail) {
             foreach ($data as $k => $v) {
-                $st[$k] = $v;
+                if ($v !== null) {
+                    $st[$k] = $v;
+                }
             }
             $updated = true;
             break;

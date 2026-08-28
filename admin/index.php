@@ -2029,7 +2029,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             saveStaffAccountByUsername('admin', $adminData);
             saveStaffAccountByUsername('oluwatosin.ligali', $adminData);
         } else {
-            saveStaffAccountByUsername($targetUser, [
+            $profileDataSave = [
                 'full_name'         => $fullName,
                 'email'             => $email,
                 'role'              => $role,
@@ -2041,12 +2041,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'phone'             => $phone,
                 'address'           => $address,
                 'location'          => $address
-            ]);
-            if (strtolower($username) === strtolower($targetUser)) {
-                $_SESSION['admin_full_name'] = $fullName;
-                $_SESSION['admin_avatar']    = $avatar;
-                $_SESSION['admin_role']      = $role;
+            ];
+            saveStaffAccountByUsername($targetUser, $profileDataSave);
+            if (!empty($email)) {
+                saveStaffAccountByUsername($email, $profileDataSave);
             }
+            if (!empty($username)) {
+                saveStaffAccountByUsername($username, $profileDataSave);
+            }
+
+            $_SESSION['admin_full_name'] = $fullName;
+            if (!empty($avatar)) {
+                $_SESSION['admin_avatar'] = $avatar;
+            }
+            $_SESSION['admin_role'] = $role;
+            $_SESSION['admin_alt_email'] = $altEmail;
         }
 
         header('Location: index.php?section=profile&target_user=' . urlencode($targetUser) . '&saved=1');
