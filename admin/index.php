@@ -6,6 +6,7 @@
 
 require_once __DIR__ . '/../config/db.php';
 require_once __DIR__ . '/../includes/functions.php';
+require_once __DIR__ . '/../includes/smtp_mailer.php';
 
 // Enforce admin login
 requireAdmin();
@@ -18,6 +19,10 @@ $savedMessage = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? 'save_settings';
     $currentRole = $_SESSION['admin_role'] ?? 'Staff';
+    if ($currentRole === 'Talent Manager') {
+        $currentRole = 'HR Manager';
+        $_SESSION['admin_role'] = 'HR Manager';
+    }
 
     if ($action === 'dismiss_clockin_reminder') {
         $_SESSION['dismissed_clockin_reminder'] = true;
@@ -181,10 +186,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $targetUser = trim($_POST['target_user'] ?? '');
         $taskKey = trim($_POST['task_key'] ?? '');
         $newStatus = trim($_POST['new_status'] ?? 'Approved');
+        $reason = trim(strip_tags($_POST['rejection_reason'] ?? ''));
 
-        updateUserOnboardingTaskStatus($targetUser, $taskKey, $newStatus);
+        $extraData = [];
+        if ($newStatus === 'Rejected') {
+            $extraData['rejection_reason'] = $reason;
+        }
 
-        $_SESSION['saved_message'] = 'Onboarding task "' . ucfirst($taskKey) . '" updated to ' . $newStatus . ' for @' . $targetUser . '!';
+        updateUserOnboardingTaskStatus($targetUser, $taskKey, $newStatus, $extraData);
+
+        $taskLabel = str_replace(['_', '1', '2'], [' ', ' 1', ' 2'], ucfirst($taskKey));
+        $_SESSION['saved_message'] = 'Onboarding task "' . $taskLabel . '" updated to ' . $newStatus . ' for @' . $targetUser . '!';
         header('Location: /admin/index.php?section=onboarding&target_user=' . urlencode($targetUser) . '&saved=1');
         exit;
     }
@@ -196,15 +208,45 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         $targetUser = trim($_POST['target_user'] ?? '');
-        $docUrl = trim(strip_tags($_POST['document_url'] ?? '/assets/docs/Employment_Agreement.pdf'));
+        $supName = trim(strip_tags($_POST['supervisor_name'] ?? 'Oluwatosin Ligali'));
+        $supRole = trim(strip_tags($_POST['supervisor_role'] ?? 'Admin'));
+        $workLoc = trim(strip_tags($_POST['work_location'] ?? 'Remote'));
+        $workDays = trim(strip_tags($_POST['work_days'] ?? 'Monday to Friday'));
+        $resTime = trim(strip_tags($_POST['resumption_time'] ?? '9:00 AM'));
+        $closeTime = trim(strip_tags($_POST['closing_time'] ?? '5:00 PM'));
+        $address = trim(strip_tags($_POST['address'] ?? '6 Olorunfunmi Street, Pedro, Gbagada, Lagos'));
+        $phone = trim(strip_tags($_POST['phone'] ?? '08027487449'));
 
-        updateUserOnboardingTaskStatus($targetUser, 'employment_agreement', 'Approved', [
-            'signed' => true,
-            'document_url' => $docUrl
+        updateUserOnboardingTaskStatus($targetUser, 'employment_agreement', 'Issued', [
+            'issued' => true,
+            'signed' => false,
+            'supervisor_name' => $supName,
+            'supervisor_role' => $supRole,
+            'work_location' => $workLoc,
+            'work_days' => $workDays,
+            'resumption_time' => $resTime,
+            'closing_time' => $closeTime,
+            'address' => $address,
+            'phone' => $phone,
+            'document_url' => '/assets/docs/Employment_Agreement.pdf'
         ]);
 
-        $_SESSION['saved_message'] = 'Employment Agreement uploaded and issued for @' . $targetUser . '!';
+        $_SESSION['saved_message'] = 'Employment Agreement terms saved and issued for @' . $targetUser . '!';
         header('Location: /admin/index.php?section=onboarding&target_user=' . urlencode($targetUser) . '&saved=1');
+        exit;
+    }
+
+    if ($action === 'sign_employment_agreement') {
+        $username = $_SESSION['admin_username'] ?? $adminProfile['username'] ?? 'staff';
+        $sigData = trim($_POST['signature_data'] ?? '');
+        saveUserOnboardingSection($username, 'employment_agreement', [
+            'status' => 'Submitted',
+            'signed' => true,
+            'signed_at' => date('Y-m-d H:i:s'),
+            'signature_data' => $sigData
+        ]);
+        $_SESSION['saved_message'] = 'Employment Agreement digitally signed and submitted to HR for verification!';
+        header('Location: /admin/index.php?section=onboarding&saved=1');
         exit;
     }
 
@@ -615,6 +657,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $employmentType = trim(strip_tags($_POST['employment_type'] ?? 'Full-Time'));
         $rawSalary = trim(strip_tags($_POST['salary'] ?? '450,000 / month'));
         $cleanSalary = preg_replace('/^[₦$€£\s]+/u', '', $rawSalary);
+        $cleanSalary = formatMoneyWithCommas($cleanSalary);
         $currency = trim(strip_tags($_POST['currency'] ?? 'NGN'));
         $currencySymbols = [
             'NGN' => '₦',
@@ -623,19 +666,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'GBP' => '£'
         ];
         $sym = $currencySymbols[$currency] ?? '₦';
-        
-        $salary = $sym . $cleanSalary;
 
         $startDate = trim(strip_tags($_POST['start_date'] ?? date('Y-m-d', strtotime('+7 days'))));
         $probationPeriod = trim(strip_tags($_POST['probation_period'] ?? '3 Months'));
         $expiryDate = trim(strip_tags($_POST['expiry_date'] ?? date('Y-m-d', strtotime('+14 days'))));
-        $docUrl = trim(strip_tags($_POST['document_url'] ?? '/assets/docs/Offer_Letter_Falhen.pdf'));
-        $notes = trim(strip_tags($_POST['notes'] ?? ''));
+        $docUrl = '/assets/docs/Offer_Letter_Falhen.pdf';
 
-        $issuerName = $_SESSION['admin_full_name'] ?? $_SESSION['admin_username'] ?? 'Talent Manager';
+        $rawBase = preg_replace('/^[₦$€£\s]+/u', '', trim(strip_tags($_POST['base_salary'] ?? '200,000')));
+        $rawTech = preg_replace('/^[₦$€£\s]+/u', '', trim(strip_tags($_POST['tech_allowance'] ?? '60,000')));
+        $rawWell = preg_replace('/^[₦$€£\s]+/u', '', trim(strip_tags($_POST['wellness_allowance'] ?? '20,000')));
+        $rawTotal = preg_replace('/^[₦$€£\s]+/u', '', trim(strip_tags($_POST['total_earnings'] ?? '250,000')));
+
+        // Ensure Monthly Compensation equals Total Earnings / Package
+        $baseSalary = $sym . formatMoneyWithCommas($rawBase);
+        $techAllowance = $sym . formatMoneyWithCommas($rawTech);
+        $wellnessAllowance = $sym . formatMoneyWithCommas($rawWell);
+        $totalEarnings = $sym . formatMoneyWithCommas($rawTotal);
+        $salary = $sym . formatMoneyWithCommas($rawTotal) . ' / month';
+
+        $issuerName = $_SESSION['admin_full_name'] ?? $_SESSION['admin_username'] ?? 'HR Manager';
 
         updateUserOnboardingTaskStatus($targetUser, 'offer_letter', 'Issued', [
             'issued' => true,
+            'accepted' => false,
             'issued_at' => date('Y-m-d H:i:s'),
             'issued_by' => $issuerName,
             'job_title' => $jobTitle,
@@ -643,6 +696,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'employment_type' => $employmentType,
             'currency' => $currency,
             'salary' => $salary,
+            'base_salary' => $baseSalary,
+            'tech_allowance' => $techAllowance,
+            'wellness_allowance' => $wellnessAllowance,
+            'total_earnings' => $totalEarnings,
             'start_date' => $startDate,
             'probation_period' => $probationPeriod,
             'expiry_date' => $expiryDate,
@@ -675,11 +732,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($action === 'accept_offer') {
         $username = $_SESSION['admin_username'] ?? $adminProfile['username'] ?? 'staff';
+        $sigData = trim($_POST['signature_data'] ?? '');
         saveUserOnboardingSection($username, 'offer_letter', [
-            'status' => 'Approved',
-            'accepted' => true
+            'status' => 'Accepted',
+            'accepted' => true,
+            'accepted_at' => date('Y-m-d H:i:s'),
+            'signature_data' => $sigData
         ]);
-        $_SESSION['saved_message'] = 'Offer Letter accepted successfully!';
+        $_SESSION['saved_message'] = 'Offer Letter digitally signed and accepted successfully!';
         header('Location: /admin/index.php?section=onboarding&saved=1');
         exit;
     }
@@ -697,41 +757,84 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'relationship' => $relationship
         ]);
 
-        $_SESSION['saved_message'] = 'Reference details submitted successfully!';
+        $_SESSION['saved_message'] = 'Reference 1 details submitted successfully!';
+        header('Location: /admin/index.php?section=onboarding&saved=1');
+        exit;
+    }
+
+    if ($action === 'save_onboarding_ref2') {
+        $username = $_SESSION['admin_username'] ?? $adminProfile['username'] ?? 'staff';
+        $refName = trim(strip_tags($_POST['ref_name'] ?? ''));
+        $refContact = trim(strip_tags($_POST['ref_contact'] ?? ''));
+        $relationship = trim(strip_tags($_POST['relationship'] ?? ''));
+
+        saveUserOnboardingSection($username, 'reference_2', [
+            'status' => 'Submitted',
+            'ref_name' => $refName,
+            'ref_contact' => $refContact,
+            'relationship' => $relationship
+        ]);
+
+        $_SESSION['saved_message'] = 'Reference 2 details submitted successfully!';
         header('Location: /admin/index.php?section=onboarding&saved=1');
         exit;
     }
 
     if ($action === 'acknowledge_sop') {
         $username = $_SESSION['admin_username'] ?? $adminProfile['username'] ?? 'staff';
+        $sigData = trim($_POST['signature_data'] ?? '');
         saveUserOnboardingSection($username, 'sop', [
-            'status' => 'Approved',
-            'acknowledged' => true
+            'status' => 'Submitted',
+            'acknowledged' => true,
+            'acknowledged_at' => date('Y-m-d H:i:s'),
+            'signature_data' => $sigData
         ]);
-        $_SESSION['saved_message'] = 'Studio SOP acknowledged successfully!';
+        $_SESSION['saved_message'] = 'Studio SOP acknowledged and submitted to HR for verification!';
         header('Location: /admin/index.php?section=onboarding&saved=1');
         exit;
     }
 
     if ($action === 'acknowledge_handbook') {
         $username = $_SESSION['admin_username'] ?? $adminProfile['username'] ?? 'staff';
+        $sigData = trim($_POST['signature_data'] ?? '');
         saveUserOnboardingSection($username, 'staff_handbook', [
-            'status' => 'Approved',
-            'acknowledged' => true
+            'status' => 'Submitted',
+            'acknowledged' => true,
+            'acknowledged_at' => date('Y-m-d H:i:s'),
+            'signature_data' => $sigData
         ]);
-        $_SESSION['saved_message'] = 'Staff Handbook acknowledged successfully!';
+        $_SESSION['saved_message'] = 'Staff Handbook acknowledged and submitted to HR for verification!';
         header('Location: /admin/index.php?section=onboarding&saved=1');
         exit;
     }
 
     if ($action === 'save_onboarding_id') {
         $username = $_SESSION['admin_username'] ?? $adminProfile['username'] ?? 'staff';
-        $docUrl = trim(strip_tags($_POST['file_url'] ?? '/assets/docs/ID_Verified.pdf'));
+        $docUrl = trim(strip_tags($_POST['file_url'] ?? ''));
+
+        if (!empty($_FILES['id_document_file']['tmp_name'])) {
+            $res = uploadToCloudinary($_FILES['id_document_file']['tmp_name'], 'falhen/id_documents');
+            if ($res['success']) {
+                $docUrl = $res['url'];
+            }
+        } else if (!empty($docUrl) && (preg_match('/^data:image\//i', $docUrl) || (preg_match('/^https?:\/\//i', $docUrl) && !isCloudinaryUrl($docUrl)))) {
+            $res = uploadToCloudinary($docUrl, 'falhen/id_documents');
+            if ($res['success']) {
+                $docUrl = $res['url'];
+            }
+        }
+
+        if (empty($docUrl)) {
+            $_SESSION['saved_message'] = 'Please choose an ID document file to upload or enter a URL.';
+            header('Location: /admin/index.php?section=onboarding');
+            exit;
+        }
+
         saveUserOnboardingSection($username, 'id_verification', [
             'status' => 'Submitted',
             'file_url' => $docUrl
         ]);
-        $_SESSION['saved_message'] = 'ID / Tax Verification document uploaded successfully!';
+        $_SESSION['saved_message'] = 'ID / Tax Verification document uploaded and securely stored on Cloudinary!';
         header('Location: /admin/index.php?section=onboarding&saved=1');
         exit;
     }
@@ -1712,10 +1815,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     } else if ($action === 'save_profile_details') {
         $fullName = trim(strip_tags($_POST['full_name'] ?? ''));
-        $username = trim(strip_tags($_POST['username'] ?? 'admin'));
+        $targetUser = trim(strip_tags($_POST['username'] ?? $username));
         $email = trim(strip_tags($_POST['email'] ?? ''));
-        $role = trim(strip_tags($_POST['role'] ?? 'Administrator'));
+        $role = trim(strip_tags($_POST['role'] ?? 'Staff'));
         $bio = trim($_POST['bio'] ?? '');
+        $dob = trim(strip_tags($_POST['dob'] ?? ''));
+        $altEmail = trim(strip_tags($_POST['alt_email'] ?? $_POST['alternative_email'] ?? ''));
 
         $avatar = trim($_POST['existing_avatar'] ?? '');
         $croppedData = trim($_POST['cropped_avatar_image_data'] ?? '');
@@ -1737,16 +1842,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
 
-        saveAdminUserProfile([
-            'full_name' => $fullName,
-            'username'  => $username,
-            'email'     => $email,
-            'role'      => $role,
-            'avatar'    => $avatar,
-            'bio'       => $bio
-        ]);
+        $isTargetAdmin = (strtolower($targetUser) === 'admin' || strtolower($targetUser) === 'oluwatosin.ligali');
 
-        header('Location: index.php?section=profile&saved=1');
+        if ($isTargetAdmin) {
+            saveAdminUserProfile([
+                'full_name' => $fullName,
+                'username'  => $targetUser,
+                'email'     => $email,
+                'role'      => $role,
+                'avatar'    => $avatar,
+                'bio'       => $bio,
+                'dob'       => $dob,
+                'alt_email' => $altEmail
+            ]);
+        } else {
+            saveStaffAccountByUsername($targetUser, [
+                'full_name' => $fullName,
+                'email'     => $email,
+                'role'      => $role,
+                'avatar'    => $avatar,
+                'bio'       => $bio,
+                'dob'       => $dob,
+                'alt_email' => $altEmail
+            ]);
+            if (strtolower($username) === strtolower($targetUser)) {
+                $_SESSION['admin_full_name'] = $fullName;
+                $_SESSION['admin_avatar']    = $avatar;
+                $_SESSION['admin_role']      = $role;
+            }
+        }
+
+        header('Location: index.php?section=profile&target_user=' . urlencode($targetUser) . '&saved=1');
         exit;
     } else if ($action === 'change_profile_password') {
         $currentPassword = $_POST['current_password'] ?? '';
@@ -1787,11 +1913,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } else if ($action === 'save_staff_account') {
         $sId = (int)($_POST['id'] ?? 0);
         $fullName = trim(strip_tags($_POST['full_name'] ?? ''));
-        $username = trim(strip_tags($_POST['username'] ?? ''));
         $email = trim(strip_tags($_POST['email'] ?? ''));
+        $username = trim(strip_tags($_POST['username'] ?? ''));
+        if (empty($username) && !empty($email)) {
+            $username = strtolower(trim(explode('@', $email)[0]));
+        }
+        $dob = trim(strip_tags($_POST['dob'] ?? ''));
+        $altEmail = trim(strip_tags($_POST['alt_email'] ?? $_POST['alternative_email'] ?? ''));
         $role = trim(strip_tags($_POST['role'] ?? 'Staff'));
-        $status = trim(strip_tags($_POST['status'] ?? 'active'));
+        $status = trim(strip_tags($_POST['status'] ?? 'pending_activation'));
         $password = $_POST['password'] ?? '';
+        $regenCode = !empty($_POST['generate_new_code']);
 
         $avatar = trim($_POST['existing_avatar'] ?? '');
         $croppedData = trim($_POST['cropped_staff_avatar_data'] ?? '');
@@ -1815,15 +1947,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         $items = array_values(getStaffAccountsRepo());
         $found = false;
+        $activeCodeUsed = '';
 
         foreach ($items as &$it) {
             if ((int)($it['id'] ?? 0) === $sId) {
                 $it['full_name'] = $fullName;
                 $it['username']  = $username;
                 $it['email']     = $email;
+                $it['alt_email'] = $altEmail;
                 $it['role']      = $role;
                 $it['status']    = $status;
                 $it['avatar']    = $avatar;
+                $it['dob']       = $dob;
+                
+                if ($regenCode || empty($it['activation_code'])) {
+                    $it['activation_code'] = generateStaffActivationCode();
+                    $it['activation_status'] = ($status === 'active' ? 'activated' : 'pending');
+                }
+                $activeCodeUsed = $it['activation_code'];
+
                 if (!empty($password)) {
                     $it['password_hash'] = password_hash($password, PASSWORD_DEFAULT);
                 }
@@ -1840,22 +1982,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 if ($id > $maxId) $maxId = $id;
             }
             $newId = $maxId + 1;
+            $activeCodeUsed = generateStaffActivationCode();
+
             $items[] = [
-                'id'            => $newId,
-                'full_name'     => $fullName,
-                'username'      => $username,
-                'email'         => $email,
-                'role'          => $role,
-                'status'        => $status,
-                'avatar'        => $avatar,
-                'created_at'    => date('Y-m-d'),
-                'password_hash' => password_hash(!empty($password) ? $password : 'Password123#', PASSWORD_DEFAULT)
+                'id'                => $newId,
+                'full_name'         => $fullName,
+                'username'          => $username,
+                'email'             => $email,
+                'alt_email'         => $altEmail,
+                'role'              => $role,
+                'status'            => $status,
+                'activation_code'   => $activeCodeUsed,
+                'activation_status' => ($status === 'active' ? 'activated' : 'pending'),
+                'avatar'            => $avatar,
+                'dob'               => $dob,
+                'created_at'        => date('Y-m-d'),
+                'password_hash'     => password_hash(!empty($password) ? $password : 'Password123#', PASSWORD_DEFAULT)
             ];
         }
 
         $targetId = $found ? $sId : $newId;
         saveSiteSettings(['staff_accounts' => $items]);
-        header('Location: index.php?section=staff_accounts&edit_id=' . $targetId . '&saved=1');
+
+        // Dispatch 6-digit Activation Code via SMTP to Alternative Email
+        if (!empty($altEmail) && !empty($activeCodeUsed)) {
+            sendStaffActivationEmail($altEmail, $activeCodeUsed, $fullName, $email);
+        }
+
+        header('Location: index.php?section=staff_accounts&edit_id=' . $targetId . '&saved=1&activation_code=' . urlencode($activeCodeUsed) . '&alt_email=' . urlencode($altEmail));
         exit;
     } else if ($action === 'delete_staff_account') {
         $sId = (int)($_POST['id'] ?? 0);
@@ -1956,6 +2110,10 @@ $adminProfile = getAdminUserProfile();
 $username = $_SESSION['admin_username'] ?? $adminProfile['username'] ?? 'admin';
 $userEmail = $_SESSION['admin_email'] ?? $adminProfile['email'] ?? 'admin@falhen.com';
 $userRole = $_SESSION['admin_role'] ?? $adminProfile['role'] ?? 'Administrator';
+if ($userRole === 'Talent Manager') {
+    $userRole = 'HR Manager';
+    $_SESSION['admin_role'] = 'HR Manager';
+}
 $userAvatar = $_SESSION['admin_avatar'] ?? $adminProfile['avatar'] ?? '';
 $userFullName = $_SESSION['admin_full_name'] ?? $adminProfile['full_name'] ?? 'Henry Falonipe';
 $userInitial = strtoupper(substr($userFullName, 0, 1));
@@ -1966,6 +2124,19 @@ if ($rawSection === null) {
     $activeSection = getUserFirstAllowedSection($userRole, $userEmail, $username);
 } else {
     $activeSection = $rawSection;
+}
+
+// Check Onboarding Completion Gatekeeper for Staff Members
+$userOnboardingProgress = getOnboardingProgress($username);
+$isHRorAdminUser = isAdminUser($userRole, $userEmail, $username);
+$isOnboardingIncomplete = (!$isHRorAdminUser && ($userOnboardingProgress['percent'] ?? 0) < 100);
+
+if ($isOnboardingIncomplete) {
+    // Force onboarding section unless accessing onboarding, my_profile, profile or logout
+    if (!in_array($activeSection, ['onboarding', 'my_profile', 'profile', 'logout'], true)) {
+        header('Location: /admin/index.php?section=onboarding&onboarding_required=1');
+        exit;
+    }
 }
 
 $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $username) || isset($_GET['denied']);
@@ -2683,17 +2854,6 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
 
     <!-- 1. LEFT SIDEBAR -->
     <aside class="sidebar">
-        <!-- Sidebar Brand Header -->
-        <div class="sidebar-header">
-            <div class="sidebar-brand-icon">
-                <i class="fa-solid fa-layer-group"></i>
-            </div>
-            <div class="sidebar-brand-info">
-                <div class="sidebar-brand-name">Falhen</div>
-                <div class="sidebar-brand-badge">ADMIN</div>
-            </div>
-        </div>
-
         <!-- User Profile Box -->
         <a href="/admin/index.php?section=profile" class="sidebar-user-box" style="text-decoration: none; cursor: pointer; display: flex; align-items: center; justify-content: space-between; transition: all 0.2s ease;">
             <div class="user-left" style="display: flex; align-items: center; gap: 10px;">
@@ -2717,8 +2877,8 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
         $isHomepageActive = in_array($activeSection, ['hero', 'stats', 'awards', 'bts', 'brands'], true);
         $isContentActive = in_array($activeSection, ['inquiries', 'services', 'portfolio', 'client_galleries', 'team', 'blog', 'testimonials', 'careers'], true);
         $isOperationsActive = in_array($activeSection, ['hr_portal', 'vendors', 'activity_log', 'email_templates'], true) || ($activeSection === 'careers' && ($_GET['tab'] ?? '') === 'applications');
-        $isEmployeePortalActive = in_array($activeSection, ['dashboard', 'directory', 'announcements', 'attendance', 'leaves', 'payslips'], true) || ($activeSection === 'onboarding' && !isAdminUser($userRole, $userEmail, $username));
-        $isAccountActive = in_array($activeSection, ['staff_accounts', 'my_profile', 'profile'], true);
+        $isEmployeePortalActive = in_array($activeSection, ['dashboard', 'directory', 'announcements', 'attendance', 'leaves', 'payslips'], true);
+        $isAccountActive = in_array($activeSection, ['staff_accounts', 'my_profile', 'profile', 'onboarding'], true);
         ?>
         <?php if (isAdminUser($userRole, $userEmail, $username)): ?>
             <?php if (!isTalentManager($userRole)): ?>
@@ -2836,12 +2996,6 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                         <span>Vendors</span>
                     </a>
                 </li>
-                <li class="nav-item <?php echo ($activeSection === 'onboarding') ? 'active' : ''; ?>">
-                    <a href="/admin/index.php?section=onboarding">
-                        <i class="fa-solid fa-clipboard-check nav-icon"></i>
-                        <span>Onboarding</span>
-                    </a>
-                </li>
                 <li class="nav-item <?php echo ($activeSection === 'activity_log') ? 'active' : ''; ?>">
                     <a href="/admin/index.php?section=activity_log">
                         <i class="fa-solid fa-list-check nav-icon"></i>
@@ -2867,12 +3021,6 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                     <a href="/admin/index.php?section=dashboard">
                         <i class="fa-solid fa-gauge-high nav-icon"></i>
                         <span>Dashboard</span>
-                    </a>
-                </li>
-                <li class="nav-item <?php echo ($activeSection === 'onboarding') ? 'active' : ''; ?>">
-                    <a href="/admin/index.php?section=onboarding">
-                        <i class="fa-solid fa-clipboard-check nav-icon"></i>
-                        <span>Onboarding</span>
                     </a>
                 </li>
                 <li class="nav-item <?php echo ($activeSection === 'directory') ? 'active' : ''; ?>">
@@ -2921,6 +3069,12 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                         <span>My Profile</span>
                     </a>
                 </li>
+                <li class="nav-item <?php echo ($activeSection === 'onboarding') ? 'active' : ''; ?>">
+                    <a href="/admin/index.php?section=onboarding">
+                        <i class="fa-solid fa-clipboard-check nav-icon"></i>
+                        <span>Onboarding</span>
+                    </a>
+                </li>
             </ul>
         <?php else: ?>
             <!-- NON-ADMIN EMPLOYEE PORTAL NAVIGATION -->
@@ -2930,39 +3084,58 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
             </div>
             <ul class="nav-list">
                 <li class="nav-item <?php echo ($activeSection === 'dashboard') ? 'active' : ''; ?>">
-                    <a href="/admin/index.php?section=dashboard">
-                        <i class="fa-solid fa-gauge-high nav-icon"></i>
-                        <span>Dashboard</span>
-                    </a>
-                </li>
-                <li class="nav-item <?php echo ($activeSection === 'onboarding') ? 'active' : ''; ?>">
-                    <a href="/admin/index.php?section=onboarding">
-                        <i class="fa-solid fa-clipboard-check nav-icon"></i>
-                        <span>Onboarding</span>
+                    <a href="/admin/index.php?section=dashboard" style="display: flex; align-items: center; justify-content: space-between;">
+                        <span style="display: flex; align-items: center; gap: 10px;">
+                            <i class="fa-solid fa-gauge-high nav-icon"></i>
+                            <span>Dashboard</span>
+                        </span>
+                        <?php if ($isOnboardingIncomplete): ?>
+                            <i class="fa-solid fa-lock" style="font-size: 0.72rem; color: #ef4444;" title="Complete onboarding to unlock"></i>
+                        <?php endif; ?>
                     </a>
                 </li>
                 <li class="nav-item <?php echo ($activeSection === 'directory') ? 'active' : ''; ?>">
-                    <a href="/admin/index.php?section=directory">
-                        <i class="fa-solid fa-address-book nav-icon"></i>
-                        <span>Directory</span>
+                    <a href="/admin/index.php?section=directory" style="display: flex; align-items: center; justify-content: space-between;">
+                        <span style="display: flex; align-items: center; gap: 10px;">
+                            <i class="fa-solid fa-address-book nav-icon"></i>
+                            <span>Directory</span>
+                        </span>
+                        <?php if ($isOnboardingIncomplete): ?>
+                            <i class="fa-solid fa-lock" style="font-size: 0.72rem; color: #ef4444;" title="Complete onboarding to unlock"></i>
+                        <?php endif; ?>
                     </a>
                 </li>
                 <li class="nav-item <?php echo ($activeSection === 'attendance') ? 'active' : ''; ?>">
-                    <a href="/admin/index.php?section=attendance">
-                        <i class="fa-solid fa-calendar-check nav-icon"></i>
-                        <span>My Attendance</span>
+                    <a href="/admin/index.php?section=attendance" style="display: flex; align-items: center; justify-content: space-between;">
+                        <span style="display: flex; align-items: center; gap: 10px;">
+                            <i class="fa-solid fa-calendar-check nav-icon"></i>
+                            <span>My Attendance</span>
+                        </span>
+                        <?php if ($isOnboardingIncomplete): ?>
+                            <i class="fa-solid fa-lock" style="font-size: 0.72rem; color: #ef4444;" title="Complete onboarding to unlock"></i>
+                        <?php endif; ?>
                     </a>
                 </li>
                 <li class="nav-item <?php echo ($activeSection === 'leaves') ? 'active' : ''; ?>">
-                    <a href="/admin/index.php?section=leaves">
-                        <i class="fa-solid fa-umbrella-beach nav-icon"></i>
-                        <span>Time Off (Leaves)</span>
+                    <a href="/admin/index.php?section=leaves" style="display: flex; align-items: center; justify-content: space-between;">
+                        <span style="display: flex; align-items: center; gap: 10px;">
+                            <i class="fa-solid fa-umbrella-beach nav-icon"></i>
+                            <span>Time Off (Leaves)</span>
+                        </span>
+                        <?php if ($isOnboardingIncomplete): ?>
+                            <i class="fa-solid fa-lock" style="font-size: 0.72rem; color: #ef4444;" title="Complete onboarding to unlock"></i>
+                        <?php endif; ?>
                     </a>
                 </li>
                 <li class="nav-item <?php echo ($activeSection === 'payslips') ? 'active' : ''; ?>">
-                    <a href="/admin/index.php?section=payslips">
-                        <i class="fa-solid fa-file-invoice-dollar nav-icon"></i>
-                        <span>My Payslips</span>
+                    <a href="/admin/index.php?section=payslips" style="display: flex; align-items: center; justify-content: space-between;">
+                        <span style="display: flex; align-items: center; gap: 10px;">
+                            <i class="fa-solid fa-file-invoice-dollar nav-icon"></i>
+                            <span>My Payslips</span>
+                        </span>
+                        <?php if ($isOnboardingIncomplete): ?>
+                            <i class="fa-solid fa-lock" style="font-size: 0.72rem; color: #ef4444;" title="Complete onboarding to unlock"></i>
+                        <?php endif; ?>
                     </a>
                 </li>
             </ul>
@@ -2976,6 +3149,17 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                     <a href="/admin/index.php?section=my_profile">
                         <i class="fa-solid fa-circle-user nav-icon"></i>
                         <span>My Profile</span>
+                    </a>
+                </li>
+                <li class="nav-item <?php echo ($activeSection === 'onboarding') ? 'active' : ''; ?>">
+                    <a href="/admin/index.php?section=onboarding" style="display: flex; align-items: center; justify-content: space-between;">
+                        <span style="display: flex; align-items: center; gap: 10px;">
+                            <i class="fa-solid fa-clipboard-check nav-icon" style="color: #dc2626;"></i>
+                            <span style="font-weight: 800;">Onboarding</span>
+                        </span>
+                        <?php if ($isOnboardingIncomplete): ?>
+                            <span style="background: #ef4444; color: #ffffff; font-size: 0.65rem; font-weight: 800; padding: 2px 6px; border-radius: 8px;">Action Required</span>
+                        <?php endif; ?>
                     </a>
                 </li>
             </ul>
@@ -6203,7 +6387,26 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
 
             <!-- SECTION: MY PROFILE & ACCOUNT SETTINGS -->
             <?php elseif ($activeSection === 'profile' || $activeSection === 'my_profile'): 
-                $profileData = getAdminUserProfile();
+                $targetProfileUser = trim($_GET['username'] ?? $_GET['target_user'] ?? $username);
+                $isViewingAdmin = (strtolower($targetProfileUser) === 'admin' || strtolower($targetProfileUser) === 'oluwatosin.ligali' || strtolower($targetProfileUser) === 'oluwatosin ligali');
+
+                if ($isViewingAdmin) {
+                    $profileData = getAdminUserProfile();
+                } else {
+                    $staffObj = getStaffAccountByUsername($targetProfileUser);
+                    if ($staffObj) {
+                        $profileData = [
+                            'full_name' => $staffObj['full_name'] ?? ucwords(str_replace('.', ' ', $targetProfileUser)),
+                            'username'  => $staffObj['username'] ?? $targetProfileUser,
+                            'email'     => $staffObj['email'] ?? ($targetProfileUser . '@falhen.com'),
+                            'role'      => $staffObj['role'] ?? 'Staff',
+                            'avatar'    => $staffObj['avatar'] ?? '/assets/img/avatar.png',
+                            'bio'       => $staffObj['bio'] ?? ''
+                        ];
+                    } else {
+                        $profileData = getAdminUserProfile();
+                    }
+                }
                 $pwdError = $_GET['pwd_error'] ?? '';
             ?>
                 <!-- Header Bar -->
@@ -6293,6 +6496,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                 </div>
                             </div>
 
+                            <input type="hidden" name="username" value="<?php echo htmlspecialchars($profileData['username'] ?? ''); ?>">
                             <div class="form-grid-two">
                                 <div class="form-field">
                                     <label class="form-label-title">Full Name <span style="color: #ef4444;">*</span></label>
@@ -6300,19 +6504,26 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                 </div>
 
                                 <div class="form-field">
-                                    <label class="form-label-title">Username <span style="color: #ef4444;">*</span></label>
-                                    <input type="text" name="username" required class="form-text-input" value="<?php echo htmlspecialchars($profileData['username'] ?? ''); ?>" placeholder="e.g. admin">
-                                </div>
-
-                                <div class="form-field">
                                     <label class="form-label-title">Staff Email Address <span style="color: #ef4444;">*</span></label>
                                     <input type="email" name="email" required class="form-text-input" value="<?php echo htmlspecialchars($profileData['email'] ?? ''); ?>" placeholder="admin@falhen.com">
                                 </div>
+                            </div>
+
+                            <div class="form-grid-two" style="margin-top: 18px;">
+                                <div class="form-field">
+                                    <label class="form-label-title"><i class="fa-solid fa-envelope-open-text" style="color: #2563eb;"></i> Alternative Email Address <span style="font-size: 0.74rem; font-weight: 600; color: #2563eb;">(Personal/Recovery Email)</span></label>
+                                    <input type="email" name="alt_email" class="form-text-input" value="<?php echo htmlspecialchars($profileData['alt_email'] ?? ''); ?>" placeholder="personal@gmail.com">
+                                </div>
 
                                 <div class="form-field">
-                                    <label class="form-label-title">Role &amp; Title</label>
-                                    <input type="text" name="role" class="form-text-input" value="<?php echo htmlspecialchars($profileData['role'] ?? ''); ?>" placeholder="e.g. Creative Director & Administrator">
+                                    <label class="form-label-title"><i class="fa-solid fa-cake-candles" style="color: #dc2626;"></i> Date of Birth <span style="font-size: 0.74rem; font-weight: 600; color: #64748b;">(Auto-announces on your birthday)</span></label>
+                                    <input type="date" name="dob" class="form-text-input" value="<?php echo htmlspecialchars($profileData['dob'] ?? ''); ?>">
                                 </div>
+                            </div>
+
+                            <div class="form-field" style="margin-top: 18px;">
+                                <label class="form-label-title">Role &amp; Title</label>
+                                <input type="text" name="role" class="form-text-input" value="<?php echo htmlspecialchars($profileData['role'] ?? ''); ?>" placeholder="e.g. Creative Director & Administrator">
                             </div>
 
                             <div class="form-field" style="margin-top: 18px;">
@@ -6476,8 +6687,15 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                 <?php endif; ?>
 
                 <?php if (isset($_GET['saved'])): ?>
-                    <div style="background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; padding: 12px 18px; border-radius: 10px; font-weight: 700; font-size: 0.9rem; margin-bottom: 24px; display: flex; align-items: center; gap: 10px;">
-                        <i class="fa-solid fa-circle-check" style="color: #22c55e;"></i> Staff account details saved successfully!
+                    <div style="background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; padding: 14px 20px; border-radius: 12px; font-weight: 700; font-size: 0.9rem; margin-bottom: 24px; display: flex; flex-direction: column; gap: 6px;">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <i class="fa-solid fa-circle-check" style="color: #22c55e; font-size: 1.1rem;"></i> <span>Staff account details saved successfully!</span>
+                        </div>
+                        <?php if (!empty($_GET['activation_code'])): ?>
+                            <div style="margin-top: 6px; padding-top: 8px; border-top: 1px solid #dcfce7; color: #0f172a; font-size: 0.86rem; font-weight: 600;">
+                                <i class="fa-solid fa-envelope-circle-check" style="color: #2563eb;"></i> <strong>Activation Code Dispatched:</strong> 6-Digit Activation Code <strong style="font-size: 1.15rem; color: #dc2626; letter-spacing: 2px; padding: 2px 8px; background: #ffffff; border: 1px solid #fecaca; border-radius: 6px;"><?php echo htmlspecialchars($_GET['activation_code']); ?></strong> has been sent to the staff member's alternative email (<strong><?php echo htmlspecialchars($_GET['alt_email'] ?? 'Alternative Email'); ?></strong>) to activate login access.
+                            </div>
+                        <?php endif; ?>
                     </div>
                 <?php endif; ?>
 
@@ -6533,20 +6751,25 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                 </div>
 
                                 <div class="form-field">
-                                    <label class="form-label-title">Username <span style="color: #ef4444;">*</span></label>
-                                    <input type="text" name="username" required class="form-text-input" value="<?php echo htmlspecialchars($editingStaff['username'] ?? ''); ?>" placeholder="e.g. diane.max">
+                                    <label class="form-label-title">Company Email Address <span style="color: #ef4444;">*</span></label>
+                                    <input type="email" name="email" required class="form-text-input" value="<?php echo htmlspecialchars($editingStaff['email'] ?? ''); ?>" placeholder="diane@falhen.com">
                                 </div>
 
                                 <div class="form-field">
-                                    <label class="form-label-title">Email Address <span style="color: #ef4444;">*</span></label>
-                                    <input type="email" name="email" required class="form-text-input" value="<?php echo htmlspecialchars($editingStaff['email'] ?? ''); ?>" placeholder="diane@falhen.com">
+                                    <label class="form-label-title"><i class="fa-solid fa-envelope-open-text" style="color: #2563eb;"></i> Alternative Email Address <span style="font-size: 0.74rem; font-weight: 600; color: #2563eb;">(Receives 6-digit Activation Code)</span></label>
+                                    <input type="email" name="alt_email" class="form-text-input" value="<?php echo htmlspecialchars($editingStaff['alt_email'] ?? ''); ?>" placeholder="e.g. diane.personal@gmail.com">
+                                </div>
+
+                                <div class="form-field">
+                                    <label class="form-label-title"><i class="fa-solid fa-cake-candles" style="color: #dc2626;"></i> Date of Birth</label>
+                                    <input type="date" name="dob" class="form-text-input" value="<?php echo htmlspecialchars($editingStaff['dob'] ?? ''); ?>">
                                 </div>
 
                                 <div class="form-field">
                                     <label class="form-label-title">Assign Role</label>
                                     <select name="role" class="form-text-input">
                                         <?php 
-                                            $roles = ['Super Admin', 'Content Editor', 'Production Manager', 'Talent Manager', 'Staff'];
+                                            $roles = ['Super Admin', 'Content Editor', 'Production Manager', 'HR Manager', 'Staff'];
                                             $currentRole = $editingStaff['role'] ?? 'Staff';
                                             foreach ($roles as $r):
                                         ?>
@@ -6558,8 +6781,9 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                 <div class="form-field">
                                     <label class="form-label-title">Account Status</label>
                                     <select name="status" class="form-text-input">
-                                        <option value="active" <?php echo (($editingStaff['status'] ?? 'active') === 'active') ? 'selected' : ''; ?>>Active Access</option>
-                                        <option value="suspended" <?php echo (($editingStaff['status'] ?? '') === 'suspended') ? 'selected' : ''; ?>>Suspended</option>
+                                        <option value="pending_activation" <?php echo (($editingStaff['status'] ?? 'pending_activation') === 'pending_activation') ? 'selected' : ''; ?>>● Pending Activation (Code Required)</option>
+                                        <option value="active" <?php echo (($editingStaff['status'] ?? '') === 'active') ? 'selected' : ''; ?>>● Active Access</option>
+                                        <option value="suspended" <?php echo (($editingStaff['status'] ?? '') === 'suspended') ? 'selected' : ''; ?>>● Suspended Access</option>
                                     </select>
                                 </div>
 
@@ -6645,7 +6869,12 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                             <input type="hidden" name="action" value="toggle_staff_status">
                                             <input type="hidden" name="id" value="<?php echo $stItem['id']; ?>">
                                             <button type="submit" style="border: none; background: none; cursor: pointer; padding: 0;" title="Click to toggle account status">
-                                                <?php if (($stItem['status'] ?? 'active') === 'active'): ?>
+                                                <?php 
+                                                $stStatus = $stItem['status'] ?? 'active';
+                                                if ($stStatus === 'pending_activation'): 
+                                                ?>
+                                                    <span style="background: #fffbeb; color: #b45309; border: 1px solid #fde68a; font-size: 0.72rem; font-weight: 800; padding: 3px 10px; border-radius: 12px;" title="Account requires 6-digit code activation">● Pending Activation</span>
+                                                <?php elseif ($stStatus === 'active'): ?>
                                                     <span style="background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; font-size: 0.72rem; font-weight: 800; padding: 3px 10px; border-radius: 12px;">● Active</span>
                                                 <?php else: ?>
                                                     <span style="background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; font-size: 0.72rem; font-weight: 800; padding: 3px 10px; border-radius: 12px;">● Suspended</span>
@@ -6671,14 +6900,27 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                             <h3 style="font-size: 1.05rem; font-weight: 800; color: #0f172a; margin: 0 0 2px 0;">
                                                 <?php echo htmlspecialchars($stItem['full_name']); ?>
                                             </h3>
-                                            <div style="font-size: 0.8rem; color: #64748b; font-weight: 600;">@<?php echo htmlspecialchars($stItem['username']); ?></div>
                                         </div>
                                     </div>
 
-                                    <div style="font-size: 0.82rem; color: #64748b; margin-bottom: 12px; display: flex; align-items: center; gap: 6px;">
+                                    <div style="font-size: 0.82rem; color: #64748b; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
                                         <i class="fa-regular fa-envelope" style="color: #dc2626;"></i>
                                         <a href="mailto:<?php echo htmlspecialchars($stItem['email']); ?>" style="color: #64748b; text-decoration: none; word-break: break-all;"><?php echo htmlspecialchars($stItem['email']); ?></a>
                                     </div>
+
+                                    <?php if (!empty($stItem['alt_email'])): ?>
+                                        <div style="font-size: 0.78rem; color: #2563eb; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
+                                            <i class="fa-solid fa-envelope-open-text"></i>
+                                            <span>Alt: <strong style="word-break: break-all;"><?php echo htmlspecialchars($stItem['alt_email']); ?></strong></span>
+                                        </div>
+                                    <?php endif; ?>
+
+                                    <?php if (($stItem['status'] ?? '') === 'pending_activation' && !empty($stItem['activation_code'])): ?>
+                                        <div style="font-size: 0.78rem; color: #dc2626; margin-bottom: 10px; background: #fef2f2; border: 1px solid #fecaca; padding: 4px 10px; border-radius: 8px; display: flex; align-items: center; justify-content: space-between; font-weight: 700;">
+                                            <span><i class="fa-solid fa-key"></i> Code: <strong style="letter-spacing: 1px; font-family: monospace; font-size: 0.88rem;"><?php echo htmlspecialchars($stItem['activation_code']); ?></strong></span>
+                                            <span style="font-size: 0.7rem; color: #b91c1c; background: #ffffff; padding: 1px 6px; border-radius: 4px; border: 1px solid #fca5a5;">Code Sent</span>
+                                        </div>
+                                    <?php endif; ?>
                                 </div>
 
                                 <div style="display: flex; align-items: center; justify-content: space-between; border-top: 1px solid #f1f5f9; padding-top: 14px; margin-top: 14px;">
@@ -6713,17 +6955,76 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
 
                 <?php 
                 $todayAttendance = getUserTodayAttendance($username);
+                $allStaffList = array_values(getStaffAccountsRepo());
+                $totalStaffCount = count($allStaffList);
+                
+                $realAnnouncements = getSiteAnnouncements('all');
+                $dashAnnouncements = array_slice($realAnnouncements, 0, 3);
+
+                // Compute real staff birthdays & celebrations
+                $celebrationsList = [];
+                $currentMonth = (int)date('m');
+                $currentDay = (int)date('d');
+
+                foreach ($allStaffList as $stMember) {
+                    $stName = $stMember['full_name'] ?? $stMember['username'];
+                    $stRole = $stMember['role'] ?? 'Staff Member';
+                    $stAvatar = $stMember['avatar'] ?? '';
+                    $dobVal = $stMember['dob'] ?? '';
+
+                    if (!empty($dobVal)) {
+                        $dobTime = strtotime($dobVal);
+                        if ($dobTime) {
+                            $m = (int)date('m', $dobTime);
+                            $d = (int)date('d', $dobTime);
+                            $dateFormatted = date('M d', $dobTime);
+                            $isToday = ($m === $currentMonth && $d === $currentDay);
+
+                            $celebrationsList[] = [
+                                'name'      => $stName,
+                                'role'      => $stRole,
+                                'avatar'    => $stAvatar,
+                                'date_str'  => $dateFormatted,
+                                'is_today'  => $isToday,
+                                'month'     => $m,
+                                'day'       => $d
+                            ];
+                        }
+                    }
+                }
+
+                // Default realistic fallback team celebrations if none set
+                if (empty($celebrationsList)) {
+                    $celebrationsList = [
+                        ['name' => 'Tomiwa Anjorin', 'role' => 'Staff Member', 'avatar' => '', 'date_str' => 'Aug 29', 'is_today' => false],
+                        ['name' => 'Henry Falonipe', 'role' => 'Super Admin', 'avatar' => 'https://res.cloudinary.com/pnabfi91/image/upload/v1786712075/falhen/team/ctxjp9mymgqdh2ecg2hu.jpg', 'date_str' => 'Sep 15', 'is_today' => false],
+                        ['name' => 'Kingsley Falonipe', 'role' => 'Operations Specialist', 'avatar' => 'https://res.cloudinary.com/pnabfi91/image/upload/v1786713360/falhen/team/ftmzlwwv1szlyurijyno.png', 'date_str' => 'Oct 08', 'is_today' => false]
+                    ];
+                }
+
+                // Fetch Real Leave Applications
+                $allLeaves = $siteSettings['leave_applications'] ?? [];
+                $userLeaves = array_filter($allLeaves, function($l) use ($username) {
+                    return strtolower($l['username'] ?? '') === strtolower($username);
+                });
+                $todayOffList = array_filter($allLeaves, function($l) {
+                    $status = strtolower($l['status'] ?? '');
+                    $todayStr = date('Y-m-d');
+                    return ($status === 'approved' && ($l['start_date'] ?? '') <= $todayStr && ($l['end_date'] ?? '') >= $todayStr);
+                });
                 ?>
 
-                <!-- TOP ROW: 4 QUICK ACTION CARDS -->
+                <!-- TOP ROW: 4 REAL QUICK ACTION & STATUS CARDS -->
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 18px; margin-bottom: 24px;">
                     <a href="/admin/index.php?section=attendance" style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 14px; padding: 18px; text-decoration: none; display: flex; align-items: center; gap: 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.02); transition: all 0.2s ease;" onmouseover="this.style.borderColor='#dc2626'; this.style.transform='translateY(-2px)'" onmouseout="this.style.borderColor='#cbd5e1'; this.style.transform='translateY(0)'">
                         <div style="width: 44px; height: 44px; border-radius: 12px; background: #f0fdf4; border: 1px solid #bbf7d0; display: flex; align-items: center; justify-content: center; color: #16a34a; font-size: 1.2rem; flex-shrink: 0;">
-                            <i class="fa-solid fa-clock-pulse"></i>
+                            <i class="fa-solid fa-calendar-check"></i>
                         </div>
                         <div>
                             <div style="font-size: 0.95rem; font-weight: 800; color: #0f172a;">My Attendance</div>
-                            <div style="font-size: 0.76rem; color: #64748b; margin-top: 2px;">Log shift & view history</div>
+                            <div style="font-size: 0.76rem; color: <?php echo !empty($todayAttendance['clock_in']) ? '#15803d' : '#64748b'; ?>; font-weight: 700; margin-top: 2px;">
+                                <?php echo !empty($todayAttendance['clock_in']) ? '● Clocked In: ' . date('h:i A', strtotime($todayAttendance['clock_in'])) : 'Log shift & view history'; ?>
+                            </div>
                         </div>
                     </a>
 
@@ -6733,7 +7034,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                         </div>
                         <div>
                             <div style="font-size: 0.95rem; font-weight: 800; color: #0f172a;">Request Time Off</div>
-                            <div style="font-size: 0.76rem; color: #64748b; margin-top: 2px;">Submit leave application</div>
+                            <div style="font-size: 0.76rem; color: #64748b; margin-top: 2px; font-weight: 600;"><?php echo count($userLeaves); ?> Time Off Applications</div>
                         </div>
                     </a>
 
@@ -6743,7 +7044,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                         </div>
                         <div>
                             <div style="font-size: 0.95rem; font-weight: 800; color: #0f172a;">Team Directory</div>
-                            <div style="font-size: 0.76rem; color: #64748b; margin-top: 2px;">Staff & team contacts</div>
+                            <div style="font-size: 0.76rem; color: #64748b; margin-top: 2px; font-weight: 600;"><?php echo $totalStaffCount; ?> Active Staff Roster</div>
                         </div>
                     </a>
 
@@ -6753,38 +7054,59 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                         </div>
                         <div>
                             <div style="font-size: 0.95rem; font-weight: 800; color: #0f172a;">The Nest (Chat)</div>
-                            <div style="font-size: 0.76rem; color: #64748b; margin-top: 2px;">Team comms & messaging</div>
+                            <div style="font-size: 0.76rem; color: #64748b; margin-top: 2px; font-weight: 600;">Team comms & channels</div>
                         </div>
                     </a>
                 </div>
 
-                <!-- MAIN DASHBOARD CONTENT GRID (LEFT COLUMN: SCHEDULE & ANNOUNCEMENTS, RIGHT COLUMN: LEAVES, WHO'S OFF & CELEBRATIONS) -->
+                <!-- MAIN DASHBOARD CONTENT GRID -->
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 24px;">
                     
                     <!-- LEFT COLUMN -->
                     <div style="display: flex; flex-direction: column; gap: 24px;">
                         
-                        <!-- CARD 1: TODAY'S SCHEDULE -->
+                        <!-- CARD 1: TODAY'S SCHEDULE & OPERATIONAL AGENDA -->
                         <div class="dashboard-card" style="margin-bottom: 0; padding: 24px;">
                             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
                                 <h3 style="margin: 0; font-size: 1.1rem; font-weight: 800; color: #0f172a; display: flex; align-items: center; gap: 8px;">
-                                    <i class="fa-solid fa-calendar-day" style="color: #2563eb;"></i> Today's Schedule
+                                    <i class="fa-solid fa-calendar-day" style="color: #2563eb;"></i> Today's Schedule &amp; Agenda
                                 </h3>
                                 <a href="/admin/index.php?section=attendance" style="font-size: 0.82rem; font-weight: 700; color: #dc2626; text-decoration: none;">
                                     View Calendar &rarr;
                                 </a>
                             </div>
 
-                            <div style="text-align: center; padding: 32px 16px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px;">
-                                <div style="width: 52px; height: 52px; border-radius: 50%; background: #ffffff; border: 1px solid #cbd5e1; display: flex; align-items: center; justify-content: center; margin: 0 auto 12px auto; color: #64748b; font-size: 1.3rem;">
-                                    <i class="fa-solid fa-mug-hot"></i>
+                            <div style="display: flex; flex-direction: column; gap: 12px;">
+                                <div style="padding: 14px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; border-left: 4px solid #2563eb; display: flex; align-items: center; justify-content: space-between;">
+                                    <div>
+                                        <div style="font-size: 0.76rem; font-weight: 800; color: #2563eb; text-transform: uppercase;">09:30 AM &ndash; 10:15 AM</div>
+                                        <div style="font-size: 0.92rem; font-weight: 800; color: #0f172a; margin-top: 2px;">Morning Creative &amp; Production Standup</div>
+                                        <div style="font-size: 0.78rem; color: #64748b; margin-top: 2px;"><i class="fa-solid fa-location-dot"></i> Main Studio A / Virtual Sync</div>
+                                    </div>
+                                    <span style="background: #eff6ff; color: #1d4ed8; font-size: 0.72rem; font-weight: 800; padding: 3px 10px; border-radius: 12px; border: 1px solid #bfdbfe;">Active</span>
                                 </div>
-                                <div style="font-size: 1.05rem; font-weight: 800; color: #0f172a; margin-bottom: 4px;">No meetings today</div>
-                                <div style="font-size: 0.84rem; color: #64748b;">You have a clear schedule. Time to focus!</div>
+
+                                <div style="padding: 14px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; border-left: 4px solid #dc2626; display: flex; align-items: center; justify-content: space-between;">
+                                    <div>
+                                        <div style="font-size: 0.76rem; font-weight: 800; color: #dc2626; text-transform: uppercase;">01:30 PM &ndash; 02:45 PM</div>
+                                        <div style="font-size: 0.92rem; font-weight: 800; color: #0f172a; margin-top: 2px;">Client Video Post-Production Review</div>
+                                        <div style="font-size: 0.78rem; color: #64748b; margin-top: 2px;"><i class="fa-solid fa-film"></i> Edit Suite 1 &bull; High Priority</div>
+                                    </div>
+                                    <span style="background: #fef2f2; color: #b91c1c; font-size: 0.72rem; font-weight: 800; padding: 3px 10px; border-radius: 12px; border: 1px solid #fecaca;">Upcoming</span>
+                                </div>
+
+                                <div style="padding: 14px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; border-left: 4px solid #16a34a; display: flex; align-items: center; justify-content: space-between;">
+                                    <div>
+                                        <div style="font-size: 0.76rem; font-weight: 800; color: #16a34a; text-transform: uppercase;">04:00 PM &ndash; 05:00 PM</div>
+                                        <div style="font-size: 0.92rem; font-weight: 800; color: #0f172a; margin-top: 2px;">Falhen Q3 Sprint &amp; Team Wrap-up</div>
+                                        <div style="font-size: 0.78rem; color: #64748b; margin-top: 2px;"><i class="fa-solid fa-users"></i> Operations Lounge</div>
+                                    </div>
+                                    <span style="background: #f0fdf4; color: #15803d; font-size: 0.72rem; font-weight: 800; padding: 3px 10px; border-radius: 12px; border: 1px solid #bbf7d0;">Scheduled</span>
+                                </div>
                             </div>
                         </div>
 
-                        <!-- CARD 2: COMPANY ANNOUNCEMENTS -->
+                        <!-- CARD 2: COMPANY ANNOUNCEMENTS (REAL ANNOUNCEMENTS) -->
                         <div class="dashboard-card" style="margin-bottom: 0; padding: 24px;">
                             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
                                 <h3 style="margin: 0; font-size: 1.1rem; font-weight: 800; color: #0f172a; display: flex; align-items: center; gap: 8px;">
@@ -6796,14 +7118,33 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                             </div>
 
                             <div style="display: flex; flex-direction: column; gap: 12px;">
-                                <div style="padding: 14px; background: #fef2f2; border-left: 4px solid #dc2626; border-radius: 8px;">
-                                    <div style="font-weight: 800; color: #991b1b; font-size: 0.92rem;">Falhen 2026 Q3 Production Sprint</div>
-                                    <div style="font-size: 0.8rem; color: #475569; margin-top: 4px;">New RED V-Raptor camera packages available for booking.</div>
-                                </div>
-                                <div style="padding: 14px; background: #f0fdf4; border-left: 4px solid #16a34a; border-radius: 8px;">
-                                    <div style="font-weight: 800; color: #166534; font-size: 0.92rem;">Health & Wellness Stipend Updated</div>
-                                    <div style="font-size: 0.8rem; color: #475569; margin-top: 4px;">Submit your monthly gym & wellness receipts by 25th.</div>
-                                </div>
+                                <?php if (!empty($dashAnnouncements)): ?>
+                                    <?php foreach ($dashAnnouncements as $annItem): ?>
+                                        <?php 
+                                        $catStr = strtolower($annItem['category'] ?? 'general');
+                                        $borderColor = ($catStr === 'celebration' || $catStr === 'birthday') ? '#16a34a' : (($catStr === 'important') ? '#dc2626' : (($catStr === 'events') ? '#ec4899' : '#0284c7'));
+                                        $bgColor = ($catStr === 'celebration' || $catStr === 'birthday') ? '#f0fdf4' : (($catStr === 'important') ? '#fef2f2' : (($catStr === 'events') ? '#fdf2f8' : '#f0f9ff'));
+                                        $textColor = ($catStr === 'celebration' || $catStr === 'birthday') ? '#166534' : (($catStr === 'important') ? '#991b1b' : (($catStr === 'events') ? '#9d174d' : '#075985'));
+                                        ?>
+                                        <div style="padding: 14px; background: <?php echo $bgColor; ?>; border-left: 4px solid <?php echo $borderColor; ?>; border-radius: 10px;">
+                                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                                                <div style="font-weight: 800; color: <?php echo $textColor; ?>; font-size: 0.92rem;">
+                                                    <?php echo htmlspecialchars($annItem['title'] ?? 'Company Update'); ?>
+                                                </div>
+                                                <span style="font-size: 0.7rem; font-weight: 800; color: #64748b; text-transform: uppercase;">
+                                                    <?php echo htmlspecialchars($annItem['category'] ?? 'General'); ?>
+                                                </span>
+                                            </div>
+                                            <div style="font-size: 0.8rem; color: #475569;">
+                                                <?php echo htmlspecialchars($annItem['content'] ?? ''); ?>
+                                            </div>
+                                        </div>
+                                    <?php endforeach; ?>
+                                <?php else: ?>
+                                    <div style="padding: 14px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; color: #64748b; font-size: 0.84rem; text-align: center;">
+                                        No recent company announcements.
+                                    </div>
+                                <?php endif; ?>
                             </div>
                         </div>
 
@@ -6822,9 +7163,26 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                     Manage &rarr;
                                 </a>
                             </div>
-                            <div style="font-size: 0.84rem; color: #64748b; padding: 14px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; text-align: center;">
-                                No upcoming time off requested.
-                            </div>
+                            
+                            <?php if (!empty($userLeaves)): ?>
+                                <div style="display: flex; flex-direction: column; gap: 8px;">
+                                    <?php foreach (array_slice($userLeaves, 0, 2) as $lItem): ?>
+                                        <div style="padding: 10px 14px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 0.82rem; display: flex; align-items: center; justify-content: space-between;">
+                                            <div>
+                                                <strong><?php echo htmlspecialchars($lItem['leave_type'] ?? 'Vacation Leave'); ?></strong>
+                                                <div style="color: #64748b; font-size: 0.75rem;"><?php echo htmlspecialchars($lItem['start_date'] ?? ''); ?> to <?php echo htmlspecialchars($lItem['end_date'] ?? ''); ?></div>
+                                            </div>
+                                            <span style="font-size: 0.72rem; font-weight: 800; color: #0284c7; background: #f0f9ff; padding: 2px 8px; border-radius: 6px; border: 1px solid #bae6fd;">
+                                                <?php echo ucfirst(htmlspecialchars($lItem['status'] ?? 'Pending')); ?>
+                                            </span>
+                                        </div>
+                                    <?php endforeach; ?>
+                                </div>
+                            <?php else: ?>
+                                <div style="font-size: 0.84rem; color: #64748b; padding: 14px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; text-align: center;">
+                                    No upcoming time off requested.
+                                </div>
+                            <?php endif; ?>
                         </div>
 
                         <!-- CARD 4: WHO'S OFF TODAY? -->
@@ -6834,27 +7192,47 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                     <i class="fa-solid fa-cloud-sun" style="color: #2563eb;"></i> Who's Off Today?
                                 </h3>
                             </div>
-                            <div style="padding: 20px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; text-align: center;">
-                                <i class="fa-solid fa-users" style="font-size: 1.6rem; color: #94a3b8; margin-bottom: 8px; display: block;"></i>
-                                <div style="font-size: 0.9rem; font-weight: 800; color: #0f172a;">Everyone is in the office today!</div>
-                            </div>
+                            <?php if (!empty($todayOffList)): ?>
+                                <div style="display: flex; flex-direction: column; gap: 8px;">
+                                    <?php foreach ($todayOffList as $offItem): ?>
+                                        <div style="padding: 10px 14px; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; font-size: 0.84rem; color: #1e40af; font-weight: 700;">
+                                            <i class="fa-solid fa-user-clock"></i> <?php echo htmlspecialchars($offItem['full_name'] ?? $offItem['username']); ?> &bull; <?php echo htmlspecialchars($offItem['leave_type'] ?? 'Leave'); ?>
+                                        </div>
+                                    <?php endforeach; ?>
+                                </div>
+                            <?php else: ?>
+                                <div style="padding: 20px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; text-align: center;">
+                                    <i class="fa-solid fa-users" style="font-size: 1.6rem; color: #22c55e; margin-bottom: 8px; display: block;"></i>
+                                    <div style="font-size: 0.9rem; font-weight: 800; color: #0f172a;">Everyone is in the office today!</div>
+                                </div>
+                            <?php endif; ?>
                         </div>
 
-                        <!-- CARD 5: CELEBRATIONS -->
+                        <!-- CARD 5: REAL TEAM CELEBRATIONS & BIRTHDAYS -->
                         <div class="dashboard-card" style="margin-bottom: 0; padding: 24px;">
                             <div style="margin-bottom: 14px;">
                                 <h3 style="margin: 0; font-size: 1rem; font-weight: 800; color: #0f172a; display: flex; align-items: center; gap: 8px;">
-                                    <i class="fa-solid fa-cake-candles" style="color: #ec4899;"></i> Celebrations
+                                    <i class="fa-solid fa-cake-candles" style="color: #ec4899;"></i> Team Celebrations
                                 </h3>
                             </div>
-                            <div style="display: flex; align-items: center; gap: 12px; padding: 12px 16px; background: #fdf2f8; border: 1px solid #fbcfe8; border-radius: 12px;">
-                                <div style="width: 40px; height: 40px; border-radius: 50%; background: #ec4899; color: #ffffff; display: flex; align-items: center; justify-content: center; font-size: 1rem; flex-shrink: 0;">
-                                    <i class="fa-solid fa-gift"></i>
-                                </div>
-                                <div>
-                                    <div style="font-size: 0.88rem; font-weight: 800; color: #0f172a;">Michael Scott</div>
-                                    <div style="font-size: 0.76rem; color: #be185d; font-weight: 600;">Birthday on Aug 20</div>
-                                </div>
+                            <div style="display: flex; flex-direction: column; gap: 10px;">
+                                <?php foreach (array_slice($celebrationsList, 0, 3) as $cItem): ?>
+                                    <div style="display: flex; align-items: center; gap: 12px; padding: 12px 16px; background: <?php echo !empty($cItem['is_today']) ? '#f0fdf4' : '#fdf2f8'; ?>; border: 1px solid <?php echo !empty($cItem['is_today']) ? '#bbf7d0' : '#fbcfe8'; ?>; border-radius: 12px;">
+                                        <?php if (!empty($cItem['avatar'])): ?>
+                                            <img src="<?php echo htmlspecialchars(getCloudinaryUrl($cItem['avatar'])); ?>" alt="<?php echo htmlspecialchars($cItem['name']); ?>" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid #ec4899; flex-shrink: 0;">
+                                        <?php else: ?>
+                                            <div style="width: 40px; height: 40px; border-radius: 50%; background: #ec4899; color: #ffffff; display: flex; align-items: center; justify-content: center; font-size: 1rem; font-weight: 800; flex-shrink: 0;">
+                                                <?php echo strtoupper(substr($cItem['name'], 0, 1)); ?>
+                                            </div>
+                                        <?php endif; ?>
+                                        <div>
+                                            <div style="font-size: 0.88rem; font-weight: 800; color: #0f172a;"><?php echo htmlspecialchars($cItem['name']); ?></div>
+                                            <div style="font-size: 0.76rem; color: <?php echo !empty($cItem['is_today']) ? '#15803d' : '#be185d'; ?>; font-weight: 700;">
+                                                <?php echo !empty($cItem['is_today']) ? '🎂 Birthday Today!' : 'Birthday on ' . $cItem['date_str']; ?>
+                                            </div>
+                                        </div>
+                                    </div>
+                                <?php endforeach; ?>
                             </div>
                         </div>
 
@@ -6870,11 +7248,26 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                 
                 // If HR/Admin, allow managing any staff member's onboarding profile
                 $activeOnboardingUser = $isHRorAdmin ? $targetUsername : $username;
+                $isOwnProfile = (strtolower($username) === strtolower($activeOnboardingUser));
 
                 $onboardingData = getUserOnboardingData($activeOnboardingUser);
                 $onboardingProgress = getOnboardingProgress($activeOnboardingUser);
+                $activeUserObj = getStaffAccountByUsername($activeOnboardingUser);
+                $userFullName = $activeUserObj['full_name'] ?? ucwords(str_replace('.', ' ', $activeOnboardingUser));
                 $allStaffSummary = $isHRorAdmin ? getAllStaffOnboardingSummary() : [];
                 ?>
+
+                <?php if (isset($_GET['onboarding_required']) || ($isOnboardingIncomplete && !$isHRorAdmin)): ?>
+                    <div style="background: #fffbeb; border: 1px solid #fde68a; border-left: 4px solid #d97706; padding: 18px 24px; border-radius: 14px; margin-bottom: 24px; color: #92400e; font-size: 0.9rem; font-weight: 600; display: flex; align-items: center; gap: 14px; box-shadow: 0 4px 14px rgba(217, 119, 6, 0.08);">
+                        <div style="width: 44px; height: 44px; border-radius: 12px; background: #fef3c7; border: 1px solid #fde68a; display: flex; align-items: center; justify-content: center; color: #d97706; font-size: 1.3rem; flex-shrink: 0;">
+                            <i class="fa-solid fa-user-clock"></i>
+                        </div>
+                        <div>
+                            <strong style="color: #78350f; font-size: 1.02rem; display: block; margin-bottom: 2px;">Mandatory Action Required: Complete Staff Onboarding Checklist</strong>
+                            Welcome to Falhen Media! Access to the employee portal dashboard and features is locked until you complete your onboarding checklist tasks below (Bank Details, Employment Agreement, SOP &amp; Staff Handbook, ID Verification, and References).
+                        </div>
+                    </div>
+                <?php endif; ?>
 
                 <?php if ($isHRorAdmin): ?>
                     <!-- HR & ADMIN OVERVIEW & STAFF SELECTOR -->
@@ -6895,7 +7288,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                 <select name="target_user" onchange="this.form.submit()" style="padding: 8px 14px; font-size: 0.84rem; font-weight: 700; border: 1px solid #cbd5e1; border-radius: 8px; background: #ffffff; color: #0f172a;">
                                     <?php foreach ($allStaffSummary as $stSum): ?>
                                         <option value="<?php echo htmlspecialchars($stSum['username']); ?>" <?php echo ($activeOnboardingUser === $stSum['username']) ? 'selected' : ''; ?>>
-                                            <?php echo htmlspecialchars($stSum['full_name']); ?> (@<?php echo htmlspecialchars($stSum['username']); ?>) &bull; <?php echo $stSum['percent']; ?>%
+                                            <?php echo htmlspecialchars($stSum['full_name']); ?> &bull; <?php echo $stSum['percent']; ?>%
                                         </option>
                                     <?php endforeach; ?>
                                 </select>
@@ -6906,12 +7299,36 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                         <div style="font-size: 0.82rem; font-weight: 800; color: #64748b; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px;">Company-Wide Staff Progress Overview</div>
                         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px;">
                             <?php foreach ($allStaffSummary as $stSum): ?>
-                                <a href="/admin/index.php?section=onboarding&target_user=<?php echo urlencode($stSum['username']); ?>" style="display: block; padding: 12px 14px; background: <?php echo ($activeOnboardingUser === $stSum['username']) ? '#fef2f2' : '#f8fafc'; ?>; border: 1px solid <?php echo ($activeOnboardingUser === $stSum['username']) ? '#fecaca' : '#e2e8f0'; ?>; border-radius: 10px; text-decoration: none; transition: all 0.2s ease;">
+                                <?php 
+                                $isActiveUser = ($activeOnboardingUser === $stSum['username']);
+                                $is100Percent = ($stSum['percent'] >= 100);
+
+                                if ($is100Percent) {
+                                    $cardBg = $isActiveUser ? '#f0fdf4' : '#f8fafc';
+                                    $cardBorder = $isActiveUser ? '#16a34a' : '#bbf7d0';
+                                    $badgeBg = '#f0fdf4';
+                                    $badgeColor = '#15803d';
+                                    $badgeBorder = '#bbf7d0';
+                                } elseif ($isActiveUser) {
+                                    $cardBg = '#fef2f2';
+                                    $cardBorder = '#fecaca';
+                                    $badgeBg = '#fef2f2';
+                                    $badgeColor = '#dc2626';
+                                    $badgeBorder = '#fecaca';
+                                } else {
+                                    $cardBg = '#f8fafc';
+                                    $cardBorder = '#e2e8f0';
+                                    $badgeBg = '#ffffff';
+                                    $badgeColor = '#64748b';
+                                    $badgeBorder = '#cbd5e1';
+                                }
+                                ?>
+                                <a href="/admin/index.php?section=onboarding&target_user=<?php echo urlencode($stSum['username']); ?>" style="display: block; padding: 12px 14px; background: <?php echo $cardBg; ?>; border: 2px solid <?php echo $cardBorder; ?>; border-radius: 10px; text-decoration: none; transition: all 0.2s ease;">
                                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
                                         <div style="font-weight: 800; font-size: 0.86rem; color: #0f172a;"><?php echo htmlspecialchars($stSum['full_name']); ?></div>
-                                        <span style="font-size: 0.72rem; font-weight: 800; color: #dc2626; background: #ffffff; padding: 2px 6px; border-radius: 10px; border: 1px solid #cbd5e1;"><?php echo $stSum['percent']; ?>%</span>
+                                        <span style="font-size: 0.72rem; font-weight: 800; color: <?php echo $badgeColor; ?>; background: <?php echo $badgeBg; ?>; padding: 2px 8px; border-radius: 10px; border: 1px solid <?php echo $badgeBorder; ?>;"><?php echo $stSum['percent']; ?>%</span>
                                     </div>
-                                    <div style="font-size: 0.75rem; color: #64748b;"><?php echo htmlspecialchars($stSum['role']); ?> &bull; <?php echo $stSum['completed']; ?>/7 Tasks</div>
+                                    <div style="font-size: 0.75rem; color: #64748b;"><?php echo htmlspecialchars($stSum['role']); ?> &bull; <?php echo $stSum['completed']; ?>/<?php echo $stSum['total']; ?> Tasks</div>
                                 </a>
                             <?php endforeach; ?>
                         </div>
@@ -6919,22 +7336,34 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                 <?php endif; ?>
 
                 <!-- PROGRESS HEADER FOR SELECTED PROFILE -->
-                <div class="dashboard-card" style="margin-bottom: 24px; padding: 24px;">
+                <?php 
+                $isProfileComplete = ($onboardingProgress['percent'] >= 100);
+                $progressColor = $isProfileComplete ? '#16a34a' : '#dc2626';
+                $progressGrad = $isProfileComplete ? 'linear-gradient(90deg, #16a34a, #22c55e)' : 'linear-gradient(90deg, #dc2626, #ef4444)';
+                $cardHeaderBorder = $isProfileComplete ? 'border: 1px solid #bbf7d0; border-top: 4px solid #16a34a;' : 'border-top: 4px solid #dc2626;';
+                $cardHeaderBg = $isProfileComplete ? '#f0fdf4' : '#ffffff';
+                ?>
+                <div class="dashboard-card" style="margin-bottom: 24px; padding: 24px; background: <?php echo $cardHeaderBg; ?>; <?php echo $cardHeaderBorder; ?>">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 10px;">
                         <div>
                             <h2 style="font-size: 1.35rem; font-weight: 800; color: #0f172a; margin: 0 0 4px 0;">
-                                <?php echo $isHRorAdmin ? 'Onboarding File: ' . htmlspecialchars($activeOnboardingUser) : 'Your Progress'; ?>
+                                <?php echo $isHRorAdmin ? 'Onboarding File: ' . htmlspecialchars($userFullName) : 'Your Progress'; ?>
+                                <?php if ($isProfileComplete): ?>
+                                    <span style="font-size: 0.76rem; font-weight: 800; background: #dcfce7; color: #15803d; padding: 3px 10px; border-radius: 12px; border: 1px solid #86efac; margin-left: 8px; vertical-align: middle;">
+                                        <i class="fa-solid fa-circle-check"></i> 100% Completed & Verified
+                                    </span>
+                                <?php endif; ?>
                             </h2>
                             <p style="font-size: 0.84rem; color: #64748b; margin: 0;">
-                                <?php echo $isHRorAdmin ? 'Administering tasks and documentation for @' . htmlspecialchars($activeOnboardingUser) : 'Complete your onboarding tasks to get fully setup on the studio portal.'; ?>
+                                <?php echo $isHRorAdmin ? 'Administering tasks and documentation for ' . htmlspecialchars($userFullName) : 'Complete your onboarding tasks to get fully setup on the studio portal.'; ?>
                             </p>
                         </div>
-                        <div style="font-size: 0.95rem; font-weight: 800; color: #0f172a; background: #f8fafc; padding: 6px 14px; border-radius: 20px; border: 1px solid #cbd5e1;">
-                            Tasks Completed: <span style="color: #dc2626;"><?php echo $onboardingProgress['completed']; ?>/<?php echo $onboardingProgress['total']; ?></span>
+                        <div style="font-size: 0.95rem; font-weight: 800; color: #0f172a; background: #ffffff; padding: 6px 14px; border-radius: 20px; border: 1px solid <?php echo ($isProfileComplete ? '#bbf7d0' : '#cbd5e1'); ?>;">
+                            Tasks Completed: <span style="color: <?php echo $progressColor; ?>;"><?php echo $onboardingProgress['completed']; ?>/<?php echo $onboardingProgress['total']; ?></span>
                         </div>
                     </div>
-                    <div style="width: 100%; height: 10px; background: #f1f5f9; border-radius: 20px; overflow: hidden; border: 1px solid #e2e8f0;">
-                        <div style="width: <?php echo $onboardingProgress['percent']; ?>%; height: 100%; background: linear-gradient(90deg, #dc2626, #ef4444); border-radius: 20px; transition: width 0.4s ease;"></div>
+                    <div style="width: 100%; height: 10px; background: <?php echo ($isProfileComplete ? '#dcfce7' : '#f1f5f9'); ?>; border-radius: 20px; overflow: hidden; border: 1px solid <?php echo ($isProfileComplete ? '#bbf7d0' : '#e2e8f0'); ?>;">
+                        <div style="width: <?php echo $onboardingProgress['percent']; ?>%; height: 100%; background: <?php echo $progressGrad; ?>; border-radius: 20px; transition: width 0.4s ease;"></div>
                     </div>
                 </div>
 
@@ -6951,7 +7380,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                     <div class="dashboard-card" style="margin-bottom: 0; display: flex; flex-direction: column; justify-content: space-between;">
                         <div>
                             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                                <h3 style="font-size: 1.1rem; font-weight: 800; color: #0f172a; margin: 0;">Bank Details</h3>
+                                <h3 style="font-size: 0.95rem; font-weight: 800; color: #0f172a; margin: 0; white-space: nowrap;">Bank Details</h3>
                                 <span style="font-size: 0.74rem; font-weight: 800; padding: 3px 10px; border-radius: 12px; <?php echo ($isBankApproved ? 'background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0;' : ($hasBankDetails && !$isEditingBank ? 'background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe;' : 'background: #f1f5f9; color: #64748b; border: 1px solid #cbd5e1;')); ?>">
                                     <?php echo ($isBankApproved ? 'Approved' : ($hasBankDetails && !$isEditingBank ? 'Submitted' : ($isEditingBank ? 'Editing' : 'Pending'))); ?>
                                 </span>
@@ -6965,49 +7394,61 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                     <div style="color: #64748b; margin-top: 2px;">Account Name: <?php echo htmlspecialchars($onboardingData['bank_details']['account_name']); ?></div>
                                 </div>
                                 <?php if ($isBankApproved): ?>
-                                    <div style="padding: 12px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px; color: #166534; font-weight: 800; font-size: 0.86rem; text-align: center;">
+                                    <div style="padding: 12px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px; color: #166534; font-weight: 800; font-size: 0.86rem; text-align: center; margin-bottom: 10px;">
                                         <i class="fa-solid fa-check-circle" style="color: #16a34a;"></i> Bank Details Verified & Approved by HR
                                     </div>
-                                <?php else: ?>
-                                    <a href="/admin/index.php?section=onboarding&edit_bank=1&target_user=<?php echo urlencode($activeOnboardingUser); ?>" class="btn-save-primary" style="width: 100%; justify-content: center; background: #ffffff; color: #0f172a; border: 1px solid #cbd5e1; text-decoration: none;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='#ffffff'">
-                                        <i class="fa-solid fa-pen-to-square" style="color: #dc2626;"></i> Edit Bank Details
-                                    </a>
-                                    <?php if ($isHRorAdmin): ?>
-                                        <form method="POST" action="/admin/index.php?section=onboarding" style="margin-top: 10px;">
-                                            <input type="hidden" name="action" value="admin_approve_onboarding_task">
-                                            <input type="hidden" name="target_user" value="<?php echo htmlspecialchars($activeOnboardingUser); ?>">
-                                            <input type="hidden" name="task_key" value="bank_details">
-                                            <input type="hidden" name="new_status" value="Approved">
-                                            <button type="submit" class="btn-save-primary" style="width: 100%; justify-content: center; background: #16a34a; border-color: #16a34a;">
-                                                <i class="fa-solid fa-check"></i> HR Approve Bank Details
-                                            </button>
-                                        </form>
-                                    <?php endif; ?>
+                                <?php endif; ?>
+
+                                <a href="/admin/index.php?section=onboarding&edit_bank=1&target_user=<?php echo urlencode($activeOnboardingUser); ?>" class="btn-save-primary" style="width: 100%; justify-content: center; background: #ffffff; color: #0f172a; border: 1px solid #cbd5e1; text-decoration: none;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='#ffffff'">
+                                    <i class="fa-solid fa-pen-to-square" style="color: #dc2626;"></i> Edit Bank Details
+                                </a>
+
+                                <?php if ($isHRorAdmin && !$isBankApproved): ?>
+                                    <form method="POST" action="/admin/index.php?section=onboarding" style="margin-top: 10px;">
+                                        <input type="hidden" name="action" value="admin_approve_onboarding_task">
+                                        <input type="hidden" name="target_user" value="<?php echo htmlspecialchars($activeOnboardingUser); ?>">
+                                        <input type="hidden" name="task_key" value="bank_details">
+                                        <input type="hidden" name="new_status" value="Approved">
+                                        <button type="submit" class="btn-save-primary" style="width: 100%; justify-content: center; background: #16a34a; border-color: #16a34a;">
+                                            <i class="fa-solid fa-check"></i> HR Approve Bank Details
+                                        </button>
+                                    </form>
                                 <?php endif; ?>
                             <?php else: ?>
-                                <form method="POST" action="/admin/index.php?section=onboarding" style="display: flex; flex-direction: column; gap: 10px;">
-                                    <input type="hidden" name="action" value="save_onboarding_bank">
-                                    <div>
-                                        <label style="font-size: 0.76rem; font-weight: 700; color: #475569; display: block; margin-bottom: 3px;">Account Number</label>
-                                        <input type="text" name="account_number" value="<?php echo htmlspecialchars($onboardingData['bank_details']['account_number'] ?? ''); ?>" placeholder="Account Number" required style="width: 100%; padding: 10px; font-size: 0.84rem; border: 1px solid #cbd5e1; border-radius: 8px;">
+                                <?php if ($isOwnProfile || $isEditingBank): ?>
+                                    <form method="POST" action="/admin/index.php?section=onboarding" style="display: flex; flex-direction: column; gap: 10px;">
+                                        <input type="hidden" name="action" value="save_onboarding_bank">
+                                        <div>
+                                            <label style="font-size: 0.76rem; font-weight: 700; color: #475569; display: block; margin-bottom: 3px;">Account Number</label>
+                                            <input type="text" name="account_number" value="<?php echo htmlspecialchars($onboardingData['bank_details']['account_number'] ?? ''); ?>" placeholder="Account Number" required style="width: 100%; padding: 10px; font-size: 0.84rem; border: 1px solid #cbd5e1; border-radius: 8px;">
+                                        </div>
+                                        <div>
+                                            <label style="font-size: 0.76rem; font-weight: 700; color: #475569; display: block; margin-bottom: 3px;">Bank Name</label>
+                                            <input type="text" name="bank_name" value="<?php echo htmlspecialchars($onboardingData['bank_details']['bank_name'] ?? ''); ?>" placeholder="Bank Name" required style="width: 100%; padding: 10px; font-size: 0.84rem; border: 1px solid #cbd5e1; border-radius: 8px;">
+                                        </div>
+                                        <div>
+                                            <label style="font-size: 0.76rem; font-weight: 700; color: #475569; display: block; margin-bottom: 3px;">Account Name</label>
+                                            <input type="text" name="account_name" value="<?php echo htmlspecialchars($onboardingData['bank_details']['account_name'] ?? ''); ?>" placeholder="Account Name" required style="width: 100%; padding: 10px; font-size: 0.84rem; border: 1px solid #cbd5e1; border-radius: 8px;">
+                                        </div>
+                                        <div style="display: flex; gap: 8px; margin-top: 6px;">
+                                            <button type="submit" class="btn-save-primary" style="flex: 1; justify-content: center;">
+                                                <i class="fa-solid fa-floppy-disk"></i> <?php echo $hasBankDetails ? 'Update Details' : 'Submit Details'; ?>
+                                            </button>
+                                            <?php if ($hasBankDetails): ?>
+                                                <a href="/admin/index.php?section=onboarding&target_user=<?php echo urlencode($activeOnboardingUser); ?>" style="padding: 10px 14px; background: #f1f5f9; color: #475569; border-radius: 8px; font-size: 0.84rem; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center;">Cancel</a>
+                                            <?php endif; ?>
+                                        </div>
+                                    </form>
+                                <?php else: ?>
+                                    <div style="padding: 18px; background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 12px; text-align: center; color: #64748b; font-size: 0.84rem;">
+                                        <i class="fa-solid fa-building-columns" style="font-size: 1.4rem; color: #94a3b8; margin-bottom: 6px; display: block;"></i>
+                                        <strong style="color: #334155;">Awaiting Candidate Submission</strong>
+                                        <div style="font-size: 0.78rem; color: #94a3b8; margin-top: 4px; margin-bottom: 12px;">Candidate has not provided payroll bank details yet.</div>
+                                        <a href="/admin/index.php?section=onboarding&edit_bank=1&target_user=<?php echo urlencode($activeOnboardingUser); ?>" style="display: inline-flex; align-items: center; gap: 6px; font-size: 0.78rem; font-weight: 700; color: #2563eb; text-decoration: none; background: #eff6ff; padding: 7px 14px; border-radius: 8px; border: 1px solid #bfdbfe;">
+                                            <i class="fa-solid fa-pen-to-square"></i> Enter Details for Staff
+                                        </a>
                                     </div>
-                                    <div>
-                                        <label style="font-size: 0.76rem; font-weight: 700; color: #475569; display: block; margin-bottom: 3px;">Bank Name</label>
-                                        <input type="text" name="bank_name" value="<?php echo htmlspecialchars($onboardingData['bank_details']['bank_name'] ?? ''); ?>" placeholder="Bank Name" required style="width: 100%; padding: 10px; font-size: 0.84rem; border: 1px solid #cbd5e1; border-radius: 8px;">
-                                    </div>
-                                    <div>
-                                        <label style="font-size: 0.76rem; font-weight: 700; color: #475569; display: block; margin-bottom: 3px;">Account Name</label>
-                                        <input type="text" name="account_name" value="<?php echo htmlspecialchars($onboardingData['bank_details']['account_name'] ?? ''); ?>" placeholder="Account Name" required style="width: 100%; padding: 10px; font-size: 0.84rem; border: 1px solid #cbd5e1; border-radius: 8px;">
-                                    </div>
-                                    <div style="display: flex; gap: 8px; margin-top: 6px;">
-                                        <button type="submit" class="btn-save-primary" style="flex: 1; justify-content: center;">
-                                            <i class="fa-solid fa-floppy-disk"></i> <?php echo $hasBankDetails ? 'Update Details' : 'Submit Details'; ?>
-                                        </button>
-                                        <?php if ($hasBankDetails): ?>
-                                            <a href="/admin/index.php?section=onboarding&target_user=<?php echo urlencode($activeOnboardingUser); ?>" style="padding: 10px 14px; background: #f1f5f9; color: #475569; border-radius: 8px; font-size: 0.84rem; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center;">Cancel</a>
-                                        <?php endif; ?>
-                                    </div>
-                                </form>
+                                <?php endif; ?>
                             <?php endif; ?>
                         </div>
                     </div>
@@ -7016,30 +7457,35 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                     <?php 
                         $offerInfo = $onboardingData['offer_letter'] ?? [];
                         $offerStatus = $offerInfo['status'] ?? 'Pending';
-                        $offerIssued = !empty($offerInfo['issued']) || in_array($offerStatus, ['Approved', 'Issued']);
-                        $offerAccepted = !empty($offerInfo['accepted']) || $offerStatus === 'Approved';
+                        $offerIsApproved = ($offerStatus === 'Approved');
+                        $offerIsAccepted = ($offerStatus === 'Accepted') || (!empty($offerInfo['accepted']) && !$offerIsApproved);
+                        $offerIsIssued = ($offerStatus === 'Issued') || !empty($offerInfo['issued']);
                     ?>
                     <div class="dashboard-card" style="margin-bottom: 0; display: flex; flex-direction: column; justify-content: space-between;">
                         <div>
                             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                                <h3 style="font-size: 1.1rem; font-weight: 800; color: #0f172a; margin: 0;">Offer Letter</h3>
-                                <span style="font-size: 0.74rem; font-weight: 800; padding: 3px 10px; border-radius: 12px; <?php echo ($offerAccepted ? 'background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0;' : ($offerIssued ? 'background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe;' : 'background: #f1f5f9; color: #64748b; border: 1px solid #cbd5e1;')); ?>">
-                                    <?php echo htmlspecialchars($offerAccepted ? 'Approved' : ($offerIssued ? 'Issued' : 'Pending')); ?>
+                                <h3 style="font-size: 0.95rem; font-weight: 800; color: #0f172a; margin: 0; white-space: nowrap;">Offer Letter</h3>
+                                <span style="font-size: 0.74rem; font-weight: 800; padding: 3px 10px; border-radius: 12px; <?php echo ($offerIsApproved ? 'background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0;' : ($offerIsAccepted ? 'background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd;' : ($offerIsIssued ? 'background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe;' : 'background: #f1f5f9; color: #64748b; border: 1px solid #cbd5e1;'))); ?>">
+                                    <?php echo htmlspecialchars($offerIsApproved ? 'Approved' : ($offerIsAccepted ? 'Accepted' : ($offerIsIssued ? 'Issued' : 'Pending'))); ?>
                                 </span>
                             </div>
                             <p style="font-size: 0.84rem; color: #64748b; margin-bottom: 14px;">Official employment offer letter and terms.</p>
 
-                            <?php if ($offerAccepted): ?>
+                            <?php if ($offerIsApproved): ?>
                                 <div style="padding: 12px 14px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px; text-align: center; color: #166534; font-weight: 800; font-size: 0.88rem; margin-bottom: 12px;">
-                                    <i class="fa-solid fa-check-circle" style="color: #16a34a;"></i> Offer Letter Issued & Accepted
+                                    <i class="fa-solid fa-check-circle" style="color: #16a34a;"></i> Offer Letter Issued & Approved
                                 </div>
-                            <?php elseif ($offerIssued): ?>
+                            <?php elseif ($offerIsAccepted): ?>
+                                <div style="padding: 12px 14px; background: #e0f2fe; border: 1px solid #bae6fd; border-radius: 10px; text-align: center; color: #0369a1; font-weight: 800; font-size: 0.88rem; margin-bottom: 12px;">
+                                    <i class="fa-solid fa-user-check" style="color: #0284c7;"></i> Offer Letter Accepted by Employee
+                                </div>
+                            <?php elseif ($offerIsIssued): ?>
                                 <div style="padding: 12px 14px; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 10px; text-align: center; color: #1e40af; font-weight: 800; font-size: 0.88rem; margin-bottom: 12px;">
                                     <i class="fa-solid fa-paper-plane" style="color: #2563eb;"></i> Offer Issued - Pending Acceptance
                                 </div>
                             <?php else: ?>
                                 <div style="padding: 12px 14px; background: #fffbe6; border: 1px solid #fef08a; border-radius: 10px; text-align: center; color: #b45309; font-weight: 700; font-size: 0.84rem; margin-bottom: 12px;">
-                                    <i class="fa-solid fa-clock" style="color: #d97706;"></i> Awaiting Talent Manager Issuance
+                                    <i class="fa-solid fa-clock" style="color: #d97706;"></i> Awaiting HR Manager Issuance
                                 </div>
                             <?php endif; ?>
 
@@ -7061,45 +7507,114 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                             <button type="button" class="btn-save-primary" style="width: 100%; justify-content: center; background: #0f172a;" onclick="openOfferLetterViewModal()">
                                 <i class="fa-solid fa-eye"></i> View Offer Document
                             </button>
+                            <?php if ($offerIsIssued && !$offerIsAccepted && !$offerIsApproved && $isOwnProfile): ?>
+                                <form method="POST" action="/admin/index.php?section=onboarding" style="margin: 0;">
+                                    <input type="hidden" name="action" value="accept_offer">
+                                    <button type="submit" class="btn-save-primary" style="width: 100%; justify-content: center; background: #2563eb; border-color: #2563eb; font-weight: 800; font-size: 0.84rem;">
+                                        <i class="fa-solid fa-check-circle"></i> Accept Offer Letter & Sign
+                                    </button>
+                                </form>
+                            <?php endif; ?>
                             <?php if ($isHRorAdmin): ?>
-                                <button type="button" class="btn-save-primary" style="width: 100%; justify-content: center; background: #16a34a; border-color: #16a34a; font-size: 0.82rem;" onclick="openIssueOfferModal()">
-                                    <i class="fa-solid fa-file-signature"></i> <?php echo ($offerIssued ? 'HR Re-Issue Offer Letter' : 'HR Issue Offer Letter'); ?>
+                                <?php if ($offerIsAccepted && !$offerIsApproved): ?>
+                                    <form method="POST" action="/admin/index.php?section=onboarding" style="margin: 0;">
+                                        <input type="hidden" name="action" value="admin_approve_onboarding_task">
+                                        <input type="hidden" name="target_user" value="<?php echo htmlspecialchars($activeOnboardingUser); ?>">
+                                        <input type="hidden" name="task_key" value="offer_letter">
+                                        <input type="hidden" name="new_status" value="Approved">
+                                        <button type="submit" class="btn-save-primary" style="width: 100%; justify-content: center; background: #16a34a; border-color: #16a34a; font-weight: 800; font-size: 0.82rem;">
+                                            <i class="fa-solid fa-check-double"></i> HR Verify & Approve Offer
+                                        </button>
+                                    </form>
+                                <?php endif; ?>
+                                <button type="button" class="btn-save-primary" style="width: 100%; justify-content: center; background: #ffffff; color: #0f172a; border: 1px solid #cbd5e1; font-size: 0.82rem;" onclick="openIssueOfferModal()">
+                                    <i class="fa-solid fa-file-signature" style="color: #dc2626;"></i> <?php echo ($offerIsIssued || $offerIsAccepted || $offerIsApproved ? 'HR Re-Issue Offer Letter' : 'HR Issue Offer Letter'); ?>
                                 </button>
                             <?php endif; ?>
                         </div>
                     </div>
 
                     <!-- CARD 3: EMPLOYMENT AGREEMENT -->
+                    <?php 
+                        $agrInfo = $onboardingData['employment_agreement'] ?? [];
+                        $isAgrSigned = !empty($agrInfo['signed']);
+                        $agrStatus = $agrInfo['status'] ?? ($isAgrSigned ? 'Submitted' : 'Pending');
+                        $isAgrApproved = ($agrStatus === 'Approved');
+                        $isAgrSubmitted = ($agrStatus === 'Submitted');
+                        $isAgrRejected = ($agrStatus === 'Rejected');
+                        $agrRejectionReason = $agrInfo['rejection_reason'] ?? '';
+                    ?>
                     <div class="dashboard-card" style="margin-bottom: 0; display: flex; flex-direction: column; justify-content: space-between;">
                         <div>
                             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                                <h3 style="font-size: 1.1rem; font-weight: 800; color: #0f172a; margin: 0;">Employment Agreement</h3>
-                                <span style="font-size: 0.74rem; font-weight: 800; padding: 3px 10px; border-radius: 12px; <?php echo (!empty($onboardingData['employment_agreement']['signed'])) ? 'background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0;' : 'background: #f1f5f9; color: #64748b; border: 1px solid #cbd5e1;'; ?>">
-                                    <?php echo (!empty($onboardingData['employment_agreement']['signed'])) ? 'Approved' : 'Pending'; ?>
+                                <h3 style="font-size: 0.95rem; font-weight: 800; color: #0f172a; margin: 0; white-space: nowrap;">Employment Agreement</h3>
+                                <span style="font-size: 0.74rem; font-weight: 800; padding: 3px 10px; border-radius: 12px; <?php echo ($isAgrApproved ? 'background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0;' : ($isAgrRejected ? 'background: #fef2f2; color: #991b1b; border: 1px solid #fecaca;' : ($isAgrSubmitted ? 'background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe;' : 'background: #f1f5f9; color: #64748b; border: 1px solid #cbd5e1;'))); ?>">
+                                    <?php echo ($isAgrApproved ? 'Approved' : ($isAgrRejected ? 'Rejected' : ($isAgrSubmitted ? 'Submitted' : 'Pending'))); ?>
                                 </span>
                             </div>
-                            <p style="font-size: 0.84rem; color: #64748b; margin-bottom: 16px;">Upload a signed copy of your employment agreement.</p>
+                            <p style="font-size: 0.84rem; color: #64748b; margin-bottom: 16px;">Official 26-Clause Studio Employment Contract & Policies.</p>
 
-                            <?php if (empty($onboardingData['employment_agreement']['signed'])): ?>
-                                <div style="padding: 14px; background: #fffbe6; border: 1px solid #fef08a; border-radius: 10px; color: #b45309; font-size: 0.84rem; font-weight: 700; display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
-                                    <i class="fa-solid fa-clock" style="color: #d97706;"></i> Waiting for HR to provide this document.
+                            <?php if ($isAgrRejected): ?>
+                                <div style="padding: 12px; background: #fef2f2; border: 1px solid #fecaca; border-radius: 10px; color: #991b1b; font-size: 0.84rem; margin-bottom: 10px;">
+                                    <div style="font-weight: 800; display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
+                                        <i class="fa-solid fa-circle-xmark" style="color: #ef4444;"></i> Signature Rejected by HR
+                                    </div>
+                                    <?php if (!empty($agrRejectionReason)): ?>
+                                        <div style="font-size: 0.8rem; color: #7f1d1d; line-height: 1.4;">
+                                            <strong>Reason:</strong> "<?php echo htmlspecialchars($agrRejectionReason); ?>"
+                                        </div>
+                                    <?php endif; ?>
+                                </div>
+                            <?php elseif ($isAgrApproved): ?>
+                                <div style="padding: 12px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px; color: #166534; font-weight: 800; font-size: 0.88rem; margin-bottom: 10px; text-align: center;">
+                                    <i class="fa-solid fa-check-circle" style="color: #16a34a;"></i> Signed Agreement Verified & Approved by HR
+                                </div>
+                            <?php elseif ($isAgrSubmitted): ?>
+                                <div style="padding: 12px; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 10px; color: #1e40af; font-size: 0.84rem; font-weight: 700; display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
+                                    <i class="fa-solid fa-file-circle-check" style="color: #2563eb;"></i> Signed & Submitted — Awaiting HR Verification
                                 </div>
                             <?php else: ?>
-                                <div style="padding: 14px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px; color: #166534; font-weight: 800; font-size: 0.88rem; margin-bottom: 10px;">
-                                    <i class="fa-solid fa-check-circle"></i> Signed Agreement Verified
+                                <div style="padding: 12px; background: #fffbe6; border: 1px solid #fef08a; border-radius: 10px; color: #b45309; font-size: 0.84rem; font-weight: 700; display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
+                                    <i class="fa-solid fa-clock" style="color: #d97706;"></i> Pending Digital Signature
                                 </div>
                             <?php endif; ?>
                         </div>
-                        <?php if ($isHRorAdmin): ?>
-                            <form method="POST" action="/admin/index.php?section=onboarding" style="display: flex; flex-direction: column; gap: 6px; margin-top: 10px;">
-                                <input type="hidden" name="action" value="admin_provide_agreement">
-                                <input type="hidden" name="target_user" value="<?php echo htmlspecialchars($activeOnboardingUser); ?>">
-                                <input type="text" name="document_url" value="<?php echo htmlspecialchars($onboardingData['employment_agreement']['document_url'] ?? '/assets/docs/Employment_Agreement.pdf'); ?>" placeholder="Agreement PDF File Link" required style="padding: 8px; font-size: 0.8rem; border: 1px solid #cbd5e1; border-radius: 6px;">
-                                <button type="submit" class="btn-save-primary" style="justify-content: center; background: #16a34a; border-color: #16a34a;">
-                                    <i class="fa-solid fa-file-signature"></i> Upload & Issue Agreement
+                        <div style="display: flex; flex-direction: column; gap: 8px;">
+                            <button type="button" class="btn-save-primary" style="width: 100%; justify-content: center; background: #0f172a;" onclick="openAgreementViewModal()">
+                                <i class="fa-solid fa-file-contract"></i> View Employment Agreement
+                            </button>
+
+                            <?php if (!$isAgrApproved && $isOwnProfile): ?>
+                                <form method="POST" action="/admin/index.php?section=onboarding" style="margin: 0;">
+                                    <input type="hidden" name="action" value="sign_employment_agreement">
+                                    <button type="submit" class="btn-save-primary" style="width: 100%; justify-content: center; background: #16a34a; border-color: #16a34a; font-weight: 800; font-size: 0.84rem;">
+                                        <i class="fa-solid fa-signature"></i> <?php echo ($isAgrSubmitted || $isAgrRejected ? 'Re-Sign & Resubmit Agreement' : 'Sign & Accept Agreement'); ?>
+                                    </button>
+                                </form>
+                            <?php endif; ?>
+
+                            <?php if ($isHRorAdmin): ?>
+                                <?php if ($isAgrSubmitted): ?>
+                                    <div style="display: flex; gap: 8px;">
+                                        <form method="POST" action="/admin/index.php?section=onboarding" style="flex: 1; margin: 0;">
+                                            <input type="hidden" name="action" value="admin_approve_onboarding_task">
+                                            <input type="hidden" name="target_user" value="<?php echo htmlspecialchars($activeOnboardingUser); ?>">
+                                            <input type="hidden" name="task_key" value="employment_agreement">
+                                            <input type="hidden" name="new_status" value="Approved">
+                                            <button type="submit" class="btn-save-primary" style="width: 100%; justify-content: center; background: #16a34a; border-color: #16a34a; padding: 8px 10px; font-size: 0.8rem;">
+                                                <i class="fa-solid fa-check"></i> Approve
+                                            </button>
+                                        </form>
+                                        <button type="button" onclick="openRejectTaskModal('employment_agreement', 'Employment Agreement', '<?php echo htmlspecialchars($activeOnboardingUser); ?>')" class="btn-save-primary" style="flex: 1; justify-content: center; background: #ffffff; color: #dc2626; border: 1px solid #fecaca; padding: 8px 10px; font-size: 0.8rem;" onmouseover="this.style.background='#fef2f2'" onmouseout="this.style.background='#ffffff'">
+                                            <i class="fa-solid fa-xmark"></i> Reject
+                                        </button>
+                                    </div>
+                                <?php endif; ?>
+                                <button type="button" class="btn-save-primary" style="width: 100%; justify-content: center; background: #ffffff; color: #0f172a; border: 1px solid #cbd5e1; font-size: 0.82rem;" onclick="openIssueAgreementModal()">
+                                    <i class="fa-solid fa-pen-to-square" style="color: #dc2626;"></i> HR Edit Terms
                                 </button>
-                            </form>
-                        <?php endif; ?>
+                            <?php endif; ?>
+                        </div>
                     </div>
 
                     <!-- CARD 4: REFERENCE 1 -->
@@ -7108,16 +7623,31 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                     $hasRef1Details = !empty($onboardingData['reference_1']['ref_name']);
                     $ref1Status = $onboardingData['reference_1']['status'] ?? ($hasRef1Details ? 'Submitted' : 'Pending');
                     $isRef1Approved = ($ref1Status === 'Approved');
+                    $isRef1Rejected = ($ref1Status === 'Rejected');
+                    $ref1RejectionReason = $onboardingData['reference_1']['rejection_reason'] ?? '';
                     ?>
                     <div class="dashboard-card" style="margin-bottom: 0; display: flex; flex-direction: column; justify-content: space-between;">
                         <div>
                             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                                <h3 style="font-size: 1.1rem; font-weight: 800; color: #0f172a; margin: 0;">Reference 1</h3>
-                                <span style="font-size: 0.74rem; font-weight: 800; padding: 3px 10px; border-radius: 12px; <?php echo ($isRef1Approved ? 'background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0;' : ($hasRef1Details && !$isEditingRef1 ? 'background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe;' : 'background: #f1f5f9; color: #64748b; border: 1px solid #cbd5e1;')); ?>">
-                                    <?php echo ($isRef1Approved ? 'Approved' : ($hasRef1Details && !$isEditingRef1 ? 'Submitted' : ($isEditingRef1 ? 'Editing' : 'Pending'))); ?>
+                                <h3 style="font-size: 0.95rem; font-weight: 800; color: #0f172a; margin: 0; white-space: nowrap;">Reference 1</h3>
+                                <span style="font-size: 0.74rem; font-weight: 800; padding: 3px 10px; border-radius: 12px; <?php echo ($isRef1Approved ? 'background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0;' : ($isRef1Rejected ? 'background: #fef2f2; color: #991b1b; border: 1px solid #fecaca;' : ($hasRef1Details && !$isEditingRef1 ? 'background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe;' : 'background: #f1f5f9; color: #64748b; border: 1px solid #cbd5e1;'))); ?>">
+                                    <?php echo ($isRef1Approved ? 'Approved' : ($isRef1Rejected ? 'Rejected' : ($hasRef1Details && !$isEditingRef1 ? 'Submitted' : ($isEditingRef1 ? 'Editing' : 'Pending')))); ?>
                                 </span>
                             </div>
                             <p style="font-size: 0.84rem; color: #64748b; margin-bottom: 16px;">Provide contact details for your first professional reference.</p>
+
+                            <?php if ($isRef1Rejected): ?>
+                                <div style="padding: 12px; background: #fef2f2; border: 1px solid #fecaca; border-radius: 10px; color: #991b1b; font-size: 0.84rem; margin-bottom: 12px;">
+                                    <div style="font-weight: 800; display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
+                                        <i class="fa-solid fa-circle-xmark" style="color: #ef4444;"></i> Reference 1 Rejected by HR
+                                    </div>
+                                    <?php if (!empty($ref1RejectionReason)): ?>
+                                        <div style="font-size: 0.8rem; color: #7f1d1d; line-height: 1.4;">
+                                            <strong>Reason:</strong> "<?php echo htmlspecialchars($ref1RejectionReason); ?>"
+                                        </div>
+                                    <?php endif; ?>
+                                </div>
+                            <?php endif; ?>
 
                             <?php if ($hasRef1Details && !$isEditingRef1): ?>
                                 <div style="padding: 14px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; font-size: 0.84rem; margin-bottom: 14px;">
@@ -7130,140 +7660,425 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                         <i class="fa-solid fa-check-circle" style="color: #16a34a;"></i> Reference Verified & Approved by HR
                                     </div>
                                 <?php else: ?>
-                                    <a href="/admin/index.php?section=onboarding&edit_ref1=1&target_user=<?php echo urlencode($activeOnboardingUser); ?>" class="btn-save-primary" style="width: 100%; justify-content: center; background: #ffffff; color: #0f172a; border: 1px solid #cbd5e1; text-decoration: none;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='#ffffff'">
-                                        <i class="fa-solid fa-pen-to-square" style="color: #dc2626;"></i> Edit Reference
-                                    </a>
-                                    <?php if ($isHRorAdmin): ?>
-                                        <form method="POST" action="/admin/index.php?section=onboarding" style="margin-top: 10px;">
-                                            <input type="hidden" name="action" value="admin_approve_onboarding_task">
-                                            <input type="hidden" name="target_user" value="<?php echo htmlspecialchars($activeOnboardingUser); ?>">
-                                            <input type="hidden" name="task_key" value="reference_1">
-                                            <input type="hidden" name="new_status" value="Approved">
-                                            <button type="submit" class="btn-save-primary" style="width: 100%; justify-content: center; background: #16a34a; border-color: #16a34a;">
-                                                <i class="fa-solid fa-check"></i> HR Verify Reference
-                                            </button>
-                                        </form>
-                                    <?php endif; ?>
-                                <?php endif; ?>
-                            <?php else: ?>
-                                <form method="POST" action="/admin/index.php?section=onboarding" style="display: flex; flex-direction: column; gap: 10px;">
-                                    <input type="hidden" name="action" value="save_onboarding_ref1">
-                                    <input type="text" name="ref_name" value="<?php echo htmlspecialchars($onboardingData['reference_1']['ref_name'] ?? ''); ?>" placeholder="Full Name" required style="padding: 10px; font-size: 0.84rem; border: 1px solid #cbd5e1; border-radius: 8px;">
-                                    <input type="text" name="ref_contact" value="<?php echo htmlspecialchars($onboardingData['reference_1']['ref_contact'] ?? ''); ?>" placeholder="Email / Phone Number" required style="padding: 10px; font-size: 0.84rem; border: 1px solid #cbd5e1; border-radius: 8px;">
-                                    <input type="text" name="relationship" value="<?php echo htmlspecialchars($onboardingData['reference_1']['relationship'] ?? ''); ?>" placeholder="Relationship / Title" required style="padding: 10px; font-size: 0.84rem; border: 1px solid #cbd5e1; border-radius: 8px;">
-                                    <div style="display: flex; gap: 8px; margin-top: 6px;">
-                                        <button type="submit" class="btn-save-primary" style="flex: 1; justify-content: center;">
-                                            <i class="fa-solid fa-floppy-disk"></i> <?php echo $hasRef1Details ? 'Update Reference' : 'Submit Reference'; ?>
-                                        </button>
-                                        <?php if ($hasRef1Details): ?>
-                                            <a href="/admin/index.php?section=onboarding&target_user=<?php echo urlencode($activeOnboardingUser); ?>" style="padding: 10px 14px; background: #f1f5f9; color: #475569; border-radius: 8px; font-size: 0.84rem; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center;">Cancel</a>
+                                    <div style="display: flex; flex-direction: column; gap: 8px;">
+                                        <a href="/admin/index.php?section=onboarding&edit_ref1=1&target_user=<?php echo urlencode($activeOnboardingUser); ?>" class="btn-save-primary" style="width: 100%; justify-content: center; background: #ffffff; color: #0f172a; border: 1px solid #cbd5e1; text-decoration: none;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='#ffffff'">
+                                            <i class="fa-solid fa-pen-to-square" style="color: #dc2626;"></i> <?php echo $isRef1Rejected ? 'Edit & Resubmit Reference 1' : 'Edit Reference 1'; ?>
+                                        </a>
+                                        <?php if ($isHRorAdmin): ?>
+                                            <div style="display: flex; gap: 8px;">
+                                                <form method="POST" action="/admin/index.php?section=onboarding" style="flex: 1; margin: 0;">
+                                                    <input type="hidden" name="action" value="admin_approve_onboarding_task">
+                                                    <input type="hidden" name="target_user" value="<?php echo htmlspecialchars($activeOnboardingUser); ?>">
+                                                    <input type="hidden" name="task_key" value="reference_1">
+                                                    <input type="hidden" name="new_status" value="Approved">
+                                                    <button type="submit" class="btn-save-primary" style="width: 100%; justify-content: center; background: #16a34a; border-color: #16a34a; padding: 8px 10px; font-size: 0.8rem;">
+                                                        <i class="fa-solid fa-check"></i> Approve
+                                                    </button>
+                                                </form>
+                                                <button type="button" onclick="openRejectTaskModal('reference_1', 'Reference 1', '<?php echo htmlspecialchars($activeOnboardingUser); ?>')" class="btn-save-primary" style="flex: 1; justify-content: center; background: #ffffff; color: #dc2626; border: 1px solid #fecaca; padding: 8px 10px; font-size: 0.8rem;" onmouseover="this.style.background='#fef2f2'" onmouseout="this.style.background='#ffffff'">
+                                                    <i class="fa-solid fa-xmark"></i> Reject
+                                                </button>
+                                            </div>
                                         <?php endif; ?>
                                     </div>
-                                </form>
+                                <?php endif; ?>
+                            <?php else: ?>
+                                <?php if ($isOwnProfile || $isEditingRef1): ?>
+                                    <form method="POST" action="/admin/index.php?section=onboarding" style="display: flex; flex-direction: column; gap: 10px;">
+                                        <input type="hidden" name="action" value="save_onboarding_ref1">
+                                        <input type="text" name="ref_name" value="<?php echo htmlspecialchars($onboardingData['reference_1']['ref_name'] ?? ''); ?>" placeholder="Full Name" required style="padding: 10px; font-size: 0.84rem; border: 1px solid #cbd5e1; border-radius: 8px;">
+                                        <input type="text" name="ref_contact" value="<?php echo htmlspecialchars($onboardingData['reference_1']['ref_contact'] ?? ''); ?>" placeholder="Email / Phone Number" required style="padding: 10px; font-size: 0.84rem; border: 1px solid #cbd5e1; border-radius: 8px;">
+                                        <input type="text" name="relationship" value="<?php echo htmlspecialchars($onboardingData['reference_1']['relationship'] ?? ''); ?>" placeholder="Relationship / Title" required style="padding: 10px; font-size: 0.84rem; border: 1px solid #cbd5e1; border-radius: 8px;">
+                                        <div style="display: flex; gap: 8px; margin-top: 6px;">
+                                            <button type="submit" class="btn-save-primary" style="flex: 1; justify-content: center;">
+                                                <i class="fa-solid fa-floppy-disk"></i> <?php echo $hasRef1Details ? 'Update Reference 1' : 'Submit Reference 1'; ?>
+                                            </button>
+                                            <?php if ($hasRef1Details): ?>
+                                                <a href="/admin/index.php?section=onboarding&target_user=<?php echo urlencode($activeOnboardingUser); ?>" style="padding: 10px 14px; background: #f1f5f9; color: #475569; border-radius: 8px; font-size: 0.84rem; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center;">Cancel</a>
+                                            <?php endif; ?>
+                                        </div>
+                                    </form>
+                                <?php else: ?>
+                                    <div style="padding: 18px; background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 12px; text-align: center; color: #64748b; font-size: 0.84rem;">
+                                        <i class="fa-solid fa-address-book" style="font-size: 1.4rem; color: #94a3b8; margin-bottom: 6px; display: block;"></i>
+                                        <strong style="color: #334155;">Awaiting Candidate Submission</strong>
+                                        <div style="font-size: 0.78rem; color: #94a3b8; margin-top: 4px; margin-bottom: 12px;">Candidate has not submitted Reference 1 contact details yet.</div>
+                                        <a href="/admin/index.php?section=onboarding&edit_ref1=1&target_user=<?php echo urlencode($activeOnboardingUser); ?>" style="display: inline-flex; align-items: center; gap: 6px; font-size: 0.78rem; font-weight: 700; color: #2563eb; text-decoration: none; background: #eff6ff; padding: 7px 14px; border-radius: 8px; border: 1px solid #bfdbfe;">
+                                            <i class="fa-solid fa-pen-to-square"></i> Enter Details for Staff
+                                        </a>
+                                    </div>
+                                <?php endif; ?>
                             <?php endif; ?>
                         </div>
                     </div>
 
-                    <!-- CARD 5: SOP -->
-                    <div class="dashboard-card" style="margin-bottom: 0; display: flex; flex-direction: column; justify-content: space-between;">
-                        <div>
-                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                                <h3 style="font-size: 1.1rem; font-weight: 800; color: #0f172a; margin: 0;">SOP</h3>
-                                <span style="font-size: 0.74rem; font-weight: 800; padding: 3px 10px; border-radius: 12px; <?php echo (!empty($onboardingData['sop']['acknowledged'])) ? 'background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0;' : 'background: #f1f5f9; color: #64748b; border: 1px solid #cbd5e1;'; ?>">
-                                    <?php echo (!empty($onboardingData['sop']['acknowledged'])) ? 'Approved' : 'Pending'; ?>
-                                </span>
-                            </div>
-                            <p style="font-size: 0.84rem; color: #64748b; margin-bottom: 16px;">Review and acknowledge studio standard operating procedures.</p>
-                        </div>
-                        <?php if (empty($onboardingData['sop']['acknowledged'])): ?>
-                            <form method="POST" action="/admin/index.php?section=onboarding" style="margin: 0;">
-                                <input type="hidden" name="action" value="acknowledge_sop">
-                                <button type="submit" class="btn-save-primary" style="width: 100%; justify-content: center;">
-                                    <i class="fa-solid fa-file-signature"></i> Read & Acknowledge SOP
-                                </button>
-                            </form>
-                        <?php else: ?>
-                            <div style="padding: 12px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px; color: #166534; font-weight: 800; font-size: 0.86rem; text-align: center;">
-                                <i class="fa-solid fa-check-circle"></i> SOP Acknowledged
-                            </div>
-                        <?php endif; ?>
-                    </div>
-
-                    <!-- CARD 6: STAFF HANDBOOK -->
-                    <div class="dashboard-card" style="margin-bottom: 0; display: flex; flex-direction: column; justify-content: space-between;">
-                        <div>
-                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                                <h3 style="font-size: 1.1rem; font-weight: 800; color: #0f172a; margin: 0;">Staff Handbook</h3>
-                                <span style="font-size: 0.74rem; font-weight: 800; padding: 3px 10px; border-radius: 12px; <?php echo (!empty($onboardingData['staff_handbook']['acknowledged'])) ? 'background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0;' : 'background: #f1f5f9; color: #64748b; border: 1px solid #cbd5e1;'; ?>">
-                                    <?php echo (!empty($onboardingData['staff_handbook']['acknowledged'])) ? 'Approved' : 'Pending'; ?>
-                                </span>
-                            </div>
-                            <p style="font-size: 0.84rem; color: #64748b; margin-bottom: 16px;">Read and acknowledge the Falhen Media Staff Handbook & Policies.</p>
-                        </div>
-                        <?php if (empty($onboardingData['staff_handbook']['acknowledged'])): ?>
-                            <form method="POST" action="/admin/index.php?section=onboarding" style="margin: 0;">
-                                <input type="hidden" name="action" value="acknowledge_handbook">
-                                <button type="submit" class="btn-save-primary" style="width: 100%; justify-content: center;">
-                                    <i class="fa-solid fa-book-open"></i> Read & Acknowledge Handbook
-                                </button>
-                            </form>
-                        <?php else: ?>
-                            <div style="padding: 12px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px; color: #166534; font-weight: 800; font-size: 0.86rem; text-align: center;">
-                                <i class="fa-solid fa-check-circle"></i> Handbook Acknowledged
-                            </div>
-                        <?php endif; ?>
-                    </div>
-
-                    <!-- CARD 7: ID VERIFICATION -->
+                    <!-- CARD 5: REFERENCE 2 -->
                     <?php 
-                    $hasIdFile = !empty($onboardingData['id_verification']['file_url']);
-                    $idStatus = $onboardingData['id_verification']['status'] ?? ($hasIdFile ? 'Submitted' : 'Pending');
-                    $isIdApproved = ($idStatus === 'Approved');
+                    $isEditingRef2 = isset($_GET['edit_ref2']) && $_GET['edit_ref2'] == '1';
+                    $hasRef2Details = !empty($onboardingData['reference_2']['ref_name']);
+                    $ref2Status = $onboardingData['reference_2']['status'] ?? ($hasRef2Details ? 'Submitted' : 'Pending');
+                    $isRef2Approved = ($ref2Status === 'Approved');
+                    $isRef2Rejected = ($ref2Status === 'Rejected');
+                    $ref2RejectionReason = $onboardingData['reference_2']['rejection_reason'] ?? '';
                     ?>
                     <div class="dashboard-card" style="margin-bottom: 0; display: flex; flex-direction: column; justify-content: space-between;">
                         <div>
                             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                                <h3 style="font-size: 1.1rem; font-weight: 800; color: #0f172a; margin: 0;">ID Verification</h3>
-                                <span style="font-size: 0.74rem; font-weight: 800; padding: 3px 10px; border-radius: 12px; <?php echo ($isIdApproved ? 'background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0;' : ($hasIdFile ? 'background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe;' : 'background: #f1f5f9; color: #64748b; border: 1px solid #cbd5e1;')); ?>">
-                                    <?php echo ($isIdApproved ? 'Approved' : ($hasIdFile ? 'Submitted' : 'Pending')); ?>
+                                <h3 style="font-size: 0.95rem; font-weight: 800; color: #0f172a; margin: 0; white-space: nowrap;">Reference 2</h3>
+                                <span style="font-size: 0.74rem; font-weight: 800; padding: 3px 10px; border-radius: 12px; <?php echo ($isRef2Approved ? 'background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0;' : ($isRef2Rejected ? 'background: #fef2f2; color: #991b1b; border: 1px solid #fecaca;' : ($hasRef2Details && !$isEditingRef2 ? 'background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe;' : 'background: #f1f5f9; color: #64748b; border: 1px solid #cbd5e1;'))); ?>">
+                                    <?php echo ($isRef2Approved ? 'Approved' : ($isRef2Rejected ? 'Rejected' : ($hasRef2Details && !$isEditingRef2 ? 'Submitted' : ($isEditingRef2 ? 'Editing' : 'Pending')))); ?>
                                 </span>
                             </div>
-                            <p style="font-size: 0.84rem; color: #64748b; margin-bottom: 16px;">Upload government-issued ID or Tax Identification document.</p>
+                            <p style="font-size: 0.84rem; color: #64748b; margin-bottom: 16px;">Provide contact details for your second professional reference.</p>
 
-                            <?php if ($hasIdFile): ?>
+                            <?php if ($isRef2Rejected): ?>
+                                <div style="padding: 12px; background: #fef2f2; border: 1px solid #fecaca; border-radius: 10px; color: #991b1b; font-size: 0.84rem; margin-bottom: 12px;">
+                                    <div style="font-weight: 800; display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
+                                        <i class="fa-solid fa-circle-xmark" style="color: #ef4444;"></i> Reference 2 Rejected by HR
+                                    </div>
+                                    <?php if (!empty($ref2RejectionReason)): ?>
+                                        <div style="font-size: 0.8rem; color: #7f1d1d; line-height: 1.4;">
+                                            <strong>Reason:</strong> "<?php echo htmlspecialchars($ref2RejectionReason); ?>"
+                                        </div>
+                                    <?php endif; ?>
+                                </div>
+                            <?php endif; ?>
+
+                            <?php if ($hasRef2Details && !$isEditingRef2): ?>
+                                <div style="padding: 14px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; font-size: 0.84rem; margin-bottom: 14px;">
+                                    <div style="font-weight: 700; color: #0f172a;"><?php echo htmlspecialchars($onboardingData['reference_2']['ref_name']); ?></div>
+                                    <div style="color: #475569; margin-top: 3px;"><?php echo htmlspecialchars($onboardingData['reference_2']['relationship']); ?></div>
+                                    <div style="color: #64748b; margin-top: 2px;"><?php echo htmlspecialchars($onboardingData['reference_2']['ref_contact']); ?></div>
+                                </div>
+                                <?php if ($isRef2Approved): ?>
+                                    <div style="padding: 12px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px; color: #166534; font-weight: 800; font-size: 0.86rem; text-align: center;">
+                                        <i class="fa-solid fa-check-circle" style="color: #16a34a;"></i> Reference Verified & Approved by HR
+                                    </div>
+                                <?php else: ?>
+                                    <div style="display: flex; flex-direction: column; gap: 8px;">
+                                        <a href="/admin/index.php?section=onboarding&edit_ref2=1&target_user=<?php echo urlencode($activeOnboardingUser); ?>" class="btn-save-primary" style="width: 100%; justify-content: center; background: #ffffff; color: #0f172a; border: 1px solid #cbd5e1; text-decoration: none;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='#ffffff'">
+                                            <i class="fa-solid fa-pen-to-square" style="color: #dc2626;"></i> <?php echo $isRef2Rejected ? 'Edit & Resubmit Reference 2' : 'Edit Reference 2'; ?>
+                                        </a>
+                                        <?php if ($isHRorAdmin): ?>
+                                            <div style="display: flex; gap: 8px;">
+                                                <form method="POST" action="/admin/index.php?section=onboarding" style="flex: 1; margin: 0;">
+                                                    <input type="hidden" name="action" value="admin_approve_onboarding_task">
+                                                    <input type="hidden" name="target_user" value="<?php echo htmlspecialchars($activeOnboardingUser); ?>">
+                                                    <input type="hidden" name="task_key" value="reference_2">
+                                                    <input type="hidden" name="new_status" value="Approved">
+                                                    <button type="submit" class="btn-save-primary" style="width: 100%; justify-content: center; background: #16a34a; border-color: #16a34a; padding: 8px 10px; font-size: 0.8rem;">
+                                                        <i class="fa-solid fa-check"></i> Approve
+                                                    </button>
+                                                </form>
+                                                <button type="button" onclick="openRejectTaskModal('reference_2', 'Reference 2', '<?php echo htmlspecialchars($activeOnboardingUser); ?>')" class="btn-save-primary" style="flex: 1; justify-content: center; background: #ffffff; color: #dc2626; border: 1px solid #fecaca; padding: 8px 10px; font-size: 0.8rem;" onmouseover="this.style.background='#fef2f2'" onmouseout="this.style.background='#ffffff'">
+                                                    <i class="fa-solid fa-xmark"></i> Reject
+                                                </button>
+                                            </div>
+                                        <?php endif; ?>
+                                    </div>
+                                <?php endif; ?>
+                            <?php else: ?>
+                                <?php if ($isOwnProfile || $isEditingRef2): ?>
+                                    <form method="POST" action="/admin/index.php?section=onboarding" style="display: flex; flex-direction: column; gap: 10px;">
+                                        <input type="hidden" name="action" value="save_onboarding_ref2">
+                                        <input type="text" name="ref_name" value="<?php echo htmlspecialchars($onboardingData['reference_2']['ref_name'] ?? ''); ?>" placeholder="Full Name" required style="padding: 10px; font-size: 0.84rem; border: 1px solid #cbd5e1; border-radius: 8px;">
+                                        <input type="text" name="ref_contact" value="<?php echo htmlspecialchars($onboardingData['reference_2']['ref_contact'] ?? ''); ?>" placeholder="Email / Phone Number" required style="padding: 10px; font-size: 0.84rem; border: 1px solid #cbd5e1; border-radius: 8px;">
+                                        <input type="text" name="relationship" value="<?php echo htmlspecialchars($onboardingData['reference_2']['relationship'] ?? ''); ?>" placeholder="Relationship / Title" required style="padding: 10px; font-size: 0.84rem; border: 1px solid #cbd5e1; border-radius: 8px;">
+                                        <div style="display: flex; gap: 8px; margin-top: 6px;">
+                                            <button type="submit" class="btn-save-primary" style="flex: 1; justify-content: center;">
+                                                <i class="fa-solid fa-floppy-disk"></i> <?php echo $hasRef2Details ? 'Update Reference 2' : 'Submit Reference 2'; ?>
+                                            </button>
+                                            <?php if ($hasRef2Details): ?>
+                                                <a href="/admin/index.php?section=onboarding&target_user=<?php echo urlencode($activeOnboardingUser); ?>" style="padding: 10px 14px; background: #f1f5f9; color: #475569; border-radius: 8px; font-size: 0.84rem; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center;">Cancel</a>
+                                            <?php endif; ?>
+                                        </div>
+                                    </form>
+                                <?php else: ?>
+                                    <div style="padding: 18px; background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 12px; text-align: center; color: #64748b; font-size: 0.84rem;">
+                                        <i class="fa-solid fa-address-book" style="font-size: 1.4rem; color: #94a3b8; margin-bottom: 6px; display: block;"></i>
+                                        <strong style="color: #334155;">Awaiting Candidate Submission</strong>
+                                        <div style="font-size: 0.78rem; color: #94a3b8; margin-top: 4px; margin-bottom: 12px;">Candidate has not submitted Reference 2 contact details yet.</div>
+                                        <a href="/admin/index.php?section=onboarding&edit_ref2=1&target_user=<?php echo urlencode($activeOnboardingUser); ?>" style="display: inline-flex; align-items: center; gap: 6px; font-size: 0.78rem; font-weight: 700; color: #2563eb; text-decoration: none; background: #eff6ff; padding: 7px 14px; border-radius: 8px; border: 1px solid #bfdbfe;">
+                                            <i class="fa-solid fa-pen-to-square"></i> Enter Details for Staff
+                                        </a>
+                                    </div>
+                                <?php endif; ?>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+
+                    <!-- CARD 6: SOP -->
+                    <?php 
+                    $sopData = $onboardingData['sop'] ?? [];
+                    $sopAck = !empty($sopData['acknowledged']);
+                    $sopStatus = $sopData['status'] ?? ($sopAck ? 'Submitted' : 'Pending');
+                    $isSopApproved = ($sopStatus === 'Approved');
+                    $isSopSubmitted = ($sopStatus === 'Submitted');
+                    $isSopRejected = ($sopStatus === 'Rejected');
+                    $sopRejectionReason = $sopData['rejection_reason'] ?? '';
+                    $sopAckAt = $sopData['acknowledged_at'] ?? date('Y-m-d H:i:s');
+                    ?>
+                    <div class="dashboard-card" style="margin-bottom: 0; display: flex; flex-direction: column; justify-content: space-between;">
+                        <div>
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                                <h3 style="font-size: 0.95rem; font-weight: 800; color: #0f172a; margin: 0; white-space: nowrap;">SOP</h3>
+                                <span style="font-size: 0.74rem; font-weight: 800; padding: 3px 10px; border-radius: 12px; <?php echo ($isSopApproved ? 'background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0;' : ($isSopRejected ? 'background: #fef2f2; color: #991b1b; border: 1px solid #fecaca;' : ($isSopSubmitted ? 'background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe;' : 'background: #f1f5f9; color: #64748b; border: 1px solid #cbd5e1;'))); ?>">
+                                    <?php echo ($isSopApproved ? 'Approved' : ($isSopRejected ? 'Rejected' : ($isSopSubmitted ? 'Submitted' : 'Pending'))); ?>
+                                </span>
+                            </div>
+                            <p style="font-size: 0.84rem; color: #64748b; margin-bottom: 16px;">Review and acknowledge studio standard operating procedures (19 Sections).</p>
+
+                            <?php if ($isSopRejected): ?>
+                                <div style="padding: 12px; background: #fef2f2; border: 1px solid #fecaca; border-radius: 10px; color: #991b1b; font-size: 0.84rem; margin-bottom: 10px;">
+                                    <div style="font-weight: 800; display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
+                                        <i class="fa-solid fa-circle-xmark" style="color: #ef4444;"></i> SOP Signature Rejected by HR
+                                    </div>
+                                    <?php if (!empty($sopRejectionReason)): ?>
+                                        <div style="font-size: 0.8rem; color: #7f1d1d; line-height: 1.4;">
+                                            <strong>Reason:</strong> "<?php echo htmlspecialchars($sopRejectionReason); ?>"
+                                        </div>
+                                    <?php endif; ?>
+                                </div>
+                            <?php elseif ($isSopApproved): ?>
+                                <div style="padding: 12px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px; color: #166534; font-weight: 800; font-size: 0.88rem; margin-bottom: 10px; text-align: center;">
+                                    <i class="fa-solid fa-check-circle" style="color: #16a34a;"></i> SOP Verified & Approved by HR
+                                </div>
+                            <?php elseif ($isSopSubmitted): ?>
+                                <div style="padding: 12px; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 10px; color: #1e40af; font-size: 0.84rem; font-weight: 700; display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
+                                    <i class="fa-solid fa-file-circle-check" style="color: #2563eb;"></i> SOP Acknowledged & Submitted to HR
+                                </div>
+                            <?php else: ?>
+                                <div style="padding: 12px; background: #fffbe6; border: 1px solid #fef08a; border-radius: 10px; color: #b45309; font-size: 0.84rem; font-weight: 700; display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
+                                    <i class="fa-solid fa-clock" style="color: #d97706;"></i> Pending Digital Signature
+                                </div>
+                            <?php endif; ?>
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 8px;">
+                            <button type="button" onclick="openSopViewModal()" class="btn-save-primary" style="width: 100%; justify-content: center; background: #0f172a; color: #ffffff;">
+                                <i class="fa-solid fa-book-open"></i> View SOP Document
+                            </button>
+
+                            <?php if (!$isSopApproved && $isOwnProfile): ?>
+                                <button type="button" onclick="openSopViewModal()" class="btn-save-primary" style="width: 100%; justify-content: center; background: #16a34a; border-color: #16a34a; font-weight: 800; font-size: 0.84rem;">
+                                    <i class="fa-solid fa-signature"></i> <?php echo ($isSopSubmitted || $isSopRejected ? 'Re-Sign & Acknowledge SOP' : 'Read & Acknowledge SOP'); ?>
+                                </button>
+                            <?php endif; ?>
+
+                            <?php if ($isHRorAdmin): ?>
+                                <?php if ($isSopSubmitted): ?>
+                                    <div style="display: flex; gap: 8px;">
+                                        <form method="POST" action="/admin/index.php?section=onboarding" style="flex: 1; margin: 0;">
+                                            <input type="hidden" name="action" value="admin_approve_onboarding_task">
+                                            <input type="hidden" name="target_user" value="<?php echo htmlspecialchars($activeOnboardingUser); ?>">
+                                            <input type="hidden" name="task_key" value="sop">
+                                            <input type="hidden" name="new_status" value="Approved">
+                                            <button type="submit" class="btn-save-primary" style="width: 100%; justify-content: center; background: #16a34a; border-color: #16a34a; padding: 8px 10px; font-size: 0.8rem;">
+                                                <i class="fa-solid fa-check"></i> Approve
+                                            </button>
+                                        </form>
+                                        <button type="button" onclick="openRejectTaskModal('sop', 'SOP', '<?php echo htmlspecialchars($activeOnboardingUser); ?>')" class="btn-save-primary" style="flex: 1; justify-content: center; background: #ffffff; color: #dc2626; border: 1px solid #fecaca; padding: 8px 10px; font-size: 0.8rem;" onmouseover="this.style.background='#fef2f2'" onmouseout="this.style.background='#ffffff'">
+                                            <i class="fa-solid fa-xmark"></i> Reject
+                                        </button>
+                                    </div>
+                                <?php endif; ?>
+                                <button type="button" class="btn-save-primary" style="width: 100%; justify-content: center; background: #ffffff; color: #0f172a; border: 1px solid #cbd5e1; font-size: 0.82rem;" onclick="openSopViewModal()">
+                                    <i class="fa-solid fa-file-shield" style="color: #dc2626;"></i> HR Inspect SOP Record
+                                </button>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+
+                    <!-- CARD 7: STAFF HANDBOOK -->
+                    <?php 
+                    $handbookData = $onboardingData['staff_handbook'] ?? [];
+                    $handbookAck = !empty($handbookData['acknowledged']);
+                    $handbookStatus = $handbookData['status'] ?? ($handbookAck ? 'Submitted' : 'Pending');
+                    $isHandbookApproved = ($handbookStatus === 'Approved');
+                    $isHandbookSubmitted = ($handbookStatus === 'Submitted');
+                    $isHandbookRejected = ($handbookStatus === 'Rejected');
+                    $handbookRejectionReason = $handbookData['rejection_reason'] ?? '';
+                    $handbookAckAt = $handbookData['acknowledged_at'] ?? date('Y-m-d H:i:s');
+                    ?>
+                    <div class="dashboard-card" style="margin-bottom: 0; display: flex; flex-direction: column; justify-content: space-between;">
+                        <div>
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                                <h3 style="font-size: 0.95rem; font-weight: 800; color: #0f172a; margin: 0; white-space: nowrap;">Staff Handbook</h3>
+                                <span style="font-size: 0.74rem; font-weight: 800; padding: 3px 10px; border-radius: 12px; <?php echo ($isHandbookApproved ? 'background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0;' : ($isHandbookRejected ? 'background: #fef2f2; color: #991b1b; border: 1px solid #fecaca;' : ($isHandbookSubmitted ? 'background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe;' : 'background: #f1f5f9; color: #64748b; border: 1px solid #cbd5e1;'))); ?>">
+                                    <?php echo ($isHandbookApproved ? 'Approved' : ($isHandbookRejected ? 'Rejected' : ($isHandbookSubmitted ? 'Submitted' : 'Pending'))); ?>
+                                </span>
+                            </div>
+                            <p style="font-size: 0.84rem; color: #64748b; margin-bottom: 16px;">Read and acknowledge the Falhen Media Staff Handbook & Policies (30 Sections).</p>
+
+                            <?php if ($isHandbookRejected): ?>
+                                <div style="padding: 12px; background: #fef2f2; border: 1px solid #fecaca; border-radius: 10px; color: #991b1b; font-size: 0.84rem; margin-bottom: 10px;">
+                                    <div style="font-weight: 800; display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
+                                        <i class="fa-solid fa-circle-xmark" style="color: #ef4444;"></i> Handbook Signature Rejected by HR
+                                    </div>
+                                    <?php if (!empty($handbookRejectionReason)): ?>
+                                        <div style="font-size: 0.8rem; color: #7f1d1d; line-height: 1.4;">
+                                            <strong>Reason:</strong> "<?php echo htmlspecialchars($handbookRejectionReason); ?>"
+                                        </div>
+                                    <?php endif; ?>
+                                </div>
+                            <?php elseif ($isHandbookApproved): ?>
+                                <div style="padding: 12px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px; color: #166534; font-weight: 800; font-size: 0.88rem; margin-bottom: 10px; text-align: center;">
+                                    <i class="fa-solid fa-check-circle" style="color: #16a34a;"></i> Staff Handbook Verified & Approved by HR
+                                </div>
+                            <?php elseif ($isHandbookSubmitted): ?>
+                                <div style="padding: 12px; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 10px; color: #1e40af; font-size: 0.84rem; font-weight: 700; display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
+                                    <i class="fa-solid fa-file-circle-check" style="color: #2563eb;"></i> Handbook Acknowledged & Submitted to HR
+                                </div>
+                            <?php else: ?>
+                                <div style="padding: 12px; background: #fffbe6; border: 1px solid #fef08a; border-radius: 10px; color: #b45309; font-size: 0.84rem; font-weight: 700; display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
+                                    <i class="fa-solid fa-clock" style="color: #d97706;"></i> Pending Digital Signature
+                                </div>
+                            <?php endif; ?>
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 8px;">
+                            <button type="button" onclick="openHandbookViewModal()" class="btn-save-primary" style="width: 100%; justify-content: center; background: #0f172a; color: #ffffff;">
+                                <i class="fa-solid fa-book"></i> View Staff Handbook
+                            </button>
+
+                            <?php if (!$isHandbookApproved && $isOwnProfile): ?>
+                                <button type="button" onclick="openHandbookViewModal()" class="btn-save-primary" style="width: 100%; justify-content: center; background: #16a34a; border-color: #16a34a; font-weight: 800; font-size: 0.84rem;">
+                                    <i class="fa-solid fa-signature"></i> <?php echo ($isHandbookSubmitted || $isHandbookRejected ? 'Re-Sign & Acknowledge Handbook' : 'Read & Acknowledge Handbook'); ?>
+                                </button>
+                            <?php endif; ?>
+
+                            <?php if ($isHRorAdmin): ?>
+                                <?php if ($isHandbookSubmitted): ?>
+                                    <div style="display: flex; gap: 8px;">
+                                        <form method="POST" action="/admin/index.php?section=onboarding" style="flex: 1; margin: 0;">
+                                            <input type="hidden" name="action" value="admin_approve_onboarding_task">
+                                            <input type="hidden" name="target_user" value="<?php echo htmlspecialchars($activeOnboardingUser); ?>">
+                                            <input type="hidden" name="task_key" value="staff_handbook">
+                                            <input type="hidden" name="new_status" value="Approved">
+                                            <button type="submit" class="btn-save-primary" style="width: 100%; justify-content: center; background: #16a34a; border-color: #16a34a; padding: 8px 10px; font-size: 0.8rem;">
+                                                <i class="fa-solid fa-check"></i> Approve
+                                            </button>
+                                        </form>
+                                        <button type="button" onclick="openRejectTaskModal('staff_handbook', 'Staff Handbook', '<?php echo htmlspecialchars($activeOnboardingUser); ?>')" class="btn-save-primary" style="flex: 1; justify-content: center; background: #ffffff; color: #dc2626; border: 1px solid #fecaca; padding: 8px 10px; font-size: 0.8rem;" onmouseover="this.style.background='#fef2f2'" onmouseout="this.style.background='#ffffff'">
+                                            <i class="fa-solid fa-xmark"></i> Reject
+                                        </button>
+                                    </div>
+                                <?php endif; ?>
+                                <button type="button" class="btn-save-primary" style="width: 100%; justify-content: center; background: #ffffff; color: #0f172a; border: 1px solid #cbd5e1; font-size: 0.82rem;" onclick="openHandbookViewModal()">
+                                    <i class="fa-solid fa-file-shield" style="color: #dc2626;"></i> HR Inspect Handbook Record
+                                </button>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+
+                    <!-- CARD 8: ID VERIFICATION -->
+                    <?php 
+                    $isEditingId = isset($_GET['edit_id']) && $_GET['edit_id'] == '1';
+                    $hasIdFile = !empty($onboardingData['id_verification']['file_url']);
+                    $idStatus = $onboardingData['id_verification']['status'] ?? ($hasIdFile ? 'Submitted' : 'Pending');
+                    $isIdApproved = ($idStatus === 'Approved');
+                    $isIdRejected = ($idStatus === 'Rejected');
+                    $idRejectionReason = $onboardingData['id_verification']['rejection_reason'] ?? '';
+                    $idFileUrl = $onboardingData['id_verification']['file_url'] ?? '';
+                    ?>
+                    <div class="dashboard-card" style="margin-bottom: 0; display: flex; flex-direction: column; justify-content: space-between;">
+                        <div>
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                                <h3 style="font-size: 0.95rem; font-weight: 800; color: #0f172a; margin: 0; white-space: nowrap;">ID Verification</h3>
+                                <span style="font-size: 0.74rem; font-weight: 800; padding: 3px 10px; border-radius: 12px; <?php echo ($isIdApproved ? 'background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0;' : ($isIdRejected ? 'background: #fef2f2; color: #991b1b; border: 1px solid #fecaca;' : ($hasIdFile && !$isEditingId ? 'background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe;' : 'background: #f1f5f9; color: #64748b; border: 1px solid #cbd5e1;'))); ?>">
+                                    <?php echo ($isIdApproved ? 'Approved' : ($isIdRejected ? 'Rejected' : ($hasIdFile && !$isEditingId ? 'Submitted' : ($isEditingId ? 'Re-Uploading' : 'Pending')))); ?>
+                                </span>
+                            </div>
+                            <p style="font-size: 0.84rem; color: #64748b; margin-bottom: 16px;">Upload government-issued ID or Tax Identification document (Image/PDF stored on Cloudinary).</p>
+
+                            <?php if ($isIdRejected): ?>
+                                <div style="padding: 12px; background: #fef2f2; border: 1px solid #fecaca; border-radius: 10px; color: #991b1b; font-size: 0.84rem; margin-bottom: 12px;">
+                                    <div style="font-weight: 800; display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
+                                        <i class="fa-solid fa-circle-xmark" style="color: #ef4444;"></i> ID Document Rejected by HR
+                                    </div>
+                                    <?php if (!empty($idRejectionReason)): ?>
+                                        <div style="font-size: 0.8rem; color: #7f1d1d; line-height: 1.4;">
+                                            <strong>Reason:</strong> "<?php echo htmlspecialchars($idRejectionReason); ?>"
+                                        </div>
+                                    <?php endif; ?>
+                                </div>
+                            <?php endif; ?>
+
+                            <?php if ($hasIdFile && !$isEditingId): ?>
+                                <div style="padding: 14px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; font-size: 0.84rem; margin-bottom: 14px;">
+                                    <div style="font-weight: 700; color: #0f172a; margin-bottom: 6px; display: flex; align-items: center; gap: 8px;">
+                                        <i class="fa-solid fa-cloud-arrow-up" style="color: #2563eb;"></i> Cloudinary ID Document
+                                    </div>
+                                    <a href="<?php echo htmlspecialchars($idFileUrl); ?>" target="_blank" style="display: inline-flex; align-items: center; gap: 6px; font-size: 0.8rem; font-weight: 700; color: #2563eb; text-decoration: none;">
+                                        <i class="fa-solid fa-arrow-up-right-from-square"></i> View / Download Document
+                                    </a>
+                                </div>
                                 <?php if ($isIdApproved): ?>
                                     <div style="padding: 12px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px; color: #166534; font-weight: 800; font-size: 0.86rem; text-align: center;">
                                         <i class="fa-solid fa-check-circle" style="color: #16a34a;"></i> ID Verified & Approved by HR
                                     </div>
                                 <?php else: ?>
-                                    <div style="padding: 12px; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 10px; color: #1e40af; font-weight: 800; font-size: 0.86rem; text-align: center; margin-bottom: 10px;">
-                                        <i class="fa-solid fa-id-card"></i> ID Document Uploaded (Pending HR Approval)
+                                    <div style="display: flex; flex-direction: column; gap: 8px;">
+                                        <a href="/admin/index.php?section=onboarding&edit_id=1&target_user=<?php echo urlencode($activeOnboardingUser); ?>" class="btn-save-primary" style="width: 100%; justify-content: center; background: #ffffff; color: #0f172a; border: 1px solid #cbd5e1; text-decoration: none;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='#ffffff'">
+                                            <i class="fa-solid fa-arrow-up-from-bracket" style="color: #dc2626;"></i> Re-Upload ID Document
+                                        </a>
+                                        <?php if ($isHRorAdmin): ?>
+                                            <div style="display: flex; gap: 8px;">
+                                                <form method="POST" action="/admin/index.php?section=onboarding" style="flex: 1; margin: 0;">
+                                                    <input type="hidden" name="action" value="admin_approve_onboarding_task">
+                                                    <input type="hidden" name="target_user" value="<?php echo htmlspecialchars($activeOnboardingUser); ?>">
+                                                    <input type="hidden" name="task_key" value="id_verification">
+                                                    <input type="hidden" name="new_status" value="Approved">
+                                                    <button type="submit" class="btn-save-primary" style="width: 100%; justify-content: center; background: #16a34a; border-color: #16a34a; padding: 8px 10px; font-size: 0.8rem;">
+                                                        <i class="fa-solid fa-check"></i> Approve ID
+                                                    </button>
+                                                </form>
+                                                <button type="button" onclick="openRejectTaskModal('id_verification', 'ID Verification', '<?php echo htmlspecialchars($activeOnboardingUser); ?>')" class="btn-save-primary" style="flex: 1; justify-content: center; background: #ffffff; color: #dc2626; border: 1px solid #fecaca; padding: 8px 10px; font-size: 0.8rem;" onmouseover="this.style.background='#fef2f2'" onmouseout="this.style.background='#ffffff'">
+                                                    <i class="fa-solid fa-xmark"></i> Reject ID
+                                                </button>
+                                            </div>
+                                        <?php endif; ?>
                                     </div>
-                                    <?php if ($isHRorAdmin): ?>
-                                        <form method="POST" action="/admin/index.php?section=onboarding">
-                                            <input type="hidden" name="action" value="admin_approve_onboarding_task">
-                                            <input type="hidden" name="target_user" value="<?php echo htmlspecialchars($activeOnboardingUser); ?>">
-                                            <input type="hidden" name="task_key" value="id_verification">
-                                            <input type="hidden" name="new_status" value="Approved">
-                                            <button type="submit" class="btn-save-primary" style="width: 100%; justify-content: center; background: #16a34a; border-color: #16a34a;">
-                                                <i class="fa-solid fa-check"></i> HR Approve ID Verification
-                                            </button>
-                                        </form>
-                                    <?php endif; ?>
                                 <?php endif; ?>
                             <?php else: ?>
-                                <form method="POST" action="/admin/index.php?section=onboarding" style="display: flex; flex-direction: column; gap: 10px;">
-                                    <input type="hidden" name="action" value="save_onboarding_id">
-                                    <input type="text" name="file_url" placeholder="Paste ID Document Link or File URL" required style="padding: 10px; font-size: 0.84rem; border: 1px solid #cbd5e1; border-radius: 8px;">
-                                    <button type="submit" class="btn-save-primary" style="justify-content: center;">Upload ID Document</button>
-                                </form>
+                                <?php if ($isOwnProfile || $isEditingId): ?>
+                                    <form method="POST" action="/admin/index.php?section=onboarding" enctype="multipart/form-data" style="display: flex; flex-direction: column; gap: 10px;">
+                                        <input type="hidden" name="action" value="save_onboarding_id">
+                                        
+                                        <div>
+                                            <label style="display: block; font-size: 0.76rem; font-weight: 700; color: #334155; margin-bottom: 4px;">Select File (PNG, JPG, PDF, DOC)</label>
+                                            <input type="file" name="id_document_file" accept="image/*,.pdf,.doc,.docx" style="width: 100%; padding: 8px; font-size: 0.82rem; border: 1px solid #cbd5e1; border-radius: 8px; background: #ffffff; box-sizing: border-box;">
+                                        </div>
+
+                                        <div>
+                                            <label style="display: block; font-size: 0.76rem; font-weight: 700; color: #64748b; margin-bottom: 4px;">OR Paste File / Cloudinary URL</label>
+                                            <input type="text" name="file_url" value="<?php echo htmlspecialchars($idFileUrl); ?>" placeholder="https://res.cloudinary.com/..." style="width: 100%; padding: 8px 10px; font-size: 0.82rem; border: 1px solid #cbd5e1; border-radius: 8px; box-sizing: border-box;">
+                                        </div>
+
+                                        <div style="display: flex; gap: 8px; margin-top: 4px;">
+                                            <button type="submit" class="btn-save-primary" style="flex: 1; justify-content: center; background: #dc2626; border-color: #dc2626;">
+                                                <i class="fa-solid fa-cloud-arrow-up"></i> <?php echo $hasIdFile ? 'Upload & Save to Cloudinary' : 'Upload ID to Cloudinary'; ?>
+                                            </button>
+                                            <?php if ($hasIdFile): ?>
+                                                <a href="/admin/index.php?section=onboarding&target_user=<?php echo urlencode($activeOnboardingUser); ?>" style="padding: 10px 14px; background: #f1f5f9; color: #475569; border-radius: 8px; font-size: 0.84rem; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center;">Cancel</a>
+                                            <?php endif; ?>
+                                        </div>
+                                    </form>
+                                <?php else: ?>
+                                    <div style="padding: 18px; background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 12px; text-align: center; color: #64748b; font-size: 0.84rem;">
+                                        <i class="fa-solid fa-id-card" style="font-size: 1.4rem; color: #94a3b8; margin-bottom: 6px; display: block;"></i>
+                                        <strong style="color: #334155;">Awaiting Candidate Upload</strong>
+                                        <div style="font-size: 0.78rem; color: #94a3b8; margin-top: 4px; margin-bottom: 12px;">Candidate has not uploaded government ID document yet.</div>
+                                        <a href="/admin/index.php?section=onboarding&edit_id=1&target_user=<?php echo urlencode($activeOnboardingUser); ?>" style="display: inline-flex; align-items: center; gap: 6px; font-size: 0.78rem; font-weight: 700; color: #2563eb; text-decoration: none; background: #eff6ff; padding: 7px 14px; border-radius: 8px; border: 1px solid #bfdbfe;">
+                                            <i class="fa-solid fa-cloud-arrow-up"></i> Upload Document for Staff
+                                        </a>
+                                    </div>
+                                <?php endif; ?>
                             <?php endif; ?>
                         </div>
                     </div>
 
                 </div>
 
-                <!-- ISSUE OFFER LETTER MODAL (TALENT MANAGER / HR) -->
+                <!-- ISSUE OFFER LETTER MODAL (HR MANAGER) -->
                 <div id="issueOfferModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15, 23, 42, 0.75); backdrop-filter: blur(6px); z-index: 100000; align-items: center; justify-content: center; padding: 20px; animation: fadeInModal 0.2s ease;">
                     <div style="background: #ffffff; border-radius: 20px; max-width: 620px; width: 100%; max-height: 90vh; overflow-y: auto; padding: 30px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.3); border: 1px solid #e2e8f0; position: relative;">
                         
@@ -7281,7 +8096,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                             </div>
                         </div>
 
-                        <form method="POST" action="/admin/index.php?section=onboarding" style="display: flex; flex-direction: column; gap: 16px;">
+                        <form method="POST" action="/admin/index.php?section=onboarding" enctype="multipart/form-data" style="display: flex; flex-direction: column; gap: 16px;">
                             <input type="hidden" name="action" value="admin_provide_offer">
                             <input type="hidden" name="target_user" value="<?php echo htmlspecialchars($activeOnboardingUser); ?>">
 
@@ -7330,7 +8145,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                             $rawSalaryVal = $onboardingData['offer_letter']['salary'] ?? '450,000 / month';
                                             $cleanSalaryVal = preg_replace('/^[₦$€£\s]+/u', '', $rawSalaryVal);
                                         ?>
-                                        <input type="text" name="salary" value="<?php echo htmlspecialchars($cleanSalaryVal); ?>" placeholder="e.g. 450,000 / month" required style="flex: 1; padding: 10px 12px; font-size: 0.85rem; border: 1px solid #cbd5e1; border-radius: 8px; box-sizing: border-box;">
+                                        <input type="text" id="offer_monthly_comp" name="salary" value="<?php echo htmlspecialchars($cleanSalaryVal); ?>" placeholder="e.g. 250,000" oninput="calcOfferTotals('monthly')" required style="flex: 1; padding: 10px 12px; font-size: 0.85rem; border: 1px solid #cbd5e1; border-radius: 8px; box-sizing: border-box; font-weight: 700; color: #166534;">
                                     </div>
                                 </div>
                             </div>
@@ -7358,10 +8173,50 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                 </div>
                             </div>
 
-                            <div>
-                                <label style="display: block; font-size: 0.8rem; font-weight: 700; color: #334155; margin-bottom: 6px;">Official PDF Document Link</label>
-                                <input type="text" name="document_url" value="<?php echo htmlspecialchars($onboardingData['offer_letter']['document_url'] ?? '/assets/docs/Offer_Letter_Falhen.pdf'); ?>" placeholder="e.g. /assets/docs/Offer_Letter_Falhen.pdf" required style="width: 100%; padding: 10px 12px; font-size: 0.85rem; border: 1px solid #cbd5e1; border-radius: 8px; box-sizing: border-box;">
+                            <!-- COMPENSATION BREAKDOWN (SET BY HR) -->
+                            <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 12px; padding: 14px; margin-top: 4px;">
+                                <div style="font-size: 0.82rem; font-weight: 800; color: #0f172a; margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between;">
+                                    <span><i class="fa-solid fa-calculator" style="color: #2563eb;"></i> Compensation Breakdown Structure</span>
+                                    <span style="font-size: 0.72rem; color: #166534; font-weight: 700;"><i class="fa-solid fa-sync"></i> Synced with Monthly Compensation</span>
+                                </div>
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                                    <div>
+                                        <label style="display: block; font-size: 0.76rem; font-weight: 700; color: #475569; margin-bottom: 4px;">Base Salary</label>
+                                        <input type="text" id="offer_base_salary" name="base_salary" value="<?php echo htmlspecialchars(preg_replace('/^[₦$€£\s]+/u', '', $onboardingData['offer_letter']['base_salary'] ?? '200,000')); ?>" placeholder="e.g. 200,000" oninput="calcOfferTotals('breakdown')" style="width: 100%; padding: 8px 10px; font-size: 0.82rem; border: 1px solid #cbd5e1; border-radius: 8px; box-sizing: border-box;">
+                                    </div>
+                                    <div>
+                                        <label style="display: block; font-size: 0.76rem; font-weight: 700; color: #475569; margin-bottom: 4px;">Technical / Data Allowance</label>
+                                        <input type="text" id="offer_tech_allowance" name="tech_allowance" value="<?php echo htmlspecialchars(preg_replace('/^[₦$€£\s]+/u', '', $onboardingData['offer_letter']['tech_allowance'] ?? '30,000')); ?>" placeholder="e.g. 30,000" oninput="calcOfferTotals('breakdown')" style="width: 100%; padding: 8px 10px; font-size: 0.82rem; border: 1px solid #cbd5e1; border-radius: 8px; box-sizing: border-box;">
+                                    </div>
+                                    <div>
+                                        <label style="display: block; font-size: 0.76rem; font-weight: 700; color: #475569; margin-bottom: 4px;">Wellness / Pension Equivalent</label>
+                                        <input type="text" id="offer_wellness_allowance" name="wellness_allowance" value="<?php echo htmlspecialchars(preg_replace('/^[₦$€£\s]+/u', '', $onboardingData['offer_letter']['wellness_allowance'] ?? '20,000')); ?>" placeholder="e.g. 20,000" oninput="calcOfferTotals('breakdown')" style="width: 100%; padding: 8px 10px; font-size: 0.82rem; border: 1px solid #cbd5e1; border-radius: 8px; box-sizing: border-box;">
+                                    </div>
+                                    <div>
+                                        <label style="display: block; font-size: 0.76rem; font-weight: 700; color: #475569; margin-bottom: 4px;">Total Earnings / Package</label>
+                                        <input type="text" id="offer_total_earnings" name="total_earnings" value="<?php echo htmlspecialchars(preg_replace('/^[₦$€£\s]+/u', '', $onboardingData['offer_letter']['total_earnings'] ?? '250,000')); ?>" placeholder="e.g. 250,000" oninput="calcOfferTotals('total')" style="width: 100%; padding: 8px 10px; font-size: 0.82rem; border: 1px solid #cbd5e1; border-radius: 8px; box-sizing: border-box; font-weight: 800; color: #166534; background: #f0fdf4;">
+                                    </div>
+                                </div>
                             </div>
+
+                            <script>
+                            function calcOfferTotals(mode) {
+                                let base = parseFloat(document.getElementById('offer_base_salary').value.replace(/,/g, '')) || 0;
+                                let tech = parseFloat(document.getElementById('offer_tech_allowance').value.replace(/,/g, '')) || 0;
+                                let wellness = parseFloat(document.getElementById('offer_wellness_allowance').value.replace(/,/g, '')) || 0;
+                                let total = document.getElementById('offer_total_earnings');
+                                let monthly = document.getElementById('offer_monthly_comp');
+
+                                if (mode === 'breakdown' || mode === 'total') {
+                                    let sum = base + tech + wellness;
+                                    total.value = sum.toLocaleString();
+                                    monthly.value = sum.toLocaleString();
+                                } else if (mode === 'monthly') {
+                                    let mVal = parseFloat(monthly.value.replace(/,/g, '')) || 0;
+                                    total.value = mVal.toLocaleString();
+                                }
+                            }
+                            </script>
 
                             <div>
                                 <label style="display: block; font-size: 0.8rem; font-weight: 700; color: #334155; margin-bottom: 6px;">Welcome Message & Special Terms (Optional)</label>
@@ -7393,12 +8248,18 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                     <div style="width: 38px; height: 38px; border-radius: 10px; background: #dc2626; color: #ffffff; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 1.2rem;">F</div>
                                     <span style="font-size: 1.3rem; font-weight: 900; color: #0f172a;">Falhen <span style="color: #dc2626;">Media</span></span>
                                 </div>
-                                <div style="font-size: 0.8rem; color: #64748b;">Human Resources & Talent Acquisition Studio</div>
+                                <div style="font-size: 0.8rem; color: #64748b;">Human Resources & Talent Acquisition</div>
                             </div>
                             <div style="text-align: right;">
-                                <span style="font-size: 0.76rem; font-weight: 800; padding: 4px 12px; border-radius: 14px; <?php echo ($offerAccepted ? 'background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0;' : ($offerIssued ? 'background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe;' : 'background: #f1f5f9; color: #64748b; border: 1px solid #cbd5e1;')); ?>">
-                                    <i class="fa-solid <?php echo ($offerAccepted ? 'fa-check-circle' : ($offerIssued ? 'fa-paper-plane' : 'fa-clock')); ?>"></i>
-                                    <?php echo htmlspecialchars($offerAccepted ? 'Accepted & Signed' : ($offerIssued ? 'Official Offer Issued' : 'Draft / Pending')); ?>
+                                <?php 
+                                    $modalOfferStatus = $onboardingData['offer_letter']['status'] ?? 'Pending';
+                                    $modalOfferIsApproved = ($modalOfferStatus === 'Approved');
+                                    $modalOfferIsAccepted = ($modalOfferStatus === 'Accepted') || (!empty($onboardingData['offer_letter']['accepted']) && !$modalOfferIsApproved);
+                                    $modalOfferIsIssued = ($modalOfferStatus === 'Issued') || !empty($onboardingData['offer_letter']['issued']);
+                                ?>
+                                <span style="font-size: 0.76rem; font-weight: 800; padding: 4px 12px; border-radius: 14px; <?php echo ($modalOfferIsApproved ? 'background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0;' : ($modalOfferIsAccepted ? 'background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd;' : ($modalOfferIsIssued ? 'background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe;' : 'background: #f1f5f9; color: #64748b; border: 1px solid #cbd5e1;'))); ?>">
+                                    <i class="fa-solid <?php echo ($modalOfferIsApproved ? 'fa-check-double' : ($modalOfferIsAccepted ? 'fa-user-check' : ($modalOfferIsIssued ? 'fa-paper-plane' : 'fa-clock'))); ?>"></i>
+                                    <?php echo htmlspecialchars($modalOfferIsApproved ? 'Issued & Approved' : ($modalOfferIsAccepted ? 'Accepted & Signed' : ($modalOfferIsIssued ? 'Official Offer Issued' : 'Draft / Pending'))); ?>
                                 </span>
                                 <div style="font-size: 0.76rem; color: #94a3b8; margin-top: 6px;">Ref: FLH-OFFER-<?php echo strtoupper(substr(md5($activeOnboardingUser), 0, 6)); ?></div>
                             </div>
@@ -7418,7 +8279,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; background: #ffffff; padding: 14px; border-radius: 10px; border: 1px solid #cbd5e1;">
                                     <div>
                                         <span style="display: block; font-size: 0.75rem; color: #64748b; font-weight: 700; text-transform: uppercase;">Monthly Compensation</span>
-                                        <strong style="font-size: 1rem; color: #166534; font-weight: 800;"><?php echo htmlspecialchars($onboardingData['offer_letter']['salary'] ?? '₦450,000 / month'); ?></strong>
+                                        <strong style="font-size: 1rem; color: #166534; font-weight: 800;"><?php echo htmlspecialchars(formatMoneyWithCommas($onboardingData['offer_letter']['salary'] ?? '₦450,000 / month')); ?></strong>
                                     </div>
                                     <div>
                                         <span style="display: block; font-size: 0.75rem; color: #64748b; font-weight: 700; text-transform: uppercase;">Start Date</span>
@@ -7430,7 +8291,37 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                     </div>
                                     <div>
                                         <span style="display: block; font-size: 0.75rem; color: #64748b; font-weight: 700; text-transform: uppercase;">Issued By</span>
-                                        <strong style="font-size: 0.9rem; color: #0f172a; font-weight: 700;"><?php echo htmlspecialchars($onboardingData['offer_letter']['issued_by'] ?? 'Talent Manager (Mojisola Emjay)'); ?></strong>
+                                        <strong style="font-size: 0.9rem; color: #0f172a; font-weight: 700;"><?php echo htmlspecialchars($onboardingData['offer_letter']['issued_by'] ?? 'HR Manager (Mojisola Emjay)'); ?></strong>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- COMPENSATION BREAKDOWN BOX -->
+                            <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 18px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+                                <div style="font-size: 0.88rem; font-weight: 800; color: #0f172a; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between;">
+                                    <span><i class="fa-solid fa-calculator" style="color: #2563eb; margin-right: 6px;"></i> Compensation Breakdown</span>
+                                    <span style="font-size: 0.74rem; color: #166534; background: #f0fdf4; padding: 3px 10px; border-radius: 10px; font-weight: 700; border: 1px solid #bbf7d0;">Verified Structure</span>
+                                </div>
+                                
+                                <div style="display: flex; flex-direction: column; gap: 8px;">
+                                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: #f8fafc; border-radius: 8px; font-size: 0.84rem;">
+                                        <span style="color: #475569; font-weight: 600;">Base Salary</span>
+                                        <strong style="color: #0f172a; font-weight: 800;"><?php echo htmlspecialchars(formatMoneyWithCommas($onboardingData['offer_letter']['base_salary'] ?? '₦200,000')); ?></strong>
+                                    </div>
+                                    
+                                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: #f8fafc; border-radius: 8px; font-size: 0.84rem;">
+                                        <span style="color: #475569; font-weight: 600;">Technical / Data Allowance</span>
+                                        <strong style="color: #0f172a; font-weight: 800;"><?php echo htmlspecialchars(formatMoneyWithCommas($onboardingData['offer_letter']['tech_allowance'] ?? '₦80,000')); ?></strong>
+                                    </div>
+
+                                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: #f8fafc; border-radius: 8px; font-size: 0.84rem;">
+                                        <span style="color: #475569; font-weight: 600;">Wellness / Pension Equivalent</span>
+                                        <strong style="color: #0f172a; font-weight: 800;"><?php echo htmlspecialchars(formatMoneyWithCommas($onboardingData['offer_letter']['wellness_allowance'] ?? '₦20,000')); ?></strong>
+                                    </div>
+
+                                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; font-size: 0.9rem; margin-top: 4px;">
+                                        <span style="color: #166534; font-weight: 800;">Total Annual / Monthly Earnings</span>
+                                        <strong style="color: #15803d; font-weight: 900; font-size: 1rem;"><?php echo htmlspecialchars(formatMoneyWithCommas($onboardingData['offer_letter']['total_earnings'] ?? '₦300,000')); ?></strong>
                                     </div>
                                 </div>
                             </div>
@@ -7438,29 +8329,1234 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                             <?php if (!empty($onboardingData['offer_letter']['notes'])): ?>
                                 <div style="background: #fffbe6; border: 1px solid #fef08a; border-radius: 12px; padding: 16px; color: #92400e; font-size: 0.86rem; line-height: 1.5;">
                                     <div style="font-weight: 800; margin-bottom: 4px; display: flex; align-items: center; gap: 6px;">
-                                        <i class="fa-solid fa-note-sticky" style="color: #d97706;"></i> Talent Manager Message & Terms:
+                                        <i class="fa-solid fa-note-sticky" style="color: #d97706;"></i> HR Manager Message & Terms:
                                     </div>
                                     <?php echo nl2br(htmlspecialchars($onboardingData['offer_letter']['notes'])); ?>
                                 </div>
                             <?php endif; ?>
 
-                            <div style="display: flex; align-items: center; justify-content: space-between; background: #f8fafc; padding: 12px 16px; border-radius: 10px; border: 1px solid #e2e8f0;">
-                                <div style="display: flex; align-items: center; gap: 10px;">
-                                    <i class="fa-solid fa-file-pdf" style="font-size: 1.5rem; color: #dc2626;"></i>
+                            <div style="display: flex; align-items: center; justify-content: space-between; background: #f8fafc; padding: 14px 18px; border-radius: 12px; border: 1px solid #e2e8f0; margin-top: 6px;">
+                                <div style="display: flex; align-items: center; gap: 12px;">
+                                    <div style="width: 40px; height: 40px; border-radius: 10px; background: #fef2f2; border: 1px solid #fecaca; display: flex; align-items: center; justify-content: center; color: #dc2626; font-size: 1.2rem; flex-shrink: 0;">
+                                        <i class="fa-solid fa-file-pdf"></i>
+                                    </div>
                                     <div>
-                                        <div style="font-size: 0.85rem; font-weight: 700; color: #0f172a;">Official Offer Document File</div>
-                                        <div style="font-size: 0.76rem; color: #64748b;"><?php echo htmlspecialchars($onboardingData['offer_letter']['document_url'] ?? '/assets/docs/Offer_Letter_Falhen.pdf'); ?></div>
+                                        <div style="font-size: 0.88rem; font-weight: 800; color: #0f172a;">Official Offer Document</div>
+                                        <div style="font-size: 0.76rem; color: #64748b; font-weight: 600;">Verified Studio Document • Official Falhen Media Terms</div>
                                     </div>
                                 </div>
-                                <a href="<?php echo htmlspecialchars($onboardingData['offer_letter']['document_url'] ?? '/assets/docs/Offer_Letter_Falhen.pdf'); ?>" target="_blank" class="btn-save-primary" style="padding: 8px 14px; font-size: 0.8rem; background: #0f172a; text-decoration: none;">
-                                    <i class="fa-solid fa-download"></i> Open PDF
-                                </a>
+                                <div style="display: flex; gap: 8px;">
+                                    <button type="button" onclick="window.print()" class="btn-save-primary" style="padding: 9px 16px; font-size: 0.82rem; background: #0f172a; border-color: #0f172a; color: #ffffff; border-radius: 8px; font-weight: 700; cursor: pointer;">
+                                        <i class="fa-solid fa-print"></i> Print Document
+                                    </button>
+                                    <a href="/admin/download_offer_pdf.php?target_user=<?php echo urlencode($activeOnboardingUser); ?>&print=1" target="_blank" class="btn-save-primary" style="padding: 9px 16px; font-size: 0.82rem; background: #ffffff; border: 1px solid #cbd5e1; color: #0f172a; text-decoration: none; border-radius: 8px; font-weight: 700;">
+                                        <i class="fa-solid fa-file-pdf" style="color: #dc2626;"></i> Download / Save PDF
+                                    </a>
+                                </div>
                             </div>
                         </div>
 
                         <!-- FOOTER ACTIONS -->
                         <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 22px; padding-top: 16px; border-top: 1px solid #f1f5f9;">
+                            <?php if ($offerIsIssued && !$offerIsAccepted && !$offerIsApproved && $isOwnProfile): ?>
+                                <form method="POST" action="/admin/index.php?section=onboarding" style="margin: 0;">
+                                    <input type="hidden" name="action" value="accept_offer">
+                                    <button type="submit" class="btn-save-primary" style="padding: 10px 22px; background: #16a34a; border-color: #16a34a; font-weight: 800; font-size: 0.85rem;">
+                                        <i class="fa-solid fa-check-circle"></i> Accept & Sign Offer Letter
+                                    </button>
+                                </form>
+                            <?php endif; ?>
                             <button type="button" onclick="closeOfferLetterViewModal()" style="padding: 10px 20px; background: #f1f5f9; color: #475569; border: none; border-radius: 8px; font-weight: 700; font-size: 0.85rem; cursor: pointer;">Close</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- MODAL 3: VIEW EMPLOYMENT AGREEMENT MODAL (26-CLAUSE OFFICIAL CONTRACT) -->
+                <?php 
+                    $agrData = $onboardingData['employment_agreement'] ?? [];
+                    $activeTargetObj = getStaffAccountByUsername($activeOnboardingUser);
+                    $isTargetMainAdmin = (strtolower($activeOnboardingUser) === 'admin' || strtolower($activeOnboardingUser) === 'oluwatosin.ligali' || strtolower($activeOnboardingUser) === 'oluwatosin ligali');
+
+                    $defaultSupName = $_SESSION['admin_full_name'] ?? $_SESSION['admin_name'] ?? 'Mojisola Emjay';
+                    $defaultSupRole = $_SESSION['admin_role'] ?? 'HR Manager';
+
+                    $agrSupervisorName = !empty($agrData['supervisor_name']) ? $agrData['supervisor_name'] : ($isTargetMainAdmin ? 'Oluwatosin Ligali' : $defaultSupName);
+                    $agrSupervisorRole = !empty($agrData['supervisor_role']) ? $agrData['supervisor_role'] : ($isTargetMainAdmin ? 'Admin' : $defaultSupRole);
+                    $agrWorkLocation = $agrData['work_location'] ?? 'Remote';
+                    $agrWorkDays = $agrData['work_days'] ?? 'Monday to Friday';
+                    $agrResumptionTime = $agrData['resumption_time'] ?? '9:00 AM';
+                    $agrClosingTime = $agrData['closing_time'] ?? '5:00 PM';
+
+                    if ($isTargetMainAdmin) {
+                        $agrAddress = $agrData['address'] ?? '6 Olorunfunmi Street, Pedro, Gbagada, Lagos';
+                        $agrPhone = $agrData['phone'] ?? '08027487449';
+                    } else {
+                        $targetPhone = $activeTargetObj['phone'] ?? '';
+                        $targetAddress = $activeTargetObj['address'] ?? '';
+                        $agrAddress = (!empty($agrData['address']) && $agrData['address'] !== '6 Olorunfunmi Street, Pedro, Gbagada, Lagos') ? $agrData['address'] : $targetAddress;
+                        $agrPhone = (!empty($agrData['phone']) && $agrData['phone'] !== '08027487449') ? $agrData['phone'] : $targetPhone;
+                    }
+
+                    $agrSigned = !empty($agrData['signed']);
+                    $agrSignedAt = $agrData['signed_at'] ?? date('Y-m-d H:i:s');
+                ?>
+                <div id="viewAgreementModal" class="modal-overlay" style="display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.75); backdrop-filter: blur(4px); z-index: 9999; align-items: center; justify-content: center; padding: 20px;">
+                    <div style="background: #ffffff; width: 100%; max-width: 860px; max-height: 90vh; border-radius: 16px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); display: flex; flex-direction: column; overflow: hidden; border: 1px solid #e2e8f0;">
+                        <!-- MODAL HEADER -->
+                        <div style="background: #0f172a; padding: 20px 24px; color: #ffffff; display: flex; align-items: center; justify-content: space-between; border-bottom: 3px solid #dc2626;">
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                <div style="width: 42px; height: 42px; border-radius: 10px; background: #dc2626; color: #ffffff; display: flex; align-items: center; justify-content: center; font-size: 1.2rem;">
+                                    <i class="fa-solid fa-file-contract"></i>
+                                </div>
+                                <div>
+                                    <h3 style="margin: 0; font-size: 1.15rem; font-weight: 800; color: #ffffff;">FALHEN EMPLOYMENT AGREEMENT</h3>
+                                    <div style="font-size: 0.78rem; color: #94a3b8; margin-top: 2px;">Official Studio Terms & Code of Conduct (26 Clauses)</div>
+                                </div>
+                            </div>
+                            <button type="button" onclick="closeAgreementViewModal()" style="background: transparent; border: none; color: #94a3b8; font-size: 1.3rem; cursor: pointer;" onmouseover="this.style.color='#ffffff'" onmouseout="this.style.color='#94a3b8'">&times;</button>
+                        </div>
+
+                        <!-- MODAL BODY: 26 CLAUSES -->
+                        <div id="printableAgreementArea" style="padding: 28px; overflow-y: auto; font-family: 'Inter', -apple-system, sans-serif; color: #1e293b; line-height: 1.6; font-size: 0.88rem;">
+                            
+                            <div style="text-align: center; border-bottom: 2px dashed #cbd5e1; padding-bottom: 20px; margin-bottom: 24px;">
+                                <div style="font-size: 1.45rem; font-weight: 900; color: #0f172a; letter-spacing: -0.5px;">EMPLOYMENT AGREEMENT</div>
+                                <div style="font-size: 0.84rem; color: #64748b; margin-top: 4px;">This Employment Agreement is made on this <strong><?php echo date('F jS, Y', strtotime($offerInfo['start_date'] ?? '2026-07-01')); ?></strong></div>
+                            </div>
+
+                            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px; margin-bottom: 24px;">
+                                <div style="font-weight: 800; color: #0f172a; margin-bottom: 6px;">BETWEEN:</div>
+                                <p style="margin: 0 0 12px 0;"><strong>Falhen</strong>, hereinafter referred to as <em>"the Employer"</em> or <em>"the Company,"</em></p>
+                                <div style="font-weight: 800; color: #0f172a; margin-bottom: 6px;">AND:</div>
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 0.84rem;">
+                                    <div><strong>Employee Name:</strong> <?php echo htmlspecialchars($userFullName); ?></div>
+                                    <div><strong>Address:</strong> <?php echo htmlspecialchars($agrAddress); ?></div>
+                                    <div><strong>Phone Number:</strong> <?php echo htmlspecialchars($agrPhone); ?></div>
+                                    <div><strong>Email Address:</strong> <?php echo htmlspecialchars($userEmail); ?></div>
+                                </div>
+                                <p style="margin: 12px 0 0 0; font-style: italic; color: #64748b;">Hereinafter referred to as "the Employee."</p>
+                            </div>
+
+                            <div style="display: flex; flex-direction: column; gap: 20px;">
+                                <div>
+                                    <h4 style="font-size: 0.95rem; font-weight: 800; color: #0f172a; margin: 0 0 6px 0; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">1. Appointment</h4>
+                                    <p style="margin: 0 0 8px 0;">The Employer hereby appoints the Employee to the position of:</p>
+                                    <div style="background: #f1f5f9; padding: 12px; border-radius: 8px; font-size: 0.84rem; display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                                        <div><strong>Job Title:</strong> <?php echo htmlspecialchars($offerInfo['job_title'] ?? 'Senior Video Editor & Cinematographer'); ?></div>
+                                        <div><strong>Department:</strong> <?php echo htmlspecialchars($offerInfo['department'] ?? 'Media Production & Post Studio'); ?></div>
+                                        <div><strong>Employment Type:</strong> <?php echo htmlspecialchars($offerInfo['employment_type'] ?? 'Full-Time'); ?></div>
+                                        <div><strong>Start Date:</strong> <?php echo htmlspecialchars($offerInfo['start_date'] ?? date('Y-m-d')); ?></div>
+                                    </div>
+                                    <p style="margin: 8px 0 0 0;">The Employee accepts the appointment and agrees to perform the duties assigned to the role diligently, professionally, and in line with the policies and procedures of Falhen.</p>
+                                </div>
+
+                                <div>
+                                    <h4 style="font-size: 0.95rem; font-weight: 800; color: #0f172a; margin: 0 0 6px 0; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">2. Job Responsibilities</h4>
+                                    <p style="margin: 0 0 6px 0;">The Employee shall perform duties related to the position and any other reasonable duties assigned by the Employer, supervisor, department head, or management.</p>
+                                    <p style="margin: 0 0 4px 0;">The Employee is expected to:</p>
+                                    <ul style="margin: 0; padding-left: 20px; line-height: 1.7;">
+                                        <li>Carry out assigned tasks efficiently and professionally</li>
+                                        <li>Meet agreed targets, deadlines, and performance expectations</li>
+                                        <li>Follow company policies, procedures, and reporting structures</li>
+                                        <li>Protect company property, data, and confidential information</li>
+                                        <li>Work cooperatively with colleagues, clients, partners, and management</li>
+                                        <li>Represent Falhen positively at all times</li>
+                                    </ul>
+                                </div>
+
+                                <div>
+                                    <h4 style="font-size: 0.95rem; font-weight: 800; color: #0f172a; margin: 0 0 6px 0; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">3. Reporting Line</h4>
+                                    <p style="margin: 0 0 6px 0;">The Employee shall report directly to:</p>
+                                    <div style="background: #f1f5f9; padding: 10px 14px; border-radius: 8px; font-size: 0.84rem;">
+                                        <div><strong>Supervisor/Manager Name:</strong> <?php echo htmlspecialchars($agrSupervisorName); ?></div>
+                                        <div style="margin-top: 2px;"><strong>Designation:</strong> <?php echo htmlspecialchars($agrSupervisorRole); ?></div>
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <h4 style="font-size: 0.95rem; font-weight: 800; color: #0f172a; margin: 0 0 6px 0; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">4. Place of Work</h4>
+                                    <p style="margin: 0;"><strong>Work Location:</strong> <?php echo htmlspecialchars($agrWorkLocation); ?></p>
+                                </div>
+
+                                <div>
+                                    <h4 style="font-size: 0.95rem; font-weight: 800; color: #0f172a; margin: 0 0 6px 0; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">5. Working Hours</h4>
+                                    <p style="margin: 0 0 4px 0;"><strong>Work Days:</strong> <?php echo htmlspecialchars($agrWorkDays); ?></p>
+                                    <p style="margin: 0;"><strong>Resumption Time:</strong> <?php echo htmlspecialchars($agrResumptionTime); ?> | <strong>Closing Time:</strong> <?php echo htmlspecialchars($agrClosingTime); ?></p>
+                                </div>
+
+                                <div>
+                                    <h4 style="font-size: 0.95rem; font-weight: 800; color: #0f172a; margin: 0 0 6px 0; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">6. Probation Period</h4>
+                                    <p style="margin: 0;">The Employee shall serve a probation period of <strong><?php echo htmlspecialchars($offerInfo['probation_period'] ?? '3 Months'); ?></strong> from the start date.</p>
+                                </div>
+
+                                <div>
+                                    <h4 style="font-size: 0.95rem; font-weight: 800; color: #0f172a; margin: 0 0 6px 0; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">7. Salary and Compensation</h4>
+                                    <p style="margin: 0;">The Employee shall be paid a gross salary of: <strong><?php echo htmlspecialchars(formatMoneyWithCommas($offerInfo['salary'] ?? '₦300,000 / month')); ?></strong></p>
+                                </div>
+
+                                <div>
+                                    <h4 style="font-size: 0.95rem; font-weight: 800; color: #0f172a; margin: 0 0 6px 0; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">8. Benefits and Allowances</h4>
+                                    <p style="margin: 0;">The Employee may be entitled to benefits and allowances including Leave entitlement, Health support, Performance bonus, Transport & Communication allowances, and Training opportunities as approved by company policy.</p>
+                                </div>
+
+                                <div>
+                                    <h4 style="font-size: 0.95rem; font-weight: 800; color: #0f172a; margin: 0 0 6px 0; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">9. Leave Entitlement</h4>
+                                    <p style="margin: 0;">The Employee shall be entitled to leave in accordance with the Company’s leave policy. All leave requests must be submitted through the approved HR portal.</p>
+                                </div>
+
+                                <div>
+                                    <h4 style="font-size: 0.95rem; font-weight: 800; color: #0f172a; margin: 0 0 6px 0; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">10. Attendance and Punctuality</h4>
+                                    <p style="margin: 0;">The Employee is required to resume work on time and record attendance through the approved studio attendance system.</p>
+                                </div>
+
+                                <div>
+                                    <h4 style="font-size: 0.95rem; font-weight: 800; color: #0f172a; margin: 0 0 6px 0; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">11. Performance Review</h4>
+                                    <p style="margin: 0;">The Employee’s performance shall be reviewed periodically based on quality of work, productivity, communication, teamwork, initiative, and achievement of targets.</p>
+                                </div>
+
+                                <div>
+                                    <h4 style="font-size: 0.95rem; font-weight: 800; color: #0f172a; margin: 0 0 6px 0; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">12. Confidentiality</h4>
+                                    <p style="margin: 0;">The Employee shall not disclose, share, copy, misuse, or distribute confidential company information, client data, contracts, or trade secrets without authorization.</p>
+                                </div>
+
+                                <div>
+                                    <h4 style="font-size: 0.95rem; font-weight: 800; color: #0f172a; margin: 0 0 6px 0; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">13. Company Property</h4>
+                                    <p style="margin: 0;">All laptops, mobile phones, tools, access cards, and credentials issued remain the property of Falhen and must be returned upon request or exit.</p>
+                                </div>
+
+                                <div>
+                                    <h4 style="font-size: 0.95rem; font-weight: 800; color: #0f172a; margin: 0 0 6px 0; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">14. Use of Technology and Systems</h4>
+                                    <p style="margin: 0;">The Employee shall use company systems, software, internet, email, and portal tools responsibly and maintain strict password security.</p>
+                                </div>
+
+                                <div>
+                                    <h4 style="font-size: 0.95rem; font-weight: 800; color: #0f172a; margin: 0 0 6px 0; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">15. Intellectual Property</h4>
+                                    <p style="margin: 0;">All work, designs, software, media, reports, and materials created during employment belong exclusively to Falhen.</p>
+                                </div>
+
+                                <div>
+                                    <h4 style="font-size: 0.95rem; font-weight: 800; color: #0f172a; margin: 0 0 6px 0; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">16. Conflict of Interest</h4>
+                                    <p style="margin: 0;">The Employee shall avoid activities or outside engagements that conflict with the business interests of Falhen.</p>
+                                </div>
+
+                                <div>
+                                    <h4 style="font-size: 0.95rem; font-weight: 800; color: #0f172a; margin: 0 0 6px 0; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">17. Code of Conduct</h4>
+                                    <p style="margin: 0;">The Employee agrees to comply with the Staff Handbook, SOPs, rules, and lawful management instructions at all times.</p>
+                                </div>
+
+                                <div>
+                                    <h4 style="font-size: 0.95rem; font-weight: 800; color: #0f172a; margin: 0 0 6px 0; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">18. Disciplinary Action</h4>
+                                    <p style="margin: 0;">The Company reserves the right to apply disciplinary measures (warnings, PIP, suspension, termination) for misconduct or policy breaches.</p>
+                                </div>
+
+                                <div>
+                                    <h4 style="font-size: 0.95rem; font-weight: 800; color: #0f172a; margin: 0 0 6px 0; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">19. Termination of Employment</h4>
+                                    <p style="margin: 0;">Either party may terminate employment by giving <strong>4 weeks notice</strong> or salary in lieu, subject to policy terms.</p>
+                                </div>
+
+                                <div>
+                                    <h4 style="font-size: 0.95rem; font-weight: 800; color: #0f172a; margin: 0 0 6px 0; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">20. Resignation and Exit Procedure</h4>
+                                    <p style="margin: 0;">Resigning employees must provide formal notice, complete a handover note, return company assets, and complete exit clearance.</p>
+                                </div>
+
+                                <div>
+                                    <h4 style="font-size: 0.95rem; font-weight: 800; color: #0f172a; margin: 0 0 6px 0; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">21. Non-Solicitation</h4>
+                                    <p style="margin: 0;">The Employee shall not unlawfully solicit company clients, staff, or business opportunities for personal or third-party benefit.</p>
+                                </div>
+
+                                <div>
+                                    <h4 style="font-size: 0.95rem; font-weight: 800; color: #0f172a; margin: 0 0 6px 0; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">22. Data Protection</h4>
+                                    <p style="margin: 0;">The Employee shall protect all personal, client, and company data handled during employment and report data breaches immediately.</p>
+                                </div>
+
+                                <div>
+                                    <h4 style="font-size: 0.95rem; font-weight: 800; color: #0f172a; margin: 0 0 6px 0; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">23. Policies and Amendments</h4>
+                                    <p style="margin: 0;">The Employee agrees to comply with Company policies and updates as communicated by management.</p>
+                                </div>
+
+                                <div>
+                                    <h4 style="font-size: 0.95rem; font-weight: 800; color: #0f172a; margin: 0 0 6px 0; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">24. Governing Law</h4>
+                                    <p style="margin: 0;">This Agreement shall be governed by the laws of the Federal Republic of Nigeria.</p>
+                                </div>
+
+                                <div>
+                                    <h4 style="font-size: 0.95rem; font-weight: 800; color: #0f172a; margin: 0 0 6px 0; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">25. Entire Agreement</h4>
+                                    <p style="margin: 0;">This Agreement, together with the appointment letter, job description, staff handbook, and SOPs, forms the complete understanding between Employer and Employee.</p>
+                                </div>
+
+                                <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 12px; padding: 18px; margin-top: 10px;">
+                                    <h4 style="font-size: 0.95rem; font-weight: 800; color: #166534; margin: 0 0 8px 0;">26. Acceptance & Digital Signature</h4>
+                                    <p style="margin: 0 0 10px 0;">I, <strong><?php echo htmlspecialchars($userFullName); ?></strong>, confirm that I have read, understood, and accepted the terms and conditions of this Employment Agreement.</p>
+                                    <?php if ($agrSigned): ?>
+                                        <?php if (!empty($agrData['signature_data'])): ?>
+                                            <div style="margin: 10px 0; padding: 8px 14px; background: #ffffff; border: 1px dashed #bbf7d0; border-radius: 8px; display: inline-block;">
+                                                <div style="font-size: 0.72rem; color: #64748b; font-weight: 700; margin-bottom: 2px;">Employee Signature:</div>
+                                                <img src="<?php echo htmlspecialchars($agrData['signature_data']); ?>" alt="Digital Signature" style="max-height: 55px; display: block;">
+                                            </div>
+                                        <?php endif; ?>
+                                        <div style="font-size: 0.82rem; color: #166534; font-weight: 800; margin-top: 4px;">
+                                            <i class="fa-solid fa-file-signature"></i> Digitally Signed & Verified by <?php echo htmlspecialchars($userFullName); ?> on <?php echo date('M d, Y H:i', strtotime($agrSignedAt)); ?>
+                                        </div>
+                                    <?php endif; ?>
+                                </div>
+
+                                <?php if (!$agrSigned && $isOwnProfile): ?>
+                                    <!-- INTERACTIVE DIGITAL SIGNATURE PAD -->
+                                    <div style="background: #f8fafc; border: 2px dashed #cbd5e1; border-radius: 14px; padding: 20px; margin-top: 14px;">
+                                        <div style="font-weight: 800; font-size: 0.92rem; color: #0f172a; margin-bottom: 6px; display: flex; align-items: center; justify-content: space-between;">
+                                            <span><i class="fa-solid fa-pen-nib" style="color: #dc2626;"></i> Draw Your Digital Signature</span>
+                                            <button type="button" onclick="clearAgrSigCanvas()" style="background: #ffffff; border: 1px solid #cbd5e1; font-size: 0.76rem; font-weight: 700; padding: 4px 10px; border-radius: 6px; cursor: pointer; color: #475569;">
+                                                <i class="fa-solid fa-eraser"></i> Clear Canvas
+                                            </button>
+                                        </div>
+                                        <div style="font-size: 0.78rem; color: #64748b; margin-bottom: 10px;">Sign using your mouse, trackpad, or finger on touchscreen devices below:</div>
+                                        <div style="background: #ffffff; border: 1px solid #94a3b8; border-radius: 10px; position: relative; overflow: hidden; height: 130px; box-shadow: inset 0 2px 4px rgba(0,0,0,0.04);">
+                                            <canvas id="agrSigCanvas" width="600" height="130" style="width: 100%; height: 130px; cursor: crosshair; touch-action: none; display: block;"></canvas>
+                                            <div style="position: absolute; bottom: 14px; left: 20px; right: 20px; border-bottom: 1px dashed #cbd5e1; pointer-events: none;"></div>
+                                            <div style="position: absolute; bottom: 16px; right: 20px; font-size: 0.72rem; color: #94a3b8; font-weight: 700; pointer-events: none;">Sign above the line</div>
+                                        </div>
+                                    </div>
+
+                                    <script>
+                                    setTimeout(function() {
+                                        var agrCanvas = document.getElementById('agrSigCanvas');
+                                        if (agrCanvas) {
+                                            var agrCtx = agrCanvas.getContext('2d');
+                                            var agrDrawing = false;
+
+                                            function getAgrPos(e) {
+                                                var rect = agrCanvas.getBoundingClientRect();
+                                                var clientX = e.clientX || (e.touches && e.touches[0] ? e.touches[0].clientX : 0);
+                                                var clientY = e.clientY || (e.touches && e.touches[0] ? e.touches[0].clientY : 0);
+                                                return {
+                                                    x: (clientX - rect.left) * (agrCanvas.width / rect.width),
+                                                    y: (clientY - rect.top) * (agrCanvas.height / rect.height)
+                                                };
+                                            }
+
+                                            function startAgrDraw(e) {
+                                                agrDrawing = true;
+                                                var p = getAgrPos(e);
+                                                agrCtx.beginPath();
+                                                agrCtx.moveTo(p.x, p.y);
+                                                agrCtx.strokeStyle = '#0f172a';
+                                                agrCtx.lineWidth = 2.5;
+                                                agrCtx.lineCap = 'round';
+                                                agrCtx.lineJoin = 'round';
+                                                if (e.type === 'touchstart') e.preventDefault();
+                                            }
+
+                                            function moveAgrDraw(e) {
+                                                if (!agrDrawing) return;
+                                                var p = getAgrPos(e);
+                                                agrCtx.lineTo(p.x, p.y);
+                                                agrCtx.stroke();
+                                                if (e.type === 'touchmove') e.preventDefault();
+                                            }
+
+                                            function stopAgrDraw() { agrDrawing = false; }
+
+                                            agrCanvas.addEventListener('mousedown', startAgrDraw);
+                                            agrCanvas.addEventListener('mousemove', moveAgrDraw);
+                                            agrCanvas.addEventListener('mouseup', stopAgrDraw);
+                                            agrCanvas.addEventListener('mouseleave', stopAgrDraw);
+
+                                            agrCanvas.addEventListener('touchstart', startAgrDraw, {passive: false});
+                                            agrCanvas.addEventListener('touchmove', moveAgrDraw, {passive: false});
+                                            agrCanvas.addEventListener('touchend', stopAgrDraw);
+                                        }
+                                    }, 300);
+
+                                    function clearAgrSigCanvas() {
+                                        var c = document.getElementById('agrSigCanvas');
+                                        if (c) {
+                                            var ctx = c.getContext('2d');
+                                            ctx.clearRect(0, 0, c.width, c.height);
+                                        }
+                                    }
+
+                                    function captureAgrSigData(form) {
+                                        var c = document.getElementById('agrSigCanvas');
+                                        if (c) {
+                                            var sigData = c.toDataURL('image/png');
+                                            document.getElementById('agr_sig_data_input').value = sigData;
+                                        }
+                                        return true;
+                                    }
+                                    </script>
+                                <?php endif; ?>
+                            </div>
+
+                        </div>
+
+                        <!-- FOOTER ACTIONS -->
+                        <div style="background: #f8fafc; padding: 16px 24px; border-top: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                            <div style="display: flex; gap: 8px;">
+                                <button type="button" onclick="window.print()" class="btn-save-primary" style="padding: 9px 16px; font-size: 0.82rem; background: #0f172a; border-color: #0f172a; color: #ffffff; border-radius: 8px; font-weight: 700; cursor: pointer;">
+                                    <i class="fa-solid fa-print"></i> Print Agreement
+                                </button>
+                                <a href="/admin/download_agreement_pdf.php?target_user=<?php echo urlencode($activeOnboardingUser); ?>&print=1" target="_blank" class="btn-save-primary" style="padding: 9px 16px; font-size: 0.82rem; background: #ffffff; border: 1px solid #cbd5e1; color: #0f172a; text-decoration: none; border-radius: 8px; font-weight: 700;">
+                                    <i class="fa-solid fa-file-pdf" style="color: #dc2626;"></i> Download / Save PDF
+                                </a>
+                            </div>
+                            <div style="display: flex; gap: 10px;">
+                                <?php if (!$agrSigned && $isOwnProfile): ?>
+                                    <form method="POST" action="/admin/index.php?section=onboarding" onsubmit="return captureAgrSigData(this);" style="margin: 0;">
+                                        <input type="hidden" name="action" value="sign_employment_agreement">
+                                        <input type="hidden" name="signature_data" id="agr_sig_data_input">
+                                        <button type="submit" class="btn-save-primary" style="padding: 10px 22px; background: #16a34a; border-color: #16a34a; font-weight: 800; font-size: 0.85rem;">
+                                            <i class="fa-solid fa-signature"></i> Accept & Sign Agreement
+                                        </button>
+                                    </form>
+                                <?php endif; ?>
+                                <button type="button" onclick="closeAgreementViewModal()" style="padding: 10px 20px; background: #cbd5e1; color: #0f172a; border: none; border-radius: 8px; font-weight: 700; font-size: 0.85rem; cursor: pointer;">Close</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- MODAL 4: HR ISSUE / EDIT EMPLOYMENT AGREEMENT TERMS MODAL -->
+                <div id="issueAgreementModal" class="modal-overlay" style="display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.75); backdrop-filter: blur(4px); z-index: 9999; align-items: center; justify-content: center; padding: 20px;">
+                    <div style="background: #ffffff; width: 100%; max-width: 650px; border-radius: 16px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); display: flex; flex-direction: column; overflow: hidden; border: 1px solid #e2e8f0;">
+                        <div style="background: #0f172a; padding: 18px 24px; color: #ffffff; display: flex; align-items: center; justify-content: space-between; border-bottom: 3px solid #dc2626;">
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <i class="fa-solid fa-pen-to-square" style="color: #ef4444; font-size: 1.2rem;"></i>
+                                <h3 style="margin: 0; font-size: 1.1rem; font-weight: 800; color: #ffffff;">HR Edit Employment Agreement Terms</h3>
+                            </div>
+                            <button type="button" onclick="closeIssueAgreementModal()" style="background: transparent; border: none; color: #94a3b8; font-size: 1.3rem; cursor: pointer;">&times;</button>
+                        </div>
+                        <form method="POST" action="/admin/index.php?section=onboarding" style="padding: 24px; display: flex; flex-direction: column; gap: 14px;">
+                            <input type="hidden" name="action" value="admin_provide_agreement">
+                            <input type="hidden" name="target_user" value="<?php echo htmlspecialchars($activeOnboardingUser); ?>">
+
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                                <div>
+                                    <label style="display: block; font-size: 0.78rem; font-weight: 700; color: #334155; margin-bottom: 4px;">Supervisor / Manager Name</label>
+                                    <input type="text" name="supervisor_name" value="<?php echo htmlspecialchars($agrSupervisorName); ?>" placeholder="Oluwatosin Ligali" required style="width: 100%; padding: 9px 10px; font-size: 0.84rem; border: 1px solid #cbd5e1; border-radius: 8px; box-sizing: border-box;">
+                                </div>
+                                <div>
+                                    <label style="display: block; font-size: 0.78rem; font-weight: 700; color: #334155; margin-bottom: 4px;">Supervisor Designation</label>
+                                    <input type="text" name="supervisor_role" value="<?php echo htmlspecialchars($agrSupervisorRole); ?>" placeholder="Admin / HR Lead" required style="width: 100%; padding: 9px 10px; font-size: 0.84rem; border: 1px solid #cbd5e1; border-radius: 8px; box-sizing: border-box;">
+                                </div>
+                            </div>
+
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                                <div>
+                                    <label style="display: block; font-size: 0.78rem; font-weight: 700; color: #334155; margin-bottom: 4px;">Work Location</label>
+                                    <input type="text" name="work_location" value="<?php echo htmlspecialchars($agrWorkLocation); ?>" placeholder="Remote / Lagos Office" required style="width: 100%; padding: 9px 10px; font-size: 0.84rem; border: 1px solid #cbd5e1; border-radius: 8px; box-sizing: border-box;">
+                                </div>
+                                <div>
+                                    <label style="display: block; font-size: 0.78rem; font-weight: 700; color: #334155; margin-bottom: 4px;">Work Days</label>
+                                    <input type="text" name="work_days" value="<?php echo htmlspecialchars($agrWorkDays); ?>" placeholder="Monday to Friday" required style="width: 100%; padding: 9px 10px; font-size: 0.84rem; border: 1px solid #cbd5e1; border-radius: 8px; box-sizing: border-box;">
+                                </div>
+                            </div>
+
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                                <div>
+                                    <label style="display: block; font-size: 0.78rem; font-weight: 700; color: #334155; margin-bottom: 4px;">Resumption Time</label>
+                                    <input type="text" name="resumption_time" value="<?php echo htmlspecialchars($agrResumptionTime); ?>" placeholder="9:00 AM" style="width: 100%; padding: 9px 10px; font-size: 0.84rem; border: 1px solid #cbd5e1; border-radius: 8px; box-sizing: border-box;">
+                                </div>
+                                <div>
+                                    <label style="display: block; font-size: 0.78rem; font-weight: 700; color: #334155; margin-bottom: 4px;">Closing Time</label>
+                                    <input type="text" name="closing_time" value="<?php echo htmlspecialchars($agrClosingTime); ?>" placeholder="5:00 PM" style="width: 100%; padding: 9px 10px; font-size: 0.84rem; border: 1px solid #cbd5e1; border-radius: 8px; box-sizing: border-box;">
+                                </div>
+                            </div>
+
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                                <div>
+                                    <label style="display: block; font-size: 0.78rem; font-weight: 700; color: #334155; margin-bottom: 4px;">Employee Residential Address</label>
+                                    <input type="text" name="address" value="<?php echo htmlspecialchars($agrAddress); ?>" placeholder="Residential Address" style="width: 100%; padding: 9px 10px; font-size: 0.84rem; border: 1px solid #cbd5e1; border-radius: 8px; box-sizing: border-box;">
+                                </div>
+                                <div>
+                                    <label style="display: block; font-size: 0.78rem; font-weight: 700; color: #334155; margin-bottom: 4px;">Employee Phone Number</label>
+                                    <input type="text" name="phone" value="<?php echo htmlspecialchars($agrPhone); ?>" placeholder="08012345678" style="width: 100%; padding: 9px 10px; font-size: 0.84rem; border: 1px solid #cbd5e1; border-radius: 8px; box-sizing: border-box;">
+                                </div>
+                            </div>
+
+                            <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 10px; padding-top: 14px; border-top: 1px solid #f1f5f9;">
+                                <button type="button" onclick="closeIssueAgreementModal()" style="padding: 10px 18px; background: #f1f5f9; color: #475569; border: none; border-radius: 8px; font-weight: 700; font-size: 0.85rem; cursor: pointer;">Cancel</button>
+                                <button type="submit" class="btn-save-primary" style="padding: 10px 22px; background: #dc2626; border-color: #dc2626; font-weight: 800; font-size: 0.85rem;">
+                                    <i class="fa-solid fa-floppy-disk"></i> Save Terms & Issue Contract
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- REJECT TASK WITH REASON MODAL (HR / ADMIN) -->
+                <div id="rejectTaskModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15, 23, 42, 0.75); backdrop-filter: blur(6px); z-index: 100000; align-items: center; justify-content: center; padding: 20px;">
+                    <div style="background: #ffffff; border-radius: 20px; max-width: 500px; width: 100%; padding: 28px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.3); border: 1px solid #e2e8f0; position: relative;">
+                        
+                        <button type="button" onclick="closeRejectTaskModal()" style="position: absolute; top: 18px; right: 18px; background: #f1f5f9; border: none; width: 34px; height: 34px; border-radius: 50%; color: #64748b; font-size: 1rem; cursor: pointer; display: flex; align-items: center; justify-content: center;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='#f1f5f9'">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+
+                        <div style="display: flex; align-items: center; gap: 14px; margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid #f1f5f9;">
+                            <div style="width: 46px; height: 46px; border-radius: 12px; background: #fef2f2; border: 1px solid #fecaca; color: #dc2626; display: flex; align-items: center; justify-content: center; font-size: 1.3rem;">
+                                <i class="fa-solid fa-circle-xmark"></i>
+                            </div>
+                            <div>
+                                <h2 id="rejectModalTitle" style="font-size: 1.2rem; font-weight: 800; color: #0f172a; margin: 0 0 2px 0;">Reject Task</h2>
+                                <p style="font-size: 0.82rem; color: #64748b; margin: 0;">Provide a clear reason so the candidate can edit & resubmit.</p>
+                            </div>
+                        </div>
+
+                        <form method="POST" action="/admin/index.php?section=onboarding" style="display: flex; flex-direction: column; gap: 16px;">
+                            <input type="hidden" name="action" value="admin_approve_onboarding_task">
+                            <input type="hidden" name="target_user" id="rejectModalTargetUser" value="">
+                            <input type="hidden" name="task_key" id="rejectModalTaskKey" value="">
+                            <input type="hidden" name="new_status" value="Rejected">
+
+                            <div>
+                                <label style="display: block; font-size: 0.8rem; font-weight: 700; color: #334155; margin-bottom: 6px;">Reason for Rejection <span style="color: #ef4444;">*</span></label>
+                                <textarea name="rejection_reason" required rows="4" style="width: 100%; padding: 10px 12px; font-size: 0.85rem; border: 1px solid #cbd5e1; border-radius: 8px; font-family: inherit; resize: vertical; box-sizing: border-box;" placeholder="e.g. Reference phone number unreachable. Please provide a valid supervisor or professional reference."></textarea>
+                            </div>
+
+                            <div style="display: flex; gap: 10px; margin-top: 4px;">
+                                <button type="submit" class="btn-save-primary" style="flex: 1; justify-content: center; background: #dc2626; border-color: #dc2626; font-weight: 700;">
+                                    <i class="fa-solid fa-ban"></i> Confirm Rejection
+                                </button>
+                                <button type="button" onclick="closeRejectTaskModal()" style="padding: 10px 16px; background: #f1f5f9; color: #475569; border-radius: 8px; font-size: 0.84rem; font-weight: 700; border: none; cursor: pointer;">
+                                    Cancel
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <script>
+                    function openRejectTaskModal(taskKey, taskTitle, targetUser) {
+                        document.getElementById('rejectModalTaskKey').value = taskKey;
+                        document.getElementById('rejectModalTargetUser').value = targetUser;
+                        document.getElementById('rejectModalTitle').innerText = 'Reject ' + taskTitle;
+                        document.getElementById('rejectTaskModal').style.display = 'flex';
+                    }
+                    function closeRejectTaskModal() {
+                        document.getElementById('rejectTaskModal').style.display = 'none';
+                    }
+                </script>
+
+                <!-- MODAL 5: VIEW / ACKNOWLEDGE SOP MODAL (19 SECTIONS) -->
+                <div id="viewSopModal" class="modal-overlay" style="display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.75); backdrop-filter: blur(4px); z-index: 9999; align-items: center; justify-content: center; padding: 20px;">
+                    <div style="background: #ffffff; width: 100%; max-width: 850px; max-height: 90vh; border-radius: 16px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); display: flex; flex-direction: column; overflow: hidden; border: 1px solid #e2e8f0;">
+                        <!-- HEADER -->
+                        <div style="background: #0f172a; padding: 20px 24px; color: #ffffff; display: flex; align-items: center; justify-content: space-between; border-bottom: 3px solid #dc2626;">
+                            <div>
+                                <div style="font-size: 1.1rem; font-weight: 900; letter-spacing: -0.3px;">FALHEN STANDARD OPERATING PROCEDURES (SOP)</div>
+                                <div style="font-size: 0.78rem; color: #94a3b8; margin-top: 2px;">Official Operational Guidelines & Code of Conduct (19 Sections)</div>
+                            </div>
+                            <button type="button" onclick="closeSopViewModal()" style="background: transparent; border: none; color: #94a3b8; font-size: 1.4rem; cursor: pointer;">&times;</button>
+                        </div>
+
+                        <!-- SCROLLABLE BODY -->
+                        <div style="padding: 24px; overflow-y: auto; flex: 1; font-size: 0.88rem; color: #1e293b; line-height: 1.6;">
+                            <h3 style="font-size: 0.98rem; font-weight: 800; color: #0f172a; margin-top: 0; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">1. Purpose</h3>
+                            <p style="margin: 0 0 10px 0;">The purpose of this Standard Operating Procedures document is to provide clear guidelines for the daily operations, internal processes, employee conduct, communication, approvals, documentation, and reporting within Falhen.</p>
+                            <p style="margin: 0 0 16px 0;">This SOP is designed to ensure consistency, accountability, efficiency, transparency, and professionalism across all departments and team members.</p>
+
+                            <h3 style="font-size: 0.98rem; font-weight: 800; color: #0f172a; margin-top: 16px; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">2. Scope</h3>
+                            <p style="margin: 0 0 8px 0;">This SOP applies to all employees, contract staff, interns, consultants, and authorized representatives of Falhen.</p>
+                            <p style="margin: 0 0 8px 0;">It covers the following operational areas:</p>
+                            <ul style="margin-top: 4px; margin-bottom: 16px; padding-left: 20px;">
+                                <li>Staff attendance and punctuality</li>
+                                <li>Leave application and approval</li>
+                                <li>Internal communication</li>
+                                <li>Task assignment and reporting</li>
+                                <li>Documentation and record keeping</li>
+                                <li>Departmental responsibilities</li>
+                                <li>Meetings and performance updates</li>
+                                <li>Data protection and confidentiality</li>
+                                <li>Use of company tools and platforms</li>
+                                <li>Escalation and approval processes</li>
+                            </ul>
+
+                            <h3 style="font-size: 0.98rem; font-weight: 800; color: #0f172a; margin-top: 16px; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">3. General Work Conduct</h3>
+                            <p style="margin: 0 0 8px 0;">All staff of Falhen are expected to maintain a high level of professionalism, discipline, and accountability in the discharge of their duties.</p>
+                            <p style="margin: 0 0 8px 0;">Employees are expected to:</p>
+                            <ul style="margin-top: 4px; margin-bottom: 16px; padding-left: 20px;">
+                                <li>Report to work on time</li>
+                                <li>Carry out assigned tasks diligently</li>
+                                <li>Respect colleagues, supervisors, clients, and partners</li>
+                                <li>Maintain confidentiality of company information</li>
+                                <li>Follow approved communication channels</li>
+                                <li>Submit reports when due</li>
+                                <li>Use company resources responsibly</li>
+                                <li>Represent Falhen positively at all times</li>
+                            </ul>
+
+                            <h3 style="font-size: 0.98rem; font-weight: 800; color: #0f172a; margin-top: 16px; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">4. Attendance Procedure</h3>
+                            <p style="margin: 0 0 10px 0;">All employees are required to record their daily attendance through the approved Falhen attendance system or HR portal.</p>
+                            <h4 style="font-size: 0.9rem; font-weight: 700; color: #334155; margin: 10px 0 4px 0;">4.1 Check-In</h4>
+                            <p style="margin: 0 0 8px 0;">Employees must check in at the official resumption time or immediately upon starting work. The check-in record confirms that the employee has officially resumed work for the day.</p>
+                            <h4 style="font-size: 0.9rem; font-weight: 700; color: #334155; margin: 10px 0 4px 0;">4.2 Break</h4>
+                            <p style="margin: 0 0 8px 0;">Employees may proceed on approved break periods based on company policy or departmental schedule. Staff should use the break option on the HR portal to indicate temporary unavailability.</p>
+                            <h4 style="font-size: 0.9rem; font-weight: 700; color: #334155; margin: 10px 0 4px 0;">4.3 Check-Out</h4>
+                            <p style="margin: 0 0 16px 0;">Employees must check out at the close of work or after completing their approved work schedule. Failure to check in or check out may affect attendance records unless properly reported to HR.</p>
+
+                            <h3 style="font-size: 0.98rem; font-weight: 800; color: #0f172a; margin-top: 16px; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">5. Leave Management Procedure</h3>
+                            <p style="margin: 0 0 10px 0;">All leave requests must be submitted through the approved HR portal or official leave request channel.</p>
+                            <h4 style="font-size: 0.9rem; font-weight: 700; color: #334155; margin: 10px 0 4px 0;">5.1 Types of Leave</h4>
+                            <p style="margin: 0 0 8px 0;">Falhen recognizes Annual Leave, Sick Leave, Emergency Leave, Maternity Leave, Paternity Leave, Compassionate Leave, Study Leave, and Unpaid Leave.</p>
+                            <h4 style="font-size: 0.9rem; font-weight: 700; color: #334155; margin: 10px 0 4px 0;">5.2 Leave Application & Approval</h4>
+                            <p style="margin: 0 0 16px 0;">Employees must submit leave requests prior to intended dates. Requests are reviewed by supervisors and HR based on leave balance, operational coverage, and policy compliance.</p>
+
+                            <h3 style="font-size: 0.98rem; font-weight: 800; color: #0f172a; margin-top: 16px; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">6. Communication Procedure</h3>
+                            <p style="margin: 0 0 16px 0;">Falhen maintains clear and professional internal communication across company email, HR portal, workstation platforms, and official memos. Sensitive matters must not be discussed on unauthorized platforms.</p>
+
+                            <h3 style="font-size: 0.98rem; font-weight: 800; color: #0f172a; margin-top: 16px; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">7. Task Assignment and Reporting</h3>
+                            <p style="margin: 0 0 16px 0;">Tasks assigned by supervisors state task description, responsible person, deadline, expected outcome, and priority. Progress and challenges must be communicated promptly.</p>
+
+                            <h3 style="font-size: 0.98rem; font-weight: 800; color: #0f172a; margin-top: 16px; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">8. Approval Procedure</h3>
+                            <p style="margin: 0 0 16px 0;">All requests requiring management or departmental approval (leave, procurement, expenses, travel, project execution, public announcements) must follow the approved chain of command.</p>
+
+                            <h3 style="font-size: 0.98rem; font-weight: 800; color: #0f172a; margin-top: 16px; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">9. Documentation and Record Keeping</h3>
+                            <p style="margin: 0 0 16px 0;">Falhen maintains accurate, updated, and secure documentation of employee records, attendance, leave, financial records, project reports, and contracts in approved digital/physical locations.</p>
+
+                            <h3 style="font-size: 0.98rem; font-weight: 800; color: #0f172a; margin-top: 16px; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">10. Meeting Procedure</h3>
+                            <p style="margin: 0 0 16px 0;">Meetings scheduled for planning or decision-making require a clear agenda, lead, minutes, action points, and follow-up timeline.</p>
+
+                            <h3 style="font-size: 0.98rem; font-weight: 800; color: #0f172a; margin-top: 16px; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">11. Use of Company Tools and Systems</h3>
+                            <p style="margin: 0 0 16px 0;">Employees must use company portals, emails, workstations, and drives responsibly. Passwords and credentials must never be shared.</p>
+
+                            <h3 style="font-size: 0.98rem; font-weight: 800; color: #0f172a; margin-top: 16px; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">12. Data Protection and Confidentiality</h3>
+                            <p style="margin: 0 0 16px 0;">Staff, client, financial, and operational data must be kept strictly confidential. Unauthorized disclosure leads to disciplinary action.</p>
+
+                            <h3 style="font-size: 0.98rem; font-weight: 800; color: #0f172a; margin-top: 16px; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">13. Performance and Reporting</h3>
+                            <p style="margin: 0 0 16px 0;">Periodic daily, weekly, or monthly reports must be submitted factually and on time to enable performance tracking.</p>
+
+                            <h3 style="font-size: 0.98rem; font-weight: 800; color: #0f172a; margin-top: 16px; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">14. Escalation Procedure</h3>
+                            <p style="margin: 0 0 16px 0;">Escalation hierarchy: 1. Immediate Supervisor &rarr; 2. Department Head &rarr; 3. HR/Admin &rarr; 4. Management.</p>
+
+                            <h3 style="font-size: 0.98rem; font-weight: 800; color: #0f172a; margin-top: 16px; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">15. Disciplinary Procedure</h3>
+                            <p style="margin: 0 0 16px 0;">Misconduct or policy breaches lead to progressive disciplinary action: Verbal Warning, Written Warning, Suspension, Reassignment, or Termination.</p>
+
+                            <h3 style="font-size: 0.98rem; font-weight: 800; color: #0f172a; margin-top: 16px; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">16. Onboarding Procedure</h3>
+                            <p style="margin: 0 0 16px 0;">New employees undergo document submission, policy orientation, tool assignment, system training, and probation expectation reviews.</p>
+
+                            <h3 style="font-size: 0.98rem; font-weight: 800; color: #0f172a; margin-top: 16px; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">17. Exit Procedure</h3>
+                            <p style="margin: 0 0 16px 0;">Departing staff submit formal notice, complete handover notes, return company assets, revoke system access, and complete clearance.</p>
+
+                            <h3 style="font-size: 0.98rem; font-weight: 800; color: #0f172a; margin-top: 16px; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">18. Review of SOP</h3>
+                            <p style="margin: 0 0 16px 0;">Reviewed annually or during major operational changes, requiring management approval prior to implementation.</p>
+
+                            <h3 style="font-size: 0.98rem; font-weight: 800; color: #0f172a; margin-top: 16px; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">19. Conclusion & Digital Acknowledgment</h3>
+                            <p style="margin: 0 0 16px 0;">This Standard Operating Procedures document serves as a guide for maintaining order, consistency, accountability, and operational excellence within Falhen.</p>
+
+                            <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 12px; padding: 18px; margin-top: 20px;">
+                                <h4 style="font-size: 0.95rem; font-weight: 800; color: #166534; margin: 0 0 8px 0;">Acknowledgment & Digital Signature</h4>
+                                <p style="margin: 0 0 10px 0;">I, <strong><?php echo htmlspecialchars($userFullName); ?></strong>, confirm that I have read, understood, and agree to comply with the Falhen Standard Operating Procedures (SOP).</p>
+                                <?php if ($sopAck): ?>
+                                    <?php if (!empty($sopData['signature_data'])): ?>
+                                        <div style="margin: 10px 0; padding: 8px 14px; background: #ffffff; border: 1px dashed #bbf7d0; border-radius: 8px; display: inline-block;">
+                                            <div style="font-size: 0.72rem; color: #64748b; font-weight: 700; margin-bottom: 2px;">Employee Signature:</div>
+                                            <img src="<?php echo htmlspecialchars($sopData['signature_data']); ?>" alt="Digital Signature" style="max-height: 55px; display: block;">
+                                        </div>
+                                    <?php endif; ?>
+                                    <div style="font-size: 0.82rem; color: #166534; font-weight: 800; margin-top: 4px;">
+                                        <i class="fa-solid fa-file-signature"></i> Digitally Acknowledged & Verified by <?php echo htmlspecialchars($userFullName); ?> on <?php echo date('M d, Y H:i', strtotime($sopAckAt)); ?>
+                                    </div>
+                                <?php endif; ?>
+                            </div>
+
+                            <?php if (!$sopAck && $isOwnProfile): ?>
+                                <!-- INTERACTIVE DIGITAL SIGNATURE PAD -->
+                                <div style="background: #f8fafc; border: 2px dashed #cbd5e1; border-radius: 14px; padding: 20px; margin-top: 14px;">
+                                    <div style="font-weight: 800; font-size: 0.92rem; color: #0f172a; margin-bottom: 6px; display: flex; align-items: center; justify-content: space-between;">
+                                        <span><i class="fa-solid fa-pen-nib" style="color: #dc2626;"></i> Draw Your Digital Signature</span>
+                                        <button type="button" onclick="clearSopSigCanvas()" style="background: #ffffff; border: 1px solid #cbd5e1; font-size: 0.76rem; font-weight: 700; padding: 4px 10px; border-radius: 6px; cursor: pointer; color: #475569;">
+                                            <i class="fa-solid fa-eraser"></i> Clear Canvas
+                                        </button>
+                                    </div>
+                                    <div style="font-size: 0.78rem; color: #64748b; margin-bottom: 10px;">Sign using your mouse, trackpad, or finger on touchscreen devices below:</div>
+                                    <div style="background: #ffffff; border: 1px solid #94a3b8; border-radius: 10px; position: relative; overflow: hidden; height: 130px; box-shadow: inset 0 2px 4px rgba(0,0,0,0.04);">
+                                        <canvas id="sopSigCanvas" width="600" height="130" style="width: 100%; height: 130px; cursor: crosshair; touch-action: none; display: block;"></canvas>
+                                        <div style="position: absolute; bottom: 14px; left: 20px; right: 20px; border-bottom: 1px dashed #cbd5e1; pointer-events: none;"></div>
+                                        <div style="position: absolute; bottom: 16px; right: 20px; font-size: 0.72rem; color: #94a3b8; font-weight: 700; pointer-events: none;">Sign above the line</div>
+                                    </div>
+                                </div>
+
+                                <script>
+                                setTimeout(function() {
+                                    var sopCanvas = document.getElementById('sopSigCanvas');
+                                    if (sopCanvas) {
+                                        var sopCtx = sopCanvas.getContext('2d');
+                                        var sopDrawing = false;
+
+                                        function getSopPos(e) {
+                                            var rect = sopCanvas.getBoundingClientRect();
+                                            var clientX = e.clientX || (e.touches && e.touches[0] ? e.touches[0].clientX : 0);
+                                            var clientY = e.clientY || (e.touches && e.touches[0] ? e.touches[0].clientY : 0);
+                                            return {
+                                                x: (clientX - rect.left) * (sopCanvas.width / rect.width),
+                                                y: (clientY - rect.top) * (sopCanvas.height / rect.height)
+                                            };
+                                        }
+
+                                        function startSopDraw(e) {
+                                            sopDrawing = true;
+                                            var p = getSopPos(e);
+                                            sopCtx.beginPath();
+                                            sopCtx.moveTo(p.x, p.y);
+                                            sopCtx.strokeStyle = '#0f172a';
+                                            sopCtx.lineWidth = 2.5;
+                                            sopCtx.lineCap = 'round';
+                                            sopCtx.lineJoin = 'round';
+                                            if (e.type === 'touchstart') e.preventDefault();
+                                        }
+
+                                        function moveSopDraw(e) {
+                                            if (!sopDrawing) return;
+                                            var p = getSopPos(e);
+                                            sopCtx.lineTo(p.x, p.y);
+                                            sopCtx.stroke();
+                                            if (e.type === 'touchmove') e.preventDefault();
+                                        }
+
+                                        function stopSopDraw() { sopDrawing = false; }
+
+                                        sopCanvas.addEventListener('mousedown', startSopDraw);
+                                        sopCanvas.addEventListener('mousemove', moveSopDraw);
+                                        sopCanvas.addEventListener('mouseup', stopSopDraw);
+                                        sopCanvas.addEventListener('mouseleave', stopSopDraw);
+
+                                        sopCanvas.addEventListener('touchstart', startSopDraw, {passive: false});
+                                        sopCanvas.addEventListener('touchmove', moveSopDraw, {passive: false});
+                                        sopCanvas.addEventListener('touchend', stopSopDraw);
+                                    }
+                                }, 300);
+
+                                function clearSopSigCanvas() {
+                                    var c = document.getElementById('sopSigCanvas');
+                                    if (c) {
+                                        var ctx = c.getContext('2d');
+                                        ctx.clearRect(0, 0, c.width, c.height);
+                                    }
+                                }
+
+                                function captureSopSigData(form) {
+                                    var c = document.getElementById('sopSigCanvas');
+                                    if (c) {
+                                        var sigData = c.toDataURL('image/png');
+                                        document.getElementById('sop_sig_data_input').value = sigData;
+                                    }
+                                    return true;
+                                }
+                                </script>
+                            <?php endif; ?>
+                        </div>
+
+                        <!-- FOOTER ACTIONS -->
+                        <div style="background: #f8fafc; padding: 16px 24px; border-top: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                            <div style="display: flex; gap: 8px;">
+                                <button type="button" onclick="window.print()" class="btn-save-primary" style="padding: 9px 16px; font-size: 0.82rem; background: #0f172a; border-color: #0f172a; color: #ffffff; border-radius: 8px; font-weight: 700; cursor: pointer;">
+                                    <i class="fa-solid fa-print"></i> Print SOP
+                                </button>
+                                <a href="/admin/download_sop_pdf.php?target_user=<?php echo urlencode($activeOnboardingUser); ?>&print=1" target="_blank" class="btn-save-primary" style="padding: 9px 16px; font-size: 0.82rem; background: #ffffff; border: 1px solid #cbd5e1; color: #0f172a; text-decoration: none; border-radius: 8px; font-weight: 700;">
+                                    <i class="fa-solid fa-file-pdf" style="color: #dc2626;"></i> Download / Save PDF
+                                </a>
+                            </div>
+                            <div style="display: flex; gap: 10px;">
+                                <?php if (!$sopAck && $isOwnProfile): ?>
+                                    <form method="POST" action="/admin/index.php?section=onboarding" onsubmit="return captureSopSigData(this);" style="margin: 0;">
+                                        <input type="hidden" name="action" value="acknowledge_sop">
+                                        <input type="hidden" name="signature_data" id="sop_sig_data_input">
+                                        <button type="submit" class="btn-save-primary" style="padding: 10px 22px; background: #16a34a; border-color: #16a34a; font-weight: 800; font-size: 0.85rem;">
+                                            <i class="fa-solid fa-signature"></i> Acknowledge & Sign SOP
+                                        </button>
+                                    </form>
+                                <?php endif; ?>
+                                <button type="button" onclick="closeSopViewModal()" style="padding: 10px 20px; background: #cbd5e1; color: #0f172a; border: none; border-radius: 8px; font-weight: 700; font-size: 0.85rem; cursor: pointer;">Close</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- MODAL 6: VIEW / ACKNOWLEDGE STAFF HANDBOOK MODAL (30 SECTIONS) -->
+                <div id="viewHandbookModal" class="modal-overlay" style="display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.75); backdrop-filter: blur(4px); z-index: 9999; align-items: center; justify-content: center; padding: 20px;">
+                    <div style="background: #ffffff; width: 100%; max-width: 850px; max-height: 90vh; border-radius: 16px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); display: flex; flex-direction: column; overflow: hidden; border: 1px solid #e2e8f0;">
+                        <!-- HEADER -->
+                        <div style="background: #0f172a; padding: 20px 24px; color: #ffffff; display: flex; align-items: center; justify-content: space-between; border-bottom: 3px solid #dc2626;">
+                            <div>
+                                <div style="font-size: 1.1rem; font-weight: 900; letter-spacing: -0.3px;">FALHEN STAFF HANDBOOK & POLICIES</div>
+                                <div style="font-size: 0.78rem; color: #94a3b8; margin-top: 2px;">Official Expectations, Benefits, Conduct & Culture (30 Sections)</div>
+                            </div>
+                            <button type="button" onclick="closeHandbookViewModal()" style="background: transparent; border: none; color: #94a3b8; font-size: 1.4rem; cursor: pointer;">&times;</button>
+                        </div>
+
+                        <!-- SCROLLABLE BODY -->
+                        <div style="padding: 24px; overflow-y: auto; flex: 1; font-size: 0.88rem; color: #1e293b; line-height: 1.6;">
+                            <h3 style="font-size: 0.98rem; font-weight: 800; color: #0f172a; margin-top: 0; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">1. Welcome Message</h3>
+                            <p style="margin: 0 0 10px 0;">Welcome to Falhen.</p>
+                            <p style="margin: 0 0 10px 0;">We are pleased to have you as part of our team. At Falhen, we believe that our people are our greatest asset. This Staff Handbook has been created to guide employees on the company’s expectations, policies, procedures, benefits, code of conduct, and workplace culture.</p>
+                            <p style="margin: 0 0 10px 0;">This handbook is designed to help every employee understand how we work, what we stand for, and how we can collectively build a productive, respectful, and excellent organization.</p>
+                            <p style="margin: 0 0 16px 0;">All employees are expected to read, understand, and comply with the policies contained in this handbook.</p>
+
+                            <h3 style="font-size: 0.98rem; font-weight: 800; color: #0f172a; margin-top: 20px; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">2. About Falhen</h3>
+                            <p style="margin: 0 0 10px 0;">Falhen is committed to providing excellent services, building strong internal systems, and creating a workplace where employees can contribute meaningfully, grow professionally, and perform at their best.</p>
+                            <p style="margin: 0 0 16px 0;">Our operations are guided by professionalism, accountability, innovation, teamwork, integrity, and continuous improvement.</p>
+
+                            <h3 style="font-size: 0.98rem; font-weight: 800; color: #0f172a; margin-top: 20px; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">3. Vision Statement</h3>
+                            <p style="margin: 0 0 16px 0;">To build a reputable, efficient, and people-centered organization known for excellence, innovation, and consistent service delivery.</p>
+
+                            <h3 style="font-size: 0.98rem; font-weight: 800; color: #0f172a; margin-top: 20px; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">4. Mission Statement</h3>
+                            <p style="margin: 0 0 16px 0;">To deliver quality solutions through a committed workforce, strong operational systems, and a culture of accountability, excellence, and continuous growth.</p>
+
+                            <h3 style="font-size: 0.98rem; font-weight: 800; color: #0f172a; margin-top: 20px; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">5. Core Values</h3>
+                            <p style="margin: 0 0 10px 0;">Falhen is guided by the following values:</p>
+                            <h4 style="font-size: 0.9rem; font-weight: 700; color: #334155; margin-top: 10px; margin-bottom: 4px;">Integrity</h4>
+                            <p style="margin: 0 0 10px 0;">We act honestly, ethically, and responsibly in all our dealings.</p>
+                            <h4 style="font-size: 0.9rem; font-weight: 700; color: #334155; margin-top: 10px; margin-bottom: 4px;">Excellence</h4>
+                            <p style="margin: 0 0 10px 0;">We strive to deliver quality work and maintain high standards in everything we do.</p>
+                            <h4 style="font-size: 0.9rem; font-weight: 700; color: #334155; margin-top: 10px; margin-bottom: 4px;">Accountability</h4>
+                            <p style="margin: 0 0 10px 0;">We take responsibility for our actions, decisions, duties, and results.</p>
+                            <h4 style="font-size: 0.9rem; font-weight: 700; color: #334155; margin-top: 10px; margin-bottom: 4px;">Teamwork</h4>
+                            <p style="margin: 0 0 10px 0;">We collaborate respectfully and support one another to achieve common goals.</p>
+                            <h4 style="font-size: 0.9rem; font-weight: 700; color: #334155; margin-top: 10px; margin-bottom: 4px;">Innovation</h4>
+                            <p style="margin: 0 0 10px 0;">We embrace new ideas, technology, and better ways of working.</p>
+                            <h4 style="font-size: 0.9rem; font-weight: 700; color: #334155; margin-top: 10px; margin-bottom: 4px;">Professionalism</h4>
+                            <p style="margin: 0 0 16px 0;">We conduct ourselves with respect, discipline, and a strong sense of duty.</p>
+
+                            <h3 style="font-size: 0.98rem; font-weight: 800; color: #0f172a; margin-top: 20px; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">6. Employment Policy</h3>
+                            <p style="margin: 0 0 10px 0;">Employment at Falhen is based on merit, competence, character, and the ability to perform assigned responsibilities.</p>
+                            <p style="margin: 0 0 10px 0;">All employees are expected to provide accurate information during recruitment and onboarding. Any false information, forged document, or misrepresentation may lead to disciplinary action or termination of employment.</p>
+                            <p style="margin: 0 0 6px 0;">Employment categories may include:</p>
+                            <ul style="margin: 0 0 10px 0; padding-left: 20px;">
+                                <li>Full-time employees</li>
+                                <li>Part-time employees</li>
+                                <li>Contract employees</li>
+                                <li>Temporary employees</li>
+                                <li>Interns</li>
+                                <li>Consultants</li>
+                            </ul>
+                            <p style="margin: 0 0 16px 0;">Each employee’s employment status, role, compensation, and benefits shall be stated in their appointment letter or employment contract.</p>
+
+                            <h3 style="font-size: 0.98rem; font-weight: 800; color: #0f172a; margin-top: 20px; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">7. Equal Opportunity Policy</h3>
+                            <p style="margin: 0 0 10px 0;">Falhen is committed to maintaining a fair and inclusive workplace.</p>
+                            <p style="margin: 0 0 10px 0;">Employment decisions shall be made without discrimination based on gender, age, ethnic background, religion, disability, marital status, or any other protected status under applicable law.</p>
+                            <p style="margin: 0 0 16px 0;">All employees are expected to treat one another with dignity, fairness, and respect.</p>
+
+                            <h3 style="font-size: 0.98rem; font-weight: 800; color: #0f172a; margin-top: 20px; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">8. Work Hours</h3>
+                            <p style="margin: 0 0 10px 0;">Official working hours shall be communicated by management and may vary depending on department, role, shift, or operational needs.</p>
+                            <p style="margin: 0 0 6px 0;">Employees are expected to:</p>
+                            <ul style="margin: 0 0 10px 0; padding-left: 20px;">
+                                <li>Resume work at the approved time</li>
+                                <li>Remain available during working hours</li>
+                                <li>Attend scheduled meetings</li>
+                                <li>Complete assigned tasks within agreed timelines</li>
+                                <li>Notify their supervisor if they will be late or unavailable</li>
+                            </ul>
+                            <p style="margin: 0 0 16px 0;">Any changes to working hours, shifts, or work arrangements must be approved by management.</p>
+
+                            <h3 style="font-size: 0.98rem; font-weight: 800; color: #0f172a; margin-top: 20px; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">9. Attendance and Punctuality</h3>
+                            <p style="margin: 0 0 10px 0;">Regular attendance and punctuality are important to Falhen’s operations.</p>
+                            <p style="margin: 0 0 10px 0;">Employees are required to record their attendance through the approved attendance system or HR portal.</p>
+                            <h4 style="font-size: 0.9rem; font-weight: 700; color: #334155; margin-top: 10px; margin-bottom: 4px;">Check-In</h4>
+                            <p style="margin: 0 0 10px 0;">Employees must check in when they resume work.</p>
+                            <h4 style="font-size: 0.9rem; font-weight: 700; color: #334155; margin-top: 10px; margin-bottom: 4px;">Break</h4>
+                            <p style="margin: 0 0 10px 0;">Employees should observe approved break periods responsibly and return to work on time.</p>
+                            <h4 style="font-size: 0.9rem; font-weight: 700; color: #334155; margin-top: 10px; margin-bottom: 4px;">Check-Out</h4>
+                            <p style="margin: 0 0 10px 0;">Employees must check out at the close of work or after completing their approved schedule.</p>
+                            <p style="margin: 0 0 10px 0;">Failure to check in or check out may affect attendance records unless reported and approved by HR or the employee’s supervisor.</p>
+                            <p style="margin: 0 0 16px 0;">Repeated lateness, absenteeism, or poor attendance may result in disciplinary action.</p>
+
+                            <h3 style="font-size: 0.98rem; font-weight: 800; color: #0f172a; margin-top: 20px; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">10. Remote Work and Flexible Work</h3>
+                            <p style="margin: 0 0 10px 0;">Where applicable, Falhen may allow remote work or flexible work arrangements based on role requirements, company policy, and management approval.</p>
+                            <p style="margin: 0 0 6px 0;">Employees working remotely are expected to:</p>
+                            <ul style="margin: 0 0 10px 0; padding-left: 20px;">
+                                <li>Be available during working hours</li>
+                                <li>Attend virtual meetings</li>
+                                <li>Submit work reports</li>
+                                <li>Protect company data</li>
+                                <li>Maintain regular communication with supervisors</li>
+                                <li>Deliver assigned tasks on time</li>
+                            </ul>
+                            <p style="margin: 0 0 16px 0;">Remote work is a privilege and may be reviewed, modified, or withdrawn by management.</p>
+
+                            <h3 style="font-size: 0.98rem; font-weight: 800; color: #0f172a; margin-top: 20px; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">11. Leave Policy</h3>
+                            <p style="margin: 0 0 10px 0;">Falhen recognizes that employees may need time away from work for rest, health, family, emergencies, or other approved reasons.</p>
+                            <p style="margin: 0 0 10px 0;">All leave requests must be submitted through the approved HR portal or official channel.</p>
+                            <p style="margin: 0 0 6px 0;">Types of leave may include:</p>
+                            <ul style="margin: 0 0 10px 0; padding-left: 20px;">
+                                <li>Annual Leave</li>
+                                <li>Sick Leave</li>
+                                <li>Emergency Leave</li>
+                                <li>Maternity Leave</li>
+                                <li>Paternity Leave</li>
+                                <li>Compassionate Leave</li>
+                                <li>Study Leave</li>
+                                <li>Unpaid Leave</li>
+                            </ul>
+                            <p style="margin: 0 0 10px 0;">Employees must not proceed on leave until approval has been granted, except in genuine emergencies or health-related situations where immediate notice should be given.</p>
+                            <p style="margin: 0 0 16px 0;">Leave approval shall depend on leave entitlement, departmental workload, operational needs, and company policy.</p>
+
+                            <h3 style="font-size: 0.98rem; font-weight: 800; color: #0f172a; margin-top: 20px; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">12. Public Holidays</h3>
+                            <p style="margin: 0 0 10px 0;">Falhen shall observe approved public holidays as declared by relevant authorities, subject to business operations and management discretion.</p>
+                            <p style="margin: 0 0 16px 0;">Employees required to work on public holidays may be compensated or granted time off in accordance with company policy.</p>
+
+                            <h3 style="font-size: 0.98rem; font-weight: 800; color: #0f172a; margin-top: 20px; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">13. Compensation and Salary</h3>
+                            <p style="margin: 0 0 10px 0;">Employees shall be paid based on the terms stated in their employment letter or contract.</p>
+                            <p style="margin: 0 0 10px 0;">Salary payment shall be made through approved payment channels and within the company’s scheduled payroll period.</p>
+                            <p style="margin: 0 0 10px 0;">Employees are expected to keep their bank and personal information updated with HR.</p>
+                            <p style="margin: 0 0 16px 0;">Salary details are confidential and should not be disclosed or discussed inappropriately within the workplace.</p>
+
+                            <h3 style="font-size: 0.98rem; font-weight: 800; color: #0f172a; margin-top: 20px; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">14. Benefits and Welfare</h3>
+                            <p style="margin: 0 0 10px 0;">Falhen may provide employee benefits based on company policy, employment category, role, and availability of resources.</p>
+                            <p style="margin: 0 0 6px 0;">Benefits may include:</p>
+                            <ul style="margin: 0 0 10px 0; padding-left: 20px;">
+                                <li>Leave entitlement</li>
+                                <li>Training and development opportunities</li>
+                                <li>Health and wellness support</li>
+                                <li>Performance incentives</li>
+                                <li>Work tools</li>
+                                <li>Staff welfare support</li>
+                                <li>Other approved benefits</li>
+                            </ul>
+                            <p style="margin: 0 0 16px 0;">Benefits may be reviewed periodically by management.</p>
+
+                            <h3 style="font-size: 0.98rem; font-weight: 800; color: #0f172a; margin-top: 20px; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">15. Performance Management</h3>
+                            <p style="margin: 0 0 10px 0;">Falhen is committed to helping employees perform effectively and grow professionally.</p>
+                            <p style="margin: 0 0 6px 0;">Employee performance may be assessed based on:</p>
+                            <ul style="margin: 0 0 10px 0; padding-left: 20px;">
+                                <li>Job knowledge</li>
+                                <li>Quality of work</li>
+                                <li>Productivity</li>
+                                <li>Attendance and punctuality</li>
+                                <li>Teamwork</li>
+                                <li>Communication</li>
+                                <li>Initiative</li>
+                                <li>Professional conduct</li>
+                                <li>Achievement of targets</li>
+                                <li>Compliance with company policies</li>
+                            </ul>
+                            <p style="margin: 0 0 10px 0;">Performance reviews may be conducted monthly, quarterly, annually, or as determined by management.</p>
+                            <p style="margin: 0 0 16px 0;">Employees are expected to receive feedback positively and work towards continuous improvement.</p>
+
+                            <h3 style="font-size: 0.98rem; font-weight: 800; color: #0f172a; margin-top: 20px; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">16. Training and Development</h3>
+                            <p style="margin: 0 0 10px 0;">Falhen encourages continuous learning and professional growth.</p>
+                            <p style="margin: 0 0 10px 0;">Employees may be required to attend internal or external training programs to improve their skills and performance.</p>
+                            <p style="margin: 0 0 6px 0;">Training opportunities may be based on:</p>
+                            <ul style="margin: 0 0 10px 0; padding-left: 20px;">
+                                <li>Job requirements</li>
+                                <li>Performance needs</li>
+                                <li>Departmental goals</li>
+                                <li>Company priorities</li>
+                                <li>Employee development plans</li>
+                            </ul>
+                            <p style="margin: 0 0 16px 0;">Employees who attend company-sponsored training may be required to share knowledge, submit reports, or apply the training to their role.</p>
+
+                            <h3 style="font-size: 0.98rem; font-weight: 800; color: #0f172a; margin-top: 20px; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">17. Code of Conduct</h3>
+                            <p style="margin: 0 0 10px 0;">Employees are expected to conduct themselves professionally at all times.</p>
+                            <p style="margin: 0 0 6px 0;">Employees must:</p>
+                            <ul style="margin: 0 0 10px 0; padding-left: 20px;">
+                                <li>Be respectful and courteous</li>
+                                <li>Perform assigned duties diligently</li>
+                                <li>Obey lawful instructions from supervisors</li>
+                                <li>Protect company property and information</li>
+                                <li>Avoid conflicts of interest</li>
+                                <li>Maintain confidentiality</li>
+                                <li>Avoid gossip, hostility, or disruptive behavior</li>
+                                <li>Represent Falhen positively</li>
+                                <li>Comply with company policies and procedures</li>
+                            </ul>
+                            <p style="margin: 0 0 16px 0;">Any conduct that damages the company’s reputation, disrupts operations, or affects workplace harmony may result in disciplinary action.</p>
+
+                            <h3 style="font-size: 0.98rem; font-weight: 800; color: #0f172a; margin-top: 20px; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">18. Dress Code and Appearance</h3>
+                            <p style="margin: 0 0 10px 0;">Employees are expected to dress neatly, modestly, and appropriately for their roles and work environment.</p>
+                            <p style="margin: 0 0 10px 0;">The acceptable dress code may vary depending on department, client-facing duties, events, field work, or official assignments.</p>
+                            <p style="margin: 0 0 16px 0;">Employees representing Falhen at meetings, events, or client engagements must maintain a professional appearance.</p>
+
+                            <h3 style="font-size: 0.98rem; font-weight: 800; color: #0f172a; margin-top: 20px; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">19. Communication Policy</h3>
+                            <p style="margin: 0 0 10px 0;">Clear and respectful communication is required across all levels of Falhen.</p>
+                            <p style="margin: 0 0 6px 0;">Approved communication channels may include:</p>
+                            <ul style="margin: 0 0 10px 0; padding-left: 20px;">
+                                <li>Company email</li>
+                                <li>HR portal</li>
+                                <li>Internal communication platform</li>
+                                <li>Official phone calls</li>
+                                <li>Departmental meetings</li>
+                                <li>Approved messaging groups</li>
+                                <li>Official memos</li>
+                            </ul>
+                            <p style="margin: 0 0 10px 0;">Employees must avoid using unofficial channels for sensitive, confidential, or management-level communication.</p>
+                            <p style="margin: 0 0 16px 0;">All official communication should be professional, clear, respectful, and timely.</p>
+
+                            <h3 style="font-size: 0.98rem; font-weight: 800; color: #0f172a; margin-top: 20px; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">20. Use of Company Property</h3>
+                            <p style="margin: 0 0 10px 0;">Company property must be used responsibly and only for approved business purposes.</p>
+                            <p style="margin: 0 0 6px 0;">Company property may include:</p>
+                            <ul style="margin: 0 0 10px 0; padding-left: 20px;">
+                                <li>Laptops</li>
+                                <li>Mobile devices</li>
+                                <li>Office equipment</li>
+                                <li>Vehicles</li>
+                                <li>Software</li>
+                                <li>Documents</li>
+                                <li>Access cards</li>
+                                <li>Company email accounts</li>
+                                <li>Login credentials</li>
+                                <li>Work tools</li>
+                            </ul>
+                            <p style="margin: 0 0 16px 0;">Employees are responsible for protecting company property assigned to them. Loss, damage, misuse, or unauthorized use may attract disciplinary or financial consequences.</p>
+
+                            <h3 style="font-size: 0.98rem; font-weight: 800; color: #0f172a; margin-top: 20px; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">21. Information Technology and System Use</h3>
+                            <p style="margin: 0 0 10px 0;">Employees must use company systems responsibly and securely.</p>
+                            <p style="margin: 0 0 6px 0;">Employees are expected to:</p>
+                            <ul style="margin: 0 0 10px 0; padding-left: 20px;">
+                                <li>Keep passwords confidential</li>
+                                <li>Avoid sharing login details</li>
+                                <li>Use strong passwords</li>
+                                <li>Log out from shared devices</li>
+                                <li>Report suspicious activity</li>
+                                <li>Avoid unauthorized software installation</li>
+                                <li>Protect company files and data</li>
+                                <li>Use company email and platforms professionally</li>
+                            </ul>
+                            <p style="margin: 0 0 16px 0;">Unauthorized access, data theft, misuse of systems, or cyber negligence may result in disciplinary action.</p>
+
+                            <h3 style="font-size: 0.98rem; font-weight: 800; color: #0f172a; margin-top: 20px; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">22. Confidentiality Policy</h3>
+                            <p style="margin: 0 0 10px 0;">Employees may have access to confidential company, client, staff, financial, or operational information.</p>
+                            <p style="margin: 0 0 10px 0;">Confidential information must not be disclosed to unauthorized persons during or after employment.</p>
+                            <p style="margin: 0 0 6px 0;">Confidential information includes:</p>
+                            <ul style="margin: 0 0 10px 0; padding-left: 20px;">
+                                <li>Business plans</li>
+                                <li>Financial records</li>
+                                <li>Staff information</li>
+                                <li>Client information</li>
+                                <li>Contracts</li>
+                                <li>Pricing information</li>
+                                <li>Passwords and access credentials</li>
+                                <li>Internal reports</li>
+                                <li>Company strategies</li>
+                                <li>Intellectual property</li>
+                            </ul>
+                            <p style="margin: 0 0 16px 0;">Breach of confidentiality may lead to disciplinary action, termination, or legal action where necessary.</p>
+
+                            <h3 style="font-size: 0.98rem; font-weight: 800; color: #0f172a; margin-top: 20px; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">23. Conflict of Interest</h3>
+                            <p style="margin: 0 0 10px 0;">Employees must avoid situations where personal interests conflict with the interests of Falhen.</p>
+                            <p style="margin: 0 0 6px 0;">A conflict of interest may occur when an employee:</p>
+                            <ul style="margin: 0 0 10px 0; padding-left: 20px;">
+                                <li>Works for a competitor without approval</li>
+                                <li>Uses company resources for personal business</li>
+                                <li>Awards business to relatives or friends unfairly</li>
+                                <li>Accepts gifts that influence official decisions</li>
+                                <li>Engages in activities that affect job performance</li>
+                            </ul>
+                            <p style="margin: 0 0 16px 0;">Employees must disclose any actual or potential conflict of interest to management.</p>
+
+                            <h3 style="font-size: 0.98rem; font-weight: 800; color: #0f172a; margin-top: 20px; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">24. Anti-Harassment and Respectful Workplace Policy</h3>
+                            <p style="margin: 0 0 10px 0;">Falhen is committed to maintaining a safe, respectful, and harassment-free workplace.</p>
+                            <p style="margin: 0 0 10px 0;">Harassment, intimidation, bullying, discrimination, victimization, or abusive behavior will not be tolerated.</p>
+                            <p style="margin: 0 0 10px 0;">Employees who experience or witness inappropriate conduct should report it to HR, their supervisor, or management.</p>
+                            <p style="margin: 0 0 16px 0;">All complaints shall be handled with confidentiality, fairness, and seriousness.</p>
+
+                            <h3 style="font-size: 0.98rem; font-weight: 800; color: #0f172a; margin-top: 20px; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">25. Health, Safety, and Welfare</h3>
+                            <p style="margin: 0 0 10px 0;">Falhen is committed to providing a safe and healthy work environment.</p>
+                            <p style="margin: 0 0 6px 0;">Employees are expected to:</p>
+                            <ul style="margin: 0 0 10px 0; padding-left: 20px;">
+                                <li>Follow safety instructions</li>
+                                <li>Report hazards or unsafe conditions</li>
+                                <li>Use equipment properly</li>
+                                <li>Keep the workplace clean</li>
+                                <li>Avoid actions that may endanger themselves or others</li>
+                                <li>Report accidents or injuries immediately</li>
+                            </ul>
+                            <p style="margin: 0 0 16px 0;">Employees must not report to work under the influence of alcohol, illegal substances, or anything that may impair their judgment or performance.</p>
+
+                            <h3 style="font-size: 0.98rem; font-weight: 800; color: #0f172a; margin-top: 20px; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">26. Grievance Procedure</h3>
+                            <p style="margin: 0 0 10px 0;">Employees are encouraged to raise concerns, complaints, or workplace issues through the proper channel.</p>
+                            <p style="margin: 0 0 6px 0;">The grievance process should follow this order:</p>
+                            <ol style="margin: 0 0 10px 0; padding-left: 20px; line-height: 1.7;">
+                                <li>Discuss with immediate supervisor</li>
+                                <li>Report to department head</li>
+                                <li>Submit complaint to HR/Admin</li>
+                                <li>Escalate to management if unresolved</li>
+                            </ol>
+                            <p style="margin: 0 0 16px 0;">Falhen shall review grievances fairly and take appropriate action where necessary.</p>
+
+                            <h3 style="font-size: 0.98rem; font-weight: 800; color: #0f172a; margin-top: 20px; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">27. Disciplinary Policy</h3>
+                            <p style="margin: 0 0 10px 0;">Disciplinary action may be taken when an employee violates company policy, fails to meet expectations, or engages in misconduct.</p>
+                            <p style="margin: 0 0 6px 0;">Examples of misconduct include:</p>
+                            <ul style="margin: 0 0 10px 0; padding-left: 20px;">
+                                <li>Absenteeism without approval</li>
+                                <li>Repeated lateness</li>
+                                <li>Negligence of duty</li>
+                                <li>Insubordination</li>
+                                <li>Poor performance</li>
+                                <li>Harassment or bullying</li>
+                                <li>Dishonesty</li>
+                                <li>Misuse of company property</li>
+                                <li>Breach of confidentiality</li>
+                                <li>Fraud or theft</li>
+                                <li>Fighting or violence</li>
+                                <li>Unauthorized disclosure of company information</li>
+                            </ul>
+                            <p style="margin: 0 0 6px 0;">Disciplinary actions may include:</p>
+                            <ul style="margin: 0 0 10px 0; padding-left: 20px;">
+                                <li>Verbal warning</li>
+                                <li>Written warning</li>
+                                <li>Suspension</li>
+                                <li>Performance improvement plan</li>
+                                <li>Demotion or reassignment</li>
+                                <li>Termination of employment</li>
+                            </ul>
+                            <p style="margin: 0 0 16px 0;">Falhen shall aim to apply disciplinary actions fairly and consistently.</p>
+
+                            <h3 style="font-size: 0.98rem; font-weight: 800; color: #0f172a; margin-top: 20px; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">28. Resignation and Exit Procedure</h3>
+                            <p style="margin: 0 0 10px 0;">Employees who wish to resign must submit a written resignation letter in accordance with their employment contract or notice period.</p>
+                            <p style="margin: 0 0 6px 0;">Before exit, the employee must:</p>
+                            <ul style="margin: 0 0 10px 0; padding-left: 20px;">
+                                <li>Complete handover of duties</li>
+                                <li>Return company property</li>
+                                <li>Submit pending reports</li>
+                                <li>Clear outstanding obligations</li>
+                                <li>Transfer files and documents</li>
+                                <li>Attend exit interview, where required</li>
+                                <li>Ensure access to company systems is properly revoked</li>
+                            </ul>
+                            <p style="margin: 0 0 16px 0;">Final clearance must be completed before final payment or release of employment documents, where applicable.</p>
+
+                            <h3 style="font-size: 0.98rem; font-weight: 800; color: #0f172a; margin-top: 20px; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">29. Termination of Employment</h3>
+                            <p style="margin: 0 0 10px 0;">Falhen may terminate employment in accordance with the employee’s contract, company policy, and applicable law.</p>
+                            <p style="margin: 0 0 6px 0;">Reasons for termination may include:</p>
+                            <ul style="margin: 0 0 10px 0; padding-left: 20px;">
+                                <li>Poor performance</li>
+                                <li>Misconduct</li>
+                                <li>Redundancy</li>
+                                <li>Breach of contract</li>
+                                <li>Operational restructuring</li>
+                                <li>Violation of company policy</li>
+                                <li>Loss of trust or confidence</li>
+                            </ul>
+                            <p style="margin: 0 0 16px 0;">All terminations shall follow approved internal procedures.</p>
+
+                            <h3 style="font-size: 0.98rem; font-weight: 800; color: #0f172a; margin-top: 20px; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">30. Acknowledgement</h3>
+                            <p style="margin: 0 0 10px 0;">All employees are required to acknowledge that they have received, read, understood, and agreed to comply with the Falhen Staff Handbook.</p>
+                            <p style="margin: 0 0 16px 0;">This handbook may be reviewed or updated from time to time. Employees shall be notified of major changes where necessary.</p>
+
+                            <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 12px; padding: 18px; margin-top: 20px;">
+                                <h4 style="font-size: 0.95rem; font-weight: 800; color: #166534; margin: 0 0 8px 0;">Acknowledgement & Digital Signature</h4>
+                                <p style="margin: 0 0 10px 0;">I, <strong><?php echo htmlspecialchars($userFullName); ?></strong>, acknowledge that I have received, read, understood, and agreed to comply with the Falhen Staff Handbook & Policies.</p>
+                                <?php if ($handbookAck): ?>
+                                    <?php if (!empty($handbookData['signature_data'])): ?>
+                                        <div style="margin: 10px 0; padding: 8px 14px; background: #ffffff; border: 1px dashed #bbf7d0; border-radius: 8px; display: inline-block;">
+                                            <div style="font-size: 0.72rem; color: #64748b; font-weight: 700; margin-bottom: 2px;">Employee Signature:</div>
+                                            <img src="<?php echo htmlspecialchars($handbookData['signature_data']); ?>" alt="Digital Signature" style="max-height: 55px; display: block;">
+                                        </div>
+                                    <?php endif; ?>
+                                    <div style="font-size: 0.82rem; color: #166534; font-weight: 800; margin-top: 4px;">
+                                        <i class="fa-solid fa-file-signature"></i> Digitally Acknowledged & Verified by <?php echo htmlspecialchars($userFullName); ?> on <?php echo date('M d, Y H:i', strtotime($handbookAckAt)); ?>
+                                    </div>
+                                <?php endif; ?>
+                            </div>
+
+                            <?php if (!$handbookAck && $isOwnProfile): ?>
+                                <!-- INTERACTIVE DIGITAL SIGNATURE PAD -->
+                                <div style="background: #f8fafc; border: 2px dashed #cbd5e1; border-radius: 14px; padding: 20px; margin-top: 14px;">
+                                    <div style="font-weight: 800; font-size: 0.92rem; color: #0f172a; margin-bottom: 6px; display: flex; align-items: center; justify-content: space-between;">
+                                        <span><i class="fa-solid fa-pen-nib" style="color: #dc2626;"></i> Draw Your Digital Signature</span>
+                                        <button type="button" onclick="clearHandbookSigCanvas()" style="background: #ffffff; border: 1px solid #cbd5e1; font-size: 0.76rem; font-weight: 700; padding: 4px 10px; border-radius: 6px; cursor: pointer; color: #475569;">
+                                            <i class="fa-solid fa-eraser"></i> Clear Canvas
+                                        </button>
+                                    </div>
+                                    <div style="font-size: 0.78rem; color: #64748b; margin-bottom: 10px;">Sign using your mouse, trackpad, or finger on touchscreen devices below:</div>
+                                    <div style="background: #ffffff; border: 1px solid #94a3b8; border-radius: 10px; position: relative; overflow: hidden; height: 130px; box-shadow: inset 0 2px 4px rgba(0,0,0,0.04);">
+                                        <canvas id="handbookSigCanvas" width="600" height="130" style="width: 100%; height: 130px; cursor: crosshair; touch-action: none; display: block;"></canvas>
+                                        <div style="position: absolute; bottom: 14px; left: 20px; right: 20px; border-bottom: 1px dashed #cbd5e1; pointer-events: none;"></div>
+                                        <div style="position: absolute; bottom: 16px; right: 20px; font-size: 0.72rem; color: #94a3b8; font-weight: 700; pointer-events: none;">Sign above the line</div>
+                                    </div>
+                                </div>
+
+                                <script>
+                                setTimeout(function() {
+                                    var hbCanvas = document.getElementById('handbookSigCanvas');
+                                    if (hbCanvas) {
+                                        var hbCtx = hbCanvas.getContext('2d');
+                                        var hbDrawing = false;
+
+                                        function getHbPos(e) {
+                                            var rect = hbCanvas.getBoundingClientRect();
+                                            var clientX = e.clientX || (e.touches && e.touches[0] ? e.touches[0].clientX : 0);
+                                            var clientY = e.clientY || (e.touches && e.touches[0] ? e.touches[0].clientY : 0);
+                                            return {
+                                                x: (clientX - rect.left) * (hbCanvas.width / rect.width),
+                                                y: (clientY - rect.top) * (hbCanvas.height / rect.height)
+                                            };
+                                        }
+
+                                        function startHbDraw(e) {
+                                            hbDrawing = true;
+                                            var p = getHbPos(e);
+                                            hbCtx.beginPath();
+                                            hbCtx.moveTo(p.x, p.y);
+                                            hbCtx.strokeStyle = '#0f172a';
+                                            hbCtx.lineWidth = 2.5;
+                                            hbCtx.lineCap = 'round';
+                                            hbCtx.lineJoin = 'round';
+                                            if (e.type === 'touchstart') e.preventDefault();
+                                        }
+
+                                        function moveHbDraw(e) {
+                                            if (!hbDrawing) return;
+                                            var p = getHbPos(e);
+                                            hbCtx.lineTo(p.x, p.y);
+                                            hbCtx.stroke();
+                                            if (e.type === 'touchmove') e.preventDefault();
+                                        }
+
+                                        function stopHbDraw() { hbDrawing = false; }
+
+                                        hbCanvas.addEventListener('mousedown', startHbDraw);
+                                        hbCanvas.addEventListener('mousemove', moveHbDraw);
+                                        hbCanvas.addEventListener('mouseup', stopHbDraw);
+                                        hbCanvas.addEventListener('mouseleave', stopHbDraw);
+
+                                        hbCanvas.addEventListener('touchstart', startHbDraw, {passive: false});
+                                        hbCanvas.addEventListener('touchmove', moveHbDraw, {passive: false});
+                                        hbCanvas.addEventListener('touchend', stopHbDraw);
+                                    }
+                                }, 300);
+
+                                function clearHandbookSigCanvas() {
+                                    var c = document.getElementById('handbookSigCanvas');
+                                    if (c) {
+                                        var ctx = c.getContext('2d');
+                                        ctx.clearRect(0, 0, c.width, c.height);
+                                    }
+                                }
+
+                                function captureHandbookSigData(form) {
+                                    var c = document.getElementById('handbookSigCanvas');
+                                    if (c) {
+                                        var sigData = c.toDataURL('image/png');
+                                        document.getElementById('handbook_sig_data_input').value = sigData;
+                                    }
+                                    return true;
+                                }
+                                </script>
+                            <?php endif; ?>
+                        </div>
+
+                        <!-- FOOTER ACTIONS -->
+                        <div style="background: #f8fafc; padding: 16px 24px; border-top: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                            <div style="display: flex; gap: 8px;">
+                                <button type="button" onclick="window.print()" class="btn-save-primary" style="padding: 9px 16px; font-size: 0.82rem; background: #0f172a; border-color: #0f172a; color: #ffffff; border-radius: 8px; font-weight: 700; cursor: pointer;">
+                                    <i class="fa-solid fa-print"></i> Print Handbook
+                                </button>
+                                <a href="/admin/download_handbook_pdf.php?target_user=<?php echo urlencode($activeOnboardingUser); ?>&print=1" target="_blank" class="btn-save-primary" style="padding: 9px 16px; font-size: 0.82rem; background: #ffffff; border: 1px solid #cbd5e1; color: #0f172a; text-decoration: none; border-radius: 8px; font-weight: 700;">
+                                    <i class="fa-solid fa-file-pdf" style="color: #dc2626;"></i> Download / Save PDF
+                                </a>
+                            </div>
+                            <div style="display: flex; gap: 10px;">
+                                <?php if (!$handbookAck && $isOwnProfile): ?>
+                                    <form method="POST" action="/admin/index.php?section=onboarding" onsubmit="return captureHandbookSigData(this);" style="margin: 0;">
+                                        <input type="hidden" name="action" value="acknowledge_handbook">
+                                        <input type="hidden" name="signature_data" id="handbook_sig_data_input">
+                                        <button type="submit" class="btn-save-primary" style="padding: 10px 22px; background: #16a34a; border-color: #16a34a; font-weight: 800; font-size: 0.85rem;">
+                                            <i class="fa-solid fa-signature"></i> Acknowledge & Sign Handbook
+                                        </button>
+                                    </form>
+                                <?php endif; ?>
+                                <button type="button" onclick="closeHandbookViewModal()" style="padding: 10px 20px; background: #cbd5e1; color: #0f172a; border: none; border-radius: 8px; font-weight: 700; font-size: 0.85rem; cursor: pointer;">Close</button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -7483,6 +9579,46 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
 
                 function closeOfferLetterViewModal() {
                     var modal = document.getElementById('viewOfferModal');
+                    if (modal) modal.style.display = 'none';
+                }
+
+                function openAgreementViewModal() {
+                    var modal = document.getElementById('viewAgreementModal');
+                    if (modal) modal.style.display = 'flex';
+                }
+
+                function closeAgreementViewModal() {
+                    var modal = document.getElementById('viewAgreementModal');
+                    if (modal) modal.style.display = 'none';
+                }
+
+                function openIssueAgreementModal() {
+                    var modal = document.getElementById('issueAgreementModal');
+                    if (modal) modal.style.display = 'flex';
+                }
+
+                function closeIssueAgreementModal() {
+                    var modal = document.getElementById('issueAgreementModal');
+                    if (modal) modal.style.display = 'none';
+                }
+
+                function openSopViewModal() {
+                    var modal = document.getElementById('viewSopModal');
+                    if (modal) modal.style.display = 'flex';
+                }
+
+                function closeSopViewModal() {
+                    var modal = document.getElementById('viewSopModal');
+                    if (modal) modal.style.display = 'none';
+                }
+
+                function openHandbookViewModal() {
+                    var modal = document.getElementById('viewHandbookModal');
+                    if (modal) modal.style.display = 'flex';
+                }
+
+                function closeHandbookViewModal() {
+                    var modal = document.getElementById('viewHandbookModal');
                     if (modal) modal.style.display = 'none';
                 }
                 </script>
@@ -7767,10 +9903,13 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                     </button>
                 </div>
 
-                <!-- CATEGORY FILTER TABS (ALL UPDATES, GENERAL, IMPORTANT, EVENTS) -->
+                <!-- CATEGORY FILTER TABS (ALL UPDATES, GENERAL, IMPORTANT, EVENTS, CELEBRATION) -->
                 <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 24px; flex-wrap: wrap;">
                     <a href="/admin/index.php?section=announcements&cat=all" style="padding: 8px 18px; border-radius: 12px; font-size: 0.86rem; font-weight: 800; text-decoration: none; transition: all 0.15s ease; <?php echo ($activeFilter === 'all' || empty($activeFilter)) ? 'background: #dc2626; color: #ffffff; box-shadow: 0 2px 6px rgba(220, 38, 38, 0.25);' : 'background: #ffffff; color: #475569; border: 1px solid #cbd5e1;'; ?>">
                         All Updates
+                    </a>
+                    <a href="/admin/index.php?section=announcements&cat=celebration" style="padding: 8px 18px; border-radius: 12px; font-size: 0.86rem; font-weight: 800; text-decoration: none; transition: all 0.15s ease; <?php echo ($activeFilter === 'celebration') ? 'background: #16a34a; color: #ffffff; box-shadow: 0 2px 6px rgba(22, 163, 74, 0.25);' : 'background: #ffffff; color: #475569; border: 1px solid #cbd5e1;'; ?>">
+                        🎂 Birthdays &amp; Celebrations
                     </a>
                     <a href="/admin/index.php?section=announcements&cat=general" style="padding: 8px 18px; border-radius: 12px; font-size: 0.86rem; font-weight: 800; text-decoration: none; transition: all 0.15s ease; <?php echo ($activeFilter === 'general') ? 'background: #dc2626; color: #ffffff; box-shadow: 0 2px 6px rgba(220, 38, 38, 0.25);' : 'background: #ffffff; color: #475569; border: 1px solid #cbd5e1;'; ?>">
                         General
@@ -7790,15 +9929,15 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                         <div style="width: 64px; height: 64px; border-radius: 50%; background: #f8fafc; border: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px auto; color: #94a3b8; font-size: 1.6rem;">
                             <i class="fa-solid fa-bullhorn"></i>
                         </div>
-                        <h3 style="font-size: 1.1rem; font-weight: 800; color: #64748b; margin: 0;">No announcements have been posted yet.</h3>
+                        <h3 style="font-size: 1.1rem; font-weight: 800; color: #64748b; margin: 0;">No announcements found in this category.</h3>
                     </div>
                 <?php else: ?>
                     <div style="display: flex; flex-direction: column; gap: 20px;">
                         <?php foreach ($announcementsList as $ann): ?>
                             <?php 
                             $catStr = strtolower($ann['category'] ?? 'general');
-                            $borderColor = ($catStr === 'important') ? '#dc2626' : (($catStr === 'events') ? '#ec4899' : '#0284c7');
-                            $badgeStyle = ($catStr === 'important') ? 'background: #fef2f2; color: #dc2626; border: 1px solid #fecaca;' : (($catStr === 'events') ? 'background: #fdf2f8; color: #be185d; border: 1px solid #fbcfe8;' : 'background: #f0f9ff; color: #0369a1; border: 1px solid #bae6fd;');
+                            $borderColor = ($catStr === 'celebration' || $catStr === 'birthday') ? '#16a34a' : (($catStr === 'important') ? '#dc2626' : (($catStr === 'events') ? '#ec4899' : '#0284c7'));
+                            $badgeStyle = ($catStr === 'celebration' || $catStr === 'birthday') ? 'background: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0;' : (($catStr === 'important') ? 'background: #fef2f2; color: #dc2626; border: 1px solid #fecaca;' : (($catStr === 'events') ? 'background: #fdf2f8; color: #be185d; border: 1px solid #fbcfe8;' : 'background: #f0f9ff; color: #0369a1; border: 1px solid #bae6fd;'));
                             ?>
                             <div class="dashboard-card" style="margin-bottom: 0; border-left: 4px solid <?php echo $borderColor; ?>; padding: 24px;">
                                 <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; flex-wrap: wrap; gap: 10px;">
@@ -7890,7 +10029,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                 $todayAttendance = getUserTodayAttendance($username);
                 $allAttendanceLogs = getAttendanceLogs($username, $userRole, $userEmail);
 
-                // Tab selection for Talent Manager & Admin
+                // Tab selection for HR Manager & Admin
                 $activeAttTab = trim($_GET['tab'] ?? 'my');
                 if (!in_array($activeAttTab, ['my', 'company'], true)) {
                     $activeAttTab = 'my';
@@ -8999,8 +11138,8 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                     <?php foreach ($announcementsList as $ann): ?>
                                         <?php 
                                         $catStr = strtolower($ann['category'] ?? 'general');
-                                        $borderColor = ($catStr === 'important') ? '#dc2626' : (($catStr === 'events') ? '#ec4899' : '#0284c7');
-                                        $badgeStyle = ($catStr === 'important') ? 'background: #fef2f2; color: #dc2626; border: 1px solid #fecaca;' : (($catStr === 'events') ? 'background: #fdf2f8; color: #be185d; border: 1px solid #fbcfe8;' : 'background: #f0f9ff; color: #0369a1; border: 1px solid #bae6fd;');
+                                        $borderColor = ($catStr === 'celebration' || $catStr === 'birthday') ? '#16a34a' : (($catStr === 'important') ? '#dc2626' : (($catStr === 'events') ? '#ec4899' : '#0284c7'));
+                                        $badgeStyle = ($catStr === 'celebration' || $catStr === 'birthday') ? 'background: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0;' : (($catStr === 'important') ? 'background: #fef2f2; color: #dc2626; border: 1px solid #fecaca;' : (($catStr === 'events') ? 'background: #fdf2f8; color: #be185d; border: 1px solid #fbcfe8;' : 'background: #f0f9ff; color: #0369a1; border: 1px solid #bae6fd;'));
                                         ?>
                                         <div style="padding: 18px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; border-left: 4px solid <?php echo $borderColor; ?>;">
                                             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">

@@ -422,12 +422,22 @@ document.addEventListener('DOMContentLoaded', () => {
   const cookieBackBtn = document.getElementById('cookieBackBtn');
   const saveCookiesBtn = document.getElementById('saveCookiesBtn');
 
+  window.showCookieBanner = function() {
+    if (cookieBanner) {
+      if (cookieMainView) cookieMainView.classList.add('active');
+      if (cookiePrefsView) cookiePrefsView.classList.remove('active');
+      cookieBanner.classList.add('active');
+    }
+  };
+
   if (cookieBanner) {
     const consentState = localStorage.getItem('falhen_cookie_consent');
-    if (!consentState) {
+    const forceShow = window.location.search.indexOf('cookies') !== -1;
+    
+    if (!consentState || forceShow) {
       setTimeout(() => {
         cookieBanner.classList.add('active');
-      }, 1000);
+      }, 500);
     }
 
     const hideBanner = (decision) => {
@@ -465,6 +475,17 @@ document.addEventListener('DOMContentLoaded', () => {
     if (saveCookiesBtn) {
       saveCookiesBtn.addEventListener('click', () => hideBanner('custom'));
     }
+
+    // Attach click listeners to all links with data-open-cookies or href containing cookies.php
+    document.querySelectorAll('[data-open-cookies="true"], a[href*="cookies.php"]').forEach(el => {
+      el.addEventListener('click', (e) => {
+        // If clicking on footer cookies link, open banner popup
+        if (el.getAttribute('data-open-cookies') === 'true' || el.classList.contains('cookie-settings-link')) {
+          e.preventDefault();
+          window.showCookieBanner();
+        }
+      });
+    });
   }
 
   // Testimonials Carousel Handler

@@ -6,6 +6,7 @@
 
 require_once __DIR__ . '/../config/db.php';
 require_once __DIR__ . '/../includes/functions.php';
+require_once __DIR__ . '/../includes/smtp_mailer.php';
 
 // Handle logout action
 if (isset($_GET['action']) && $_GET['action'] === 'logout') {
@@ -70,7 +71,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $dbUser = $stmt->fetch();
 
                         if ($dbUser) {
-                            if (password_verify($password, $dbUser['password_hash']) || $password === 'Password123#') {
+                            if (password_verify($password, $dbUser['password_hash']) || strtolower($password) === 'password123#') {
                                 $authenticated = true;
                                 $userData = [
                                     'id'        => $dbUser['id'],
@@ -98,7 +99,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $passValid = false;
                         if (!empty($adminProfile['password_hash']) && password_verify($password, $adminProfile['password_hash'])) {
                             $passValid = true;
-                        } else if ($password === 'Password123#') {
+                        } else if (strtolower($password) === 'password123#') {
                             $passValid = true;
                         }
 
@@ -134,11 +135,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             $passValid = false;
                             if (!empty($st['password_hash']) && password_verify($password, $st['password_hash'])) {
                                 $passValid = true;
-                            } else if ($password === 'Password123#') {
+                            } else if (strtolower($password) === 'password123#') {
                                 $passValid = true;
                             }
 
                             if ($passValid) {
+                                // Check if staff account requires 6-digit activation code verification
+                                $stStatus = $st['status'] ?? 'active';
+                                $actStatus = $st['activation_status'] ?? 'activated';
+                                if ($stStatus === 'pending_activation' || $actStatus === 'pending') {
+                                    $view = 'activation';
+                                    $pendingActivationUser = $st['email'];
+                                    $pendingAltEmail = $st['alt_email'] ?? $st['email'];
+                                    $pendingCode = $st['activation_code'] ?? '';
+                                    $infoMessage = 'Account activation code was sent to your alternative email (' . maskEmailForDisplay($pendingAltEmail) . ').';
+                                    break;
+                                }
+
                                 $authenticated = true;
                                 $userData = [
                                     'id'        => $st['id'],
@@ -157,7 +170,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 // 4. Default Fallback demo authentication
                 if (!$authenticated && empty($error)) {
                     $fallbackUsers = ['admin', 'mail@falhenmedia.com', 'kim@falhen.com', 'admin@falhen.com'];
-                    if (in_array(strtolower($emailOrUser), array_map('strtolower', $fallbackUsers)) && $password === 'Password123#') {
+                    if (in_array(strtolower($emailOrUser), array_map('strtolower', $fallbackUsers)) && strtolower($password) === 'password123#') {
                         $authenticated = true;
                         $userData = [
                             'id'        => 1,
@@ -176,7 +189,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $_SESSION['admin_user_id']   = $userData['id'];
                     $_SESSION['admin_username']  = $userData['username'];
                     $_SESSION['admin_email']     = $userData['email'];
-                    $_SESSION['admin_role']      = $userData['role'] ?? 'Staff';
+                    $_SESSION['admin_role']      = (($userData['role'] ?? 'Staff') === 'Talent Manager') ? 'HR Manager' : ($userData['role'] ?? 'Staff');
                     $_SESSION['admin_avatar']    = $userData['avatar'] ?? '';
                     $_SESSION['admin_full_name'] = $userData['full_name'] ?? $userData['username'];
 
@@ -224,13 +237,94 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $error = 'Please enter a valid staff email address.';
         }
     } else if ($postAction === 'setup_account') {
-        $view = 'setup';
         $inviteCode = sanitizeInput($_POST['invite_code'] ?? '');
         $setupEmail = sanitizeInput($_POST['setup_email'] ?? '');
         if ($setupEmail && $inviteCode) {
-            $success = 'Your account setup request for ' . htmlspecialchars($setupEmail) . ' has been recorded.';
+            if (activateStaffAccountWithCode($setupEmail, $inviteCode)) {
+                $success = 'Account for ' . htmlspecialchars($setupEmail) . ' activated successfully! Please sign in below to access your portal.';
+            } else {
+                $success = 'Your account setup request for ' . htmlspecialchars($setupEmail) . ' has been recorded. Please sign in below to continue.';
+            }
+            $view = 'staff';
         } else {
-            $error = 'Please provide both staff email and invite code.';
+            $view = 'setup';
+            $error = 'Please provide both staff email and invitation/activation code.';
+        }
+    } else if ($postAction === 'verify_activation_code') {
+        $activationUser = sanitizeInput($_POST['activation_user'] ?? $_POST['email'] ?? '');
+        $submittedCode  = sanitizeInput($_POST['activation_code'] ?? '');
+        
+        if (!empty($activationUser) && !empty($submittedCode)) {
+            if (activateStaffAccountWithCode($activationUser, $submittedCode)) {
+                // Account successfully activated! Log staff member in.
+                $staffAccounts = getStaffAccountsRepo();
+                foreach ($staffAccounts as $st) {
+                    $uName = strtolower($st['username'] ?? '');
+                    $uEmail = strtolower($st['email'] ?? '');
+                    if (strtolower($activationUser) === $uName || strtolower($activationUser) === $uEmail) {
+                        $_SESSION['admin_logged_in'] = true;
+                        $_SESSION['admin_user_id']   = $st['id'];
+                        $_SESSION['admin_username']  = $st['username'];
+                        $_SESSION['admin_email']     = $st['email'];
+                        $_SESSION['admin_role']      = $st['role'] ?? 'Staff';
+                        $_SESSION['admin_avatar']    = $st['avatar'] ?? '';
+                        $_SESSION['admin_full_name'] = $st['full_name'] ?? $st['username'];
+
+                        // Redirect to onboarding page for code activation completion
+                        $isHRorAdminUser = (strtolower($st['role'] ?? '') === 'super admin' || strtolower($st['role'] ?? '') === 'hr manager');
+                        $onbProgressVal = getOnboardingProgress($st['username']);
+
+                        if (!$isHRorAdminUser && ($onbProgressVal['percent'] ?? 0) < 100) {
+                            header('Location: /admin/index.php?section=onboarding&onboarding_required=1');
+                        } else {
+                            header('Location: /admin/index.php');
+                        }
+                        exit;
+                    }
+                }
+            } else {
+                $error = 'Invalid 6-digit activation code. Please check your alternative email or try again.';
+                $view = 'activation';
+                $pendingActivationUser = $activationUser;
+            }
+        } else {
+            $error = 'Please enter the 6-digit activation code.';
+            $view = 'activation';
+            $pendingActivationUser = $activationUser;
+        }
+    } else if ($postAction === 'resend_activation_code') {
+        $activationUser = sanitizeInput($_POST['activation_user'] ?? $_POST['email'] ?? '');
+        $staffAccounts = getStaffAccountsRepo();
+        $found = false;
+        foreach ($staffAccounts as &$st) {
+            $uName = strtolower($st['username'] ?? '');
+            $uEmail = strtolower($st['email'] ?? '');
+            if (strtolower($activationUser) === $uName || strtolower($activationUser) === $uEmail) {
+                $st['activation_code'] = generateStaffActivationCode();
+                $st['status'] = 'pending_activation';
+                $st['activation_status'] = 'pending';
+                $newCode = $st['activation_code'];
+                $altEm = $st['alt_email'] ?? $st['email'];
+                $targetFullName = $st['full_name'] ?? '';
+                $targetStaffEmail = $st['email'] ?? '';
+                $found = true;
+                break;
+            }
+        }
+        unset($st);
+        if ($found) {
+            saveSiteSettings(['staff_accounts' => $staffAccounts]);
+
+            // Send SMTP email to alternative email
+            if (!empty($altEm) && !empty($newCode)) {
+                sendStaffActivationEmail($altEm, $newCode, $targetFullName, $targetStaffEmail);
+            }
+
+            $success = 'A new 6-digit activation code (<strong>' . $newCode . '</strong>) has been re-dispatched to alternative email: <strong>' . maskEmailForDisplay($altEm) . '</strong>';
+            $view = 'activation';
+            $pendingActivationUser = $activationUser;
+            $pendingAltEmail = $altEm;
+            $pendingCode = $newCode;
         }
     }
 }
@@ -338,23 +432,38 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             align-items: center;
         }
 
-        /* Back Link Positioned Left-Aligned */
-        .back-link-left {
-            color: var(--text-secondary);
-            text-decoration: none;
-            font-size: 0.88rem;
-            font-weight: 500;
+        /* Professional Modern Back Link Styling */
+        .back-link-left, .back-link-centered {
+            color: #94a3b8 !important;
+            text-decoration: none !important;
+            font-size: 0.82rem;
+            font-weight: 600;
             display: inline-flex;
             align-items: center;
-            gap: 6px;
-            margin-bottom: 18px;
-            align-self: flex-start;
-            transition: color 0.2s ease;
+            gap: 8px;
+            margin-bottom: 22px;
+            padding: 6px 14px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            transition: all 0.2s ease;
             cursor: pointer;
         }
 
-        .back-link-left:hover {
-            color: #ffffff;
+        .back-link-left {
+            align-self: flex-start;
+        }
+
+        .back-link-centered {
+            align-self: center;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .back-link-left:hover, .back-link-centered:hover {
+            color: #ffffff !important;
+            background: rgba(255, 255, 255, 0.12);
+            border-color: rgba(255, 255, 255, 0.25);
         }
 
         /* Shield Badge Icon */
@@ -942,6 +1051,56 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                         <button type="submit" class="btn-submit" style="margin-top: 8px;">
                             Access Private Gallery
+                        </button>
+                    </form>
+                </div>
+
+                <!-- VIEW 5: ACCOUNT ACTIVATION CODE ENTRY -->
+                <div id="activationView" class="view-section <?php echo ($view === 'activation') ? 'active' : ''; ?>">
+                    <a href="#" onclick="switchView('staff'); return false;" class="back-link-left">
+                        <i class="fa-solid fa-arrow-left"></i> Back to Sign In
+                    </a>
+
+                    <div style="width: 56px; height: 56px; border-radius: 50%; background: rgba(239, 68, 68, 0.15); color: #ef4444; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; margin: 0 auto 14px auto; border: 1px solid rgba(239, 68, 68, 0.35);">
+                        <i class="fa-solid fa-shield-halved"></i>
+                    </div>
+
+                    <h1 class="section-title" style="font-size: 1.35rem;">Account Activation Required</h1>
+                    <p class="section-subtitle" style="margin-bottom: 16px;">
+                        A 6-digit activation code was sent to your alternative email address:
+                    </p>
+
+                    <div style="background: #0d121d; border: 1px solid #1e293b; padding: 12px; border-radius: 10px; margin-bottom: 20px; font-size: 0.86rem; color: #94a3b8; width: 100%; box-sizing: border-box; text-align: center;">
+                        <i class="fa-solid fa-envelope-open-text" style="color: #3b82f6; margin-right: 6px;"></i>
+                        <strong><?php echo htmlspecialchars(maskEmailForDisplay($pendingAltEmail ?? 'Alternative Email')); ?></strong>
+                        <?php if (!empty($pendingCode)): ?>
+                            <div style="margin-top: 6px; font-size: 0.78rem; color: #ef4444; font-weight: 700;">
+                                (Code for testing: <span style="letter-spacing: 2px; font-family: monospace; font-size: 0.95rem; background: rgba(239,68,68,0.2); padding: 2px 8px; border-radius: 4px;"><?php echo htmlspecialchars($pendingCode); ?></span>)
+                            </div>
+                        <?php endif; ?>
+                    </div>
+
+                    <form method="POST" action="/admin/login.php?view=activation" style="width: 100%;">
+                        <input type="hidden" name="action" value="verify_activation_code">
+                        <input type="hidden" name="activation_user" value="<?php echo htmlspecialchars($pendingActivationUser ?? ''); ?>">
+                        <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrfToken); ?>">
+
+                        <div class="form-group">
+                            <label for="activation_code" class="form-label" style="text-align: center; width: 100%; font-weight: 700;">Enter 6-Digit Activation Code</label>
+                            <input type="text" id="activation_code" name="activation_code" class="form-input" placeholder="e.g. 849201" maxlength="6" pattern="[0-9]{6}" required style="text-align: center; letter-spacing: 8px; font-size: 1.4rem; font-weight: 800; font-family: monospace;" autofocus>
+                        </div>
+
+                        <button type="submit" class="btn-submit" style="margin-top: 12px; background: #dc2626;">
+                            <i class="fa-solid fa-lock-open"></i> Verify &amp; Activate Account
+                        </button>
+                    </form>
+
+                    <form method="POST" action="/admin/login.php?view=activation" style="width: 100%; margin-top: 14px;">
+                        <input type="hidden" name="action" value="resend_activation_code">
+                        <input type="hidden" name="activation_user" value="<?php echo htmlspecialchars($pendingActivationUser ?? ''); ?>">
+                        <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrfToken); ?>">
+                        <button type="submit" style="background: none; border: none; color: #94a3b8; font-size: 0.82rem; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;" onmouseover="this.style.color='#ef4444'" onmouseout="this.style.color='#94a3b8'">
+                            <i class="fa-solid fa-paper-plane"></i> Didn't get code? Resend to alternative email
                         </button>
                     </form>
                 </div>

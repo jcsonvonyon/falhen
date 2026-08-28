@@ -455,5 +455,7 @@ $galleryPhotos = [
             <span class="dock-label">TOP</span>
         </button>
     </nav>
+    <?php require_once __DIR__ . '/includes/cookie-banner.php'; ?>
+    <script src="/assets/js/main.js"></script>
 </body>
 </html>

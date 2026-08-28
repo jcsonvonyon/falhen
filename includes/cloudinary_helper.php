@@ -52,6 +52,14 @@ function uploadToCloudinary($fileOrUrl, $folder = 'falhen') {
         return ['success' => false, 'message' => 'Cloudinary API credentials are missing.'];
     }
 
+    // Auto-detect PDF or raw documents to prevent Cloudinary image 401 error
+    $ext = strtolower(pathinfo((string)$fileOrUrl, PATHINFO_EXTENSION));
+    if ($ext === 'pdf' || $ext === 'doc' || $ext === 'docx' || $resourceType === 'raw' || strpos((string)$fileOrUrl, '.pdf') !== false) {
+        $resourceType = 'raw';
+    } else if ($resourceType !== 'video') {
+        $resourceType = 'image';
+    }
+
     $timestamp = time();
     $paramsToSign = [
         'folder' => $folder,
@@ -66,7 +74,7 @@ function uploadToCloudinary($fileOrUrl, $folder = 'falhen') {
     $stringToSign = rtrim($stringToSign, '&') . $apiSecret;
     $signature = sha1($stringToSign);
 
-    $endpoint = "https://api.cloudinary.com/v1_1/{$cloudName}/image/upload";
+    $endpoint = "https://api.cloudinary.com/v1_1/{$cloudName}/{$resourceType}/upload";
 
     $postFields = [
         'api_key' => $apiKey,

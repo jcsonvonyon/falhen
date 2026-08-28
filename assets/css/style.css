@@ -460,9 +460,11 @@ ul {
   0% {
     transform: scale(1);
   }
+
   50% {
     transform: scale(1.12);
   }
+
   100% {
     transform: scale(1.03);
   }
@@ -471,7 +473,7 @@ ul {
 .hero-overlay {
   position: absolute;
   inset: 0;
-  background: 
+  background:
     radial-gradient(circle at 50% 40%, rgba(9, 9, 11, 0.1) 0%, rgba(9, 9, 11, 0.55) 80%),
     linear-gradient(180deg, rgba(9, 9, 11, 0.15) 0%, rgba(9, 9, 11, 0.8) 100%);
   z-index: 1;
@@ -507,7 +509,7 @@ ul {
   font-size: 1.25rem;
   color: #e4e4e7;
   max-width: 720px;
-  margin: 0 auto 40px auto;
+  margin: 0 auto 50px auto !important;
   font-weight: 400;
   line-height: 1.6;
 }
@@ -518,6 +520,7 @@ ul {
   justify-content: center;
   gap: 18px;
   flex-wrap: wrap;
+  margin-top: 90px !important;
 }
 
 .btn-hero-red {
@@ -634,6 +637,7 @@ ul {
   0% {
     transform: translateX(0);
   }
+
   100% {
     transform: translateX(-50%);
   }
@@ -979,11 +983,12 @@ ul {
   color: var(--text-muted);
   line-height: 1.4;
 }
-  align-items: center;
-  justify-content: center;
-  font-size: 1.8rem;
-  color: var(--accent-red-light);
-  margin-bottom: 24px;
+
+align-items: center;
+justify-content: center;
+font-size: 1.8rem;
+color: var(--accent-red-light);
+margin-bottom: 24px;
 }
 
 .service-title {
@@ -1062,7 +1067,7 @@ ul {
 .showcase-player-overlay {
   position: absolute;
   inset: 0;
-  background: 
+  background:
     radial-gradient(circle at 50% 50%, transparent 20%, rgba(9, 9, 11, 0.6) 80%),
     linear-gradient(180deg, rgba(9, 9, 11, 0.2) 0%, rgba(9, 9, 11, 0.95) 100%);
   z-index: 1;
@@ -1655,7 +1660,7 @@ ul {
   overflow: hidden;
 }
 
-.testimonial-author > div {
+.testimonial-author>div {
   min-width: 0;
   flex: 1;
 }
@@ -2410,9 +2415,20 @@ a.team-card {
 }
 
 @keyframes pulseGreen {
-  0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
-  70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); }
-  100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+  0% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+  }
+
+  70% {
+    transform: scale(1);
+    box-shadow: 0 0 0 10px rgba(16, 185, 129, 0);
+  }
+
+  100% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+  }
 }
 
 .discovery-features-grid {
@@ -2655,14 +2671,12 @@ textarea.form-control {
 .footer-top-accent-line {
   width: 100%;
   height: 2px;
-  background: linear-gradient(
-    90deg,
-    rgba(220, 38, 38, 0) 0%,
-    rgba(239, 68, 68, 0.45) 18%,
-    #ef4444 50%,
-    rgba(239, 68, 68, 0.45) 82%,
-    rgba(220, 38, 38, 0) 100%
-  );
+  background: linear-gradient(90deg,
+      rgba(220, 38, 38, 0) 0%,
+      rgba(239, 68, 68, 0.45) 18%,
+      #ef4444 50%,
+      rgba(239, 68, 68, 0.45) 82%,
+      rgba(220, 38, 38, 0) 100%);
   box-shadow: 0 0 15px rgba(239, 68, 68, 0.75), 0 0 30px rgba(220, 38, 38, 0.35);
   position: relative;
   z-index: 5;
@@ -3077,11 +3091,11 @@ textarea.form-control {
   border-radius: 50%;
 }
 
-.cookie-switch input:checked + .cookie-slider {
+.cookie-switch input:checked+.cookie-slider {
   background-color: #dc2626;
 }
 
-.cookie-switch input:checked + .cookie-slider:before {
+.cookie-switch input:checked+.cookie-slider:before {
   transform: translateX(16px);
 }
 
@@ -3380,6 +3394,7 @@ textarea.form-control {
     gap: 8px !important;
     width: 100% !important;
     max-width: 100% !important;
+    margin-top: 28px !important;
   }
 
   .hero-actions .btn {

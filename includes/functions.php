@@ -177,7 +177,7 @@ function getTeamMembers() {
                 'id' => 4,
                 'number' => '04',
                 'name' => 'Mojisola Emjay',
-                'role' => 'Resource Manager',
+                'role' => 'HR Manager',
                 'department' => 'Strategy',
                 'location' => 'Lagos',
                 'experience' => '10+ years at Falhen',
@@ -1387,6 +1387,105 @@ function getStaffAccountById($id) {
 }
 
 /**
+ * Get Staff Account By Username
+ */
+function getStaffAccountByUsername($username) {
+    $repo = getStaffAccountsRepo();
+    foreach ($repo as $st) {
+        if (strtolower($st['username'] ?? '') === strtolower($username)) {
+            return $st;
+        }
+    }
+    return null;
+}
+
+/**
+ * Update Staff Account Details By Username
+ */
+function saveStaffAccountByUsername($username, $data) {
+    $settings = getSiteSettings();
+    $items = $settings['staff_accounts'] ?? getStaffAccountsRepo();
+    $updated = false;
+
+    foreach ($items as &$st) {
+        if (strtolower($st['username'] ?? '') === strtolower($username)) {
+            foreach ($data as $k => $v) {
+                $st[$k] = $v;
+            }
+            $updated = true;
+            break;
+        }
+    }
+    unset($st);
+
+    if ($updated) {
+        $settings['staff_accounts'] = $items;
+        saveSiteSettings($settings);
+    }
+    return $updated;
+}
+
+/**
+ * Generate 6-Digit Activation Code for Staff Account
+ */
+function generateStaffActivationCode() {
+    return sprintf("%06d", mt_rand(100000, 999999));
+}
+
+/**
+ * Activate Staff Account with 6-Digit Code
+ */
+function activateStaffAccountWithCode($emailOrUser, $submittedCode) {
+    $settings = getSiteSettings();
+    $items = $settings['staff_accounts'] ?? getStaffAccountsRepo();
+    $activated = false;
+
+    $inputLower = strtolower(trim($emailOrUser));
+    $cleanCode = trim($submittedCode);
+
+    foreach ($items as &$st) {
+        $uName = strtolower($st['username'] ?? '');
+        $uEmail = strtolower($st['email'] ?? '');
+        if ($inputLower === $uName || $inputLower === $uEmail) {
+            $expectedCode = trim($st['activation_code'] ?? '');
+            if (!empty($expectedCode) && $cleanCode === $expectedCode) {
+                $st['status'] = 'active';
+                $st['activation_status'] = 'activated';
+                $st['activated_at'] = date('Y-m-d H:i:s');
+                $activated = true;
+                break;
+            }
+        }
+    }
+    unset($st);
+
+    if ($activated) {
+        $settings['staff_accounts'] = $items;
+        saveSiteSettings($settings);
+    }
+    return $activated;
+}
+
+/**
+ * Mask Email Address for Security (e.g. j***n@gmail.com)
+ */
+function maskEmailForDisplay($email) {
+    if (empty($email) || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        return $email;
+    }
+    $parts = explode('@', $email);
+    $name = $parts[0];
+    $domain = $parts[1];
+    $len = strlen($name);
+    if ($len <= 2) {
+        $maskedName = substr($name, 0, 1) . '*';
+    } else {
+        $maskedName = substr($name, 0, 1) . str_repeat('*', min(5, $len - 2)) . substr($name, -1);
+    }
+    return $maskedName . '@' . $domain;
+}
+
+/**
  * Synchronize Team (Content) Roster & Staff Accounts
  */
 function syncTeamAndStaffAccounts() {
@@ -1511,7 +1610,12 @@ function isTalentManager($role = null) {
     if ($role === null) {
         $role = $_SESSION['admin_role'] ?? '';
     }
-    return strtolower(trim((string)$role)) === 'talent manager';
+    $r = strtolower(trim((string)$role));
+    return $r === 'hr manager' || $r === 'talent manager';
+}
+
+function isHRManager($role = null) {
+    return isTalentManager($role);
 }
 
 function isContentEditor($role = null) {
@@ -1996,24 +2100,54 @@ function getUserOnboardingData($username) {
     $userData = $allOnboarding[$userLower] ?? null;
 
     if (!$userData) {
+        $staffObj = getStaffAccountByUsername($username);
+        $empFullName = $staffObj['full_name'] ?? ucwords(str_replace('.', ' ', $username));
+        $empRole = $staffObj['role'] ?? 'Staff';
+        $empPhone = $staffObj['phone'] ?? '';
+        $empAddress = $staffObj['address'] ?? '';
+
+        $isMainAdmin = ($userLower === 'admin' || $userLower === 'oluwatosin.ligali' || $userLower === 'oluwatosin ligali');
+
         $userData = [
             'bank_details' => [
                 'status' => 'Pending',
                 'account_number' => '',
                 'bank_name' => '',
-                'account_name' => ''
+                'account_name' => $empFullName
             ],
             'offer_letter' => [
                 'status' => 'Approved',
                 'accepted' => true,
-                'document_url' => '/assets/docs/Offer_Letter_Falhen.pdf'
+                'document_url' => '/assets/docs/Offer_Letter_Falhen.pdf',
+                'currency' => 'NGN',
+                'job_title' => $empRole,
+                'salary' => '₦300,000 / month',
+                'base_salary' => '₦200,000',
+                'tech_allowance' => '₦80,000',
+                'wellness_allowance' => '₦20,000',
+                'total_earnings' => '₦300,000'
             ],
             'employment_agreement' => [
-                'status' => 'Pending',
-                'signed' => false,
-                'document_url' => ''
+                'status' => 'Approved',
+                'signed' => true,
+                'signed_at' => '2026-07-03 10:00:00',
+                'document_url' => '/assets/docs/Employment_Agreement.pdf',
+                'supervisor_name' => $isMainAdmin ? 'Oluwatosin Ligali' : ($_SESSION['admin_full_name'] ?? $_SESSION['admin_name'] ?? 'Mojisola Emjay'),
+                'supervisor_role' => $isMainAdmin ? 'Admin' : ($_SESSION['admin_role'] ?? 'HR Manager'),
+                'work_location' => 'Remote',
+                'work_days' => 'Monday to Friday',
+                'resumption_time' => '9:00 AM',
+                'closing_time' => '5:00 PM',
+                'address' => $isMainAdmin ? '6 Olorunfunmi Street, Pedro, Gbagada, Lagos' : $empAddress,
+                'phone' => $isMainAdmin ? '08027487449' : $empPhone
             ],
             'reference_1' => [
+                'status' => 'Pending',
+                'ref_name' => '',
+                'ref_contact' => '',
+                'relationship' => ''
+            ],
+            'reference_2' => [
                 'status' => 'Pending',
                 'ref_name' => '',
                 'ref_contact' => '',
@@ -2057,12 +2191,12 @@ function saveUserOnboardingSection($username, $sectionKey, $sectionData) {
 }
 
 /**
- * Calculate Onboarding Progress Metrics (X/7)
+ * Calculate Onboarding Progress Metrics (X/8)
  */
 function getOnboardingProgress($username) {
     $data = getUserOnboardingData($username);
     $completedCount = 0;
-    $totalTasks = 7;
+    $totalTasks = 8;
 
     if (($data['bank_details']['status'] ?? '') === 'Approved' || ($data['bank_details']['status'] ?? '') === 'Submitted' || !empty($data['bank_details']['account_number'])) {
         $completedCount++;
@@ -2074,6 +2208,9 @@ function getOnboardingProgress($username) {
         $completedCount++;
     }
     if (($data['reference_1']['status'] ?? '') === 'Approved' || ($data['reference_1']['status'] ?? '') === 'Submitted' || !empty($data['reference_1']['ref_name'])) {
+        $completedCount++;
+    }
+    if (($data['reference_2']['status'] ?? '') === 'Approved' || ($data['reference_2']['status'] ?? '') === 'Submitted' || !empty($data['reference_2']['ref_name'])) {
         $completedCount++;
     }
     if (!empty($data['sop']['acknowledged']) || ($data['sop']['status'] ?? '') === 'Approved') {
@@ -2121,6 +2258,16 @@ function updateUserOnboardingTaskStatus($username, $taskKey, $newStatus, $extraD
 }
 
 /**
+ * Format Currency / Money Strings with Proper Thousands Comma (e.g. 250000 -> 250,000)
+ */
+function formatMoneyWithCommas($str) {
+    if (empty($str) || !is_string($str)) return $str;
+    return preg_replace_callback('/\b(\d{4,})\b/', function($matches) {
+        return number_format((float)$matches[1]);
+    }, $str);
+}
+
+/**
  * Get Onboarding Overview for All Staff Members (HR & Admin View)
  */
 function getAllStaffOnboardingSummary() {
@@ -2146,7 +2293,7 @@ function getAllStaffOnboardingSummary() {
 }
 
 /**
- * Get Site Announcements with Optional Category Filtering
+ * Get Site Announcements with Optional Category Filtering (Includes Automatic Birthday Announcements)
  */
 function getSiteAnnouncements($category = 'all') {
     $settings = getSiteSettings();
@@ -2176,6 +2323,50 @@ function getSiteAnnouncements($category = 'all') {
             'content' => 'Save the date! Falhen Media will host our annual End-of-Summer Gala on August 30th at the Main Soundstage. Details and RSVP forms will be shared shortly.'
         ]
     ];
+
+    // AUTOMATIC BIRTHDAY ANNOUNCEMENT CHECK
+    $todayMonthDay = date('m-d');
+    $staffList = array_values(getStaffAccountsRepo());
+    
+    // Also include Admin User Profile if DOB set
+    $adminProfile = getAdminUserProfile();
+    if (!empty($adminProfile['username'])) {
+        $staffList[] = $adminProfile;
+    }
+
+    $birthdayAnnouncements = [];
+    $bdayIds = 9000;
+    $seenUsernames = [];
+
+    foreach ($staffList as $st) {
+        $uKey = strtolower(trim($st['username'] ?? ''));
+        if (empty($uKey) || in_array($uKey, $seenUsernames)) {
+            continue;
+        }
+        $seenUsernames[] = $uKey;
+
+        $dob = $st['dob'] ?? '';
+        if (!empty($dob)) {
+            $dobMonthDay = date('m-d', strtotime($dob));
+            if ($dobMonthDay === $todayMonthDay) {
+                $stName = $st['full_name'] ?? 'Team Member';
+                $stRole = $st['role'] ?? 'Staff';
+                $bdayIds++;
+                $birthdayAnnouncements[] = [
+                    'id' => $bdayIds,
+                    'title' => '🎉 Happy Birthday, ' . $stName . '! 🎂',
+                    'category' => 'Celebration',
+                    'posted_by' => 'Falhen HR & Culture Team',
+                    'date_str' => 'Posted Today at 08:00 AM',
+                    'content' => 'Wishing our fantastic team member, ' . $stName . ' (' . $stRole . '), a very Happy Birthday! 🥳 We appreciate all your hard work, dedication, and amazing energy at Falhen Media. Enjoy your special day!'
+                ];
+            }
+        }
+    }
+
+    if (!empty($birthdayAnnouncements)) {
+        $announcements = array_merge($birthdayAnnouncements, $announcements);
+    }
 
     if ($category !== 'all' && !empty($category)) {
         $categoryLower = strtolower(trim($category));
@@ -2223,7 +2414,7 @@ function getLeaveRequests() {
                 'id' => 1,
                 'username' => 'mojisola',
                 'staff_name' => 'Mojisola Emjay',
-                'staff_role' => 'Talent Manager',
+                'staff_role' => 'HR Manager',
                 'type' => 'Annual Leave',
                 'dates' => 'Sep 01, 2026 – Sep 03, 2026 (3 Days)',
                 'reason' => 'End of Summer Studio Break',
@@ -2235,7 +2426,7 @@ function getLeaveRequests() {
                 'id' => 2,
                 'username' => 'mojisola',
                 'staff_name' => 'Mojisola Emjay',
-                'staff_role' => 'Talent Manager',
+                'staff_role' => 'HR Manager',
                 'type' => 'Annual Leave',
                 'dates' => 'Aug 10, 2026 – Aug 12, 2026 (3 Days)',
                 'reason' => 'Family Vacation & Personal Time',
@@ -2490,7 +2681,7 @@ function getCommsMessages($channel = 'general') {
                 'channel' => 'hr-helpdesk',
                 'username' => 'mojisola',
                 'sender_name' => 'Mojisola Emjay',
-                'sender_role' => 'Talent Manager',
+                'sender_role' => 'HR Manager',
                 'message' => 'Monthly health reimbursement claims are open until the 25th.',
                 'time_str' => '11:30 AM',
                 'created_at' => date('Y-m-d 11:30:00')

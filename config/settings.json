@@ -1149,7 +1149,7 @@
             "full_name": "Mojisola Emjay",
             "username": "mojisola.emjay",
             "email": "mojisola.emjay@falhenmedia.com",
-            "role": "Talent Manager",
+            "role": "HR Manager",
             "status": "active",
             "avatar": "https://res.cloudinary.com/pnabfi91/image/upload/v1786714006/falhen/team/ini79za7jvbjokrf1dup.jpg",
             "created_at": "2024-03-01",
@@ -1191,17 +1191,60 @@
     ],
     "attendance_logs": [
         {
+            "id": 10,
+            "username": "mojisola.emjay",
+            "full_name": "Mojisola Emjay",
+            "date": "2026-08-27",
+            "clock_in": "02:44 PM",
+            "clock_out": "11:59 PM",
+            "break_start": null,
+            "break_end": null,
+            "duration": "9 hrs 15 mins",
+            "status": "Present",
+            "work_state": "completed",
+            "auto_clocked_out": true
+        },
+        {
+            "id": 9,
+            "username": "daniel.ifeoluwa",
+            "full_name": "Daniel Ifeoluwa",
+            "date": "2026-08-27",
+            "clock_in": "01:38 PM",
+            "clock_out": "11:59 PM",
+            "break_start": null,
+            "break_end": null,
+            "duration": "10 hrs 21 mins",
+            "status": "Present",
+            "work_state": "completed",
+            "auto_clocked_out": true
+        },
+        {
+            "id": 8,
+            "username": "admin",
+            "full_name": "Oluwatosin Ligali",
+            "date": "2026-08-27",
+            "clock_in": "08:28 AM",
+            "clock_out": "11:59 PM",
+            "break_start": null,
+            "break_end": null,
+            "duration": "15 hrs 31 mins",
+            "status": "Present",
+            "work_state": "completed",
+            "auto_clocked_out": true
+        },
+        {
             "id": 7,
             "username": "mojisola.emjay",
             "full_name": "Mojisola Emjay",
             "date": "2026-08-26",
             "clock_in": "01:33 AM",
-            "clock_out": null,
+            "clock_out": "11:59 PM",
             "break_start": null,
             "break_end": null,
-            "duration": "In Progress",
-            "status": "Clocked In",
-            "work_state": "working"
+            "duration": "22 hrs 26 mins",
+            "status": "Present",
+            "work_state": "completed",
+            "auto_clocked_out": true
         },
         {
             "id": 6,
@@ -1209,12 +1252,13 @@
             "full_name": "Victoria Opemipo",
             "date": "2026-08-26",
             "clock_in": "01:11 AM",
-            "clock_out": null,
+            "clock_out": "11:59 PM",
             "break_start": null,
             "break_end": null,
-            "duration": "In Progress",
-            "status": "Clocked In",
-            "work_state": "working"
+            "duration": "22 hrs 48 mins",
+            "status": "Present",
+            "work_state": "completed",
+            "auto_clocked_out": true
         },
         {
             "id": 5,
@@ -1222,12 +1266,13 @@
             "full_name": "Oluwatosin Ligali",
             "date": "2026-08-26",
             "clock_in": "12:53 AM",
-            "clock_out": null,
+            "clock_out": "11:59 PM",
             "break_start": null,
             "break_end": null,
-            "duration": "In Progress",
-            "status": "Clocked In",
-            "work_state": "working"
+            "duration": "23 hrs 6 mins",
+            "status": "Present",
+            "work_state": "completed",
+            "auto_clocked_out": true
         },
         {
             "id": 4,
@@ -1235,12 +1280,13 @@
             "full_name": "Daniel Ifeoluwa",
             "date": "2026-08-26",
             "clock_in": "12:33 AM",
-            "clock_out": null,
+            "clock_out": "11:59 PM",
             "break_start": null,
             "break_end": null,
-            "duration": "In Progress",
-            "status": "Clocked In",
-            "work_state": "working"
+            "duration": "23 hrs 26 mins",
+            "status": "Present",
+            "work_state": "completed",
+            "auto_clocked_out": true
         },
         {
             "id": 3,
@@ -1290,26 +1336,102 @@
                 "account_name": "Daniel Ifeoluwa"
             },
             "offer_letter": {
-                "status": "Issued",
+                "status": "Approved",
                 "accepted": true,
                 "document_url": "/assets/docs/Offer_Letter_Falhen.pdf",
                 "issued": true,
-                "issued_at": "2026-08-26 17:04:21",
+                "issued_at": "2026-08-27 13:40:15",
                 "issued_by": "Mojisola Emjay",
                 "job_title": "Senior Video Editor & Cinematographer",
                 "department": "Media Production & Post Studio",
                 "employment_type": "Full-Time",
                 "currency": "NGN",
-                "salary": "\u20a6300,000 / month",
+                "salary": "\u20a6250,000 / month",
+                "base_salary": "\u20a6200,000",
+                "tech_allowance": "\u20a630,000",
+                "wellness_allowance": "\u20a620,000",
+                "total_earnings": "\u20a6250,000",
                 "start_date": "2026-09-02",
                 "probation_period": "3 Months",
                 "expiry_date": "2026-09-09",
-                "notes": "Welcome to Falhen Media! We are thrilled to invite you to join our creative production team."
+                "notes": null,
+                "accepted_at": "2026-08-27 13:40:45"
             },
             "employment_agreement": {
                 "status": "Approved",
                 "signed": true,
-                "document_url": "/assets/docs/Employment_Agreement_Daniel.pdf"
+                "signed_at": "2026-07-03 10:00:00",
+                "document_url": "/assets/docs/Employment_Agreement.pdf",
+                "supervisor_name": "Oluwatosin Ligali",
+                "supervisor_role": "Admin",
+                "work_location": "Remote",
+                "work_days": "Monday to Friday",
+                "resumption_time": "9:00 AM",
+                "closing_time": "5:00 PM",
+                "address": "6 Olorunfunmi Street, Pedro, Gbagada, Lagos",
+                "phone": "08027487449"
+            },
+            "reference_1": {
+                "status": "Approved",
+                "ref_name": "babatola musa",
+                "ref_contact": "98348284398",
+                "relationship": "brother"
+            },
+            "sop": {
+                "status": "Approved",
+                "acknowledged": true
+            },
+            "staff_handbook": {
+                "status": "Approved",
+                "acknowledged": true,
+                "acknowledged_at": "2026-08-27 14:42:08",
+                "signature_data": "data:image/png;base64,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"
+            },
+            "id_verification": {
+                "status": "Approved",
+                "document_type": "Government ID / Tax ID",
+                "file_url": "https://res.cloudinary.com/pnabfi91/image/upload/v1787841370/falhen/id_documents/b98buar4ba1gf8guepoe.jpg"
+            },
+            "reference_2": {
+                "status": "Approved",
+                "ref_name": "kadiri wale",
+                "ref_contact": "8988989",
+                "relationship": "sister",
+                "rejection_reason": "number not reachabel"
+            }
+        },
+        "mojisola.emjay": {
+            "bank_details": {
+                "status": "Pending",
+                "account_number": "",
+                "bank_name": "",
+                "account_name": ""
+            },
+            "offer_letter": {
+                "status": "Issued",
+                "accepted": false,
+                "document_url": "/assets/docs/Offer_Letter_Falhen.pdf",
+                "base_salary": "$2,000",
+                "tech_allowance": "$800",
+                "wellness_allowance": "$200",
+                "total_earnings": "$3,000",
+                "issued": true,
+                "issued_at": "2026-08-27 09:16:15",
+                "issued_by": "Mojisola Emjay",
+                "job_title": "Senior Video Editor & Cinematographer",
+                "department": "Media Production & Post Studio",
+                "employment_type": "Full-Time",
+                "currency": "NGN",
+                "salary": "\u20a6450,000 / month",
+                "start_date": "2026-09-03",
+                "probation_period": "3 Months",
+                "expiry_date": "2026-09-10",
+                "notes": "Welcome to Falhen Media! We are thrilled to invite you to join our creative production team."
+            },
+            "employment_agreement": {
+                "status": "Pending",
+                "signed": false,
+                "document_url": ""
             },
             "reference_1": {
                 "status": "Pending",
@@ -1318,12 +1440,12 @@
                 "relationship": ""
             },
             "sop": {
-                "status": "Approved",
-                "acknowledged": true
+                "status": "Pending",
+                "acknowledged": false
             },
             "staff_handbook": {
-                "status": "Approved",
-                "acknowledged": true
+                "status": "Pending",
+                "acknowledged": false
             },
             "id_verification": {
                 "status": "Pending",
