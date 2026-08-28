@@ -2007,49 +2007,39 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
 
-        $isTargetAdmin = (strtolower($targetUser) === 'admin' || strtolower($targetUser) === 'oluwatosin.ligali');
+        $isTargetAdmin = (strtolower($targetUser) === 'admin' || strtolower($targetUser) === 'oluwatosin.ligali' || strtolower($targetUser) === 'oluwatosin.ligali@falhenmedia.com' || strtolower($targetUser) === 'mail@falhenmedia.com' || strtolower($email) === 'mail@falhenmedia.com' || strtolower($email) === 'oluwatosin.ligali@falhenmedia.com' || isAdminUser($role, $email, $targetUser));
+
+        $profileDataSave = [
+            'full_name'         => $fullName,
+            'email'             => $email,
+            'role'              => $role,
+            'avatar'            => $avatar,
+            'bio'               => $bio,
+            'dob'               => $dob,
+            'alt_email'         => $altEmail,
+            'alternative_email' => $altEmail,
+            'phone'             => $phone,
+            'address'           => $address,
+            'location'          => $address
+        ];
+
+        saveStaffAccountByUsername($targetUser, $profileDataSave);
+        if (!empty($email)) {
+            saveStaffAccountByUsername($email, $profileDataSave);
+        }
+        if (!empty($username)) {
+            saveStaffAccountByUsername($username, $profileDataSave);
+        }
 
         if ($isTargetAdmin) {
-            $adminData = [
-                'full_name'         => $fullName,
-                'username'          => $targetUser,
-                'email'             => $email,
-                'role'              => $role,
-                'avatar'            => $avatar,
-                'bio'               => $bio,
-                'dob'               => $dob,
-                'alt_email'         => $altEmail,
-                'alternative_email' => $altEmail,
-                'phone'             => $phone,
-                'address'           => $address,
-                'location'          => $address
-            ];
-            saveAdminUserProfile($adminData);
-            saveStaffAccountByUsername($targetUser, $adminData);
-            saveStaffAccountByUsername('admin', $adminData);
-            saveStaffAccountByUsername('oluwatosin.ligali', $adminData);
-        } else {
-            $profileDataSave = [
-                'full_name'         => $fullName,
-                'email'             => $email,
-                'role'              => $role,
-                'avatar'            => $avatar,
-                'bio'               => $bio,
-                'dob'               => $dob,
-                'alt_email'         => $altEmail,
-                'alternative_email' => $altEmail,
-                'phone'             => $phone,
-                'address'           => $address,
-                'location'          => $address
-            ];
-            saveStaffAccountByUsername($targetUser, $profileDataSave);
-            if (!empty($email)) {
-                saveStaffAccountByUsername($email, $profileDataSave);
-            }
-            if (!empty($username)) {
-                saveStaffAccountByUsername($username, $profileDataSave);
-            }
+            $profileDataSave['username'] = $targetUser;
+            saveAdminUserProfile($profileDataSave);
+            saveStaffAccountByUsername('admin', $profileDataSave);
+            saveStaffAccountByUsername('oluwatosin.ligali', $profileDataSave);
+        }
 
+        // Always sync active session variables for the logged in user
+        if (strtolower($username) === strtolower($targetUser) || strtolower($userEmail) === strtolower($email) || $isTargetAdmin) {
             $_SESSION['admin_full_name'] = $fullName;
             if (!empty($avatar)) {
                 $_SESSION['admin_avatar'] = $avatar;
@@ -6672,15 +6662,29 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
             <!-- SECTION: MY PROFILE & ACCOUNT SETTINGS -->
             <?php elseif ($activeSection === 'profile' || $activeSection === 'my_profile'): 
                 $targetProfileUser = trim($_GET['username'] ?? $_GET['target_user'] ?? $username);
-                $isViewingAdmin = (strtolower($targetProfileUser) === 'admin' || strtolower($targetProfileUser) === 'oluwatosin.ligali' || strtolower($targetProfileUser) === 'oluwatosin ligali');
+                $isViewingAdmin = (strtolower($targetProfileUser) === 'admin' || strtolower($targetProfileUser) === 'oluwatosin.ligali' || strtolower($targetProfileUser) === 'oluwatosin ligali' || strtolower($targetProfileUser) === 'oluwatosin.ligali@falhenmedia.com' || strtolower($targetProfileUser) === 'mail@falhenmedia.com' || strtolower($userEmail) === 'mail@falhenmedia.com' || strtolower($userEmail) === 'oluwatosin.ligali@falhenmedia.com' || isAdminUser($userRole, $userEmail, $username));
 
                 if ($isViewingAdmin) {
                     $profileData = getAdminUserProfile();
+                    $staffFallback = getStaffAccountByUsername($targetProfileUser);
+                    if (!$staffFallback && !empty($username)) {
+                        $staffFallback = getStaffAccountByUsername($username);
+                    }
+                    if ($staffFallback) {
+                        foreach ($staffFallback as $fk => $fv) {
+                            if (!empty($fv)) {
+                                $profileData[$fk] = $fv;
+                            }
+                        }
+                    }
                     if (!isset($profileData['phone'])) $profileData['phone'] = $profileData['phone'] ?? '';
                     if (!isset($profileData['address'])) $profileData['address'] = $profileData['address'] ?? ($profileData['location'] ?? '');
                     if (empty($profileData['alt_email'])) $profileData['alt_email'] = $profileData['alt_email'] ?? ($profileData['alternative_email'] ?? ($_SESSION['admin_alt_email'] ?? ($_SESSION['alt_email'] ?? '')));
                 } else {
                     $staffObj = getStaffAccountByUsername($targetProfileUser);
+                    if (!$staffObj && !empty($username)) {
+                        $staffObj = getStaffAccountByUsername($username);
+                    }
                     if ($staffObj) {
                         $profileData = [
                             'full_name' => $staffObj['full_name'] ?? ucwords(str_replace('.', ' ', $targetProfileUser)),
