@@ -2366,9 +2366,32 @@ if ($userRole === 'Talent Manager') {
     $userRole = 'HR Manager';
     $_SESSION['admin_role'] = 'HR Manager';
 }
-$userAvatar = $_SESSION['admin_avatar'] ?? $adminProfile['avatar'] ?? '';
-$userFullName = $_SESSION['admin_full_name'] ?? $adminProfile['full_name'] ?? 'Henry Falonipe';
-$userInitial = strtoupper(substr($userFullName, 0, 1));
+
+$isSuperAdmin = (strtolower($username) === 'admin' || strtolower($username) === 'oluwatosin.ligali' || strtolower($userEmail) === 'mail@falhenmedia.com' || strtolower($userEmail) === 'admin@falhen.com');
+
+if ($isSuperAdmin) {
+    $userAvatar = $_SESSION['admin_avatar'] ?? $adminProfile['avatar'] ?? '';
+    $userFullName = $_SESSION['admin_full_name'] ?? $adminProfile['full_name'] ?? 'Henry Falonipe';
+} else {
+    $currentStaffAcc = getStaffAccountByUsername($username);
+    if (!$currentStaffAcc && !empty($userEmail)) {
+        $currentStaffAcc = getStaffAccountByUsername($userEmail);
+    }
+
+    if ($currentStaffAcc) {
+        $userFullName = !empty($currentStaffAcc['full_name']) ? $currentStaffAcc['full_name'] : ($_SESSION['admin_full_name'] ?? $username);
+        $userAvatar   = !empty($currentStaffAcc['avatar']) ? $currentStaffAcc['avatar'] : ($_SESSION['admin_avatar'] ?? '');
+        $userRole     = !empty($currentStaffAcc['role']) ? $currentStaffAcc['role'] : ($_SESSION['admin_role'] ?? 'Staff');
+        
+        $_SESSION['admin_full_name'] = $userFullName;
+        $_SESSION['admin_avatar']    = $userAvatar;
+        $_SESSION['admin_role']      = $userRole;
+    } else {
+        $userAvatar = $_SESSION['admin_avatar'] ?? '';
+        $userFullName = $_SESSION['admin_full_name'] ?? ucwords(str_replace('.', ' ', $username));
+    }
+}
+$userInitial = strtoupper(substr($userFullName ?: 'S', 0, 1));
 
 // Resolve active section & evaluate RBAC permission
 $rawSection = $_GET['section'] ?? null;
