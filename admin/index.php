@@ -6787,7 +6787,11 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                             </a>
                         </div>
 
-                        <form action="index.php?section=staff_accounts" method="POST" enctype="multipart/form-data">
+                        <form action="index.php?section=staff_accounts" method="POST" enctype="multipart/form-data" autocomplete="off">
+                            <!-- Dummy inputs to prevent browser credential autofill -->
+                            <input type="text" style="display:none;" name="prevent_autofill_user">
+                            <input type="password" style="display:none;" name="prevent_autofill_pwd">
+
                             <input type="hidden" name="action" value="save_staff_account">
                             <?php if ($editingStaffId !== null): ?>
                                 <input type="hidden" name="id" value="<?php echo $editingStaffId; ?>">
@@ -6816,17 +6820,17 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                             <div class="form-grid-two">
                                 <div class="form-field">
                                     <label class="form-label-title">Full Name <span style="color: #ef4444;">*</span></label>
-                                    <input type="text" name="full_name" required class="form-text-input" value="<?php echo htmlspecialchars($editingStaff['full_name'] ?? ''); ?>" placeholder="e.g. Diane Max">
+                                    <input type="text" name="full_name" required class="form-text-input" value="<?php echo htmlspecialchars($editingStaff['full_name'] ?? ''); ?>" placeholder="e.g. Diane Max" autocomplete="off">
                                 </div>
 
                                 <div class="form-field">
                                     <label class="form-label-title">Company Email Address <span style="color: #ef4444;">*</span></label>
-                                    <input type="email" name="email" required class="form-text-input" value="<?php echo htmlspecialchars($editingStaff['email'] ?? ''); ?>" placeholder="diane@falhen.com">
+                                    <input type="email" name="email" required class="form-text-input" value="<?php echo htmlspecialchars($editingStaffId !== null ? ($editingStaff['email'] ?? '') : ''); ?>" placeholder="diane@falhen.com" autocomplete="off">
                                 </div>
 
                                 <div class="form-field">
                                     <label class="form-label-title"><i class="fa-solid fa-envelope-open-text" style="color: #2563eb;"></i> Alternative Email Address <span style="font-size: 0.74rem; font-weight: 600; color: #2563eb;">(Receives 6-digit Activation Code)</span></label>
-                                    <input type="email" name="alt_email" class="form-text-input" value="<?php echo htmlspecialchars($editingStaff['alt_email'] ?? ''); ?>" placeholder="e.g. diane.personal@gmail.com">
+                                    <input type="email" name="alt_email" class="form-text-input" value="<?php echo htmlspecialchars($editingStaff['alt_email'] ?? ''); ?>" placeholder="e.g. diane.personal@gmail.com" autocomplete="off">
                                 </div>
 
                                 <div class="form-field">
@@ -6859,7 +6863,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                 <div class="form-field">
                                     <label class="form-label-title">Set Password <?php echo ($editingStaff === null) ? '<span style="color: #ef4444;">*</span>' : '(Leave blank to keep unchanged)'; ?></label>
                                     <div style="position: relative;">
-                                        <input type="password" id="staff_password_input" name="password" class="form-text-input" placeholder="<?php echo ($editingStaff === null) ? 'Password123#' : 'Enter new password...'; ?>" <?php echo ($editingStaff === null) ? 'required' : ''; ?> style="padding-right: 40px;">
+                                        <input type="password" id="staff_password_input" name="password" class="form-text-input" placeholder="<?php echo ($editingStaff === null) ? 'Password123#' : 'Enter new password...'; ?>" <?php echo ($editingStaff === null) ? 'required' : ''; ?> style="padding-right: 40px;" autocomplete="new-password">
                                         <button type="button" onclick="togglePasswordVisibility('staff_password_input', this)" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #64748b; cursor: pointer;" title="Toggle Password Visibility">
                                             <i class="fa-regular fa-eye"></i>
                                         </button>
