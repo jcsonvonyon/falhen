@@ -4,11 +4,16 @@
  * Falhen Media PHP Application
  */
 
+$isCpanel = (strpos(__DIR__, 'henadinnovate') !== false || file_exists('/home/henadinnovate'));
+$defaultDbName = $isCpanel ? 'henadinn_falhen_db' : 'falhen_db';
+$defaultDbUser = $isCpanel ? 'henadinn_falhen_user' : 'root';
+$defaultDbPass = $isCpanel ? 'FalhenMedia2026!#' : 'Oluwatosin25#';
+
 define('DB_HOST', getenv('DB_HOST') ?: '127.0.0.1');
 define('DB_PORT', getenv('DB_PORT') ?: '3306');
-define('DB_NAME', getenv('DB_NAME') ?: 'falhen_db');
-define('DB_USER', getenv('DB_USER') ?: 'root');
-define('DB_PASS', getenv('DB_PASS') ?: 'Oluwatosin25#');
+define('DB_NAME', getenv('DB_NAME') ?: $defaultDbName);
+define('DB_USER', getenv('DB_USER') ?: $defaultDbUser);
+define('DB_PASS', getenv('DB_PASS') ?: $defaultDbPass);
 
 function getDBConnection() {
     static $pdo = null;
