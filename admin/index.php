@@ -6700,9 +6700,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                     <label class="form-label-title">
                                         Staff Email Address <span style="color: #ef4444;">*</span>
                                         <?php if (!$canEditStaffEmail): ?>
-                                            <span style="font-size: 0.74rem; font-weight: 600; color: #64748b; margin-left: 6px;">
-                                                <i class="fa-solid fa-lock" style="color: #64748b; font-size: 0.74rem;"></i> (Locked - Super Admin Only)
-                                            </span>
+                                            <i class="fa-solid fa-lock" style="color: #64748b; font-size: 0.76rem; margin-left: 4px;" title="Locked field"></i>
                                         <?php endif; ?>
                                     </label>
                                     <input type="email" name="email" required class="form-text-input" value="<?php echo htmlspecialchars($profileData['email'] ?? ''); ?>" placeholder="admin@falhen.com" <?php echo !$canEditStaffEmail ? 'readonly style="background-color: #f8fafc; color: #64748b; cursor: not-allowed; border-color: #e2e8f0;"' : ''; ?>>
