@@ -1899,6 +1899,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $phone = trim(strip_tags($_POST['phone'] ?? ''));
         $address = trim(strip_tags($_POST['address'] ?? $_POST['location'] ?? ''));
 
+        // Lock email editing to Super Admin users only
+        if (!isSuperAdminUser($currentRole, $currentEmail, $currentUsername)) {
+            $isTargetAdmin = (strtolower($targetUser) === 'admin' || strtolower($targetUser) === 'oluwatosin.ligali');
+            if ($isTargetAdmin) {
+                $existingAdmin = getAdminUserProfile();
+                $email = $existingAdmin['email'] ?? $currentEmail;
+            } else {
+                $existingStaff = getStaffAccountByUsername($targetUser);
+                $email = $existingStaff['email'] ?? $currentEmail;
+            }
+        }
+
         $avatar = trim($_POST['existing_avatar'] ?? '');
         $croppedData = trim($_POST['cropped_avatar_image_data'] ?? '');
 
@@ -6684,8 +6696,16 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                 </div>
 
                                 <div class="form-field">
-                                    <label class="form-label-title">Staff Email Address <span style="color: #ef4444;">*</span></label>
-                                    <input type="email" name="email" required class="form-text-input" value="<?php echo htmlspecialchars($profileData['email'] ?? ''); ?>" placeholder="admin@falhen.com">
+                                    <?php $canEditStaffEmail = isSuperAdminUser($currentRole, $currentEmail, $currentUsername); ?>
+                                    <label class="form-label-title">
+                                        Staff Email Address <span style="color: #ef4444;">*</span>
+                                        <?php if (!$canEditStaffEmail): ?>
+                                            <span style="font-size: 0.74rem; font-weight: 600; color: #64748b; margin-left: 6px;">
+                                                <i class="fa-solid fa-lock" style="color: #64748b; font-size: 0.74rem;"></i> (Locked - Super Admin Only)
+                                            </span>
+                                        <?php endif; ?>
+                                    </label>
+                                    <input type="email" name="email" required class="form-text-input" value="<?php echo htmlspecialchars($profileData['email'] ?? ''); ?>" placeholder="admin@falhen.com" <?php echo !$canEditStaffEmail ? 'readonly style="background-color: #f8fafc; color: #64748b; cursor: not-allowed; border-color: #e2e8f0;"' : ''; ?>>
                                 </div>
                             </div>
 
