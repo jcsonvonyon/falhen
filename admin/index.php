@@ -2360,8 +2360,13 @@ if ($userRole === 'Talent Manager') {
 $isSuperAdmin = (strtolower($username) === 'admin' || strtolower($username) === 'oluwatosin.ligali' || strtolower($userEmail) === 'mail@falhenmedia.com' || strtolower($userEmail) === 'admin@falhen.com');
 
 if ($isSuperAdmin) {
-    $userAvatar = $_SESSION['admin_avatar'] ?? $adminProfile['avatar'] ?? '';
-    $userFullName = $_SESSION['admin_full_name'] ?? $adminProfile['full_name'] ?? 'Henry Falonipe';
+    $userAvatar   = !empty($adminProfile['avatar']) ? $adminProfile['avatar'] : ($_SESSION['admin_avatar'] ?? '');
+    $userFullName = !empty($adminProfile['full_name']) ? $adminProfile['full_name'] : ($_SESSION['admin_full_name'] ?? 'Henry Falonipe');
+    $userRole     = !empty($adminProfile['role']) ? $adminProfile['role'] : ($_SESSION['admin_role'] ?? 'Super Admin');
+
+    $_SESSION['admin_avatar']    = $userAvatar;
+    $_SESSION['admin_full_name'] = $userFullName;
+    $_SESSION['admin_role']      = $userRole;
 } else {
     $currentStaffAcc = getStaffAccountByUsername($username);
     if (!$currentStaffAcc && !empty($userEmail)) {

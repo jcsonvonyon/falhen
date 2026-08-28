@@ -1249,9 +1249,11 @@ function saveAdminUserProfile($data) {
     if (!empty($data['avatar'])) {
         $teamMembers = $settings['team_members'] ?? [];
         if (is_array($teamMembers)) {
+            $adminNameLower = strtolower(trim($updated['full_name'] ?? 'admin'));
+            $adminUserLower = strtolower(trim($updated['username'] ?? 'admin'));
             foreach ($teamMembers as &$tm) {
                 $tmNameLower = strtolower(trim($tm['name'] ?? ''));
-                if (strpos($tmNameLower, 'henry') !== false || strpos($tmNameLower, 'falonipe') !== false || strpos($tmNameLower, 'admin') !== false) {
+                if (!empty($tmNameLower) && ($tmNameLower === $adminNameLower || $tmNameLower === $adminUserLower || strpos($adminNameLower, $tmNameLower) !== false || strpos($tmNameLower, $adminNameLower) !== false || strpos($tmNameLower, 'admin') !== false || strpos($tmNameLower, 'oluwatosin') !== false || strpos($tmNameLower, 'henry') !== false)) {
                     $tm['image'] = $data['avatar'];
                 }
             }
