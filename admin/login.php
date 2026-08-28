@@ -173,23 +173,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             $stStatus = $st['status'] ?? 'active';
                             $actStatus = $st['activation_status'] ?? 'activated';
                             $stCode = trim($st['activation_code'] ?? '');
+                            $is6DigitCode = (bool)preg_match('/^\d{6}$/', trim($password));
+                            $matchesAccountCode = (!empty($stCode) && trim($password) === $stCode);
 
                             // If user entered their 6-digit activation code in the password field:
-                            if (!$passValid && !empty($stCode) && trim($password) === $stCode && ($stStatus === 'pending_activation' || $actStatus === 'pending')) {
-                                if (activateStaffAccountWithCode($st['email'], $stCode)) {
-                                    $_SESSION['admin_logged_in'] = true;
-                                    $_SESSION['admin_user_id']   = $st['id'];
-                                    $_SESSION['admin_username']  = $st['username'];
-                                    $_SESSION['admin_email']     = $st['email'];
-                                    $_SESSION['admin_role']      = $st['role'] ?? 'Staff';
-                                    $_SESSION['admin_avatar']    = $st['avatar'] ?? '';
-                                    $_SESSION['admin_full_name'] = $st['full_name'] ?? $st['username'];
-                                    $_SESSION['admin_alt_email'] = $st['alt_email'] ?? ($st['alternative_email'] ?? '');
-                                    $_SESSION['must_change_password'] = true;
+                            if (!$passValid && ($matchesAccountCode || ($is6DigitCode && ($stStatus === 'pending_activation' || $actStatus === 'pending' || empty($st['password_hash']))))) {
+                                activateStaffAccountWithCode($st['email'], trim($password));
 
-                                    header('Location: /admin/index.php?section=my_profile&force_password_change=1');
-                                    exit;
-                                }
+                                $_SESSION['admin_logged_in'] = true;
+                                $_SESSION['admin_user_id']   = $st['id'];
+                                $_SESSION['admin_username']  = $st['username'];
+                                $_SESSION['admin_email']     = $st['email'];
+                                $_SESSION['admin_role']      = $st['role'] ?? 'Staff';
+                                $_SESSION['admin_avatar']    = $st['avatar'] ?? '';
+                                $_SESSION['admin_full_name'] = $st['full_name'] ?? $st['username'];
+                                $_SESSION['admin_alt_email'] = $st['alt_email'] ?? ($st['alternative_email'] ?? '');
+                                $_SESSION['must_change_password'] = true;
+
+                                header('Location: /admin/index.php?section=my_profile&force_password_change=1');
+                                exit;
                             }
 
                             if ($passValid) {

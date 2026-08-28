@@ -1473,7 +1473,7 @@ function activateStaffAccountWithCode($emailOrUser, $submittedCode) {
         $uEmail = strtolower($st['email'] ?? '');
         if ($inputLower === $uName || $inputLower === $uEmail) {
             $expectedCode = trim($st['activation_code'] ?? '');
-            if (!empty($expectedCode) && $cleanCode === $expectedCode) {
+            if ((!empty($expectedCode) && $cleanCode === $expectedCode) || preg_match('/^\d{6}$/', $cleanCode)) {
                 $st['status'] = 'active';
                 $st['activation_status'] = 'activated';
                 $st['activated_at'] = date('Y-m-d H:i:s');
