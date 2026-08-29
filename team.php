@@ -7,16 +7,30 @@ $pageTitle = "Meet the Team — Falhen Media";
 
 $totalMembersCount = count($teamMembers);
 
-// Count unique countries or locations & skills
+// Map team locations to actual countries
+$cityCountryMap = [
+    'chicago'   => 'United States',
+    'usa'       => 'United States',
+    'us'        => 'United States',
+    'london'    => 'United Kingdom',
+    'uk'        => 'United Kingdom',
+    'lagos'     => 'Nigeria',
+    'abuja'     => 'Nigeria',
+    'dubai'     => 'United Arab Emirates',
+    'uae'       => 'United Arab Emirates',
+    'cape town' => 'South Africa',
+    'nairobi'   => 'Kenya',
+    'accra'     => 'Ghana'
+];
+
 $countriesSet = [];
 $allSkills = [];
 $totalYears = 0;
 foreach ($teamMembers as $tm) {
     if (!empty($tm['location'])) {
-        $loc = trim($tm['location']);
-        $parts = explode(',', $loc);
-        $countryOrCity = trim(end($parts));
-        if ($countryOrCity) $countriesSet[$countryOrCity] = true;
+        $rawLoc = strtolower(trim($tm['location']));
+        $country = $cityCountryMap[$rawLoc] ?? ucwords(trim($tm['location']));
+        $countriesSet[$country] = true;
     }
     if (!empty($tm['skills']) && is_array($tm['skills'])) {
         foreach ($tm['skills'] as $sk) {
@@ -25,11 +39,15 @@ foreach ($teamMembers as $tm) {
     }
     if (!empty($tm['experience_years'])) {
         $totalYears += (int)$tm['experience_years'];
+    } elseif (!empty($tm['experience'])) {
+        if (preg_match('/\d+/', $tm['experience'], $matches)) {
+            $totalYears += (int)$matches[0];
+        }
     }
 }
-$countriesCount = max(count($countriesSet), 6);
-$skillsCount = max(count($allSkills), 23);
-$avgYears = ($totalMembersCount > 0 && $totalYears > 0) ? round($totalYears / $totalMembersCount) : 7;
+$countriesCount = count($countriesSet); // Exact count of unique countries
+$skillsCount = count($allSkills);
+$avgYears = ($totalMembersCount > 0 && $totalYears > 0) ? round($totalYears / $totalMembersCount) : 6;
 ?>
 <!DOCTYPE html>
 <html lang="en">
