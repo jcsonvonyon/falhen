@@ -91,11 +91,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'create_studio_task_stage'   => 'comms',
         'delete_studio_task_stage'   => 'comms',
         'update_studio_task_stage_label' => 'comms',
-        'save_celebration_settings'     => 'celebrations',
-        'save_employee_custom_wish'     => 'celebrations',
+        'save_celebration_settings'         => 'celebrations',
+        'save_employee_custom_wish'         => 'celebrations',
         'save_employee_celebration_profile' => 'celebrations',
-        'post_instant_birthday_shoutout'=> 'celebrations',
-        'post_instant_celebration_shoutout' => 'celebrations'
+        'post_instant_birthday_shoutout'    => 'celebrations',
+        'post_instant_celebration_shoutout' => 'celebrations',
+        'save_payment_gateways'             => 'payment_gateways'
     ];
 
     $currentEmail = $_SESSION['admin_email'] ?? '';
@@ -2509,6 +2510,75 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $_SESSION['saved_message'] = 'Instant celebration shoutout broadcasted for ' . htmlspecialchars($employeeName) . '!';
         header('Location: /admin/index.php?section=announcements&cat=celebration&saved=1');
         exit;
+    } else if ($action === 'save_payment_gateways') {
+        if (!isAdminUser($currentRole, $currentEmail, $currentUsername)) {
+            header('Location: /admin/index.php?section=payment_gateways&denied=1');
+            exit;
+        }
+
+        $postedGateways = [
+            'raenest' => [
+                'enabled'            => !empty($_POST['raenest_enabled']),
+                'mode'               => trim($_POST['raenest_mode'] ?? 'sandbox'),
+                'public_key'         => trim($_POST['raenest_public_key'] ?? ''),
+                'secret_key'         => trim($_POST['raenest_secret_key'] ?? ''),
+                'webhook_secret'     => trim($_POST['raenest_webhook_secret'] ?? ''),
+                'account_name'       => trim($_POST['raenest_account_name'] ?? 'Falhen Media Ltd'),
+                'usd_bank_name'      => trim($_POST['raenest_usd_bank_name'] ?? 'JPMorgan Chase / Lead Bank'),
+                'usd_account_number' => trim($_POST['raenest_usd_account_number'] ?? ''),
+                'usd_routing_number' => trim($_POST['raenest_usd_routing_number'] ?? ''),
+                'gbp_bank_name'      => trim($_POST['raenest_gbp_bank_name'] ?? 'Barclays Bank UK'),
+                'gbp_sort_code'      => trim($_POST['raenest_gbp_sort_code'] ?? ''),
+                'gbp_account_number' => trim($_POST['raenest_gbp_account_number'] ?? ''),
+                'eur_bank_name'      => trim($_POST['raenest_eur_bank_name'] ?? 'Banking Circle'),
+                'eur_iban'           => trim($_POST['raenest_eur_iban'] ?? ''),
+                'eur_bic'            => trim($_POST['raenest_eur_bic'] ?? ''),
+                'ngn_bank_name'      => trim($_POST['raenest_ngn_bank_name'] ?? 'Wema Bank / VFD Microfinance Bank'),
+                'ngn_account_number' => trim($_POST['raenest_ngn_account_number'] ?? '')
+            ],
+            'lemfi' => [
+                'enabled'         => !empty($_POST['lemfi_enabled']),
+                'tag'             => trim($_POST['lemfi_tag'] ?? '@falhen'),
+                'account_name'    => trim($_POST['lemfi_account_name'] ?? 'Falhen Media Global'),
+                'receiving_bank'  => trim($_POST['lemfi_receiving_bank'] ?? 'LemFi Virtual Account (Providus Bank / Wema)'),
+                'account_number'  => trim($_POST['lemfi_account_number'] ?? ''),
+                'country'         => trim($_POST['lemfi_country'] ?? 'Nigeria / Global Diaspora'),
+                'instructions'    => trim($_POST['lemfi_instructions'] ?? '')
+            ],
+            'taptap' => [
+                'enabled'          => !empty($_POST['taptap_enabled']),
+                'recipient_name'   => trim($_POST['taptap_recipient_name'] ?? 'Falhen Media Limited'),
+                'receiving_bank'   => trim($_POST['taptap_receiving_bank'] ?? 'Zenith Bank PLC / Access Bank'),
+                'account_number'   => trim($_POST['taptap_account_number'] ?? ''),
+                'domiciliary_usd'  => trim($_POST['taptap_domiciliary_usd'] ?? ''),
+                'country'          => trim($_POST['taptap_country'] ?? 'Nigeria (Global Send: US, UK, EU, CA, UAE)'),
+                'reference_prefix' => trim($_POST['taptap_reference_prefix'] ?? 'FAL-'),
+                'instructions'     => trim($_POST['taptap_instructions'] ?? '')
+            ],
+            'paystack' => [
+                'enabled'    => !empty($_POST['paystack_enabled']),
+                'mode'       => trim($_POST['paystack_mode'] ?? 'test'),
+                'public_key' => trim($_POST['paystack_public_key'] ?? ''),
+                'secret_key' => trim($_POST['paystack_secret_key'] ?? '')
+            ],
+            'bank_transfer' => [
+                'enabled'        => !empty($_POST['bank_transfer_enabled']),
+                'bank_name'      => trim($_POST['bank_name'] ?? 'Zenith Bank PLC'),
+                'account_name'   => trim($_POST['bank_account_name'] ?? 'Falhen Media Limited'),
+                'account_number' => trim($_POST['bank_account_number'] ?? ''),
+                'dom_usd_bank'   => trim($_POST['dom_usd_bank'] ?? 'Zenith Bank PLC (USD Domiciliary)'),
+                'dom_usd_acc'    => trim($_POST['dom_usd_acc'] ?? ''),
+                'dom_gbp_acc'    => trim($_POST['dom_gbp_acc'] ?? ''),
+                'dom_eur_acc'    => trim($_POST['dom_eur_acc'] ?? ''),
+                'swift_code'     => trim($_POST['swift_code'] ?? 'ZEIBNGLA')
+            ]
+        ];
+
+        savePaymentGatewaysSettings($postedGateways);
+
+        $_SESSION['saved_message'] = 'Global Payment Gateways (Raenest, LemFi, Taptap Send & Bank Details) updated successfully!';
+        header('Location: /admin/index.php?section=payment_gateways&saved=1');
+        exit;
     }
 }
 
@@ -3752,6 +3822,12 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                     <a href="/admin/index.php?section=activity_log">
                         <i class="fa-solid fa-list-check nav-icon"></i>
                         <span>Activity Log</span>
+                    </a>
+                </li>
+                <li class="nav-item <?php echo ($activeSection === 'payment_gateways') ? 'active' : ''; ?>">
+                    <a href="/admin/index.php?section=payment_gateways">
+                        <i class="fa-solid fa-credit-card nav-icon"></i>
+                        <span>Payment Gateways</span>
                     </a>
                 </li>
                 <li class="nav-item <?php echo ($activeSection === 'email_templates') ? 'active' : ''; ?>">
@@ -11187,9 +11263,12 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                     <input type="text" id="payModalDeductions" name="deductions" value="10,000" oninput="calculateModalNetPay()" style="width: 100%; padding: 10px 12px; font-size: 0.88rem; font-weight: 800; color: #dc2626; border: 1px solid #fecaca; background: #fef2f2; border-radius: 10px;">
                                 </div>
                                 <div>
-                                    <label style="font-size: 0.76rem; font-weight: 800; color: #0f172a; display: block; margin-bottom: 4px;">Payment Method</label>
-                                    <select name="payment_method" style="width: 100%; padding: 10px 12px; font-size: 0.84rem; font-weight: 700; border: 1px solid #cbd5e1; border-radius: 10px; background: #ffffff; cursor: pointer;">
-                                        <option value="Direct Bank Transfer">Direct Bank Transfer</option>
+                                    <label style="font-size: 0.76rem; font-weight: 800; color: #0f172a; display: block; margin-bottom: 4px;">Payment Method / Gateway</label>
+                                    <select name="payment_method" id="payModalMethod" onchange="updatePayModalTxRefPrefix(this.value)" style="width: 100%; padding: 10px 12px; font-size: 0.84rem; font-weight: 700; border: 1px solid #cbd5e1; border-radius: 10px; background: #ffffff; cursor: pointer;">
+                                        <option value="Raenest Global Payout">Raenest Global Payout (USD/GBP/EUR/NGN)</option>
+                                        <option value="LemFi Transfer">LemFi Transfer (Lemonade Finance)</option>
+                                        <option value="Taptap Send">Taptap Send Remittance</option>
+                                        <option value="Direct Bank Transfer">Direct Bank Transfer (Local/Dom)</option>
                                         <option value="Paystack / Direct Deposit">Paystack / Direct Deposit</option>
                                         <option value="Cheque / Cash">Cheque / Cash</option>
                                     </select>
@@ -11262,6 +11341,26 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
 
                     var net = (base + allow) - deduc;
                     document.getElementById('payModalNetPayDisplay').textContent = '₦' + net.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                }
+
+                function updatePayModalTxRefPrefix(method) {
+                    var txField = document.getElementById('payModalTxRef');
+                    if (!txField) return;
+                    var current = txField.value || '';
+                    var parts = current.split('-');
+                    var suffix = (parts.length >= 3) ? parts.slice(2).join('-') : (new Date().getFullYear() + '' + ('0' + (new Date().getMonth() + 1)).slice(-2) + '-' + Math.floor(100 + Math.random() * 900));
+
+                    if (method === 'Raenest Global Payout') {
+                        txField.value = 'RAE-PAY-' + suffix;
+                    } else if (method === 'LemFi Transfer') {
+                        txField.value = 'LEM-PAY-' + suffix;
+                    } else if (method === 'Taptap Send') {
+                        txField.value = 'TAP-PAY-' + suffix;
+                    } else if (method === 'Paystack / Direct Deposit') {
+                        txField.value = 'PST-PAY-' + suffix;
+                    } else {
+                        txField.value = 'FAL-PAY-' + suffix;
+                    }
                 }
                 </script>
 
@@ -14027,6 +14126,319 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                             card.style.display = 'none';
                         }
                     });
+                }
+                </script>
+
+            <?php elseif ($activeSection === 'payment_gateways'): ?>
+                <!-- SECTION: GLOBAL PAYMENT GATEWAYS & REMITTANCE -->
+                <?php
+                $gwSettings = getPaymentGatewaysSettings();
+                $rae = $gwSettings['raenest'] ?? [];
+                $lem = $gwSettings['lemfi'] ?? [];
+                $tap = $gwSettings['taptap'] ?? [];
+                $pst = $gwSettings['paystack'] ?? [];
+                $bnk = $gwSettings['bank_transfer'] ?? [];
+                ?>
+                <form method="POST" action="/admin/index.php?section=payment_gateways">
+                    <input type="hidden" name="action" value="save_payment_gateways">
+
+                    <div class="section-header-bar">
+                        <div>
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <span style="background: #0284c7; color: #ffffff; font-weight: 800; font-size: 0.75rem; padding: 3px 10px; border-radius: 12px; text-transform: uppercase;">Financial &amp; Payout Engine</span>
+                                <h1 class="section-header-title">Global Payment Gateways &amp; Remittance</h1>
+                            </div>
+                            <p class="section-header-desc">Manage multi-currency collection, diaspora remittance (Raenest, LemFi, Taptap Send), and bank settlement accounts for client invoicing &amp; global staff payroll.</p>
+                        </div>
+                        <button type="submit" class="btn-save-primary" style="background: #0284c7; border-color: #0284c7;">
+                            <i class="fa-solid fa-floppy-disk"></i> Save Gateway Settings
+                        </button>
+                    </div>
+
+                    <!-- TAB SELECTOR -->
+                    <div style="display: flex; gap: 8px; margin-bottom: 20px; overflow-x: auto; padding-bottom: 4px;">
+                        <button type="button" class="gw-tab-btn active-gw-tab" onclick="switchGwTab('raenest', this)" style="padding: 10px 18px; font-size: 0.86rem; font-weight: 800; border-radius: 10px; border: 1px solid #0284c7; background: #0284c7; color: #ffffff; cursor: pointer; display: flex; align-items: center; gap: 8px;">
+                            <i class="fa-solid fa-globe"></i> Raenest Global
+                        </button>
+                        <button type="button" class="gw-tab-btn" onclick="switchGwTab('lemfi', this)" style="padding: 10px 18px; font-size: 0.86rem; font-weight: 800; border-radius: 10px; border: 1px solid #cbd5e1; background: #ffffff; color: #475569; cursor: pointer; display: flex; align-items: center; gap: 8px;">
+                            <i class="fa-solid fa-lemon" style="color: #eab308;"></i> LemFi (Lemonade)
+                        </button>
+                        <button type="button" class="gw-tab-btn" onclick="switchGwTab('taptap', this)" style="padding: 10px 18px; font-size: 0.86rem; font-weight: 800; border-radius: 10px; border: 1px solid #cbd5e1; background: #ffffff; color: #475569; cursor: pointer; display: flex; align-items: center; gap: 8px;">
+                            <i class="fa-solid fa-paper-plane" style="color: #10b981;"></i> Taptap Send
+                        </button>
+                        <button type="button" class="gw-tab-btn" onclick="switchGwTab('bank', this)" style="padding: 10px 18px; font-size: 0.86rem; font-weight: 800; border-radius: 10px; border: 1px solid #cbd5e1; background: #ffffff; color: #475569; cursor: pointer; display: flex; align-items: center; gap: 8px;">
+                            <i class="fa-solid fa-building-columns"></i> Bank &amp; Paystack
+                        </button>
+                    </div>
+
+                    <!-- TAB 1: RAENEST GLOBAL -->
+                    <div id="gw-tab-raenest" class="gw-tab-pane">
+                        <div class="dashboard-card" style="border-top: 4px solid #0284c7; margin-bottom: 24px; padding: 24px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px; margin-bottom: 20px; border-bottom: 1px solid #e2e8f0; padding-bottom: 16px;">
+                                <div>
+                                    <div style="display: flex; align-items: center; gap: 10px;">
+                                        <div style="width: 36px; height: 36px; border-radius: 8px; background: #e0f2fe; color: #0284c7; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; font-weight: 900;">
+                                            <i class="fa-solid fa-globe"></i>
+                                        </div>
+                                        <div>
+                                            <h2 style="font-size: 1.15rem; font-weight: 800; color: #0f172a; margin: 0;">Raenest Multi-Currency Engine &amp; Payouts</h2>
+                                            <p style="font-size: 0.8rem; color: #64748b; margin: 2px 0 0 0;">Accept USD, GBP, EUR, CAD, USDC/USDT from global clients and automate bulk staff payouts.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div style="display: flex; align-items: center; gap: 12px;">
+                                    <label style="display: flex; align-items: center; gap: 8px; font-size: 0.85rem; font-weight: 700; color: #0f172a; cursor: pointer;">
+                                        <input type="checkbox" name="raenest_enabled" value="1" <?php echo !empty($rae['enabled']) ? 'checked' : ''; ?> style="width: 18px; height: 18px; accent-color: #0284c7;">
+                                        Enable Raenest
+                                    </label>
+                                    <select name="raenest_mode" style="padding: 6px 12px; font-size: 0.8rem; font-weight: 700; border-radius: 8px; border: 1px solid #cbd5e1; background: #f8fafc;">
+                                        <option value="sandbox" <?php echo (($rae['mode'] ?? 'sandbox') === 'sandbox') ? 'selected' : ''; ?>>🧪 Sandbox / Test Mode</option>
+                                        <option value="live" <?php echo (($rae['mode'] ?? '') === 'live') ? 'selected' : ''; ?>>🟢 Live Production</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 18px; margin-bottom: 20px;">
+                                <div>
+                                    <label class="form-label-title">Public API Key</label>
+                                    <input type="text" name="raenest_public_key" value="<?php echo htmlspecialchars($rae['public_key'] ?? ''); ?>" class="form-text-input" placeholder="rae_pub_live_...">
+                                </div>
+                                <div>
+                                    <label class="form-label-title">Secret API Key</label>
+                                    <input type="password" name="raenest_secret_key" value="<?php echo htmlspecialchars($rae['secret_key'] ?? ''); ?>" class="form-text-input" placeholder="rae_sec_live_...">
+                                </div>
+                                <div>
+                                    <label class="form-label-title">Webhook Secret Key</label>
+                                    <input type="password" name="raenest_webhook_secret" value="<?php echo htmlspecialchars($rae['webhook_secret'] ?? ''); ?>" class="form-text-input" placeholder="rae_whsec_...">
+                                </div>
+                            </div>
+
+                            <div style="background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 12px; padding: 14px 18px; margin-bottom: 24px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+                                <div>
+                                    <strong style="font-size: 0.85rem; color: #0369a1; display: block;">Webhook Callback URL (Add to Raenest Dashboard):</strong>
+                                    <code style="font-size: 0.8rem; color: #0f172a; background: #ffffff; padding: 3px 8px; border-radius: 6px; border: 1px solid #cbd5e1; margin-top: 4px; display: inline-block;">https://falhen.com/api/raenest_webhook.php</code>
+                                </div>
+                                <button type="button" class="btn-save-primary" onclick="navigator.clipboard.writeText('https://falhen.com/api/raenest_webhook.php'); alert('Webhook URL copied!');" style="padding: 6px 12px; font-size: 0.75rem; background: #0284c7; border-color: #0284c7;">
+                                    <i class="fa-solid fa-copy"></i> Copy URL
+                                </button>
+                            </div>
+
+                            <h3 style="font-size: 0.95rem; font-weight: 800; color: #0f172a; margin: 0 0 14px 0; display: flex; align-items: center; gap: 6px;">
+                                <i class="fa-solid fa-landmark" style="color: #0284c7;"></i> Virtual Multi-Currency Receiving Accounts (For Client Invoices)
+                            </h3>
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px;">
+                                <!-- USD Account -->
+                                <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px;">
+                                    <div style="font-size: 0.88rem; font-weight: 800; color: #0f172a; margin-bottom: 10px;">🇺🇸 USD Virtual Account (ACH/Wire)</div>
+                                    <div style="margin-bottom: 8px;">
+                                        <label style="font-size: 0.72rem; font-weight: 700; color: #64748b; display: block;">Bank Name</label>
+                                        <input type="text" name="raenest_usd_bank_name" value="<?php echo htmlspecialchars($rae['usd_bank_name'] ?? ''); ?>" style="width: 100%; padding: 7px 10px; font-size: 0.82rem; border: 1px solid #cbd5e1; border-radius: 6px;">
+                                    </div>
+                                    <div style="margin-bottom: 8px;">
+                                        <label style="font-size: 0.72rem; font-weight: 700; color: #64748b; display: block;">Account Number</label>
+                                        <input type="text" name="raenest_usd_account_number" value="<?php echo htmlspecialchars($rae['usd_account_number'] ?? ''); ?>" style="width: 100%; padding: 7px 10px; font-size: 0.82rem; border: 1px solid #cbd5e1; border-radius: 6px;">
+                                    </div>
+                                    <div>
+                                        <label style="font-size: 0.72rem; font-weight: 700; color: #64748b; display: block;">Routing Number (ABA)</label>
+                                        <input type="text" name="raenest_usd_routing_number" value="<?php echo htmlspecialchars($rae['usd_routing_number'] ?? ''); ?>" style="width: 100%; padding: 7px 10px; font-size: 0.82rem; border: 1px solid #cbd5e1; border-radius: 6px;">
+                                    </div>
+                                </div>
+
+                                <!-- GBP Account -->
+                                <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px;">
+                                    <div style="font-size: 0.88rem; font-weight: 800; color: #0f172a; margin-bottom: 10px;">🇬🇧 GBP Account (UK Faster Payments)</div>
+                                    <div style="margin-bottom: 8px;">
+                                        <label style="font-size: 0.72rem; font-weight: 700; color: #64748b; display: block;">Bank Name</label>
+                                        <input type="text" name="raenest_gbp_bank_name" value="<?php echo htmlspecialchars($rae['gbp_bank_name'] ?? ''); ?>" style="width: 100%; padding: 7px 10px; font-size: 0.82rem; border: 1px solid #cbd5e1; border-radius: 6px;">
+                                    </div>
+                                    <div style="margin-bottom: 8px;">
+                                        <label style="font-size: 0.72rem; font-weight: 700; color: #64748b; display: block;">Sort Code</label>
+                                        <input type="text" name="raenest_gbp_sort_code" value="<?php echo htmlspecialchars($rae['gbp_sort_code'] ?? ''); ?>" style="width: 100%; padding: 7px 10px; font-size: 0.82rem; border: 1px solid #cbd5e1; border-radius: 6px;">
+                                    </div>
+                                    <div>
+                                        <label style="font-size: 0.72rem; font-weight: 700; color: #64748b; display: block;">Account Number</label>
+                                        <input type="text" name="raenest_gbp_account_number" value="<?php echo htmlspecialchars($rae['gbp_account_number'] ?? ''); ?>" style="width: 100%; padding: 7px 10px; font-size: 0.82rem; border: 1px solid #cbd5e1; border-radius: 6px;">
+                                    </div>
+                                </div>
+
+                                <!-- EUR Account -->
+                                <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px;">
+                                    <div style="font-size: 0.88rem; font-weight: 800; color: #0f172a; margin-bottom: 10px;">🇪🇺 EUR Account (SEPA Transfer)</div>
+                                    <div style="margin-bottom: 8px;">
+                                        <label style="font-size: 0.72rem; font-weight: 700; color: #64748b; display: block;">Bank Name</label>
+                                        <input type="text" name="raenest_eur_bank_name" value="<?php echo htmlspecialchars($rae['eur_bank_name'] ?? ''); ?>" style="width: 100%; padding: 7px 10px; font-size: 0.82rem; border: 1px solid #cbd5e1; border-radius: 6px;">
+                                    </div>
+                                    <div style="margin-bottom: 8px;">
+                                        <label style="font-size: 0.72rem; font-weight: 700; color: #64748b; display: block;">IBAN</label>
+                                        <input type="text" name="raenest_eur_iban" value="<?php echo htmlspecialchars($rae['eur_iban'] ?? ''); ?>" style="width: 100%; padding: 7px 10px; font-size: 0.82rem; border: 1px solid #cbd5e1; border-radius: 6px;">
+                                    </div>
+                                    <div>
+                                        <label style="font-size: 0.72rem; font-weight: 700; color: #64748b; display: block;">BIC / SWIFT</label>
+                                        <input type="text" name="raenest_eur_bic" value="<?php echo htmlspecialchars($rae['eur_bic'] ?? ''); ?>" style="width: 100%; padding: 7px 10px; font-size: 0.82rem; border: 1px solid #cbd5e1; border-radius: 6px;">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- TAB 2: LEMFI -->
+                    <div id="gw-tab-lemfi" class="gw-tab-pane" style="display: none;">
+                        <div class="dashboard-card" style="border-top: 4px solid #eab308; margin-bottom: 24px; padding: 24px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px; margin-bottom: 20px; border-bottom: 1px solid #e2e8f0; padding-bottom: 16px;">
+                                <div style="display: flex; align-items: center; gap: 10px;">
+                                    <div style="width: 36px; height: 36px; border-radius: 8px; background: #fef9c3; color: #a16207; display: flex; align-items: center; justify-content: center; font-size: 1.2rem;">
+                                        <i class="fa-solid fa-lemon"></i>
+                                    </div>
+                                    <div>
+                                        <h2 style="font-size: 1.15rem; font-weight: 800; color: #0f172a; margin: 0;">LemFi (Lemonade Finance) Integration</h2>
+                                        <p style="font-size: 0.8rem; color: #64748b; margin: 2px 0 0 0;">Zero-fee cross-border remittance for diaspora clients in the UK, US, Canada, and Europe.</p>
+                                    </div>
+                                </div>
+                                <label style="display: flex; align-items: center; gap: 8px; font-size: 0.85rem; font-weight: 700; color: #0f172a; cursor: pointer;">
+                                    <input type="checkbox" name="lemfi_enabled" value="1" <?php echo !empty($lem['enabled']) ? 'checked' : ''; ?> style="width: 18px; height: 18px; accent-color: #eab308;">
+                                    Enable LemFi
+                                </label>
+                            </div>
+
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 18px; margin-bottom: 20px;">
+                                <div>
+                                    <label class="form-label-title">LemFi Handle / Tag</label>
+                                    <input type="text" name="lemfi_tag" value="<?php echo htmlspecialchars($lem['tag'] ?? '@falhen'); ?>" class="form-text-input" placeholder="@falhen">
+                                    <p class="form-label-help">Clients with the LemFi mobile app can send funds directly to this handle instantly.</p>
+                                </div>
+                                <div>
+                                    <label class="form-label-title">Recipient Account Name</label>
+                                    <input type="text" name="lemfi_account_name" value="<?php echo htmlspecialchars($lem['account_name'] ?? 'Falhen Media Global'); ?>" class="form-text-input">
+                                </div>
+                                <div>
+                                    <label class="form-label-title">LemFi Receiving Account Number</label>
+                                    <input type="text" name="lemfi_account_number" value="<?php echo htmlspecialchars($lem['account_number'] ?? ''); ?>" class="form-text-input" placeholder="9920192834">
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="form-label-title">Client Payment Instructions on Invoices</label>
+                                <textarea name="lemfi_instructions" rows="3" class="form-text-input" style="height: auto; resize: vertical;"><?php echo htmlspecialchars($lem['instructions'] ?? ''); ?></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- TAB 3: TAPTAP SEND -->
+                    <div id="gw-tab-taptap" class="gw-tab-pane" style="display: none;">
+                        <div class="dashboard-card" style="border-top: 4px solid #10b981; margin-bottom: 24px; padding: 24px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px; margin-bottom: 20px; border-bottom: 1px solid #e2e8f0; padding-bottom: 16px;">
+                                <div style="display: flex; align-items: center; gap: 10px;">
+                                    <div style="width: 36px; height: 36px; border-radius: 8px; background: #d1fae5; color: #059669; display: flex; align-items: center; justify-content: center; font-size: 1.2rem;">
+                                        <i class="fa-solid fa-paper-plane"></i>
+                                    </div>
+                                    <div>
+                                        <h2 style="font-size: 1.15rem; font-weight: 800; color: #0f172a; margin: 0;">Taptap Send Remittance Integration</h2>
+                                        <p style="font-size: 0.8rem; color: #64748b; margin: 2px 0 0 0;">Receive fast, low-cost international transfers from clients in the US, UK, EU, Canada, and UAE.</p>
+                                    </div>
+                                </div>
+                                <label style="display: flex; align-items: center; gap: 8px; font-size: 0.85rem; font-weight: 700; color: #0f172a; cursor: pointer;">
+                                    <input type="checkbox" name="taptap_enabled" value="1" <?php echo !empty($tap['enabled']) ? 'checked' : ''; ?> style="width: 18px; height: 18px; accent-color: #10b981;">
+                                    Enable Taptap Send
+                                </label>
+                            </div>
+
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 18px; margin-bottom: 20px;">
+                                <div>
+                                    <label class="form-label-title">Recipient Account Name</label>
+                                    <input type="text" name="taptap_recipient_name" value="<?php echo htmlspecialchars($tap['recipient_name'] ?? 'Falhen Media Limited'); ?>" class="form-text-input">
+                                </div>
+                                <div>
+                                    <label class="form-label-title">Receiving Bank Name</label>
+                                    <input type="text" name="taptap_receiving_bank" value="<?php echo htmlspecialchars($tap['receiving_bank'] ?? 'Zenith Bank PLC'); ?>" class="form-text-input">
+                                </div>
+                                <div>
+                                    <label class="form-label-title">NGN / Domiciliary Account Number</label>
+                                    <input type="text" name="taptap_account_number" value="<?php echo htmlspecialchars($tap['account_number'] ?? ''); ?>" class="form-text-input" placeholder="1019283746">
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="form-label-title">Invoice Remittance Instructions</label>
+                                <textarea name="taptap_instructions" rows="3" class="form-text-input" style="height: auto; resize: vertical;"><?php echo htmlspecialchars($tap['instructions'] ?? ''); ?></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- TAB 4: BANK & PAYSTACK -->
+                    <div id="gw-tab-bank" class="gw-tab-pane" style="display: none;">
+                        <div class="dashboard-card" style="border-top: 4px solid #6366f1; margin-bottom: 24px; padding: 24px;">
+                            <h2 style="font-size: 1.15rem; font-weight: 800; color: #0f172a; margin: 0 0 16px 0;">Direct Bank &amp; Domiciliary Accounts</h2>
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 18px; margin-bottom: 20px;">
+                                <div>
+                                    <label class="form-label-title">Local NGN Bank Name</label>
+                                    <input type="text" name="bank_name" value="<?php echo htmlspecialchars($bnk['bank_name'] ?? 'Zenith Bank PLC'); ?>" class="form-text-input">
+                                </div>
+                                <div>
+                                    <label class="form-label-title">Local NGN Account Number</label>
+                                    <input type="text" name="bank_account_number" value="<?php echo htmlspecialchars($bnk['account_number'] ?? ''); ?>" class="form-text-input">
+                                </div>
+                                <div>
+                                    <label class="form-label-title">USD Domiciliary Account Number</label>
+                                    <input type="text" name="dom_usd_acc" value="<?php echo htmlspecialchars($bnk['dom_usd_acc'] ?? ''); ?>" class="form-text-input">
+                                </div>
+                                <div>
+                                    <label class="form-label-title">GBP Domiciliary Account Number</label>
+                                    <input type="text" name="dom_gbp_acc" value="<?php echo htmlspecialchars($bnk['dom_gbp_acc'] ?? ''); ?>" class="form-text-input">
+                                </div>
+                                <div>
+                                    <label class="form-label-title">EUR Domiciliary Account Number</label>
+                                    <input type="text" name="dom_eur_acc" value="<?php echo htmlspecialchars($bnk['dom_eur_acc'] ?? ''); ?>" class="form-text-input">
+                                </div>
+                                <div>
+                                    <label class="form-label-title">SWIFT / BIC Code</label>
+                                    <input type="text" name="swift_code" value="<?php echo htmlspecialchars($bnk['swift_code'] ?? 'ZEIBNGLA'); ?>" class="form-text-input">
+                                </div>
+                            </div>
+
+                            <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 24px 0;">
+
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+                                <h3 style="font-size: 1rem; font-weight: 800; color: #0f172a; margin: 0;">Paystack Payment Gateway</h3>
+                                <label style="display: flex; align-items: center; gap: 8px; font-size: 0.85rem; font-weight: 700; color: #0f172a; cursor: pointer;">
+                                    <input type="checkbox" name="paystack_enabled" value="1" <?php echo !empty($pst['enabled']) ? 'checked' : ''; ?> style="width: 18px; height: 18px; accent-color: #059669;">
+                                    Enable Paystack
+                                </label>
+                            </div>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 18px;">
+                                <div>
+                                    <label class="form-label-title">Paystack Public Key</label>
+                                    <input type="text" name="paystack_public_key" value="<?php echo htmlspecialchars($pst['public_key'] ?? ''); ?>" class="form-text-input" placeholder="pk_live_...">
+                                </div>
+                                <div>
+                                    <label class="form-label-title">Paystack Secret Key</label>
+                                    <input type="password" name="paystack_secret_key" value="<?php echo htmlspecialchars($pst['secret_key'] ?? ''); ?>" class="form-text-input" placeholder="sk_live_...">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+
+                <script>
+                function switchGwTab(tabKey, btn) {
+                    document.querySelectorAll('.gw-tab-pane').forEach(function(el) {
+                        el.style.display = 'none';
+                    });
+                    document.querySelectorAll('.gw-tab-btn').forEach(function(b) {
+                        b.style.background = '#ffffff';
+                        b.style.color = '#475569';
+                        b.style.borderColor = '#cbd5e1';
+                    });
+
+                    const target = document.getElementById('gw-tab-' + tabKey);
+                    if (target) {
+                        target.style.display = 'block';
+                    }
+
+                    if (btn) {
+                        btn.style.background = (tabKey === 'lemfi') ? '#eab308' : ((tabKey === 'taptap') ? '#10b981' : ((tabKey === 'bank') ? '#6366f1' : '#0284c7'));
+                        btn.style.borderColor = btn.style.background;
+                        btn.style.color = '#ffffff';
+                    }
                 }
                 </script>
 

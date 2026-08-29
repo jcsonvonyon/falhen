@@ -382,6 +382,98 @@ function saveSiteSettings($newSettings) {
 }
 
 /**
+ * Get Global Payment Gateways & Remittance Settings
+ * (Raenest, LemFi, Taptap Send, Paystack, Direct Bank/Dom)
+ */
+function getPaymentGatewaysSettings() {
+    $settings = getSiteSettings();
+    $gateways = $settings['payment_gateways'] ?? [];
+
+    $defaults = [
+        'raenest' => [
+            'enabled'            => true,
+            'mode'               => 'sandbox', // sandbox or live
+            'public_key'         => 'rae_pub_test_8921fa76b10',
+            'secret_key'         => 'rae_sec_test_9921abcf783',
+            'webhook_secret'     => 'rae_whsec_f89312b918',
+            'account_name'       => 'Falhen Media Ltd',
+            'usd_bank_name'      => 'JPMorgan Chase / Lead Bank',
+            'usd_account_number' => '1029384756',
+            'usd_routing_number' => '021000021',
+            'gbp_bank_name'      => 'Barclays Bank UK',
+            'gbp_sort_code'      => '20-00-00',
+            'gbp_account_number' => '83920194',
+            'eur_bank_name'      => 'Banking Circle',
+            'eur_iban'           => 'LU9200091823901923',
+            'eur_bic'            => 'BCIRLULL',
+            'ngn_bank_name'      => 'Wema Bank / VFD Microfinance Bank',
+            'ngn_account_number' => '0129384756',
+            'supported_currencies' => ['USD', 'GBP', 'EUR', 'NGN', 'CAD', 'USDC', 'USDT']
+        ],
+        'lemfi' => [
+            'enabled'         => true,
+            'tag'             => '@falhen',
+            'account_name'    => 'Falhen Media Global',
+            'receiving_bank'  => 'LemFi Virtual Account (Providus Bank / Wema)',
+            'account_number'  => '9920192834',
+            'country'         => 'Nigeria / Global Diaspora (UK, US, Canada, EU)',
+            'instructions'    => 'Send zero-fee instant payments via the LemFi App directly to handle @falhen or transfer to our LemFi receiving account.'
+        ],
+        'taptap' => [
+            'enabled'          => true,
+            'recipient_name'   => 'Falhen Media Limited',
+            'receiving_bank'   => 'Zenith Bank PLC / Access Bank',
+            'account_number'   => '1019283746',
+            'domiciliary_usd'  => '5071928340',
+            'country'          => 'Nigeria (Global Send: US, UK, EU, CA, UAE)',
+            'reference_prefix' => 'FAL-',
+            'instructions'     => 'Send via the Taptap Send mobile app. Select Nigeria (Bank Transfer), enter our account details, and input your invoice reference code.'
+        ],
+        'paystack' => [
+            'enabled'    => true,
+            'mode'       => 'test',
+            'public_key' => 'pk_test_falhen892173819',
+            'secret_key' => 'sk_test_falhen892173819'
+        ],
+        'bank_transfer' => [
+            'enabled'        => true,
+            'bank_name'      => 'Zenith Bank PLC',
+            'account_name'   => 'Falhen Media Limited',
+            'account_number' => '1019283746',
+            'dom_usd_bank'   => 'Zenith Bank PLC (USD Domiciliary)',
+            'dom_usd_acc'    => '5071928340',
+            'dom_gbp_acc'    => '5071928357',
+            'dom_eur_acc'    => '5071928364',
+            'swift_code'     => 'ZEIBNGLA'
+        ]
+    ];
+
+    if (empty($gateways) || !is_array($gateways)) {
+        return $defaults;
+    }
+
+    foreach ($defaults as $gwKey => $gwDef) {
+        if (!isset($gateways[$gwKey]) || !is_array($gateways[$gwKey])) {
+            $gateways[$gwKey] = $gwDef;
+        } else {
+            $gateways[$gwKey] = array_merge($gwDef, $gateways[$gwKey]);
+        }
+    }
+
+    return $gateways;
+}
+
+/**
+ * Save Global Payment Gateways & Remittance Settings
+ */
+function savePaymentGatewaysSettings($gatewayData) {
+    $current = getPaymentGatewaysSettings();
+    $updated = array_merge($current, $gatewayData);
+    saveSiteSettings(['payment_gateways' => $updated]);
+    return $updated;
+}
+
+/**
  * Get Dynamic Master Services Repository
  */
 function getServicesRepo() {
