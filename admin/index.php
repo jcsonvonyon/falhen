@@ -3405,7 +3405,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
 
         <!-- Navigation Categories -->
         <?php 
-        $isHomepageActive = in_array($activeSection, ['hero', 'stats', 'awards', 'bts', 'brands'], true);
+        $isHomepageActive = in_array($activeSection, ['hero', 'stats', 'bts', 'brands'], true);
         $isContentActive = in_array($activeSection, ['inquiries', 'services', 'portfolio', 'client_galleries', 'team', 'blog', 'testimonials', 'careers'], true);
         $isOperationsActive = in_array($activeSection, ['hr_portal', 'vendors', 'activity_log', 'email_templates'], true) || ($activeSection === 'careers' && ($_GET['tab'] ?? '') === 'applications');
         $isEmployeePortalActive = in_array($activeSection, ['dashboard', 'directory', 'announcements', 'attendance', 'leaves', 'payslips'], true);
@@ -3429,12 +3429,6 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                     <a href="/admin/index.php?section=stats">
                         <i class="fa-solid fa-chart-simple nav-icon"></i>
                         <span>Stats Counter</span>
-                    </a>
-                </li>
-                <li class="nav-item <?php echo ($activeSection === 'awards') ? 'active' : ''; ?>">
-                    <a href="/admin/index.php?section=awards">
-                        <i class="fa-solid fa-trophy nav-icon"></i>
-                        <span>Awards</span>
                     </a>
                 </li>
                 <li class="nav-item <?php echo ($activeSection === 'bts') ? 'active' : ''; ?>">
@@ -3722,7 +3716,6 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                 $sectionTitles = [
                     'hero' => 'Hero',
                     'stats' => 'Stats Counter',
-                    'awards' => 'Awards',
                     'bts' => 'Production BTS',
                     'featured' => 'Featured Work',
                     'services' => 'Services',
