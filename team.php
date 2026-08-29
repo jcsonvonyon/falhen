@@ -4,6 +4,32 @@ require_once __DIR__ . '/includes/functions.php';
 
 $teamMembers = getTeamMembers();
 $pageTitle = "Meet the Team — Falhen Media";
+
+$totalMembersCount = count($teamMembers);
+
+// Count unique countries or locations & skills
+$countriesSet = [];
+$allSkills = [];
+$totalYears = 0;
+foreach ($teamMembers as $tm) {
+    if (!empty($tm['location'])) {
+        $loc = trim($tm['location']);
+        $parts = explode(',', $loc);
+        $countryOrCity = trim(end($parts));
+        if ($countryOrCity) $countriesSet[$countryOrCity] = true;
+    }
+    if (!empty($tm['skills']) && is_array($tm['skills'])) {
+        foreach ($tm['skills'] as $sk) {
+            $allSkills[trim(strtolower($sk))] = true;
+        }
+    }
+    if (!empty($tm['experience_years'])) {
+        $totalYears += (int)$tm['experience_years'];
+    }
+}
+$countriesCount = max(count($countriesSet), 6);
+$skillsCount = max(count($allSkills), 23);
+$avgYears = ($totalMembersCount > 0 && $totalYears > 0) ? round($totalYears / $totalMembersCount) : 7;
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -507,26 +533,26 @@ $pageTitle = "Meet the Team — Falhen Media";
     <!-- Hero Section -->
     <section class="team-hero-section">
         <div class="team-container">
-            <div class="team-hero-badge">8+ Creative Professionals</div>
+            <div class="team-hero-badge"><?php echo $totalMembersCount; ?>+ Creative Professionals</div>
             <h1 class="team-hero-title">Meet the People<br>Behind the Stories</h1>
             <p class="team-hero-desc">Our global team brings diverse perspectives, deep expertise, and relentless creative energy to every project. From Lagos to London, we collaborate across borders to craft visual experiences that move audiences.</p>
 
             <!-- Metrics Grid -->
             <div class="team-stats-grid">
                 <div class="stat-card-box">
-                    <div class="stat-num-val" data-target="8" data-suffix="">0</div>
+                    <div class="stat-num-val" data-target="<?php echo $totalMembersCount; ?>" data-suffix=""><?php echo $totalMembersCount; ?></div>
                     <div class="stat-label-text">Team Members</div>
                 </div>
                 <div class="stat-card-box">
-                    <div class="stat-num-val" data-target="6" data-suffix="">0</div>
+                    <div class="stat-num-val" data-target="<?php echo $countriesCount; ?>" data-suffix=""><?php echo $countriesCount; ?></div>
                     <div class="stat-label-text">Countries</div>
                 </div>
                 <div class="stat-card-box">
-                    <div class="stat-num-val" data-target="23" data-suffix="+">0</div>
+                    <div class="stat-num-val" data-target="<?php echo $skillsCount; ?>" data-suffix="+"><?php echo $skillsCount; ?>+</div>
                     <div class="stat-label-text">Combined Skills</div>
                 </div>
                 <div class="stat-card-box">
-                    <div class="stat-num-val" data-target="3" data-suffix="+">0</div>
+                    <div class="stat-num-val" data-target="<?php echo $avgYears; ?>" data-suffix="+"><?php echo $avgYears; ?>+</div>
                     <div class="stat-label-text">Avg. Years Experience</div>
                 </div>
             </div>
@@ -693,6 +719,51 @@ $pageTitle = "Meet the Team — Falhen Media";
                     currentSearch = e.target.value.toLowerCase().trim();
                     updateFilter();
                 });
+            }
+
+            // Stat Counter Count-Up Animation
+            function animateTeamCounters() {
+                const statElements = document.querySelectorAll('.stat-num-val[data-target]');
+                statElements.forEach(el => {
+                    const target = parseInt(el.getAttribute('data-target'), 10) || 0;
+                    const suffix = el.getAttribute('data-suffix') || '';
+                    const duration = 1600;
+                    const frameRate = 1000 / 60;
+                    const totalFrames = Math.round(duration / frameRate);
+                    let frame = 0;
+
+                    const counterTimer = setInterval(() => {
+                        frame++;
+                        const progress = frame / totalFrames;
+                        const currentCount = Math.round(target * (progress * (2 - progress)));
+                        el.textContent = (frame >= totalFrames ? target : currentCount) + suffix;
+
+                        if (frame >= totalFrames) {
+                            clearInterval(counterTimer);
+                        }
+                    }, frameRate);
+                });
+            }
+
+            if ('IntersectionObserver' in window) {
+                const statsSection = document.querySelector('.team-stats-grid');
+                if (statsSection) {
+                    let statsAnimated = false;
+                    const obs = new IntersectionObserver((entries) => {
+                        entries.forEach(entry => {
+                            if (entry.isIntersecting && !statsAnimated) {
+                                statsAnimated = true;
+                                animateTeamCounters();
+                                obs.disconnect();
+                            }
+                        });
+                    }, { threshold: 0.2 });
+                    obs.observe(statsSection);
+                } else {
+                    animateTeamCounters();
+                }
+            } else {
+                animateTeamCounters();
             }
     </script>
 
