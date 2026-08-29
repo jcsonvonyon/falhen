@@ -1573,9 +1573,9 @@ function getStaffAccountsRepo() {
                 'email'         => 'ligali@falhen.com',
                 'role'          => 'Super Admin',
                 'designation'   => 'IT Support Specialist',
-                'base_salary'   => 280000,
-                'allowances'    => 25000,
-                'deductions'    => 12000,
+                'base_salary'   => 120000,
+                'allowances'    => 20000,
+                'deductions'    => 10000,
                 'bank_name'     => 'Zenith Bank PLC',
                 'account_number'=> '2089123456',
                 'account_name'  => 'Ligali Oluwatosin',
@@ -1786,10 +1786,10 @@ function getStaffAccountsRepo() {
                 $it['role'] = 'Super Admin';
                 $modified = true;
             }
-            if (empty($it['base_salary']) || (float)$it['base_salary'] < 260000) {
-                $it['base_salary'] = 280000;
-                $it['allowances'] = 25000;
-                $it['deductions'] = 12000;
+            if (!isset($it['base_salary']) || (float)$it['base_salary'] != 120000) {
+                $it['base_salary'] = 120000;
+                $it['allowances'] = 20000;
+                $it['deductions'] = 10000;
                 $modified = true;
             }
             if (empty($it['bank_name'])) {
@@ -2660,8 +2660,8 @@ function getUserOnboardingData($username) {
     $empPhone = $staffObj['phone'] ?? '08027487449';
     $empAddress = $staffObj['address'] ?? 'Lagos, Nigeria';
 
-    $sal = (float)($staffObj['base_salary'] ?? 280000);
-    $allow = (float)($staffObj['allowances'] ?? 25000);
+    $sal = (float)($staffObj['base_salary'] ?? 120000);
+    $allow = (float)($staffObj['allowances'] ?? 20000);
     $tot = $sal + $allow;
 
     if (!$userData) {
