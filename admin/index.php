@@ -3317,6 +3317,28 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                 display: none;
             }
         }
+
+        /* Avatar Dropdown Menu Styles */
+        @keyframes avatarDropdownFade {
+            from { opacity: 0; transform: translateY(-8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .user-avatar-btn:focus .user-avatar-circle,
+        .user-avatar-btn:hover .user-avatar-circle {
+            transform: scale(1.05);
+            box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.25);
+        }
+
+        .dropdown-item-link:hover {
+            background-color: #f8fafc;
+            color: #0f172a !important;
+        }
+
+        .dropdown-item-link.logout:hover {
+            background-color: #fef2f2;
+            color: #b91c1c !important;
+        }
     </style>
 </head>
 <body>
@@ -3773,16 +3795,61 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                     </div>
                 <?php endif; ?>
 
-                <a href="/admin/login.php?action=logout" class="header-link" style="color: var(--text-secondary);">
-                    <i class="fa-solid fa-right-from-bracket"></i> Sign Out
-                </a>
-                <a href="/admin/index.php?section=profile" class="user-avatar-circle" id="topbar_avatar_circle" title="My Profile Settings" style="width: 36px; height: 36px; border-radius: 50%; text-decoration: none; overflow: hidden; display: flex; align-items: center; justify-content: center; cursor: pointer; border: 2px solid #dc2626; flex-shrink: 0;">
-                    <?php if (!empty($userAvatar)): ?>
-                        <img id="topbar_avatar_img" src="<?php echo htmlspecialchars(getCloudinaryUrl($userAvatar)); ?>" alt="Profile" style="width: 100%; height: 100%; object-fit: cover;">
-                    <?php else: ?>
-                        <span id="topbar_avatar_initial"><?php echo $userInitial; ?></span>
-                    <?php endif; ?>
-                </a>
+                <!-- USER AVATAR DROPDOWN MENU WRAPPER -->
+                <div class="user-avatar-dropdown-wrapper" style="position: relative;">
+                    <button type="button" class="user-avatar-btn" id="topbarAvatarBtn" onclick="toggleAvatarDropdown(event)" aria-haspopup="true" aria-expanded="false" title="Account Menu" style="background: none; border: none; padding: 0; cursor: pointer; display: flex; align-items: center; justify-content: center;">
+                        <div class="user-avatar-circle" id="topbar_avatar_circle" style="width: 36px; height: 36px; border-radius: 50%; overflow: hidden; display: flex; align-items: center; justify-content: center; border: 2px solid #dc2626; flex-shrink: 0; transition: transform 0.15s, box-shadow 0.15s;">
+                            <?php if (!empty($userAvatar)): ?>
+                                <img id="topbar_avatar_img" src="<?php echo htmlspecialchars(getCloudinaryUrl($userAvatar)); ?>" alt="Profile" style="width: 100%; height: 100%; object-fit: cover;">
+                            <?php else: ?>
+                                <span id="topbar_avatar_initial"><?php echo $userInitial; ?></span>
+                            <?php endif; ?>
+                        </div>
+                    </button>
+
+                    <!-- DROPDOWN MENU -->
+                    <div class="avatar-dropdown-menu" id="topbarAvatarDropdown" style="display: none; position: absolute; right: 0; top: calc(100% + 10px); width: 260px; background: #ffffff; border-radius: 14px; box-shadow: 0 14px 35px -5px rgba(0, 0, 0, 0.18), 0 0 1px 1px rgba(0,0,0,0.06); border: 1px solid #e2e8f0; z-index: 10000; overflow: hidden; animation: avatarDropdownFade 0.18s ease;">
+                        <!-- User Card Header -->
+                        <div style="padding: 16px 18px; background: #f8fafc; border-bottom: 1px solid #f1f5f9; display: flex; align-items: center; gap: 12px;">
+                            <div style="width: 42px; height: 42px; border-radius: 50%; overflow: hidden; border: 2px solid #dc2626; flex-shrink: 0; display: flex; align-items: center; justify-content: center; background: #dc2626; color: #ffffff; font-weight: 800;">
+                                <?php if (!empty($userAvatar)): ?>
+                                    <img src="<?php echo htmlspecialchars(getCloudinaryUrl($userAvatar)); ?>" alt="User Avatar" style="width: 100%; height: 100%; object-fit: cover;">
+                                <?php else: ?>
+                                    <?php echo $userInitial; ?>
+                                <?php endif; ?>
+                            </div>
+                            <div style="overflow: hidden; flex-grow: 1; text-align: left;">
+                                <div style="font-weight: 800; font-size: 0.9rem; color: #0f172a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"><?php echo htmlspecialchars($userFullName); ?></div>
+                                <div style="font-size: 0.76rem; color: #64748b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 1px;"><?php echo htmlspecialchars($userEmail); ?></div>
+                                <span style="display: inline-block; margin-top: 4px; font-size: 0.68rem; font-weight: 700; background: #fee2e2; color: #dc2626; padding: 1px 7px; border-radius: 6px; text-transform: uppercase; letter-spacing: 0.5px;"><?php echo htmlspecialchars($userRole); ?></span>
+                            </div>
+                        </div>
+
+                        <!-- Dropdown Action Links -->
+                        <div style="padding: 6px 0; text-align: left;">
+                            <a href="/admin/index.php?section=<?php echo (isAdminUser($userRole, $userEmail, $username) && !isTalentManager($userRole)) ? 'profile' : 'my_profile'; ?>" class="dropdown-item-link" style="display: flex; align-items: center; gap: 10px; padding: 10px 18px; font-size: 0.86rem; color: #334155; text-decoration: none; font-weight: 600; transition: background 0.15s, color 0.15s;">
+                                <i class="fa-solid fa-user-gear" style="color: #64748b; font-size: 0.95rem; width: 18px; text-align: center;"></i>
+                                <span>My Profile &amp; Settings</span>
+                            </a>
+                            <a href="/admin/index.php?section=dashboard" class="dropdown-item-link" style="display: flex; align-items: center; gap: 10px; padding: 10px 18px; font-size: 0.86rem; color: #334155; text-decoration: none; font-weight: 600; transition: background 0.15s, color 0.15s;">
+                                <i class="fa-solid fa-gauge-high" style="color: #64748b; font-size: 0.95rem; width: 18px; text-align: center;"></i>
+                                <span>Staff Dashboard</span>
+                            </a>
+                            <a href="/" target="_blank" class="dropdown-item-link" style="display: flex; align-items: center; gap: 10px; padding: 10px 18px; font-size: 0.86rem; color: #334155; text-decoration: none; font-weight: 600; transition: background 0.15s, color 0.15s;">
+                                <i class="fa-solid fa-arrow-up-right-from-square" style="color: #64748b; font-size: 0.95rem; width: 18px; text-align: center;"></i>
+                                <span>View Live Website</span>
+                            </a>
+                        </div>
+
+                        <!-- Divider & Sign Out -->
+                        <div style="border-top: 1px solid #f1f5f9; padding: 6px 0; background: #fff; text-align: left;">
+                            <a href="/admin/login.php?action=logout" class="dropdown-item-link logout" style="display: flex; align-items: center; gap: 10px; padding: 10px 18px; font-size: 0.86rem; color: #dc2626; text-decoration: none; font-weight: 700; transition: background 0.15s;">
+                                <i class="fa-solid fa-right-from-bracket" style="color: #dc2626; font-size: 0.95rem; width: 18px; text-align: center;"></i>
+                                <span>Sign Out</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
             </div>
         </header>
 
@@ -14652,6 +14719,32 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
 
     <!-- GLOBAL SIDEBAR & MOBILE RESPONSIVE SCRIPT -->
     <script>
+    function toggleAvatarDropdown(e) {
+        if (e) e.stopPropagation();
+        var menu = document.getElementById('topbarAvatarDropdown');
+        if (menu) {
+            var isVisible = menu.style.display === 'block';
+            menu.style.display = isVisible ? 'none' : 'block';
+        }
+    }
+
+    document.addEventListener('click', function(e) {
+        var menu = document.getElementById('topbarAvatarDropdown');
+        var btn = document.getElementById('topbarAvatarBtn');
+        if (menu && menu.style.display === 'block') {
+            if (btn && !btn.contains(e.target) && !menu.contains(e.target)) {
+                menu.style.display = 'none';
+            }
+        }
+    });
+
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            var menu = document.getElementById('topbarAvatarDropdown');
+            if (menu) menu.style.display = 'none';
+        }
+    });
+
     function toggleMobileSidebar() {
         var sidebar = document.querySelector('.sidebar');
         var backdrop = document.getElementById('sidebarBackdrop');
