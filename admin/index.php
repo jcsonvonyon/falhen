@@ -6979,6 +6979,16 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                             if (data.success) {
                                 existingInput.value = data.url;
                                 previewContainer.innerHTML = '<img id="profile_avatar_img" src="' + data.url + '" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 3px solid #dc2626; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">';
+                                
+                                // Also update sidebar and header topbar avatars immediately in DOM
+                                document.querySelectorAll('.sidebar-user-box img, .user-avatar-circle img').forEach(img => {
+                                    img.src = data.url;
+                                });
+                                document.querySelectorAll('.sidebar-user-box .user-left div:first-child, .user-avatar-circle').forEach(el => {
+                                    if (el.tagName !== 'IMG' && !el.querySelector('img')) {
+                                        el.innerHTML = '<img src="' + data.url + '" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">';
+                                    }
+                                });
                             } else {
                                 alert('Avatar Upload Error: ' + data.message);
                             }
