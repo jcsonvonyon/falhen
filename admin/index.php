@@ -944,7 +944,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'notes' => $notes
         ]);
 
-        $_SESSION['saved_message'] = 'Offer Letter issued successfully to @' . $targetUser . '!';
+        // Keep staff accounts compensation & role in strict two-way synchronization
+        $numericBase = (float)str_replace(',', '', $rawBase);
+        $numericAllow = (float)str_replace(',', '', $rawTech) + (float)str_replace(',', '', $rawWell);
+        saveStaffAccountByUsername($targetUser, [
+            'base_salary'  => $numericBase,
+            'allowances'   => $numericAllow,
+            'role'         => $jobTitle,
+            'designation'  => $jobTitle,
+            'department'   => $department,
+            'currency'     => $currency
+        ]);
+
+        $_SESSION['saved_message'] = 'Offer Letter issued successfully to @' . $targetUser . '! Remuneration synchronized with Payroll.';
         header('Location: /admin/index.php?section=onboarding&target_user=' . urlencode($targetUser) . '&saved=1');
         exit;
     }
@@ -966,6 +978,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'account_number' => $accNo,
             'bank_name' => $bankName,
             'account_name' => $accName
+        ]);
+
+        // Sync bank details to authoritative staff account
+        saveStaffAccountByUsername($canonicalTarget, [
+            'bank_name'      => $bankName,
+            'account_number' => $accNo,
+            'account_name'   => $accName
         ]);
 
         $_SESSION['saved_message'] = 'Bank Details submitted successfully for payroll processing!';
@@ -2724,6 +2743,54 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         ]);
 
         $_SESSION['saved_message'] = 'Salary payment of ₦' . number_format($netPay, 2) . ' via ' . htmlspecialchars($paymentMethod) . ' processed for ' . htmlspecialchars($fullName) . ' (' . htmlspecialchars($payPeriod) . ')!';
+        header('Location: /admin/index.php?section=payroll&month=' . urlencode($periodMonth) . '&year=' . urlencode($periodYear) . '&saved=1');
+        exit;
+    } else if ($action === 'bulk_process_payroll') {
+        if (!isAdminUser($currentRole, $currentEmail, $currentUsername) && strtolower($currentRole) !== 'hr manager') {
+            header('Location: /admin/index.php?section=payroll&denied=1');
+            exit;
+        }
+
+        $periodMonth   = sprintf('%02d', (int)($_POST['period_month'] ?? date('m')));
+        $periodYear    = (string)($_POST['period_year'] ?? date('Y'));
+        $payPeriod     = date('F Y', mktime(0, 0, 0, (int)$periodMonth, 1, (int)$periodYear));
+        $paymentMethod = trim($_POST['bulk_payment_method'] ?? 'Direct Bank Transfer');
+        $processedBy   = $_SESSION['admin_full_name'] ?? $_SESSION['admin_name'] ?? 'HR & Finance';
+
+        $allStaff = array_values(getStaffAccountsRepo());
+        $countPaid = 0;
+        $totalPaidSum = 0;
+
+        foreach ($allStaff as $idx => $st) {
+            $baseSal    = (float)($st['base_salary'] ?? 250000);
+            $allowances = (float)($st['allowances'] ?? 20000);
+            $deductions = (float)($st['deductions'] ?? 10000);
+            $netPay     = ($baseSal + $allowances) - $deductions;
+            $txRef      = 'FAL-PAY-' . $periodYear . $periodMonth . '-' . sprintf('%03d', $idx + 1);
+
+            processEmployeePayment([
+                'username'       => $st['username'] ?? '',
+                'full_name'      => $st['full_name'] ?? '',
+                'email'          => $st['email'] ?? '',
+                'role'           => $st['role'] ?? 'Staff',
+                'pay_period'     => $payPeriod,
+                'period_month'   => $periodMonth,
+                'period_year'    => $periodYear,
+                'base_salary'    => $baseSal,
+                'allowances'     => $allowances,
+                'deductions'     => $deductions,
+                'net_pay'        => $netPay,
+                'currency'       => 'NGN',
+                'status'         => 'Paid',
+                'payment_method' => $paymentMethod,
+                'tx_ref'         => $txRef,
+                'processed_by'   => $processedBy
+            ]);
+            $countPaid++;
+            $totalPaidSum += $netPay;
+        }
+
+        $_SESSION['saved_message'] = "Bulk monthly payroll processed successfully! {$countPaid} active team members disbursed total of ₦" . number_format($totalPaidSum, 2) . " for {$payPeriod}.";
         header('Location: /admin/index.php?section=payroll&month=' . urlencode($periodMonth) . '&year=' . urlencode($periodYear) . '&saved=1');
         exit;
     }
@@ -12485,7 +12552,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                     }
                 ?>
                 <!-- Header Bar -->
-                <div class="section-header-bar" style="align-items: center; margin-bottom: 24px;">
+                <div class="section-header-bar" style="align-items: center; justify-content: space-between; margin-bottom: 24px; flex-wrap: wrap; gap: 16px;">
                     <div>
                         <h1 class="section-header-title" style="font-size: 1.75rem; font-weight: 800; color: #0f172a; margin: 0;">Payroll &amp; Remuneration Management</h1>
                         <p class="section-header-desc" style="font-size: 0.88rem; color: #64748b; margin: 4px 0 0 0;">
@@ -12493,7 +12560,11 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                         </p>
                     </div>
 
-                    <div style="display: flex; align-items: center; gap: 12px;">
+                    <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+                        <button type="button" onclick="openBulkPayrollModal()" style="padding: 10px 18px; font-size: 0.88rem; font-weight: 800; border-radius: 10px; background: #16a34a; border: 1px solid #16a34a; color: #ffffff; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 4px 14px rgba(22, 163, 74, 0.35); transition: all 0.15s ease;" onmouseover="this.style.background='#15803d'" onmouseout="this.style.background='#16a34a'">
+                            <i class="fa-solid fa-money-bill-transfer"></i> Process Monthly Payroll (Bulk Pay)
+                        </button>
+
                         <form action="/admin/index.php" method="GET" style="display: flex; align-items: center; gap: 8px; margin: 0;">
                             <input type="hidden" name="section" value="payroll">
                             <select name="month" style="padding: 10px 14px; border: 1px solid #cbd5e1; border-radius: 10px; background: #ffffff; font-size: 0.85rem; font-weight: 700; color: #0f172a; cursor: pointer;" onchange="this.form.submit()">
@@ -12536,27 +12607,37 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
 
                 <!-- PAYROLL ROSTER TABLE CARD -->
                 <div class="dashboard-card" style="padding: 0; overflow: hidden; margin-bottom: 30px;">
-                    <div style="padding: 20px 24px; background: #ffffff; border-bottom: 1px solid #f1f5f9; display: flex; align-items: center; justify-content: space-between;">
-                        <h3 style="margin: 0; font-size: 1.1rem; font-weight: 800; color: #0f172a;">
-                            <i class="fa-solid fa-users-gear" style="color: #dc2626; margin-right: 6px;"></i> Staff Remuneration Roster
-                        </h3>
-                        <span style="font-size: 0.82rem; font-weight: 700; color: #64748b; background: #f8fafc; padding: 4px 12px; border-radius: 20px; border: 1px solid #e2e8f0;">
-                            Period: <strong><?php echo htmlspecialchars($selectedPeriodStr); ?></strong>
-                        </span>
+                    <div style="padding: 20px 24px; background: #ffffff; border-bottom: 1px solid #f1f5f9; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+                        <div>
+                            <h3 style="margin: 0; font-size: 1.1rem; font-weight: 800; color: #0f172a;">
+                                <i class="fa-solid fa-users-gear" style="color: #dc2626; margin-right: 6px;"></i> Staff Remuneration Roster
+                            </h3>
+                            <p style="margin: 3px 0 0 0; font-size: 0.8rem; color: #64748b;">
+                                Click <strong>Pay Salary</strong> on any employee to disburse via Bank Transfer, Raenest, LemFi, or Taptap Send.
+                            </p>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <span style="font-size: 0.82rem; font-weight: 700; color: #64748b; background: #f8fafc; padding: 6px 14px; border-radius: 20px; border: 1px solid #e2e8f0;">
+                                Period: <strong><?php echo htmlspecialchars($selectedPeriodStr); ?></strong>
+                            </span>
+                            <button type="button" onclick="openBulkPayrollModal()" style="padding: 6px 14px; font-size: 0.8rem; font-weight: 800; border-radius: 8px; background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; transition: all 0.15s ease;" onmouseover="this.style.background='#dcfce7'" onmouseout="this.style.background='#f0fdf4'">
+                                <i class="fa-solid fa-bolt"></i> Quick Pay All Active (<?php echo count($allStaffForPayroll); ?>)
+                            </button>
+                        </div>
                     </div>
 
                     <div style="overflow-x: auto;">
-                        <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.88rem;">
+                        <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.86rem; white-space: nowrap;">
                             <thead>
-                                <tr style="border-bottom: 1px solid #e2e8f0; background: #f8fafc; color: #64748b; font-size: 0.76rem; text-transform: uppercase; font-weight: 800; letter-spacing: 0.03em;">
-                                    <th style="padding: 16px 20px;">Employee</th>
-                                    <th style="padding: 16px 20px;">Role &amp; Title</th>
-                                    <th style="padding: 16px 20px;">Base Salary</th>
-                                    <th style="padding: 16px 20px;">Allowances</th>
-                                    <th style="padding: 16px 20px;">Deductions</th>
-                                    <th style="padding: 16px 20px;">Net Payable</th>
-                                    <th style="padding: 16px 20px;">Status</th>
-                                    <th style="padding: 16px 20px; text-align: right;">Action</th>
+                                <tr style="border-bottom: 1px solid #e2e8f0; background: #f8fafc; color: #64748b; font-size: 0.75rem; text-transform: uppercase; font-weight: 800; letter-spacing: 0.03em;">
+                                    <th style="padding: 14px 18px;">Employee</th>
+                                    <th style="padding: 14px 18px;">Role &amp; Title</th>
+                                    <th style="padding: 14px 18px;">Base Salary</th>
+                                    <th style="padding: 14px 18px;">Allowances</th>
+                                    <th style="padding: 14px 18px;">Deductions</th>
+                                    <th style="padding: 14px 18px;">Net Payable</th>
+                                    <th style="padding: 14px 18px;">Status</th>
+                                    <th style="padding: 14px 18px; text-align: right;">Action</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -12573,38 +12654,38 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                     $statusStr = $disbData ? ($disbData['status'] ?? 'Paid') : 'Pending';
                                     ?>
                                     <tr style="border-bottom: 1px solid #f1f5f9; transition: background 0.15s ease;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
-                                        <td style="padding: 16px 20px;">
-                                            <div style="display: flex; align-items: center; gap: 12px;">
+                                        <td style="padding: 14px 18px;">
+                                            <div style="display: flex; align-items: center; gap: 10px;">
                                                 <?php if (!empty($st['avatar'])): ?>
-                                                    <img src="<?php echo htmlspecialchars(getCloudinaryUrl($st['avatar'])); ?>" alt="<?php echo htmlspecialchars($st['full_name']); ?>" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid #e2e8f0; flex-shrink: 0;">
+                                                    <img src="<?php echo htmlspecialchars(getCloudinaryUrl($st['avatar'])); ?>" alt="<?php echo htmlspecialchars($st['full_name']); ?>" style="width: 38px; height: 38px; border-radius: 50%; object-fit: cover; border: 2px solid #e2e8f0; flex-shrink: 0;">
                                                 <?php else: ?>
-                                                    <div style="width: 40px; height: 40px; border-radius: 50%; background: #dc2626; color: #ffffff; display: flex; align-items: center; justify-content: center; font-size: 1rem; font-weight: 800; flex-shrink: 0;">
+                                                    <div style="width: 38px; height: 38px; border-radius: 50%; background: #dc2626; color: #ffffff; display: flex; align-items: center; justify-content: center; font-size: 0.95rem; font-weight: 800; flex-shrink: 0;">
                                                         <?php echo strtoupper(substr($st['full_name'] ?? 'S', 0, 1)); ?>
                                                     </div>
                                                 <?php endif; ?>
                                                 <div>
-                                                    <div style="font-weight: 800; color: #0f172a; font-size: 0.92rem;"><?php echo htmlspecialchars($st['full_name']); ?></div>
-                                                    <div style="font-size: 0.78rem; color: #64748b; margin-top: 1px;"><?php echo htmlspecialchars($st['email']); ?></div>
+                                                    <div style="font-weight: 800; color: #0f172a; font-size: 0.9rem;"><?php echo htmlspecialchars($st['full_name']); ?></div>
+                                                    <div style="font-size: 0.76rem; color: #64748b; margin-top: 1px;"><?php echo htmlspecialchars($st['email']); ?></div>
                                                 </div>
                                             </div>
                                         </td>
-                                        <td style="padding: 16px 20px;">
-                                            <div style="font-weight: 800; color: #0f172a; font-size: 0.86rem;"><?php echo htmlspecialchars($st['designation'] ?? ($st['role'] ?? 'Staff')); ?></div>
-                                            <div style="font-size: 0.72rem; color: #64748b; font-weight: 700; margin-top: 1px; text-transform: uppercase;"><?php echo htmlspecialchars($st['role'] ?? 'Staff'); ?></div>
+                                        <td style="padding: 14px 18px;">
+                                            <div style="font-weight: 800; color: #0f172a; font-size: 0.84rem;"><?php echo htmlspecialchars($st['designation'] ?? ($st['role'] ?? 'Staff')); ?></div>
+                                            <div style="font-size: 0.7rem; color: #64748b; font-weight: 700; margin-top: 1px; text-transform: uppercase;"><?php echo htmlspecialchars($st['role'] ?? 'Staff'); ?></div>
                                         </td>
-                                        <td style="padding: 16px 20px; font-weight: 800; color: #0f172a;">
+                                        <td style="padding: 14px 18px; font-weight: 800; color: #0f172a;">
                                             &#8358;<?php echo number_format($baseSal, 2); ?>
                                         </td>
-                                        <td style="padding: 16px 20px; font-weight: 700; color: #16a34a;">
+                                        <td style="padding: 14px 18px; font-weight: 700; color: #16a34a;">
                                             +&#8358;<?php echo number_format($allowVal, 2); ?>
                                         </td>
-                                        <td style="padding: 16px 20px; font-weight: 700; color: #dc2626;">
+                                        <td style="padding: 14px 18px; font-weight: 700; color: #dc2626;">
                                             -&#8358;<?php echo number_format($deducVal, 2); ?>
                                         </td>
-                                        <td style="padding: 16px 20px; font-weight: 800; color: #0f172a; font-size: 0.95rem;">
+                                        <td style="padding: 14px 18px; font-weight: 800; color: #0f172a; font-size: 0.92rem;">
                                             &#8358;<?php echo number_format($netVal, 2); ?>
                                         </td>
-                                        <td style="padding: 16px 20px;">
+                                        <td style="padding: 14px 18px;">
                                             <?php if ($statusStr === 'Paid'): ?>
                                                 <?php 
                                                 $pm = $disbData['payment_method'] ?? 'Direct Bank Transfer';
@@ -12643,11 +12724,12 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                                 </span>
                                             <?php endif; ?>
                                         </td>
-                                        <td style="padding: 16px 20px; text-align: right;">
+                                        <td style="padding: 14px 18px; text-align: right;">
                                             <div style="display: flex; gap: 6px; justify-content: flex-end; align-items: center;">
-                                                <button onclick="openProcessPaymentModal(<?php echo htmlspecialchars(json_encode([
+                                                <button type="button" onclick="openProcessPaymentModal(<?php echo htmlspecialchars(json_encode([
                                                     'username'       => $st['username'] ?? '',
                                                     'full_name'      => $st['full_name'] ?? '',
+                                                    'avatar'         => !empty($st['avatar']) ? getCloudinaryUrl($st['avatar']) : '',
                                                     'designation'    => $st['designation'] ?? ($st['role'] ?? 'Staff'),
                                                     'email'          => $st['email'] ?? '',
                                                     'role'           => $st['role'] ?? 'Staff',
@@ -12663,9 +12745,11 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                                     'taptap_account' => $st['taptap_account'] ?? ($st['account_number'] ?? ''),
                                                     'period'         => $selectedPeriodStr,
                                                     'month'          => $selectedMonth,
-                                                    'year'           => $selectedYear
-                                                ])); ?>)" class="btn-save-primary" style="padding: 7px 14px; font-size: 0.78rem; font-weight: 700; border-radius: 8px; display: inline-flex; align-items: center; gap: 5px; cursor: pointer; text-decoration: none; <?php echo $hasDisb ? 'background: #ffffff; color: #0f172a; border: 1px solid #cbd5e1;' : 'background: #dc2626; border-color: #dc2626; color: #ffffff;'; ?>">
-                                                    <i class="fa-solid fa-money-bill-wave"></i> <?php echo $hasDisb ? 'Re-Process' : 'Process Payment'; ?>
+                                                    'year'           => $selectedYear,
+                                                    'is_paid'        => $hasDisb
+                                                ])); ?>)" style="padding: 8px 16px; font-size: 0.82rem; font-weight: 800; border-radius: 8px; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; transition: all 0.15s ease; <?php echo $hasDisb ? 'background: #ffffff; color: #0f172a; border: 1px solid #cbd5e1;' : 'background: #16a34a; border: 1px solid #16a34a; color: #ffffff; box-shadow: 0 2px 8px rgba(22,163,74,0.3);'; ?>" onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'">
+                                                    <i class="fa-solid <?php echo $hasDisb ? 'fa-rotate-right' : 'fa-money-bill-wave'; ?>"></i>
+                                                    <?php echo $hasDisb ? 'Re-Process / Edit' : 'Pay Salary'; ?>
                                                 </button>
                                             </div>
                                         </td>
@@ -17481,6 +17565,255 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
             closeConfirmModal();
             f.submit();
         }
+    }
+    </script>
+
+    <!-- INDIVIDUAL EMPLOYEE SALARY DISBURSEMENT MODAL -->
+    <div id="processPaymentModal" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.75); backdrop-filter: blur(6px); z-index: 100000; align-items: center; justify-content: center; padding: 20px; animation: fadeInModal 0.2s ease;">
+        <div style="background: #ffffff; border-radius: 20px; max-width: 560px; width: 100%; padding: 30px 28px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.3); border: 1px solid #e2e8f0; position: relative; max-height: 90vh; overflow-y: auto;">
+            
+            <button type="button" onclick="closeProcessPaymentModal()" style="position: absolute; top: 16px; right: 16px; background: #f1f5f9; border: none; width: 32px; height: 32px; border-radius: 50%; color: #64748b; font-size: 1rem; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.15s ease;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='#f1f5f9'">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+
+            <!-- Header -->
+            <div style="text-align: center; margin-bottom: 20px;">
+                <div style="width: 56px; height: 56px; border-radius: 50%; background: #f0fdf4; border: 1px solid #bbf7d0; color: #16a34a; display: flex; align-items: center; justify-content: center; margin: 0 auto 12px auto; font-size: 1.5rem; box-shadow: 0 4px 12px rgba(22, 163, 74, 0.15);">
+                    <i class="fa-solid fa-money-bill-transfer"></i>
+                </div>
+                <h2 style="font-size: 1.3rem; font-weight: 800; color: #0f172a; margin: 0 0 4px 0;">Disburse Employee Salary</h2>
+                <p style="font-size: 0.84rem; color: #64748b; margin: 0;">Confirm monthly compensation breakdown and issue disbursement advice.</p>
+            </div>
+
+            <!-- Employee Info Header Card -->
+            <div style="display: flex; align-items: center; gap: 14px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 12px 16px; margin-bottom: 18px;">
+                <img id="pay_modal_avatar" src="/assets/img/team/team_henry.png" alt="Employee" style="width: 46px; height: 46px; border-radius: 50%; object-fit: cover; border: 2px solid #ffffff; box-shadow: 0 2px 6px rgba(0,0,0,0.08); flex-shrink: 0;">
+                <div style="flex: 1; min-width: 0;">
+                    <div id="pay_modal_fullname" style="font-size: 0.96rem; font-weight: 800; color: #0f172a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Staff Member</div>
+                    <div style="display: flex; align-items: center; gap: 8px; margin-top: 2px; flex-wrap: wrap;">
+                        <span id="pay_modal_designation" style="font-size: 0.76rem; color: #64748b; font-weight: 700;">Creative Specialist</span>
+                        <span style="font-size: 0.72rem; background: #fee2e2; color: #dc2626; font-weight: 800; padding: 1px 8px; border-radius: 10px;" id="pay_modal_period_badge">August 2026</span>
+                    </div>
+                </div>
+            </div>
+
+            <form method="POST" action="/admin/index.php" style="display: flex; flex-direction: column; gap: 14px;">
+                <input type="hidden" name="action" value="process_employee_payment">
+                <input type="hidden" name="target_user" id="pay_modal_username" value="">
+                <input type="hidden" name="full_name" id="pay_modal_hidden_fullname" value="">
+                <input type="hidden" name="email" id="pay_modal_email" value="">
+                <input type="hidden" name="role" id="pay_modal_role" value="">
+                <input type="hidden" name="pay_period" id="pay_modal_pay_period" value="">
+                <input type="hidden" name="period_month" id="pay_modal_month" value="">
+                <input type="hidden" name="period_year" id="pay_modal_year" value="">
+
+                <!-- Compensation Inputs Grid -->
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;">
+                    <div>
+                        <label style="font-size: 0.74rem; font-weight: 700; color: #475569; display: block; margin-bottom: 4px;">Base Salary (&#8358;) *</label>
+                        <input type="number" step="0.01" name="base_salary" id="pay_modal_base" required style="width: 100%; padding: 9px 10px; font-size: 0.86rem; font-weight: 700; border: 1px solid #cbd5e1; border-radius: 8px;" oninput="recalculateModalNetPay()">
+                    </div>
+                    <div>
+                        <label style="font-size: 0.74rem; font-weight: 700; color: #166534; display: block; margin-bottom: 4px;">Allowances (&#8358;)</label>
+                        <input type="number" step="0.01" name="allowances" id="pay_modal_allowances" value="0" style="width: 100%; padding: 9px 10px; font-size: 0.86rem; font-weight: 700; color: #166534; border: 1px solid #bbf7d0; background: #f0fdf4; border-radius: 8px;" oninput="recalculateModalNetPay()">
+                    </div>
+                    <div>
+                        <label style="font-size: 0.74rem; font-weight: 700; color: #991b1b; display: block; margin-bottom: 4px;">Deductions (&#8358;)</label>
+                        <input type="number" step="0.01" name="deductions" id="pay_modal_deductions" value="0" style="width: 100%; padding: 9px 10px; font-size: 0.86rem; font-weight: 700; color: #dc2626; border: 1px solid #fecaca; background: #fef2f2; border-radius: 8px;" oninput="recalculateModalNetPay()">
+                    </div>
+                </div>
+
+                <!-- Total Net Payable Box -->
+                <div style="background: linear-gradient(135deg, #0f172a, #1e293b); color: #ffffff; border-radius: 12px; padding: 14px 18px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 4px 12px rgba(15, 23, 42, 0.15);">
+                    <div>
+                        <div style="font-size: 0.72rem; text-transform: uppercase; font-weight: 800; color: #94a3b8; letter-spacing: 0.04em;">Net Payable Amount</div>
+                        <div style="font-size: 0.78rem; color: #cbd5e1; margin-top: 1px;">Calculated Total Take-Home</div>
+                    </div>
+                    <div id="pay_modal_net_display" style="font-size: 1.45rem; font-weight: 800; color: #4ade80; font-family: monospace;">&#8358;0.00</div>
+                </div>
+
+                <!-- Payment Rail Selector -->
+                <div>
+                    <label style="font-size: 0.76rem; font-weight: 700; color: #475569; display: block; margin-bottom: 4px;">Disbursement Channel / Rail *</label>
+                    <select name="payment_method" id="pay_modal_payment_method" style="width: 100%; padding: 10px; font-size: 0.86rem; font-weight: 700; border: 1px solid #cbd5e1; border-radius: 8px; background: #ffffff;" onchange="updateModalPaymentMethodDetails()">
+                        <option value="Direct Bank Transfer">🏦 Direct Bank Transfer (Nigeria NGN Account)</option>
+                        <option value="Raenest Multi-Currency (USD/GBP/EUR/NGN)">🌐 Raenest Multi-Currency (USD / GBP / EUR / NGN)</option>
+                        <option value="LemFi Diaspora Remittance">🍋 LemFi Diaspora Remittance</option>
+                        <option value="Taptap Send Global Remit">✈️ Taptap Send Global Remit</option>
+                    </select>
+                </div>
+
+                <!-- Destination Account Details Live Display Box -->
+                <div id="pay_modal_destination_box" style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 10px; padding: 12px 14px;">
+                    <div style="font-size: 0.72rem; font-weight: 800; color: #64748b; text-transform: uppercase; margin-bottom: 4px;">Destination Account Details:</div>
+                    <div id="pay_modal_destination_text" style="font-size: 0.86rem; font-weight: 700; color: #0f172a; line-height: 1.4;">Zenith Bank PLC &bull; Account: 1012345678</div>
+                </div>
+
+                <!-- Transaction Reference -->
+                <div>
+                    <label style="font-size: 0.76rem; font-weight: 700; color: #475569; display: block; margin-bottom: 4px;">Transaction Reference Ref #</label>
+                    <input type="text" name="tx_ref" id="pay_modal_tx_ref" style="width: 100%; padding: 9px 10px; font-size: 0.84rem; font-family: monospace; border: 1px solid #cbd5e1; border-radius: 8px;">
+                </div>
+
+                <!-- Action Buttons -->
+                <div style="display: flex; gap: 12px; margin-top: 8px;">
+                    <button type="button" onclick="closeProcessPaymentModal()" style="flex: 1; padding: 12px; background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 10px; font-weight: 700; color: #475569; cursor: pointer; transition: all 0.15s ease;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='#f1f5f9'">
+                        Cancel
+                    </button>
+                    <button type="submit" id="pay_modal_submit_btn" style="flex: 1.5; padding: 12px; background: #16a34a; border: 1px solid #16a34a; border-radius: 10px; font-weight: 800; color: #ffffff; cursor: pointer; box-shadow: 0 4px 14px rgba(22, 163, 74, 0.35); display: inline-flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.15s ease;" onmouseover="this.style.background='#15803d'" onmouseout="this.style.background='#16a34a'">
+                        <i class="fa-solid fa-circle-check"></i> Disburse Salary Now
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- BULK MONTHLY PAYROLL DISBURSEMENT MODAL -->
+    <div id="bulkPayrollModal" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.75); backdrop-filter: blur(6px); z-index: 100000; align-items: center; justify-content: center; padding: 20px; animation: fadeInModal 0.2s ease;">
+        <div style="background: #ffffff; border-radius: 20px; max-width: 480px; width: 100%; padding: 32px 28px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.3); border: 1px solid #e2e8f0; position: relative; text-align: center;">
+            
+            <button type="button" onclick="closeBulkPayrollModal()" style="position: absolute; top: 16px; right: 16px; background: #f1f5f9; border: none; width: 32px; height: 32px; border-radius: 50%; color: #64748b; font-size: 1rem; cursor: pointer; display: flex; align-items: center; justify-content: center;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='#f1f5f9'">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+
+            <div style="width: 60px; height: 60px; border-radius: 50%; background: #f0fdf4; border: 2px solid #bbf7d0; color: #16a34a; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px auto; font-size: 1.7rem; box-shadow: 0 4px 14px rgba(22, 163, 74, 0.2);">
+                <i class="fa-solid fa-money-bill-transfer"></i>
+            </div>
+            
+            <h3 style="font-size: 1.3rem; font-weight: 800; color: #0f172a; margin: 0 0 6px 0;">Disburse All Staff Salaries</h3>
+            <p style="font-size: 0.86rem; color: #64748b; margin: 0 0 18px 0; line-height: 1.5;">
+                Process and record monthly payroll payouts for all <strong><?php echo isset($allStaffForPayroll) ? count($allStaffForPayroll) : 0; ?> active employees</strong> for <strong><?php echo htmlspecialchars($selectedPeriodStr ?? date('F Y')); ?></strong>.
+            </p>
+
+            <form method="POST" action="/admin/index.php" style="display: flex; flex-direction: column; gap: 14px; text-align: left;">
+                <input type="hidden" name="action" value="bulk_process_payroll">
+                <input type="hidden" name="period_month" value="<?php echo htmlspecialchars($selectedMonth ?? date('m')); ?>">
+                <input type="hidden" name="period_year" value="<?php echo htmlspecialchars($selectedYear ?? date('Y')); ?>">
+
+                <div>
+                    <label style="font-size: 0.76rem; font-weight: 700; color: #475569; display: block; margin-bottom: 4px;">Primary Disbursement Rail</label>
+                    <select name="bulk_payment_method" style="width: 100%; padding: 10px; font-size: 0.86rem; font-weight: 700; border: 1px solid #cbd5e1; border-radius: 8px; background: #ffffff;">
+                        <option value="Direct Bank Transfer">🏦 Direct Bank Transfer (Staff Registered NGN Accounts)</option>
+                        <option value="Raenest Multi-Currency">🌐 Raenest Multi-Currency Virtual Wallets</option>
+                        <option value="LemFi Diaspora Remittance">🍋 LemFi Diaspora Direct</option>
+                        <option value="Taptap Send Global Remit">✈️ Taptap Send Global</option>
+                    </select>
+                </div>
+
+                <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 12px 16px;">
+                    <div style="display: flex; justify-content: space-between; font-size: 0.82rem; color: #475569; margin-bottom: 4px;">
+                        <span>Total Active Staff:</span>
+                        <strong><?php echo isset($allStaffForPayroll) ? count($allStaffForPayroll) : 0; ?> Employees</strong>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; font-size: 0.88rem; color: #0f172a; font-weight: 800;">
+                        <span>Total Monthly Payout:</span>
+                        <span style="color: #16a34a;">&#8358;<?php echo isset($totalPayrollBudget) ? number_format($totalPayrollBudget, 2) : '0.00'; ?></span>
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 12px; margin-top: 6px;">
+                    <button type="button" onclick="closeBulkPayrollModal()" style="flex: 1; padding: 12px; background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 10px; font-weight: 700; color: #475569; cursor: pointer; transition: all 0.15s ease;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='#f1f5f9'">
+                        Cancel
+                    </button>
+                    <button type="submit" style="flex: 1.5; padding: 12px; background: #16a34a; border: 1px solid #16a34a; border-radius: 10px; font-weight: 800; color: #ffffff; cursor: pointer; box-shadow: 0 4px 12px rgba(22,163,74,0.35); display: inline-flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.15s ease;" onmouseover="this.style.background='#15803d'" onmouseout="this.style.background='#16a34a'">
+                        <i class="fa-solid fa-check-double"></i> Confirm &amp; Pay All
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- PAYROLL JAVASCRIPT HANDLERS -->
+    <script>
+    var currentPaymentStaffData = null;
+
+    function openProcessPaymentModal(data) {
+        if (!data) return;
+        currentPaymentStaffData = data;
+
+        document.getElementById('pay_modal_username').value = data.username || '';
+        document.getElementById('pay_modal_hidden_fullname').value = data.full_name || '';
+        document.getElementById('pay_modal_fullname').innerText = data.full_name || 'Staff Member';
+        document.getElementById('pay_modal_designation').innerText = data.designation || data.role || 'Staff';
+        document.getElementById('pay_modal_email').value = data.email || '';
+        document.getElementById('pay_modal_role').value = data.role || 'Staff';
+        document.getElementById('pay_modal_pay_period').value = data.period || '';
+        document.getElementById('pay_modal_month').value = data.month || '';
+        document.getElementById('pay_modal_year').value = data.year || '';
+        document.getElementById('pay_modal_period_badge').innerText = data.period || 'Monthly Salary';
+
+        var fallbackAvatar = '/assets/img/team/team_henry.png';
+        document.getElementById('pay_modal_avatar').src = (data.avatar && data.avatar.length > 5) ? data.avatar : fallbackAvatar;
+
+        document.getElementById('pay_modal_base').value = parseFloat(data.base || 0);
+        document.getElementById('pay_modal_allowances').value = parseFloat(data.allowances || 0);
+        document.getElementById('pay_modal_deductions').value = parseFloat(data.deductions || 0);
+
+        var txId = 'FAL-PAY-' + (data.year || '2026') + (data.month || '08') + '-' + Math.floor(100 + Math.random() * 900);
+        document.getElementById('pay_modal_tx_ref').value = txId;
+
+        recalculateModalNetPay();
+        updateModalPaymentMethodDetails();
+
+        var modal = document.getElementById('processPaymentModal');
+        if (modal) modal.style.display = 'flex';
+    }
+
+    function closeProcessPaymentModal() {
+        var modal = document.getElementById('processPaymentModal');
+        if (modal) modal.style.display = 'none';
+        currentPaymentStaffData = null;
+    }
+
+    function recalculateModalNetPay() {
+        var base = parseFloat(document.getElementById('pay_modal_base').value) || 0;
+        var allow = parseFloat(document.getElementById('pay_modal_allowances').value) || 0;
+        var deduc = parseFloat(document.getElementById('pay_modal_deductions').value) || 0;
+        var net = (base + allow) - deduc;
+        if (net < 0) net = 0;
+
+        var formatted = '₦' + net.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        var display = document.getElementById('pay_modal_net_display');
+        if (display) display.innerText = formatted;
+        
+        var btn = document.getElementById('pay_modal_submit_btn');
+        if (btn) {
+            btn.innerHTML = '<i class="fa-solid fa-circle-check"></i> Disburse ' + formatted;
+        }
+    }
+
+    function updateModalPaymentMethodDetails() {
+        if (!currentPaymentStaffData) return;
+        var method = document.getElementById('pay_modal_payment_method').value;
+        var destBox = document.getElementById('pay_modal_destination_text');
+        if (!destBox) return;
+
+        if (method.indexOf('Raenest') !== -1) {
+            var raeId = currentPaymentStaffData.raenest_id || ('RAE-' + (currentPaymentStaffData.username || 'USER').toUpperCase() + '-01');
+            var raeEmail = currentPaymentStaffData.raenest_email || currentPaymentStaffData.email || '';
+            destBox.innerHTML = '<strong>Raenest ID:</strong> ' + raeId + ' &bull; <strong>Email:</strong> ' + raeEmail;
+        } else if (method.indexOf('LemFi') !== -1) {
+            var lemfiTag = currentPaymentStaffData.lemfi_tag || ('@' + (currentPaymentStaffData.username || 'falhen').replace(/[^a-zA-Z0-9]/g, ''));
+            destBox.innerHTML = '<strong>LemFi Tag:</strong> ' + lemfiTag + ' &bull; <strong>Beneficiary:</strong> ' + currentPaymentStaffData.full_name;
+        } else if (method.indexOf('Taptap') !== -1) {
+            var tapAcc = currentPaymentStaffData.taptap_account || currentPaymentStaffData.account_number || '1012345678';
+            destBox.innerHTML = '<strong>Taptap Destination:</strong> ' + (currentPaymentStaffData.bank_name || 'Zenith Bank') + ' - ' + tapAcc;
+        } else {
+            var bName = currentPaymentStaffData.bank_name || 'Zenith Bank PLC';
+            var accNo = currentPaymentStaffData.account_number || '1012345678';
+            var accName = currentPaymentStaffData.account_name || currentPaymentStaffData.full_name || '';
+            destBox.innerHTML = '<strong>' + bName + '</strong> &bull; <strong>Acc No:</strong> ' + accNo + (accName ? (' &bull; <strong>Name:</strong> ' + accName) : '');
+        }
+    }
+
+    function openBulkPayrollModal() {
+        var m = document.getElementById('bulkPayrollModal');
+        if (m) m.style.display = 'flex';
+    }
+
+    function closeBulkPayrollModal() {
+        var m = document.getElementById('bulkPayrollModal');
+        if (m) m.style.display = 'none';
     }
     </script>
 </body>

@@ -2736,11 +2736,14 @@ function getUserOnboardingData($username) {
         if (empty($userData['offer_letter']['job_title'])) {
             $userData['offer_letter']['job_title'] = $empRole;
         }
-        if (empty($userData['offer_letter']['salary']) || $userData['offer_letter']['salary'] === '₦300,000 / month') {
+        
+        // Strictly synchronize offer letter compensation with authoritative staff accounts data
+        if ($sal > 0) {
             $userData['offer_letter']['salary'] = '₦' . number_format($tot) . ' / month';
             $userData['offer_letter']['base_salary'] = '₦' . number_format($sal);
             $userData['offer_letter']['tech_allowance'] = '₦' . number_format($allow);
             $userData['offer_letter']['total_earnings'] = '₦' . number_format($tot);
+            $userData['offer_letter']['currency'] = $staffObj['currency'] ?? 'NGN';
         }
     }
 
