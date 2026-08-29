@@ -1205,18 +1205,11 @@ function getBrandLogosRepo() {
         saveSiteSettings($settings);
     }
 
-    $keyed = [];
-    foreach ($items as $item) {
-        $id = (int)($item['id'] ?? 0);
-        if ($id > 0) {
-            $keyed[$id] = $item;
-        }
-    }
-    return $keyed;
+    return array_values($items);
 }
 
 /**
- * Get Admin User Profile Settings
+ * Get Admin User Profile Settings (With distinct Access Role and Corporate Designation)
  */
 function getAdminUserProfile() {
     $settings = getSiteSettings();
@@ -1227,7 +1220,8 @@ function getAdminUserProfile() {
             'full_name'     => 'Henry Falonipe',
             'username'      => 'admin',
             'email'         => 'admin@falhen.com',
-            'role'          => 'Creative Director & Administrator',
+            'role'          => 'Super Admin',
+            'designation'   => 'Creative Director & Founder',
             'avatar'        => 'https://res.cloudinary.com/pnabfi91/image/upload/v1786712075/falhen/team/ctxjp9mymgqdh2ecg2hu.jpg',
             'bio'           => 'Visionary Creative Director and founder of Falhen Media.',
             'password_hash' => password_hash('Password123#', PASSWORD_DEFAULT)
@@ -1235,6 +1229,21 @@ function getAdminUserProfile() {
 
         $settings['admin_profile'] = $profile;
         saveSiteSettings($settings);
+    }
+
+    // Ensure designation is populated
+    if (empty($profile['designation'])) {
+        $nameLower = strtolower($profile['full_name'] ?? '');
+        if (strpos($nameLower, 'ligali') !== false || strpos($nameLower, 'oluwatosin') !== false) {
+            $profile['designation'] = 'IT Support Specialist';
+            $profile['role'] = 'Super Admin';
+        } elseif (strpos($nameLower, 'henry') !== false) {
+            $profile['designation'] = 'Creative Director & Founder';
+            $profile['role'] = 'Super Admin';
+        } else {
+            $profile['designation'] = $profile['role'] ?? 'Creative Specialist';
+            $profile['role'] = 'Super Admin';
+        }
     }
 
     return $profile;
@@ -1270,9 +1279,10 @@ function saveAdminUserProfile($data) {
     saveSiteSettings($settings);
 
     // Sync session variables
-    $_SESSION['admin_username']  = $updated['username'];
-    $_SESSION['admin_email']     = $updated['email'];
-    $_SESSION['admin_role']      = $updated['role'];
+    $_SESSION['admin_username']    = $updated['username'];
+    $_SESSION['admin_email']       = $updated['email'];
+    $_SESSION['admin_role']        = $updated['role'];
+    $_SESSION['admin_designation'] = $updated['designation'] ?? ($updated['role'] ?? '');
     $_SESSION['admin_avatar']    = $updated['avatar'];
     $_SESSION['admin_full_name'] = $updated['full_name'];
 
@@ -1280,11 +1290,13 @@ function saveAdminUserProfile($data) {
 }
 
 /**
- * Get Staff Accounts Repository (Includes entire company staff)
+ * Get Staff Accounts Repository (Includes distinct Access Role and Corporate Designation)
  */
 function getStaffAccountsRepo() {
     $settings = getSiteSettings();
     $items = $settings['staff_accounts'] ?? [];
+
+    $knownAccessRoles = ['Super Admin', 'HR Manager', 'Production Manager', 'Content Editor', 'Staff'];
 
     if (empty($items) || !is_array($items)) {
         $defaultPasswordHash = password_hash('Password123#', PASSWORD_DEFAULT);
@@ -1295,6 +1307,7 @@ function getStaffAccountsRepo() {
                 'username'      => 'admin',
                 'email'         => 'admin@falhen.com',
                 'role'          => 'Super Admin',
+                'designation'   => 'Creative Director & Founder',
                 'status'        => 'active',
                 'avatar'        => 'https://res.cloudinary.com/pnabfi91/image/upload/v1786712075/falhen/team/ctxjp9mymgqdh2ecg2hu.jpg',
                 'created_at'    => '2024-01-10',
@@ -1305,7 +1318,8 @@ function getStaffAccountsRepo() {
                 'full_name'     => 'Kingsley Falonipe',
                 'username'      => 'kingsley.falonipe',
                 'email'         => 'kingsley@falhen.com',
-                'role'          => 'Operations Specialist',
+                'role'          => 'Production Manager',
+                'designation'   => 'Operations Specialist',
                 'status'        => 'active',
                 'avatar'        => 'https://res.cloudinary.com/pnabfi91/image/upload/v1786713360/falhen/team/ftmzlwwv1szlyurijyno.png',
                 'created_at'    => '2024-02-01',
@@ -1316,7 +1330,8 @@ function getStaffAccountsRepo() {
                 'full_name'     => 'Lisa Okoli',
                 'username'      => 'lisa.okoli',
                 'email'         => 'lisa@falhen.com',
-                'role'          => 'Head of Marketing & Client Partnerships',
+                'role'          => 'Content Editor',
+                'designation'   => 'Head of Marketing & Client Partnerships',
                 'status'        => 'active',
                 'avatar'        => 'https://res.cloudinary.com/pnabfi91/image/upload/v1786713962/falhen/team/b5v6o8oirs95xihokmgc.jpg',
                 'created_at'    => '2024-02-15',
@@ -1327,7 +1342,8 @@ function getStaffAccountsRepo() {
                 'full_name'     => 'Mojisola Emjay',
                 'username'      => 'mojisola.emjay',
                 'email'         => 'mojisola@falhen.com',
-                'role'          => 'Resource & HR Manager',
+                'role'          => 'HR Manager',
+                'designation'   => 'Resource & HR Manager',
                 'status'        => 'active',
                 'avatar'        => 'https://res.cloudinary.com/pnabfi91/image/upload/v1786714006/falhen/team/ini79za7jvbjokrf1dup.jpg',
                 'created_at'    => '2024-03-01',
@@ -1338,7 +1354,8 @@ function getStaffAccountsRepo() {
                 'full_name'     => 'Daniel Ifeoluwa',
                 'username'      => 'daniel.ifeoluwa',
                 'email'         => 'daniel@falhen.com',
-                'role'          => 'Lead Graphics Designer',
+                'role'          => 'Staff',
+                'designation'   => 'Head of Creative Services',
                 'status'        => 'active',
                 'avatar'        => 'https://res.cloudinary.com/pnabfi91/image/upload/v1786714147/falhen/team/xba4ep38ewfdq3chfx1h.jpg',
                 'created_at'    => '2024-03-10',
@@ -1349,12 +1366,20 @@ function getStaffAccountsRepo() {
                 'full_name'     => 'Victoria Opemipo',
                 'username'      => 'victoria.opemipo',
                 'email'         => 'victoria@falhen.com',
-                'role'          => 'Social Media Manager',
+                'role'          => 'Content Editor',
+                'designation'   => 'Social Media Manager',
                 'status'        => 'active',
                 'avatar'        => 'https://res.cloudinary.com/pnabfi91/image/upload/v1786714208/falhen/team/ri0fc0rdmjfvyzx1lihn.jpg',
+                'created_at'    => '2024-03-20',
+                'password_hash' => $defaultPasswordHash
+            ],
+            [
+                'id'            => 7,
+                'full_name'     => 'Micheal Otuwho',
                 'username'      => 'micheal.otuwho',
                 'email'         => 'micheal@falhen.com',
-                'role'          => 'Content Manager',
+                'role'          => 'Content Editor',
+                'designation'   => 'Content Manager',
                 'status'        => 'active',
                 'avatar'        => 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=600&auto=format&fit=crop',
                 'created_at'    => '2024-04-18',
@@ -1365,7 +1390,8 @@ function getStaffAccountsRepo() {
                 'full_name'     => 'Ligali Oluwatosin',
                 'username'      => 'ligali.oluwatosin',
                 'email'         => 'ligali@falhen.com',
-                'role'          => 'IT Support Specialist',
+                'role'          => 'Super Admin',
+                'designation'   => 'IT Support Specialist',
                 'status'        => 'active',
                 'avatar'        => 'https://res.cloudinary.com/pnabfi91/image/upload/v1786753671/falhen/team/sptg6oyc6wudqirgzqxc.png',
                 'created_at'    => '2024-05-01',
@@ -1376,6 +1402,91 @@ function getStaffAccountsRepo() {
         $settings['staff_accounts'] = array_values($items);
         saveSiteSettings($settings);
     }
+
+    // Normalize and auto-populate designation and valid access role for existing records
+    $modified = false;
+    foreach ($items as $idx => &$it) {
+        $fn = $it['full_name'] ?? '';
+        $fnLower = strtolower($fn);
+        $currRole = $it['role'] ?? 'Staff';
+
+        // Auto-fix specific key personnel
+        if (strpos($fnLower, 'ligali') !== false || strpos($fnLower, 'oluwatosin') !== false) {
+            if (empty($it['designation']) || $it['designation'] === 'Super Admin') {
+                $it['designation'] = 'IT Support Specialist';
+                $modified = true;
+            }
+            if ($it['role'] !== 'Super Admin') {
+                $it['role'] = 'Super Admin';
+                $modified = true;
+            }
+        } elseif (strpos($fnLower, 'daniel') !== false || strpos($fnLower, 'ifeoluwa') !== false) {
+            if (empty($it['designation']) || $it['designation'] === 'Staff') {
+                $it['designation'] = 'Head of Creative Services';
+                $modified = true;
+            }
+            if (!in_array($it['role'], $knownAccessRoles, true)) {
+                $it['role'] = 'Staff';
+                $modified = true;
+            }
+        } elseif (strpos($fnLower, 'henry') !== false) {
+            if (empty($it['designation']) || $it['designation'] === 'Super Admin') {
+                $it['designation'] = 'Creative Director & Founder';
+                $modified = true;
+            }
+            if ($it['role'] !== 'Super Admin') {
+                $it['role'] = 'Super Admin';
+                $modified = true;
+            }
+        } elseif (strpos($fnLower, 'kingsley') !== false) {
+            if (empty($it['designation'])) {
+                $it['designation'] = 'Operations Specialist';
+                $modified = true;
+            }
+            if (!in_array($it['role'], $knownAccessRoles, true)) {
+                $it['role'] = 'Production Manager';
+                $modified = true;
+            }
+        } elseif (strpos($fnLower, 'lisa') !== false) {
+            if (empty($it['designation'])) {
+                $it['designation'] = 'Head of Marketing & Client Partnerships';
+                $modified = true;
+            }
+            if (!in_array($it['role'], $knownAccessRoles, true)) {
+                $it['role'] = 'Content Editor';
+                $modified = true;
+            }
+        } elseif (strpos($fnLower, 'mojisola') !== false) {
+            if (empty($it['designation'])) {
+                $it['designation'] = 'Resource & HR Manager';
+                $modified = true;
+            }
+            if (!in_array($it['role'], $knownAccessRoles, true)) {
+                $it['role'] = 'HR Manager';
+                $modified = true;
+            }
+        } elseif (strpos($fnLower, 'victoria') !== false) {
+            if (empty($it['designation'])) {
+                $it['designation'] = 'Social Media Manager';
+                $modified = true;
+            }
+            if (!in_array($it['role'], $knownAccessRoles, true)) {
+                $it['role'] = 'Content Editor';
+                $modified = true;
+            }
+        } else {
+            if (empty($it['designation'])) {
+                if (!in_array($currRole, $knownAccessRoles, true)) {
+                    $it['designation'] = $currRole;
+                    $it['role'] = 'Staff';
+                } else {
+                    $it['designation'] = $currRole;
+                }
+                $modified = true;
+            }
+        }
+    }
+    unset($it);
 
     // Fallback sync of initial avatars from Team (Content) menu if empty
     $teamMembers = getTeamMembers();
@@ -2394,7 +2505,62 @@ function getAllStaffOnboardingSummary() {
 }
 
 /**
- * Get Site Announcements with Optional Category Filtering (Includes Automatic Birthday Announcements)
+ * Get Celebration Settings & Curated Templates (Birthdays & Work Milestones)
+ */
+function getCelebrationSettings() {
+    $settings = getSiteSettings();
+    $defaults = [
+        'auto_announce' => true,
+        'enable_birthdays' => true,
+        'enable_45d' => true,
+        'enable_90d' => true,
+        'enable_6m' => true,
+        'enable_anniversaries' => true,
+        'author_title' => 'Falhen HR & Culture Team',
+        'default_template' => "Wishing our fantastic {name} ({role}) a very Happy Birthday! 🎂🎉 May your year ahead be filled with boundless creativity, joy, and incredible milestones. We celebrate you today and appreciate everything you bring to the Falhen family! 🥳✨",
+        'template_45d' => "Congratulations to {name} ({role}) on completing your first 45 days at Falhen Media! 🚀🌟 We love having your creativity, dedication, and positive energy on the team. Keep shining and reaching higher! 👏✨",
+        'template_90d' => "Huge congratulations to {name} ({role}) on reaching your 90-day milestone and successfully completing probation at Falhen Media! 🏆🎉 Thank you for your hard work, impact, and brilliance. We are proud to have you on board! 🌟🚀",
+        'template_6m' => "Happy 6-Month Anniversary to {name} ({role})! 💫🎊 Celebrating half a year of memorable moments, creative excellence, and great teamwork. Thank you for everything you bring to Falhen Media! 🥂✨",
+        'template_1y' => "Happy 1st Work Anniversary to our exceptional {name} ({role})! 🥂🎉 A whole year of remarkable achievements, inspiring teamwork, and dedication. We appreciate all you do for the Falhen family! 🥳🌟",
+        'template_multi_year' => "Happy {years}-Year Work Anniversary to {name} ({role})! 🎖️🌟 Thank you for your continued loyalty, leadership, and outstanding contributions to Falhen Media over the past {years} years! 🥂🎉",
+        'custom_wishes' => []
+    ];
+
+    $celeb = $settings['celebration_settings'] ?? [];
+    if (!is_array($celeb)) {
+        $celeb = [];
+    }
+    return array_merge($defaults, $celeb);
+}
+
+/**
+ * Save Celebration Settings
+ */
+function saveCelebrationSettings($data) {
+    $settings = getSiteSettings();
+    $current = getCelebrationSettings();
+    $updatedCeleb = array_merge($current, $data);
+    $settings['celebration_settings'] = $updatedCeleb;
+    saveSiteSettings($settings);
+    return $updatedCeleb;
+}
+
+/**
+ * Save or Update Employee Custom Celebration Wish (HR Curated)
+ */
+function saveEmployeeCustomBirthdayWish($username, $customWish) {
+    $celebSettings = getCelebrationSettings();
+    $uKey = strtolower(trim($username));
+    if (!isset($celebSettings['custom_wishes']) || !is_array($celebSettings['custom_wishes'])) {
+        $celebSettings['custom_wishes'] = [];
+    }
+    $celebSettings['custom_wishes'][$uKey] = trim($customWish);
+    saveCelebrationSettings($celebSettings);
+    return true;
+}
+
+/**
+ * Get Site Announcements with Optional Category Filtering (Includes Birthdays, 45d/90d Milestones & Work Anniversaries)
  */
 function getSiteAnnouncements($category = 'all') {
     $settings = getSiteSettings();
@@ -2425,48 +2591,255 @@ function getSiteAnnouncements($category = 'all') {
         ]
     ];
 
-    // AUTOMATIC BIRTHDAY ANNOUNCEMENT CHECK
-    $todayMonthDay = date('m-d');
-    $staffList = array_values(getStaffAccountsRepo());
-    
-    // Also include Admin User Profile if DOB set
-    $adminProfile = getAdminUserProfile();
-    if (!empty($adminProfile['username'])) {
-        $staffList[] = $adminProfile;
-    }
+    // AUTOMATIC CELEBRATIONS CHECK (Birthdays, 45-Day, 90-Day, 6-Month, Work Anniversaries)
+    $celebSettings = getCelebrationSettings();
+    $autoAnnounce = !empty($celebSettings['auto_announce']);
 
-    $birthdayAnnouncements = [];
-    $bdayIds = 9000;
-    $seenUsernames = [];
+    if ($autoAnnounce) {
+        $todayMonthDay = date('m-d');
+        $todayTs = strtotime(date('Y-m-d'));
+        $todayYear = (int)date('Y');
 
-    foreach ($staffList as $st) {
-        $uKey = strtolower(trim($st['username'] ?? ''));
-        if (empty($uKey) || in_array($uKey, $seenUsernames)) {
-            continue;
+        $allStaffAccounts = array_values(getStaffAccountsRepo());
+        $adminProfile = getAdminUserProfile();
+
+        $unifiedPeople = [];
+        foreach ($allStaffAccounts as $st) {
+            $fn = trim($st['full_name'] ?? ($st['name'] ?? ''));
+            $un = trim($st['username'] ?? '');
+            $em = trim($st['email'] ?? '');
+            $key = strtolower($fn ?: $un);
+            if (empty($key)) continue;
+
+            $unifiedPeople[$key] = [
+                'username'   => $un ?: strtolower(str_replace(' ', '.', $fn)),
+                'name'       => $fn ?: $un,
+                'role'       => $st['designation'] ?? ($st['role'] ?? 'Staff Member'),
+                'access_role'=> $st['role'] ?? 'Staff',
+                'avatar'     => $st['avatar'] ?? ($st['image'] ?? ''),
+                'email'      => $em,
+                'dob'        => $st['dob'] ?? '',
+                'created_at' => $st['hire_date'] ?? ($st['created_at'] ?? '2024-01-10')
+            ];
         }
-        $seenUsernames[] = $uKey;
 
-        $dob = $st['dob'] ?? '';
-        if (!empty($dob)) {
-            $dobMonthDay = date('m-d', strtotime($dob));
-            if ($dobMonthDay === $todayMonthDay) {
-                $stName = $st['full_name'] ?? 'Team Member';
-                $stRole = $st['role'] ?? 'Staff';
-                $bdayIds++;
-                $birthdayAnnouncements[] = [
-                    'id' => $bdayIds,
-                    'title' => '🎉 Happy Birthday, ' . $stName . '! 🎂',
-                    'category' => 'Celebration',
-                    'posted_by' => 'Falhen HR & Culture Team',
-                    'date_str' => 'Posted Today at 08:00 AM',
-                    'content' => 'Wishing our fantastic team member, ' . $stName . ' (' . $stRole . '), a very Happy Birthday! 🥳 We appreciate all your hard work, dedication, and amazing energy at Falhen Media. Enjoy your special day!'
+        if (!empty($adminProfile) && is_array($adminProfile)) {
+            $admFn = trim($adminProfile['full_name'] ?? '');
+            $admUn = trim($adminProfile['username'] ?? 'admin');
+            $admEm = trim($adminProfile['email'] ?? '');
+            $admKey = strtolower($admFn ?: $admUn);
+
+            $matchedKey = null;
+            foreach ($unifiedPeople as $k => $p) {
+                if ($k === $admKey || strtolower($p['username']) === strtolower($admUn) || (!empty($admEm) && strtolower($p['email']) === strtolower($admEm))) {
+                    $matchedKey = $k;
+                    break;
+                }
+            }
+
+            if ($matchedKey) {
+                if (!empty($adminProfile['dob'])) $unifiedPeople[$matchedKey]['dob'] = $adminProfile['dob'];
+                if (!empty($adminProfile['avatar'])) $unifiedPeople[$matchedKey]['avatar'] = $adminProfile['avatar'];
+                if (!empty($admFn)) $unifiedPeople[$matchedKey]['name'] = $admFn;
+                if (!empty($adminProfile['designation'])) $unifiedPeople[$matchedKey]['role'] = $adminProfile['designation'];
+                if (!empty($adminProfile['hire_date'])) $unifiedPeople[$matchedKey]['created_at'] = $adminProfile['hire_date'];
+            } else {
+                $unifiedPeople[$admKey] = [
+                    'username'   => $admUn,
+                    'name'       => $admFn ?: 'Admin User',
+                    'role'       => $adminProfile['designation'] ?? ($adminProfile['role'] ?? 'Super Admin'),
+                    'access_role'=> $adminProfile['role'] ?? 'Super Admin',
+                    'avatar'     => $adminProfile['avatar'] ?? '',
+                    'email'      => $admEm,
+                    'dob'        => $adminProfile['dob'] ?? '',
+                    'created_at' => $adminProfile['hire_date'] ?? '2023-01-01'
                 ];
             }
         }
-    }
 
-    if (!empty($birthdayAnnouncements)) {
-        $announcements = array_merge($birthdayAnnouncements, $announcements);
+        if (function_exists('getTeamMembers')) {
+            $siteTeamMembers = array_values(getTeamMembers());
+            foreach ($siteTeamMembers as $tm) {
+                $tmName = trim($tm['name'] ?? '');
+                if (empty($tmName)) continue;
+                $tmKey = strtolower($tmName);
+
+                if (isset($unifiedPeople[$tmKey])) {
+                    if (empty($unifiedPeople[$tmKey]['dob']) && !empty($tm['dob'])) {
+                        $unifiedPeople[$tmKey]['dob'] = $tm['dob'];
+                    }
+                    if (empty($unifiedPeople[$tmKey]['avatar']) && !empty($tm['image'])) {
+                        $unifiedPeople[$tmKey]['avatar'] = $tm['image'];
+                    }
+                    if (!empty($tm['role']) && (empty($unifiedPeople[$tmKey]['role']) || in_array($unifiedPeople[$tmKey]['role'], ['Staff', 'Staff Member']))) {
+                        $unifiedPeople[$tmKey]['role'] = $tm['role'];
+                    }
+                } else {
+                    $unifiedPeople[$tmKey] = [
+                        'username'   => strtolower(str_replace(' ', '.', $tmName)),
+                        'name'       => $tmName,
+                        'role'       => $tm['role'] ?? ($tm['title'] ?? 'Team Member'),
+                        'access_role'=> 'Staff',
+                        'avatar'     => $tm['image'] ?? '',
+                        'email'      => strtolower(str_replace(' ', '.', $tmName)) . '@falhen.com',
+                        'dob'        => $tm['dob'] ?? '',
+                        'created_at' => $tm['hire_date'] ?? ($tm['created_at'] ?? '2024-01-01')
+                    ];
+                }
+            }
+        }
+
+        $celebrationAnnouncements = [];
+        $celebIds = 9000;
+
+        foreach ($unifiedPeople as $st) {
+            $stName = $st['name'] ?? 'Team Member';
+            $stRole = $st['role'] ?? 'Staff Member';
+            $stAvatar = $st['avatar'] ?? '';
+            $stUser = strtolower(trim($st['username'] ?? ''));
+            $stEmail = strtolower(trim($st['email'] ?? ''));
+            $firstName = explode(' ', trim($stName))[0] ?? $stName;
+            $authorTitle = $celebSettings['author_title'] ?? 'Falhen HR & Culture Team';
+
+            $customWishes = $celebSettings['custom_wishes'] ?? [];
+            $userCustomWish = $customWishes[$stUser] ?? ($customWishes[$stEmail] ?? ($customWishes[strtolower(trim($stName))] ?? ''));
+
+            // 1. BIRTHDAY CHECK
+            $dob = $st['dob'] ?? '';
+            if (!empty($dob) && !empty($celebSettings['enable_birthdays'])) {
+                $dobTime = strtotime($dob);
+                if ($dobTime && date('m-d', $dobTime) === $todayMonthDay) {
+                    if (!empty($userCustomWish)) {
+                        $content = str_replace(['{name}', '{role}', '{first_name}'], [$stName, $stRole, $firstName], $userCustomWish);
+                    } else {
+                        $template = $celebSettings['default_template'] ?? "Wishing our fantastic {name} ({role}) a very Happy Birthday! 🎂🎉 May your year ahead be filled with boundless creativity, joy, and incredible milestones. We celebrate you today and appreciate everything you bring to the Falhen family! 🥳✨";
+                        $content = str_replace(['{name}', '{role}', '{first_name}'], [$stName, $stRole, $firstName], $template);
+                    }
+
+                    $celebIds++;
+                    $celebrationAnnouncements[] = [
+                        'id'            => $celebIds,
+                        'is_birthday'   => true,
+                        'is_celebration'=> true,
+                        'celebration_type' => 'birthday',
+                        'employee_name' => $stName,
+                        'employee_role' => $stRole,
+                        'avatar'        => $stAvatar,
+                        'title'         => '🎉 Happy Birthday, ' . $stName . '! 🎂',
+                        'category'      => 'Celebration',
+                        'posted_by'     => $authorTitle,
+                        'date_str'      => 'Birthday Today 🎈',
+                        'content'       => $content
+                    ];
+                }
+            }
+
+            // 2. WORK ANNIVERSARIES & MILESTONES CHECK (45d, 90d, 6m, 1y, 2y+)
+            $startDate = $st['created_at'] ?? '';
+            if (!empty($startDate)) {
+                $startTs = strtotime(date('Y-m-d', strtotime($startDate)));
+                if ($startTs && $todayTs >= $startTs) {
+                    $daysEmployed = (int)round(($todayTs - $startTs) / 86400);
+
+                    // 45-Day Milestone
+                    if ($daysEmployed === 45 && !empty($celebSettings['enable_45d'])) {
+                        $template = $celebSettings['template_45d'] ?? "Congratulations to {name} ({role}) on completing your first 45 days at Falhen Media! 🚀🌟 We love having your creativity, dedication, and positive energy on the team. Keep shining and reaching higher! 👏✨";
+                        $content = str_replace(['{name}', '{role}', '{first_name}'], [$stName, $stRole, $firstName], $template);
+                        $celebIds++;
+                        $celebrationAnnouncements[] = [
+                            'id'            => $celebIds,
+                            'is_celebration'=> true,
+                            'celebration_type' => 'milestone_45d',
+                            'employee_name' => $stName,
+                            'employee_role' => $stRole,
+                            'avatar'        => $stAvatar,
+                            'title'         => '🌟 45-Day Milestone: Congratulations ' . $stName . '! 🚀',
+                            'category'      => 'Celebration',
+                            'posted_by'     => $authorTitle,
+                            'date_str'      => '45-Day Milestone 🌟',
+                            'content'       => $content
+                        ];
+                    }
+
+                    // 90-Day Milestone (Probation Completion)
+                    if ($daysEmployed === 90 && !empty($celebSettings['enable_90d'])) {
+                        $template = $celebSettings['template_90d'] ?? "Huge congratulations to {name} ({role}) on reaching your 90-day milestone and successfully completing probation at Falhen Media! 🏆🎉 Thank you for your hard work, impact, and brilliance. We are proud to have you on board! 🌟🚀";
+                        $content = str_replace(['{name}', '{role}', '{first_name}'], [$stName, $stRole, $firstName], $template);
+                        $celebIds++;
+                        $celebrationAnnouncements[] = [
+                            'id'            => $celebIds,
+                            'is_celebration'=> true,
+                            'celebration_type' => 'milestone_90d',
+                            'employee_name' => $stName,
+                            'employee_role' => $stRole,
+                            'avatar'        => $stAvatar,
+                            'title'         => '🏆 90-Day Milestone: Congratulations ' . $stName . '! 🎉',
+                            'category'      => 'Celebration',
+                            'posted_by'     => $authorTitle,
+                            'date_str'      => '90-Day Milestone 🏆',
+                            'content'       => $content
+                        ];
+                    }
+
+                    // 6-Month / Half-Year Milestone (Day 182)
+                    if ($daysEmployed === 182 && !empty($celebSettings['enable_6m'])) {
+                        $template = $celebSettings['template_6m'] ?? "Happy 6-Month Anniversary to {name} ({role})! 💫🎊 Celebrating half a year of memorable moments, creative excellence, and great teamwork. Thank you for everything you bring to Falhen Media! 🥂✨";
+                        $content = str_replace(['{name}', '{role}', '{first_name}'], [$stName, $stRole, $firstName], $template);
+                        $celebIds++;
+                        $celebrationAnnouncements[] = [
+                            'id'            => $celebIds,
+                            'is_celebration'=> true,
+                            'celebration_type' => 'milestone_6m',
+                            'employee_name' => $stName,
+                            'employee_role' => $stRole,
+                            'avatar'        => $stAvatar,
+                            'title'         => '💫 Happy 6-Month Anniversary, ' . $stName . '! 🎊',
+                            'category'      => 'Celebration',
+                            'posted_by'     => $authorTitle,
+                            'date_str'      => '6-Month Anniversary 💫',
+                            'content'       => $content
+                        ];
+                    }
+
+                    // Annual Work Anniversaries (1 Year, 2 Years, 3 Years, etc.)
+                    $startMonthDay = date('m-d', $startTs);
+                    $startYear = (int)date('Y', $startTs);
+                    if ($startMonthDay === $todayMonthDay && $todayYear > $startYear && !empty($celebSettings['enable_anniversaries'])) {
+                        $years = $todayYear - $startYear;
+                        if ($years === 1) {
+                            $template = $celebSettings['template_1y'] ?? "Happy 1st Work Anniversary to our exceptional {name} ({role})! 🥂🎉 A whole year of remarkable achievements, inspiring teamwork, and dedication. We appreciate all you do for the Falhen family! 🥳🌟";
+                            $content = str_replace(['{name}', '{role}', '{first_name}', '{years}'], [$stName, $stRole, $firstName, $years], $template);
+                            $title = '🥂 Happy 1st Work Anniversary, ' . $stName . '! 🎉';
+                            $dateTag = '1-Year Work Anniversary 🥂';
+                        } else {
+                            $template = $celebSettings['template_multi_year'] ?? "Happy {years}-Year Work Anniversary to {name} ({role})! 🎖️🌟 Thank you for your continued loyalty, leadership, and outstanding contributions to Falhen Media over the past {years} years! 🥂🎉";
+                            $content = str_replace(['{name}', '{role}', '{first_name}', '{years}'], [$stName, $stRole, $firstName, $years], $template);
+                            $title = '🎖️ Happy ' . $years . '-Year Work Anniversary, ' . $stName . '! 🌟';
+                            $dateTag = $years . '-Year Work Anniversary 🎖️';
+                        }
+
+                        $celebIds++;
+                        $celebrationAnnouncements[] = [
+                            'id'            => $celebIds,
+                            'is_celebration'=> true,
+                            'celebration_type' => 'work_anniversary',
+                            'employee_name' => $stName,
+                            'employee_role' => $stRole,
+                            'avatar'        => $stAvatar,
+                            'title'         => $title,
+                            'category'      => 'Celebration',
+                            'posted_by'     => $authorTitle,
+                            'date_str'      => $dateTag,
+                            'content'       => $content
+                        ];
+                    }
+                }
+            }
+        }
+
+        if (!empty($celebrationAnnouncements)) {
+            $announcements = array_merge($celebrationAnnouncements, $announcements);
+        }
     }
 
     if ($category !== 'all' && !empty($category)) {

@@ -797,7 +797,7 @@
             "department": "Creative",
             "location": "Lagos",
             "experience": "1+ years at Falhen",
-            "image": "https://res.cloudinary.com/pnabfi91/image/upload/v1786714147/falhen/team/xba4ep38ewfdq3chfx1h.jpg",
+            "image": "https://res.cloudinary.com/pnabfi91/image/upload/v1787996302/falhen/profile/w5vpzeqnbvz8llejfnzy.png",
             "bio": "Combining technical precision with creative artistry to produce immersive visual assets that elevate brand storytelling.",
             "skills": [
                 "Graphics Design",
@@ -1108,7 +1108,13 @@
         "role": "IT Support Specialist",
         "avatar": "https://res.cloudinary.com/pnabfi91/image/upload/v1786752054/falhen/profile/vo0hzeidqes0giydxkmr.png",
         "bio": "Visionary Creative Director and founder of Falhen Media.",
-        "password_hash": "$2y$10$1WjN6Hyou2/JLvl.rvv7YuceT1EqQh5YuFANe1GEQR8TbXtFcQxvW"
+        "password_hash": "$2y$10$1WjN6Hyou2/JLvl.rvv7YuceT1EqQh5YuFANe1GEQR8TbXtFcQxvW",
+        "dob": "1985-08-29",
+        "alt_email": "personal@gmail.com",
+        "alternative_email": "",
+        "phone": "08012345678",
+        "address": "Lagos, Nigeria",
+        "location": ""
     },
     "staff_accounts": [
         {
@@ -1162,15 +1168,16 @@
             "email": "daniel.ifeoluwa@falhenmedia.com",
             "role": "Staff",
             "status": "active",
-            "avatar": "https://res.cloudinary.com/pnabfi91/image/upload/v1786714147/falhen/team/xba4ep38ewfdq3chfx1h.jpg",
+            "avatar": "https://res.cloudinary.com/pnabfi91/image/upload/v1787996302/falhen/profile/w5vpzeqnbvz8llejfnzy.png",
             "created_at": "2024-03-10",
             "password_hash": "$2y$10$jeH3MaV.zSI3qo6E.qmEGOvDpZnLtJk7LcFLl//3gWFhqXxO6vC4.",
             "bio": "",
             "dob": "",
-            "alt_email": "",
-            "phone": "0818283783",
-            "address": "Lagos, Nigeria",
-            "location": "Lagos, Nigeria"
+            "alt_email": "daniel.personal@gmail.com",
+            "phone": "08123456789",
+            "address": "Ikeja, Lagos",
+            "location": "Lagos, Nigeriax",
+            "alternative_email": ""
         },
         {
             "id": 6,
@@ -1196,6 +1203,19 @@
         }
     ],
     "attendance_logs": [
+        {
+            "id": 11,
+            "username": "admin",
+            "full_name": "Oluwatosin Ligali",
+            "date": "2026-08-29",
+            "clock_in": "09:46 AM",
+            "clock_out": null,
+            "break_start": null,
+            "break_end": null,
+            "duration": "In Progress",
+            "status": "Clocked In",
+            "work_state": "working"
+        },
         {
             "id": 10,
             "username": "mojisola.emjay",
@@ -1460,5 +1480,74 @@
             "date_str": "Posted 3 days ago",
             "content": "Save the date! Falhen Media will host our annual End-of-Summer Gala on August 30th at the Main Soundstage. Details and RSVP forms will be shared shortly."
         }
-    ]
+    ],
+    "payroll_disbursements": [
+        {
+            "id": 1,
+            "username": "mojisola.emjay",
+            "full_name": "Mojisola Emjay",
+            "email": "mojisola.emjay@falhenmedia.com",
+            "role": "HR Manager",
+            "pay_period": "April 2026",
+            "period_month": "04",
+            "period_year": "2026",
+            "base_salary": 140000,
+            "allowances": 10000,
+            "deductions": 10000,
+            "net_pay": 140000,
+            "currency": "NGN",
+            "status": "Paid",
+            "payment_method": "Direct Bank Transfer",
+            "tx_ref": "FAL-PAY-202604-001",
+            "processed_at": "2026-04-28 10:30:00",
+            "processed_by": "Super Admin"
+        },
+        {
+            "id": 2,
+            "username": "mojisola.emjay",
+            "full_name": "Mojisola Emjay",
+            "email": "mojisola.emjay@falhenmedia.com",
+            "role": "HR Manager",
+            "pay_period": "March 2026",
+            "period_month": "03",
+            "period_year": "2026",
+            "base_salary": 140000,
+            "allowances": 10000,
+            "deductions": 10000,
+            "net_pay": 140000,
+            "currency": "NGN",
+            "status": "Paid",
+            "payment_method": "Direct Bank Transfer",
+            "tx_ref": "FAL-PAY-202603-002",
+            "processed_at": "2026-03-28 11:15:00",
+            "processed_by": "Super Admin"
+        },
+        {
+            "id": 3,
+            "username": "daniel.ifeoluwa",
+            "full_name": "Daniel Ifeoluwa",
+            "email": "daniel.ifeoluwa@falhenmedia.com",
+            "role": "Staff",
+            "pay_period": "April 2026",
+            "period_month": "04",
+            "period_year": "2026",
+            "base_salary": 250000,
+            "allowances": 20000,
+            "deductions": 20000,
+            "net_pay": 250000,
+            "currency": "NGN",
+            "status": "Paid",
+            "payment_method": "Direct Bank Transfer",
+            "tx_ref": "FAL-PAY-202604-003",
+            "processed_at": "2026-04-28 14:20:00",
+            "processed_by": "Mojisola Emjay"
+        }
+    ],
+    "team_members": [],
+    "celebration_settings": {
+        "auto_announce": true,
+        "author_title": "Falhen HR & Culture Team",
+        "default_template": "Wishing our fantastic {name} ({role}) a very Happy Birthday! \ud83c\udf82\ud83c\udf89 May your year ahead be filled with boundless creativity, joy, and incredible milestones. We celebrate you today and appreciate everything you bring to the Falhen family! \ud83e\udd73\u2728",
+        "custom_wishes": []
+    }
 }
