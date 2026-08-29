@@ -3289,6 +3289,39 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                 box-sizing: border-box;
             }
 
+            /* Section Header Mobile Layout */
+            .section-header-desc {
+                display: none !important;
+            }
+
+            .section-header-bar {
+                flex-direction: column !important;
+                align-items: stretch !important;
+                gap: 12px !important;
+                margin-bottom: 20px !important;
+            }
+
+            .section-header-bar > div:first-child {
+                width: 100% !important;
+            }
+
+            .section-header-bar .btn-save-primary,
+            .section-header-bar a.btn-save-primary,
+            .section-header-bar button.btn-save-primary,
+            .section-header-bar .header-btn,
+            .section-header-bar > button,
+            .section-header-bar > a.btn,
+            .section-header-bar > a.btn-primary {
+                width: 100% !important;
+                justify-content: center !important;
+                text-align: center !important;
+            }
+
+            .section-header-title {
+                font-size: 1.45rem !important;
+                margin-bottom: 0 !important;
+            }
+
             .form-grid-two,
             .form-grid-three {
                 grid-template-columns: 1fr !important;
