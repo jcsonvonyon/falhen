@@ -11296,6 +11296,19 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                 </div>
                             </div>
 
+                            <!-- DESTINATION RECEIVING ACCOUNT DETAILS CARD -->
+                            <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 12px; padding: 12px 14px; font-size: 0.82rem;">
+                                <div style="font-weight: 800; color: #0f172a; margin-bottom: 6px; display: flex; align-items: center; justify-content: space-between;">
+                                    <span><i class="fa-solid fa-building-columns" style="color: #2563eb; margin-right: 5px;"></i> Recipient Settlement Details</span>
+                                    <span id="payModalDesignationBadge" style="font-size: 0.72rem; font-weight: 700; color: #475569; background: #e2e8f0; padding: 2px 8px; border-radius: 8px;"></span>
+                                </div>
+                                <div style="display: flex; flex-direction: column; gap: 4px; color: #334155; font-size: 0.8rem;">
+                                    <div id="destBankRow"><strong>Bank:</strong> <span id="payModalBankDisplay" style="font-weight: 700; color: #0f172a;"></span></div>
+                                    <div id="destRaenestRow"><strong>Raenest ID/Email:</strong> <span id="payModalRaenestDisplay" style="color: #0369a1; font-weight: 700;"></span></div>
+                                    <div id="destLemfiRow"><strong>LemFi Tag:</strong> <span id="payModalLemfiDisplay" style="color: #a16207; font-weight: 700;"></span></div>
+                                </div>
+                            </div>
+
                             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
                                 <div>
                                     <label style="font-size: 0.76rem; font-weight: 800; color: #475569; display: block; margin-bottom: 4px;">Base Salary (&#8358;)</label>
@@ -11363,12 +11376,26 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
 
                     document.getElementById('payModalPeriodBadge').textContent = data.period;
                     document.getElementById('payModalEmailBadge').textContent = data.email;
+                    if (document.getElementById('payModalDesignationBadge')) {
+                        document.getElementById('payModalDesignationBadge').textContent = data.designation || data.role || 'Staff';
+                    }
+
+                    if (document.getElementById('payModalBankDisplay')) {
+                        document.getElementById('payModalBankDisplay').textContent = (data.bank_name || 'Zenith Bank PLC') + ' • ' + (data.account_number || 'N/A') + ' (' + (data.account_name || data.full_name) + ')';
+                    }
+                    if (document.getElementById('payModalRaenestDisplay')) {
+                        document.getElementById('payModalRaenestDisplay').textContent = (data.raenest_email || data.email) + ' [' + (data.raenest_id || 'RAE-GLOBAL') + ']';
+                    }
+                    if (document.getElementById('payModalLemfiDisplay')) {
+                        document.getElementById('payModalLemfiDisplay').textContent = data.lemfi_tag || ('@' + (data.username || 'falhen'));
+                    }
+
                     document.getElementById('payModalBaseSalary').value = Number(data.base).toLocaleString();
                     document.getElementById('payModalAllowances').value = Number(data.allowances).toLocaleString();
                     document.getElementById('payModalDeductions').value = Number(data.deductions).toLocaleString();
 
-                    var randomRef = 'FAL-PAY-' + data.year + data.month + '-' + Math.floor(100 + Math.random() * 900);
-                    document.getElementById('payModalTxRef').value = randomRef;
+                    var curMethod = document.getElementById('payModalMethod').value;
+                    updatePayModalTxRefPrefix(curMethod);
 
                     calculateModalNetPay();
 
@@ -12284,18 +12311,16 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                     }
 
                     foreach ($allStaffForPayroll as $st) {
-                        $stOnboarding = $siteSettings['user_onboarding'][$st['username'] ?? ''] ?? [];
-                        $offerData = $stOnboarding['offer_letter'] ?? [];
-                        $rawSal = $offerData['salary'] ?? '250,000 / month';
-                        preg_match('/[\d,]+/', $rawSal, $matches);
-                        $baseSal = !empty($matches[0]) ? (float)str_replace(',', '', $matches[0]) : 250000;
-                        if ($baseSal <= 0) $baseSal = 250000;
+                        $baseSal = (float)($st['base_salary'] ?? 250000);
+                        $allowVal = (float)($st['allowances'] ?? 20000);
+                        $deducVal = (float)($st['deductions'] ?? 10000);
+                        $netExpected = ($baseSal + $allowVal) - $deducVal;
 
-                        $totalPayrollBudget += $baseSal;
+                        $totalPayrollBudget += $netExpected;
 
                         $stKey = strtolower($st['username'] ?? $st['email']);
                         if (!isset($processedMap[$stKey])) {
-                            $pendingAmount += $baseSal;
+                            $pendingAmount += $netExpected;
                         }
                     }
                 ?>
@@ -12381,15 +12406,9 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                     $hasDisb = isset($processedMap[$stKey]);
                                     $disbData = $hasDisb ? $processedMap[$stKey] : null;
 
-                                    $stOnboarding = $siteSettings['user_onboarding'][$st['username'] ?? ''] ?? [];
-                                    $offerData = $stOnboarding['offer_letter'] ?? [];
-                                    $rawSal = $offerData['salary'] ?? '250,000 / month';
-                                    preg_match('/[\d,]+/', $rawSal, $matches);
-                                    $baseSal = !empty($matches[0]) ? (float)str_replace(',', '', $matches[0]) : 250000;
-                                    if ($baseSal <= 0) $baseSal = 250000;
-
-                                    $allowVal = $disbData ? (float)$disbData['allowances'] : 20000;
-                                    $deducVal = $disbData ? (float)$disbData['deductions'] : 10000;
+                                    $baseSal = (float)($st['base_salary'] ?? 250000);
+                                    $allowVal = $disbData ? (float)$disbData['allowances'] : (float)($st['allowances'] ?? 20000);
+                                    $deducVal = $disbData ? (float)$disbData['deductions'] : (float)($st['deductions'] ?? 10000);
                                     $netVal = $disbData ? (float)$disbData['net_pay'] : ($baseSal + $allowVal - $deducVal);
                                     $statusStr = $disbData ? ($disbData['status'] ?? 'Paid') : 'Pending';
                                     ?>
@@ -12409,8 +12428,9 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                                 </div>
                                             </div>
                                         </td>
-                                        <td style="padding: 16px 20px; font-weight: 700; color: #475569; font-size: 0.85rem;">
-                                            <?php echo htmlspecialchars($st['role'] ?? 'Staff Member'); ?>
+                                        <td style="padding: 16px 20px;">
+                                            <div style="font-weight: 800; color: #0f172a; font-size: 0.86rem;"><?php echo htmlspecialchars($st['designation'] ?? ($st['role'] ?? 'Staff')); ?></div>
+                                            <div style="font-size: 0.72rem; color: #64748b; font-weight: 700; margin-top: 1px; text-transform: uppercase;"><?php echo htmlspecialchars($st['role'] ?? 'Staff'); ?></div>
                                         </td>
                                         <td style="padding: 16px 20px; font-weight: 800; color: #0f172a;">
                                             &#8358;<?php echo number_format($baseSal, 2); ?>
@@ -12466,16 +12486,24 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                         <td style="padding: 16px 20px; text-align: right;">
                                             <div style="display: flex; gap: 6px; justify-content: flex-end; align-items: center;">
                                                 <button onclick="openProcessPaymentModal(<?php echo htmlspecialchars(json_encode([
-                                                    'username'   => $st['username'] ?? '',
-                                                    'full_name'  => $st['full_name'] ?? '',
-                                                    'email'      => $st['email'] ?? '',
-                                                    'role'       => $st['role'] ?? 'Staff',
-                                                    'base'       => $baseSal,
-                                                    'allowances' => $allowVal,
-                                                    'deductions' => $deducVal,
-                                                    'period'     => $selectedPeriodStr,
-                                                    'month'      => $selectedMonth,
-                                                    'year'       => $selectedYear
+                                                    'username'       => $st['username'] ?? '',
+                                                    'full_name'      => $st['full_name'] ?? '',
+                                                    'designation'    => $st['designation'] ?? ($st['role'] ?? 'Staff'),
+                                                    'email'          => $st['email'] ?? '',
+                                                    'role'           => $st['role'] ?? 'Staff',
+                                                    'base'           => $baseSal,
+                                                    'allowances'     => $allowVal,
+                                                    'deductions'     => $deducVal,
+                                                    'bank_name'      => $st['bank_name'] ?? 'Zenith Bank PLC',
+                                                    'account_number' => $st['account_number'] ?? '1012345678',
+                                                    'account_name'   => $st['account_name'] ?? ($st['full_name'] ?? ''),
+                                                    'raenest_email'  => $st['raenest_email'] ?? ($st['email'] ?? ''),
+                                                    'raenest_id'     => $st['raenest_id'] ?? ('RAE-' . strtoupper(substr($st['username'] ?? 'USER', 0, 4)) . '-01'),
+                                                    'lemfi_tag'      => $st['lemfi_tag'] ?? ('@' . strtolower(str_replace('.', '', $st['username'] ?? 'falhen'))),
+                                                    'taptap_account' => $st['taptap_account'] ?? ($st['account_number'] ?? ''),
+                                                    'period'         => $selectedPeriodStr,
+                                                    'month'          => $selectedMonth,
+                                                    'year'           => $selectedYear
                                                 ])); ?>)" class="btn-save-primary" style="padding: 7px 14px; font-size: 0.78rem; font-weight: 700; border-radius: 8px; display: inline-flex; align-items: center; gap: 5px; cursor: pointer; text-decoration: none; <?php echo $hasDisb ? 'background: #ffffff; color: #0f172a; border: 1px solid #cbd5e1;' : 'background: #dc2626; border-color: #dc2626; color: #ffffff;'; ?>">
                                                     <i class="fa-solid fa-money-bill-wave"></i> <?php echo $hasDisb ? 'Re-Process' : 'Process Payment'; ?>
                                                 </button>

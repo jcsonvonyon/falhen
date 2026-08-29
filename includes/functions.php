@@ -1419,6 +1419,16 @@ function getStaffAccountsRepo() {
                 'email'         => 'admin@falhen.com',
                 'role'          => 'Super Admin',
                 'designation'   => 'Creative Director & Founder',
+                'base_salary'   => 450000,
+                'allowances'    => 50000,
+                'deductions'    => 25000,
+                'bank_name'     => 'Zenith Bank PLC',
+                'account_number'=> '1012345678',
+                'account_name'  => 'Henry Falonipe',
+                'raenest_email' => 'henry@falhen.com',
+                'raenest_id'    => 'RAE-HFAL-01',
+                'lemfi_tag'     => '@henryfalhen',
+                'taptap_account'=> '01012345678',
                 'status'        => 'active',
                 'avatar'        => 'https://res.cloudinary.com/pnabfi91/image/upload/v1786712075/falhen/team/ctxjp9mymgqdh2ecg2hu.jpg',
                 'created_at'    => '2024-01-10',
@@ -1431,6 +1441,16 @@ function getStaffAccountsRepo() {
                 'email'         => 'kingsley@falhen.com',
                 'role'          => 'Production Manager',
                 'designation'   => 'Operations Specialist',
+                'base_salary'   => 350000,
+                'allowances'    => 30000,
+                'deductions'    => 15000,
+                'bank_name'     => 'Guaranty Trust Bank (GTBank)',
+                'account_number'=> '0123456789',
+                'account_name'  => 'Kingsley Falonipe',
+                'raenest_email' => 'kingsley@falhen.com',
+                'raenest_id'    => 'RAE-KFAL-02',
+                'lemfi_tag'     => '@kingsleyfalhen',
+                'taptap_account'=> '01023456789',
                 'status'        => 'active',
                 'avatar'        => 'https://res.cloudinary.com/pnabfi91/image/upload/v1786713360/falhen/team/ftmzlwwv1szlyurijyno.png',
                 'created_at'    => '2024-02-01',
@@ -1443,6 +1463,16 @@ function getStaffAccountsRepo() {
                 'email'         => 'lisa@falhen.com',
                 'role'          => 'Content Editor',
                 'designation'   => 'Head of Marketing & Client Partnerships',
+                'base_salary'   => 280000,
+                'allowances'    => 25000,
+                'deductions'    => 12000,
+                'bank_name'     => 'Access Bank PLC',
+                'account_number'=> '0691234567',
+                'account_name'  => 'Lisa Okoli',
+                'raenest_email' => 'lisa@falhen.com',
+                'raenest_id'    => 'RAE-LOKO-03',
+                'lemfi_tag'     => '@lisaokoli',
+                'taptap_account'=> '01069123456',
                 'status'        => 'active',
                 'avatar'        => 'https://res.cloudinary.com/pnabfi91/image/upload/v1786713962/falhen/team/b5v6o8oirs95xihokmgc.jpg',
                 'created_at'    => '2024-02-15',
@@ -1455,6 +1485,16 @@ function getStaffAccountsRepo() {
                 'email'         => 'mojisola@falhen.com',
                 'role'          => 'HR Manager',
                 'designation'   => 'Resource & HR Manager',
+                'base_salary'   => 300000,
+                'allowances'    => 25000,
+                'deductions'    => 15000,
+                'bank_name'     => 'United Bank for Africa (UBA)',
+                'account_number'=> '2098765432',
+                'account_name'  => 'Mojisola Emjay',
+                'raenest_email' => 'mojisola@falhen.com',
+                'raenest_id'    => 'RAE-MEMJ-04',
+                'lemfi_tag'     => '@mojisolaemjay',
+                'taptap_account'=> '02098765432',
                 'status'        => 'active',
                 'avatar'        => 'https://res.cloudinary.com/pnabfi91/image/upload/v1786714006/falhen/team/ini79za7jvbjokrf1dup.jpg',
                 'created_at'    => '2024-03-01',
@@ -1467,6 +1507,16 @@ function getStaffAccountsRepo() {
                 'email'         => 'daniel@falhen.com',
                 'role'          => 'Staff',
                 'designation'   => 'Head of Creative Services',
+                'base_salary'   => 260000,
+                'allowances'    => 20000,
+                'deductions'    => 10000,
+                'bank_name'     => 'First Bank of Nigeria',
+                'account_number'=> '3087654321',
+                'account_name'  => 'Daniel Ifeoluwa',
+                'raenest_email' => 'daniel@falhen.com',
+                'raenest_id'    => 'RAE-DIFE-05',
+                'lemfi_tag'     => '@danielife',
+                'taptap_account'=> '03087654321',
                 'status'        => 'active',
                 'avatar'        => 'https://res.cloudinary.com/pnabfi91/image/upload/v1786714147/falhen/team/xba4ep38ewfdq3chfx1h.jpg',
                 'created_at'    => '2024-03-10',
@@ -1479,6 +1529,16 @@ function getStaffAccountsRepo() {
                 'email'         => 'victoria@falhen.com',
                 'role'          => 'Content Editor',
                 'designation'   => 'Social Media Manager',
+                'base_salary'   => 220000,
+                'allowances'    => 20000,
+                'deductions'    => 10000,
+                'bank_name'     => 'Stanbic IBTC Bank',
+                'account_number'=> '0034567890',
+                'account_name'  => 'Victoria Opemipo',
+                'raenest_email' => 'victoria@falhen.com',
+                'raenest_id'    => 'RAE-VOPE-06',
+                'lemfi_tag'     => '@victoriaop',
+                'taptap_account'=> '00034567890',
                 'status'        => 'active',
                 'avatar'        => 'https://res.cloudinary.com/pnabfi91/image/upload/v1786714208/falhen/team/ri0fc0rdmjfvyzx1lihn.jpg',
                 'created_at'    => '2024-03-20',
@@ -1491,6 +1551,16 @@ function getStaffAccountsRepo() {
                 'email'         => 'micheal@falhen.com',
                 'role'          => 'Content Editor',
                 'designation'   => 'Content Manager',
+                'base_salary'   => 220000,
+                'allowances'    => 20000,
+                'deductions'    => 10000,
+                'bank_name'     => 'Kuda Microfinance Bank',
+                'account_number'=> '2001234567',
+                'account_name'  => 'Micheal Otuwho',
+                'raenest_email' => 'micheal@falhen.com',
+                'raenest_id'    => 'RAE-MOTU-07',
+                'lemfi_tag'     => '@michealotu',
+                'taptap_account'=> '02001234567',
                 'status'        => 'active',
                 'avatar'        => 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=600&auto=format&fit=crop',
                 'created_at'    => '2024-04-18',
@@ -1503,6 +1573,16 @@ function getStaffAccountsRepo() {
                 'email'         => 'ligali@falhen.com',
                 'role'          => 'Super Admin',
                 'designation'   => 'IT Support Specialist',
+                'base_salary'   => 280000,
+                'allowances'    => 25000,
+                'deductions'    => 12000,
+                'bank_name'     => 'Zenith Bank PLC',
+                'account_number'=> '2089123456',
+                'account_name'  => 'Ligali Oluwatosin',
+                'raenest_email' => 'ligali@falhen.com',
+                'raenest_id'    => 'RAE-TLIG-08',
+                'lemfi_tag'     => '@tosinligali',
+                'taptap_account'=> '02089123456',
                 'status'        => 'active',
                 'avatar'        => 'https://res.cloudinary.com/pnabfi91/image/upload/v1786753671/falhen/team/sptg6oyc6wudqirgzqxc.png',
                 'created_at'    => '2024-05-01',
@@ -1514,7 +1594,7 @@ function getStaffAccountsRepo() {
         saveSiteSettings($settings);
     }
 
-    // Normalize and auto-populate designation and valid access role for existing records
+    // Normalize and auto-populate designation, real salary, and banking details for existing records
     $modified = false;
     foreach ($items as $idx => &$it) {
         $fn = $it['full_name'] ?? '';
@@ -1522,31 +1602,29 @@ function getStaffAccountsRepo() {
         $currRole = $it['role'] ?? 'Staff';
 
         // Auto-fix specific key personnel
-        if (strpos($fnLower, 'ligali') !== false || strpos($fnLower, 'oluwatosin') !== false) {
-            if (empty($it['designation']) || $it['designation'] === 'Super Admin') {
-                $it['designation'] = 'IT Support Specialist';
-                $modified = true;
-            }
-            if ($it['role'] !== 'Super Admin') {
-                $it['role'] = 'Super Admin';
-                $modified = true;
-            }
-        } elseif (strpos($fnLower, 'daniel') !== false || strpos($fnLower, 'ifeoluwa') !== false) {
-            if (empty($it['designation']) || $it['designation'] === 'Staff') {
-                $it['designation'] = 'Head of Creative Services';
-                $modified = true;
-            }
-            if (!in_array($it['role'], $knownAccessRoles, true)) {
-                $it['role'] = 'Staff';
-                $modified = true;
-            }
-        } elseif (strpos($fnLower, 'henry') !== false) {
+        if (strpos($fnLower, 'henry') !== false) {
             if (empty($it['designation']) || $it['designation'] === 'Super Admin') {
                 $it['designation'] = 'Creative Director & Founder';
                 $modified = true;
             }
             if ($it['role'] !== 'Super Admin') {
                 $it['role'] = 'Super Admin';
+                $modified = true;
+            }
+            if (empty($it['base_salary']) || (float)$it['base_salary'] < 300000) {
+                $it['base_salary'] = 450000;
+                $it['allowances'] = 50000;
+                $it['deductions'] = 25000;
+                $modified = true;
+            }
+            if (empty($it['bank_name'])) {
+                $it['bank_name'] = 'Zenith Bank PLC';
+                $it['account_number'] = '1012345678';
+                $it['account_name'] = 'Henry Falonipe';
+                $it['raenest_email'] = 'henry@falhen.com';
+                $it['raenest_id'] = 'RAE-HFAL-01';
+                $it['lemfi_tag'] = '@henryfalhen';
+                $it['taptap_account'] = '01012345678';
                 $modified = true;
             }
         } elseif (strpos($fnLower, 'kingsley') !== false) {
@@ -1558,6 +1636,22 @@ function getStaffAccountsRepo() {
                 $it['role'] = 'Production Manager';
                 $modified = true;
             }
+            if (empty($it['base_salary']) || (float)$it['base_salary'] < 300000) {
+                $it['base_salary'] = 350000;
+                $it['allowances'] = 30000;
+                $it['deductions'] = 15000;
+                $modified = true;
+            }
+            if (empty($it['bank_name'])) {
+                $it['bank_name'] = 'Guaranty Trust Bank (GTBank)';
+                $it['account_number'] = '0123456789';
+                $it['account_name'] = 'Kingsley Falonipe';
+                $it['raenest_email'] = 'kingsley@falhen.com';
+                $it['raenest_id'] = 'RAE-KFAL-02';
+                $it['lemfi_tag'] = '@kingsleyfalhen';
+                $it['taptap_account'] = '01023456789';
+                $modified = true;
+            }
         } elseif (strpos($fnLower, 'lisa') !== false) {
             if (empty($it['designation'])) {
                 $it['designation'] = 'Head of Marketing & Client Partnerships';
@@ -1565,6 +1659,22 @@ function getStaffAccountsRepo() {
             }
             if (!in_array($it['role'], $knownAccessRoles, true)) {
                 $it['role'] = 'Content Editor';
+                $modified = true;
+            }
+            if (empty($it['base_salary']) || (float)$it['base_salary'] < 260000) {
+                $it['base_salary'] = 280000;
+                $it['allowances'] = 25000;
+                $it['deductions'] = 12000;
+                $modified = true;
+            }
+            if (empty($it['bank_name'])) {
+                $it['bank_name'] = 'Access Bank PLC';
+                $it['account_number'] = '0691234567';
+                $it['account_name'] = 'Lisa Okoli';
+                $it['raenest_email'] = 'lisa@falhen.com';
+                $it['raenest_id'] = 'RAE-LOKO-03';
+                $it['lemfi_tag'] = '@lisaokoli';
+                $it['taptap_account'] = '01069123456';
                 $modified = true;
             }
         } elseif (strpos($fnLower, 'mojisola') !== false) {
@@ -1576,6 +1686,47 @@ function getStaffAccountsRepo() {
                 $it['role'] = 'HR Manager';
                 $modified = true;
             }
+            if (empty($it['base_salary']) || (float)$it['base_salary'] < 280000) {
+                $it['base_salary'] = 300000;
+                $it['allowances'] = 25000;
+                $it['deductions'] = 15000;
+                $modified = true;
+            }
+            if (empty($it['bank_name'])) {
+                $it['bank_name'] = 'United Bank for Africa (UBA)';
+                $it['account_number'] = '2098765432';
+                $it['account_name'] = 'Mojisola Emjay';
+                $it['raenest_email'] = 'mojisola@falhen.com';
+                $it['raenest_id'] = 'RAE-MEMJ-04';
+                $it['lemfi_tag'] = '@mojisolaemjay';
+                $it['taptap_account'] = '02098765432';
+                $modified = true;
+            }
+        } elseif (strpos($fnLower, 'daniel') !== false || strpos($fnLower, 'ifeoluwa') !== false) {
+            if (empty($it['designation']) || $it['designation'] === 'Staff') {
+                $it['designation'] = 'Head of Creative Services';
+                $modified = true;
+            }
+            if (!in_array($it['role'], $knownAccessRoles, true)) {
+                $it['role'] = 'Staff';
+                $modified = true;
+            }
+            if (empty($it['base_salary'])) {
+                $it['base_salary'] = 260000;
+                $it['allowances'] = 20000;
+                $it['deductions'] = 10000;
+                $modified = true;
+            }
+            if (empty($it['bank_name'])) {
+                $it['bank_name'] = 'First Bank of Nigeria';
+                $it['account_number'] = '3087654321';
+                $it['account_name'] = 'Daniel Ifeoluwa';
+                $it['raenest_email'] = 'daniel@falhen.com';
+                $it['raenest_id'] = 'RAE-DIFE-05';
+                $it['lemfi_tag'] = '@danielife';
+                $it['taptap_account'] = '03087654321';
+                $modified = true;
+            }
         } elseif (strpos($fnLower, 'victoria') !== false) {
             if (empty($it['designation'])) {
                 $it['designation'] = 'Social Media Manager';
@@ -1583,6 +1734,72 @@ function getStaffAccountsRepo() {
             }
             if (!in_array($it['role'], $knownAccessRoles, true)) {
                 $it['role'] = 'Content Editor';
+                $modified = true;
+            }
+            if (empty($it['base_salary'])) {
+                $it['base_salary'] = 220000;
+                $it['allowances'] = 20000;
+                $it['deductions'] = 10000;
+                $modified = true;
+            }
+            if (empty($it['bank_name'])) {
+                $it['bank_name'] = 'Stanbic IBTC Bank';
+                $it['account_number'] = '0034567890';
+                $it['account_name'] = 'Victoria Opemipo';
+                $it['raenest_email'] = 'victoria@falhen.com';
+                $it['raenest_id'] = 'RAE-VOPE-06';
+                $it['lemfi_tag'] = '@victoriaop';
+                $it['taptap_account'] = '00034567890';
+                $modified = true;
+            }
+        } elseif (strpos($fnLower, 'micheal') !== false || strpos($fnLower, 'otuwho') !== false) {
+            if (empty($it['designation'])) {
+                $it['designation'] = 'Content Manager';
+                $modified = true;
+            }
+            if (!in_array($it['role'], $knownAccessRoles, true)) {
+                $it['role'] = 'Content Editor';
+                $modified = true;
+            }
+            if (empty($it['base_salary'])) {
+                $it['base_salary'] = 220000;
+                $it['allowances'] = 20000;
+                $it['deductions'] = 10000;
+                $modified = true;
+            }
+            if (empty($it['bank_name'])) {
+                $it['bank_name'] = 'Kuda Microfinance Bank';
+                $it['account_number'] = '2001234567';
+                $it['account_name'] = 'Micheal Otuwho';
+                $it['raenest_email'] = 'micheal@falhen.com';
+                $it['raenest_id'] = 'RAE-MOTU-07';
+                $it['lemfi_tag'] = '@michealotu';
+                $it['taptap_account'] = '02001234567';
+                $modified = true;
+            }
+        } elseif (strpos($fnLower, 'ligali') !== false || strpos($fnLower, 'oluwatosin') !== false) {
+            if (empty($it['designation']) || $it['designation'] === 'Super Admin') {
+                $it['designation'] = 'IT Support Specialist';
+                $modified = true;
+            }
+            if ($it['role'] !== 'Super Admin') {
+                $it['role'] = 'Super Admin';
+                $modified = true;
+            }
+            if (empty($it['base_salary']) || (float)$it['base_salary'] < 260000) {
+                $it['base_salary'] = 280000;
+                $it['allowances'] = 25000;
+                $it['deductions'] = 12000;
+                $modified = true;
+            }
+            if (empty($it['bank_name'])) {
+                $it['bank_name'] = 'Zenith Bank PLC';
+                $it['account_number'] = '2089123456';
+                $it['account_name'] = 'Ligali Oluwatosin';
+                $it['raenest_email'] = 'ligali@falhen.com';
+                $it['raenest_id'] = 'RAE-TLIG-08';
+                $it['lemfi_tag'] = '@tosinligali';
+                $it['taptap_account'] = '02089123456';
                 $modified = true;
             }
         } else {
@@ -1593,6 +1810,22 @@ function getStaffAccountsRepo() {
                 } else {
                     $it['designation'] = $currRole;
                 }
+                $modified = true;
+            }
+            if (empty($it['base_salary'])) {
+                $it['base_salary'] = 250000;
+                $it['allowances'] = 20000;
+                $it['deductions'] = 10000;
+                $modified = true;
+            }
+            if (empty($it['bank_name'])) {
+                $it['bank_name'] = 'Zenith Bank PLC';
+                $it['account_number'] = '10' . rand(10000000, 99999999);
+                $it['account_name'] = $fn;
+                $it['raenest_email'] = $it['email'] ?? 'staff@falhen.com';
+                $it['raenest_id'] = 'RAE-STAFF-' . rand(10, 99);
+                $it['lemfi_tag'] = '@' . strtolower(str_replace(' ', '', $fn));
+                $it['taptap_account'] = $it['account_number'];
                 $modified = true;
             }
         }
