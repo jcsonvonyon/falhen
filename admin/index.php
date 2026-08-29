@@ -61,8 +61,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'save_staff_account'         => 'staff_accounts',
         'delete_staff_account'       => 'staff_accounts',
         'toggle_staff_status'        => 'staff_accounts',
-        'update_profile'             => 'profile',
-        'change_password'            => 'profile',
+        'save_profile_details'       => 'my_profile',
+        'change_profile_password'    => 'my_profile',
+        'update_profile'             => 'my_profile',
+        'change_password'            => 'my_profile',
         'clock_in'                   => 'attendance',
         'clock_out'                  => 'attendance',
         'start_break'                => 'attendance',
@@ -2048,7 +2050,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $_SESSION['admin_alt_email'] = $altEmail;
         }
 
-        header('Location: index.php?section=profile&target_user=' . urlencode($targetUser) . '&saved=1');
+        header('Location: index.php?section=my_profile&saved=1');
         exit;
     } else if ($action === 'change_profile_password') {
         $currentPassword = $_POST['current_password'] ?? '';
@@ -6781,7 +6783,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                             </div>
                         </div>
 
-                        <form action="index.php?section=profile" method="POST" enctype="multipart/form-data" id="profileForm">
+                        <form action="index.php?section=my_profile" method="POST" enctype="multipart/form-data" id="profileForm">
                             <input type="hidden" name="action" value="save_profile_details">
                             <input type="hidden" name="existing_avatar" id="profile_existing_avatar" value="<?php echo htmlspecialchars($profileData['avatar'] ?? ''); ?>">
                             <input type="hidden" name="cropped_avatar_image_data" id="cropped_avatar_image_data" value="">
