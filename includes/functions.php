@@ -1643,7 +1643,7 @@ function getStaffAccountsRepo() {
                 $it['role'] = 'Super Admin';
                 $modified = true;
             }
-            if (!isset($it['base_salary']) || $it['base_salary'] === '' || (($it['currency'] ?? '') === 'USD' && (float)$it['deductions'] > 500)) {
+            if (!isset($it['base_salary']) || $it['base_salary'] === '' || (($it['currency'] ?? '') === 'USD' && (float)($it['deductions'] ?? 0) > 500)) {
                 $it['base_salary'] = 2700;
                 $it['allowances'] = 100;
                 $it['deductions'] = 200;

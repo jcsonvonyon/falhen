@@ -12619,8 +12619,6 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
 
                 </div>
 
-                </div>
-
             <?php elseif ($activeSection === 'payroll' || $activeSection === 'hr_portal'): ?>
                 <!-- SECTION: PAYROLL & REMUNERATION MANAGEMENT -->
                 <?php 
@@ -12640,9 +12638,10 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                     $budgetByCurrency = [];
                     $processedByCurrency = [];
                     $pendingByCurrency = [];
+                    $processedMap = [];
 
-                    foreach ($monthDisbursements as $disb) {
-                        $key = strtolower($disb['username'] ?? $disb['email']);
+                    foreach ($periodDisbursements as $disb) {
+                        $key = strtolower($disb['username'] ?? ($disb['email'] ?? ''));
                         $processedMap[$key] = $disb;
                         $dCurr = $disb['currency'] ?? 'NGN';
                         if (($disb['status'] ?? '') === 'Paid') {
