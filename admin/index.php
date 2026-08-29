@@ -96,7 +96,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'save_employee_celebration_profile' => 'celebrations',
         'post_instant_birthday_shoutout'    => 'celebrations',
         'post_instant_celebration_shoutout' => 'celebrations',
-        'save_payment_gateways'             => 'payment_gateways'
+        'save_payment_gateways'             => 'payment_gateways',
+        'process_employee_payment'          => 'payroll'
     ];
 
     $currentEmail = $_SESSION['admin_email'] ?? '';
@@ -2578,6 +2579,55 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         $_SESSION['saved_message'] = 'Global Payment Gateways (Raenest, LemFi, Taptap Send & Bank Details) updated successfully!';
         header('Location: /admin/index.php?section=payment_gateways&saved=1');
+        exit;
+    } else if ($action === 'process_employee_payment') {
+        if (!isAdminUser($currentRole, $currentEmail, $currentUsername) && strtolower($currentRole) !== 'hr manager') {
+            header('Location: /admin/index.php?section=payroll&denied=1');
+            exit;
+        }
+
+        $targetUser   = trim($_POST['target_user'] ?? '');
+        $fullName     = trim($_POST['full_name'] ?? $targetUser);
+        $email        = trim($_POST['email'] ?? '');
+        $role         = trim($_POST['role'] ?? 'Staff');
+        $payPeriod    = trim($_POST['pay_period'] ?? date('F Y'));
+        $periodMonth  = sprintf('%02d', (int)($_POST['period_month'] ?? date('m')));
+        $periodYear   = (string)($_POST['period_year'] ?? date('Y'));
+
+        $rawBase      = str_replace(',', '', trim($_POST['base_salary'] ?? '0'));
+        $rawAllow     = str_replace(',', '', trim($_POST['allowances'] ?? '0'));
+        $rawDeduc     = str_replace(',', '', trim($_POST['deductions'] ?? '0'));
+
+        $baseSal      = (float)$rawBase;
+        $allowances   = (float)$rawAllow;
+        $deductions   = (float)$rawDeduc;
+        $netPay       = ($baseSal + $allowances) - $deductions;
+
+        $paymentMethod = trim($_POST['payment_method'] ?? 'Direct Bank Transfer');
+        $txRef        = trim($_POST['tx_ref'] ?? ('FAL-PAY-' . $periodYear . $periodMonth . '-' . rand(100, 999)));
+        $processedBy  = $_SESSION['admin_full_name'] ?? $_SESSION['admin_name'] ?? 'HR & Finance';
+
+        $disb = processEmployeePayment([
+            'username'       => $targetUser,
+            'full_name'      => $fullName,
+            'email'          => $email,
+            'role'           => $role,
+            'pay_period'     => $payPeriod,
+            'period_month'   => $periodMonth,
+            'period_year'    => $periodYear,
+            'base_salary'    => $baseSal,
+            'allowances'     => $allowances,
+            'deductions'     => $deductions,
+            'net_pay'        => $netPay,
+            'currency'       => 'NGN',
+            'status'         => 'Paid',
+            'payment_method' => $paymentMethod,
+            'tx_ref'         => $txRef,
+            'processed_by'   => $processedBy
+        ]);
+
+        $_SESSION['saved_message'] = 'Salary payment of ₦' . number_format($netPay, 2) . ' via ' . htmlspecialchars($paymentMethod) . ' processed for ' . htmlspecialchars($fullName) . ' (' . htmlspecialchars($payPeriod) . ')!';
+        header('Location: /admin/index.php?section=payroll&month=' . urlencode($periodMonth) . '&year=' . urlencode($periodYear) . '&saved=1');
         exit;
     }
 }
@@ -11225,7 +11275,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                             <p style="font-size: 0.84rem; color: #64748b; margin: 0;">Disburse monthly payment advice for <strong id="payModalStaffName"></strong>.</p>
                         </div>
 
-                        <form method="POST" action="/admin/index.php" onsubmit="return confirm('Confirm processing salary payment disbursement for ' + document.getElementById('payModalStaffName').textContent + '?')" style="display: flex; flex-direction: column; gap: 14px;">
+                        <form method="POST" action="/admin/index.php?section=payroll" onsubmit="return confirm('Confirm processing salary payment disbursement for ' + document.getElementById('payModalStaffName').textContent + '?')" style="display: flex; flex-direction: column; gap: 14px;">
                             <input type="hidden" name="action" value="process_employee_payment">
                             <input type="hidden" id="payModalUsername" name="target_user" value="">
                             <input type="hidden" id="payModalFullName" name="full_name" value="">
@@ -12376,9 +12426,37 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                         </td>
                                         <td style="padding: 16px 20px;">
                                             <?php if ($statusStr === 'Paid'): ?>
-                                                <span style="font-size: 0.72rem; font-weight: 800; color: #166534; background: #f0fdf4; border: 1px solid #bbf7d0; padding: 3px 10px; border-radius: 12px; display: inline-flex; align-items: center; gap: 4px;">
-                                                    <i class="fa-solid fa-circle-check"></i> Paid
+                                                <?php 
+                                                $pm = $disbData['payment_method'] ?? 'Direct Bank Transfer';
+                                                $pmBadgeBg = '#f0fdf4';
+                                                $pmBadgeColor = '#166534';
+                                                $pmBadgeBorder = '#bbf7d0';
+                                                $pmIcon = 'fa-solid fa-circle-check';
+
+                                                if (stripos($pm, 'raenest') !== false) {
+                                                    $pmBadgeBg = '#e0f2fe';
+                                                    $pmBadgeColor = '#0369a1';
+                                                    $pmBadgeBorder = '#bae6fd';
+                                                    $pmIcon = 'fa-solid fa-globe';
+                                                } elseif (stripos($pm, 'lemfi') !== false) {
+                                                    $pmBadgeBg = '#fef9c3';
+                                                    $pmBadgeColor = '#a16207';
+                                                    $pmBadgeBorder = '#fde047';
+                                                    $pmIcon = 'fa-solid fa-lemon';
+                                                } elseif (stripos($pm, 'taptap') !== false) {
+                                                    $pmBadgeBg = '#d1fae5';
+                                                    $pmBadgeColor = '#065f46';
+                                                    $pmBadgeBorder = '#a7f3d0';
+                                                    $pmIcon = 'fa-solid fa-paper-plane';
+                                                }
+                                                ?>
+                                                <span style="font-size: 0.72rem; font-weight: 800; color: <?php echo $pmBadgeColor; ?>; background: <?php echo $pmBadgeBg; ?>; border: 1px solid <?php echo $pmBadgeBorder; ?>; padding: 3px 10px; border-radius: 12px; display: inline-flex; align-items: center; gap: 4px;">
+                                                    <i class="<?php echo $pmIcon; ?>"></i> Paid
                                                 </span>
+                                                <div style="font-size: 0.7rem; color: #475569; font-weight: 700; margin-top: 3px;"><?php echo htmlspecialchars($pm); ?></div>
+                                                <?php if (!empty($disbData['tx_ref'])): ?>
+                                                    <div style="font-size: 0.65rem; color: #94a3b8; font-family: monospace;"><?php echo htmlspecialchars($disbData['tx_ref']); ?></div>
+                                                <?php endif; ?>
                                             <?php else: ?>
                                                 <span style="font-size: 0.72rem; font-weight: 800; color: #b45309; background: #fffbeb; border: 1px solid #fde68a; padding: 3px 10px; border-radius: 12px; display: inline-flex; align-items: center; gap: 4px;">
                                                     <i class="fa-solid fa-clock"></i> Pending
@@ -12386,20 +12464,22 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                             <?php endif; ?>
                                         </td>
                                         <td style="padding: 16px 20px; text-align: right;">
-                                            <button onclick="openProcessPaymentModal(<?php echo htmlspecialchars(json_encode([
-                                                'username'   => $st['username'] ?? '',
-                                                'full_name'  => $st['full_name'] ?? '',
-                                                'email'      => $st['email'] ?? '',
-                                                'role'       => $st['role'] ?? 'Staff',
-                                                'base'       => $baseSal,
-                                                'allowances' => $allowVal,
-                                                'deductions' => $deducVal,
-                                                'period'     => $selectedPeriodStr,
-                                                'month'      => $selectedMonth,
-                                                'year'       => $selectedYear
-                                            ])); ?>)" class="btn-save-primary" style="padding: 7px 14px; font-size: 0.78rem; font-weight: 700; border-radius: 8px; display: inline-flex; align-items: center; gap: 5px; cursor: pointer; text-decoration: none;">
-                                                <i class="fa-solid fa-money-bill-wave"></i> <?php echo $hasDisb ? 'Re-Process' : 'Process Payment'; ?>
-                                            </button>
+                                            <div style="display: flex; gap: 6px; justify-content: flex-end; align-items: center;">
+                                                <button onclick="openProcessPaymentModal(<?php echo htmlspecialchars(json_encode([
+                                                    'username'   => $st['username'] ?? '',
+                                                    'full_name'  => $st['full_name'] ?? '',
+                                                    'email'      => $st['email'] ?? '',
+                                                    'role'       => $st['role'] ?? 'Staff',
+                                                    'base'       => $baseSal,
+                                                    'allowances' => $allowVal,
+                                                    'deductions' => $deducVal,
+                                                    'period'     => $selectedPeriodStr,
+                                                    'month'      => $selectedMonth,
+                                                    'year'       => $selectedYear
+                                                ])); ?>)" class="btn-save-primary" style="padding: 7px 14px; font-size: 0.78rem; font-weight: 700; border-radius: 8px; display: inline-flex; align-items: center; gap: 5px; cursor: pointer; text-decoration: none; <?php echo $hasDisb ? 'background: #ffffff; color: #0f172a; border: 1px solid #cbd5e1;' : 'background: #dc2626; border-color: #dc2626; color: #ffffff;'; ?>">
+                                                    <i class="fa-solid fa-money-bill-wave"></i> <?php echo $hasDisb ? 'Re-Process' : 'Process Payment'; ?>
+                                                </button>
+                                            </div>
                                         </td>
                                     </tr>
                                 <?php endforeach; ?>

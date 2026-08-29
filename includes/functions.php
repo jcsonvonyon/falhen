@@ -86,14 +86,16 @@ function sendJSONResponse($success, $message, $extra = []) {
  * Log Database Audit Event
  */
 function logDatabaseAudit($actorUsername, $actionType, $entityType, $entityId = null, $details = '') {
-    $pdo = getDBConnection();
-    $ip = $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1';
-    if ($pdo) {
-        try {
-            $stmt = $pdo->prepare("INSERT INTO `audit_logs` (`actor_username`, `action_type`, `entity_type`, `entity_id`, `details`, `ip_address`) VALUES (?, ?, ?, ?, ?, ?)");
-            $stmt->execute([$actorUsername, $actionType, $entityType, (string)$entityId, (string)$details, $ip]);
-            return true;
-        } catch (Exception $e) {}
+    if (function_exists('getDBConnection')) {
+        $pdo = getDBConnection();
+        $ip = $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1';
+        if ($pdo) {
+            try {
+                $stmt = $pdo->prepare("INSERT INTO `audit_logs` (`actor_username`, `action_type`, `entity_type`, `entity_id`, `details`, `ip_address`) VALUES (?, ?, ?, ?, ?, ?)");
+                $stmt->execute([$actorUsername, $actionType, $entityType, (string)$entityId, (string)$details, $ip]);
+                return true;
+            } catch (Exception $e) {}
+        }
     }
     return false;
 }
@@ -4075,11 +4077,13 @@ function processEmployeePayment($data) {
     $settings = getSiteSettings();
     $items = $settings['payroll_disbursements'] ?? getPayrollDisbursements();
 
-    $newId = count($items) + 1;
     $payPeriod = trim($data['pay_period'] ?? date('F Y'));
-    $periodMonth = trim($data['period_month'] ?? date('m'));
-    $periodYear = trim($data['period_year'] ?? date('Y'));
+    $periodMonth = sprintf('%02d', (int)($data['period_month'] ?? date('m')));
+    $periodYear = (string)($data['period_year'] ?? date('Y'));
+    $uName = strtolower(trim($data['username'] ?? ''));
+    $uEmail = strtolower(trim($data['email'] ?? ''));
 
+    $newId = count($items) + 1;
     $disbursement = [
         'id'            => $newId,
         'username'      => trim($data['username'] ?? ''),
@@ -4096,16 +4100,44 @@ function processEmployeePayment($data) {
         'currency'      => trim($data['currency'] ?? 'NGN'),
         'status'        => trim($data['status'] ?? 'Paid'),
         'payment_method'=> trim($data['payment_method'] ?? 'Direct Bank Transfer'),
-        'tx_ref'        => trim($data['tx_ref'] ?? ('FAL-PAY-' . date('Ym') . '-' . sprintf('%03d', $newId))),
+        'tx_ref'        => trim($data['tx_ref'] ?? ('FAL-PAY-' . $periodYear . $periodMonth . '-' . sprintf('%03d', $newId))),
         'note'          => trim($data['note'] ?? ''),
         'processed_at'  => date('Y-m-d H:i:s'),
         'processed_by'  => trim($data['processed_by'] ?? 'HR Manager')
     ];
 
-    // Prepend new disbursement record
-    array_unshift($items, $disbursement);
+    // Check if an existing disbursement exists for this staff member in this period
+    $updatedExisting = false;
+    foreach ($items as &$it) {
+        $itUser = strtolower($it['username'] ?? '');
+        $itEmail = strtolower($it['email'] ?? '');
+        $itMonth = sprintf('%02d', (int)($it['period_month'] ?? '0'));
+        $itYear = (string)($it['period_year'] ?? '');
+
+        if (($itUser === $uName || $itEmail === $uEmail) && $itMonth === $periodMonth && $itYear === $periodYear) {
+            $disbursement['id'] = $it['id'] ?? $newId;
+            $it = $disbursement;
+            $updatedExisting = true;
+            break;
+        }
+    }
+    unset($it);
+
+    if (!$updatedExisting) {
+        array_unshift($items, $disbursement);
+    }
+
     $settings['payroll_disbursements'] = array_values($items);
     saveSiteSettings($settings);
+
+    // Audit log
+    logDatabaseAudit(
+        $disbursement['processed_by'],
+        'payroll_disbursement',
+        'payroll',
+        $disbursement['tx_ref'],
+        "Salary payment of ₦" . number_format($disbursement['net_pay'], 2) . " processed for {$disbursement['full_name']} ({$disbursement['pay_period']}) via {$disbursement['payment_method']}."
+    );
 
     return $disbursement;
 }

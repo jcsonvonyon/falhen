@@ -1551,6 +1551,27 @@
     ],
     "payroll_disbursements": [
         {
+            "id": 4,
+            "username": "kingsley.falonipe",
+            "full_name": "Kingsley Falonipe",
+            "email": "kingsley.falonipe@falhenmedia.com",
+            "role": "Production Manager",
+            "pay_period": "August 2026",
+            "period_month": "08",
+            "period_year": "2026",
+            "base_salary": 250000,
+            "allowances": 20000,
+            "deductions": 10000,
+            "net_pay": 260000,
+            "currency": "NGN",
+            "status": "Paid",
+            "payment_method": "Raenest Global Payout",
+            "tx_ref": "RAE-PAY-202608-892",
+            "note": "",
+            "processed_at": "2026-08-29 13:04:08",
+            "processed_by": "Super Admin"
+        },
+        {
             "id": 1,
             "username": "mojisola.emjay",
             "full_name": "Mojisola Emjay",
