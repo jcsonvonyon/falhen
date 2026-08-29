@@ -2955,6 +2955,68 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
             transform: translateY(-1px);
         }
 
+        /* Unified Header Action Buttons */
+        .btn-header-action {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 7px;
+            padding: 8px 14px;
+            font-size: 0.84rem;
+            font-weight: 600;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+            background: #ffffff;
+            color: #334155;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.15s ease;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+            white-space: nowrap;
+        }
+
+        .btn-header-action:hover {
+            background: #f8fafc;
+            border-color: #cbd5e1;
+            color: #0f172a;
+            transform: translateY(-1px);
+        }
+
+        .btn-header-action.danger {
+            color: #64748b;
+        }
+
+        .btn-header-action.danger:hover {
+            background: #fef2f2;
+            border-color: #fca5a5;
+            color: #dc2626;
+        }
+
+        .btn-header-action.primary-dark {
+            background: #0f172a;
+            color: #ffffff;
+            border-color: #0f172a;
+        }
+
+        .btn-header-action.primary-dark:hover {
+            background: #1e293b;
+            color: #ffffff;
+        }
+
+        .btn-header-action.primary-brand {
+            background: #dc2626;
+            color: #ffffff;
+            border-color: #dc2626;
+            font-weight: 700;
+            box-shadow: 0 4px 12px rgba(220, 38, 38, 0.25);
+        }
+
+        .btn-header-action.primary-brand:hover {
+            background: #b91c1c;
+            border-color: #b91c1c;
+            color: #ffffff;
+        }
+
         /* Two-Column Form Layout Grid */
         .form-grid-two {
             display: grid;
@@ -4470,22 +4532,19 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                             </p>
                         </div>
                         <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
-                            <button type="button" onclick="syncBtsGallery()" class="btn-live-site" style="color: #ef4444; border-color: rgba(239,68,68,0.3); background: rgba(239,68,68,0.05); font-size: 0.82rem;" title="Sync gallery order">
-                                <i class="fa-solid fa-rotate"></i> Sync
+                            <button type="button" onclick="openDriveUrlsModal()" class="btn-header-action" title="Import Google Drive image links">
+                                <i class="fa-brands fa-google-drive" style="color: #16a34a;"></i> Drive URLs
                             </button>
-                            <button type="button" onclick="openDriveFolderModal()" class="btn-live-site" style="color: #16a34a; border-color: rgba(22,163,74,0.3); background: rgba(22,163,74,0.05); font-size: 0.82rem;" title="Import from Google Drive Folder">
-                                <i class="fa-brands fa-google-drive"></i> Drive Folder
+                            <button type="button" onclick="syncBtsGallery()" class="btn-header-action" title="Re-index and sync gallery order">
+                                <i class="fa-solid fa-arrows-rotate"></i> Sync
                             </button>
-                            <button type="button" onclick="openDriveUrlsModal()" class="btn-live-site" style="color: #16a34a; border-color: rgba(22,163,74,0.3); background: rgba(22,163,74,0.05); font-size: 0.82rem;" title="Paste multiple image/Drive links">
-                                <i class="fa-solid fa-link"></i> Drive URLs
-                            </button>
-                            <button type="button" onclick="openAddBtsCard()" class="btn-save-primary" style="font-size: 0.82rem; padding: 8px 14px;">
+                            <button type="button" onclick="openAddBtsCard()" class="btn-header-action primary-dark">
                                 <i class="fa-solid fa-plus"></i> Add Photo
                             </button>
-                            <button type="button" onclick="clearAllBtsPhotos()" class="btn-live-site" style="color: var(--text-muted); font-size: 0.82rem;">
+                            <button type="button" onclick="clearAllBtsPhotos()" class="btn-header-action danger" title="Clear all photos">
                                 <i class="fa-regular fa-trash-can"></i> Clear All
                             </button>
-                            <button type="submit" class="btn-save-primary" style="font-size: 0.82rem; padding: 8px 16px; background-color: var(--accent-red);">
+                            <button type="submit" class="btn-header-action primary-brand">
                                 <i class="fa-solid fa-floppy-disk"></i> Save Changes
                             </button>
                         </div>
@@ -4748,11 +4807,11 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                 <span style="letter-spacing: -1px; font-weight: 700; color: #cbd5e1;">::</span> Drag the handle on any card to reorder
                             </p>
                         </div>
-                        <div style="display: flex; gap: 12px; align-items: center;">
-                            <a href="/" target="_blank" class="btn-live-site" style="text-decoration: none; color: #9333ea; border-color: #d8b4fe; background: #faf5ff; font-weight: 600; font-size: 0.85rem; padding: 8px 16px; border-radius: 8px; display: inline-flex; align-items: center; gap: 6px;">
-                                <i class="fa-solid fa-arrow-up-right-from-square" style="font-size: 0.8rem;"></i> Preview Site
+                        <div style="display: flex; gap: 10px; align-items: center;">
+                            <a href="/index.php#featured" target="_blank" class="btn-header-action" title="View live section on site">
+                                <i class="fa-solid fa-arrow-up-right-from-square"></i> Preview Site
                             </a>
-                            <a href="index.php?section=featured&sub_action=add" class="btn-save-primary" style="text-decoration: none; background-color: #dc2626; font-weight: 700; font-size: 0.88rem; padding: 9px 18px; border-radius: 8px; box-shadow: 0 4px 14px rgba(220,38,38,0.3); display: inline-flex; align-items: center; gap: 6px;">
+                            <a href="index.php?section=featured&sub_action=add" class="btn-header-action primary-brand">
                                 <i class="fa-solid fa-plus"></i> Add Video
                             </a>
                         </div>
