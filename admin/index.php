@@ -3272,6 +3272,11 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
             .top-header .breadcrumb {
                 gap: 8px;
                 font-size: 0.82rem;
+                flex-wrap: nowrap !important;
+            }
+
+            .breadcrumb-text {
+                display: none !important;
             }
 
             .topbar-primary-nav {
@@ -3709,7 +3714,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                 ];
                 $displayBreadcrumb = $sectionTitles[$activeSection] ?? ucwords(str_replace('_', ' ', $activeSection));
                 ?>
-                <div>Admin &rsaquo; <strong><?php echo htmlspecialchars($displayBreadcrumb); ?></strong></div>
+                <div class="breadcrumb-text">Admin &rsaquo; <strong><?php echo htmlspecialchars($displayBreadcrumb); ?></strong></div>
 
                 <!-- 4 PRIMARY TOPBAR MENU ITEMS FOR STAFF PORTAL -->
                 <?php 
