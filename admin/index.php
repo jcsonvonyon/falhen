@@ -3203,7 +3203,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
             padding: 6px 8px;
             border-radius: 8px;
             margin-left: auto;
-            display: inline-flex;
+            display: none;
             align-items: center;
             justify-content: center;
             transition: all 0.15s;
@@ -3233,6 +3233,10 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
         @media (max-width: 992px) {
             .mobile-nav-toggle {
                 display: inline-flex;
+            }
+
+            .sidebar-close-btn {
+                display: inline-flex !important;
             }
 
             .sidebar-header-bar {
