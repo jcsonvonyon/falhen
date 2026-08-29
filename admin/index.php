@@ -218,7 +218,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if ($action === 'admin_approve_onboarding_task') {
-        if (!isAdminUser($currentRole, $currentEmail, $currentUsername)) {
+        if (!isAdminUser($currentRole, $currentEmail, $currentUsername) && !isHRManager($currentRole)) {
             header('Location: /admin/index.php?section=onboarding&denied=1');
             exit;
         }
@@ -228,16 +228,65 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $newStatus = trim($_POST['new_status'] ?? 'Approved');
         $reason = trim(strip_tags($_POST['rejection_reason'] ?? ''));
 
-        $extraData = [];
+        $staffObj = getStaffAccountByUsername($targetUser);
+        $canonicalTarget = !empty($staffObj['username']) ? $staffObj['username'] : $targetUser;
+
+        $approver = $_SESSION['admin_full_name'] ?? $_SESSION['admin_username'] ?? 'HR & Admin Management';
+
+        $extraData = [
+            'approved_by' => $approver,
+            'approved_at' => date('Y-m-d H:i:s')
+        ];
         if ($newStatus === 'Rejected') {
             $extraData['rejection_reason'] = $reason;
+            $extraData['rejected_by'] = $approver;
+            $extraData['rejected_at'] = date('Y-m-d H:i:s');
         }
 
-        updateUserOnboardingTaskStatus($targetUser, $taskKey, $newStatus, $extraData);
+        updateUserOnboardingTaskStatus($canonicalTarget, $taskKey, $newStatus, $extraData);
+
+        // If task is bank_details and approved, sync to staff repository profile
+        if ($taskKey === 'bank_details' && $newStatus === 'Approved') {
+            $onbData = getUserOnboardingData($canonicalTarget);
+            $bd = $onbData['bank_details'] ?? [];
+            if (!empty($bd['account_number'])) {
+                saveStaffAccountByUsername($canonicalTarget, [
+                    'bank_name'      => $bd['bank_name'] ?? 'Zenith Bank PLC',
+                    'account_number' => $bd['account_number'] ?? '',
+                    'account_name'   => $bd['account_name'] ?? ''
+                ]);
+            }
+        }
 
         $taskLabel = str_replace(['_', '1', '2'], [' ', ' 1', ' 2'], ucfirst($taskKey));
-        $_SESSION['saved_message'] = 'Onboarding task "' . $taskLabel . '" updated to ' . $newStatus . ' for @' . $targetUser . '!';
-        header('Location: /admin/index.php?section=onboarding&target_user=' . urlencode($targetUser) . '&saved=1');
+        $_SESSION['saved_message'] = 'Onboarding task "' . $taskLabel . '" updated to ' . $newStatus . ' for ' . ($staffObj['full_name'] ?? ('@' . $canonicalTarget)) . '!';
+        header('Location: /admin/index.php?section=onboarding&target_user=' . urlencode($canonicalTarget) . '&saved=1');
+        exit;
+    }
+
+    if ($action === 'admin_approve_all_onboarding_tasks') {
+        if (!isAdminUser($currentRole, $currentEmail, $currentUsername) && !isHRManager($currentRole)) {
+            header('Location: /admin/index.php?section=onboarding&denied=1');
+            exit;
+        }
+
+        $targetUser = trim($_POST['target_user'] ?? '');
+        $staffObj = getStaffAccountByUsername($targetUser);
+        $canonicalTarget = !empty($staffObj['username']) ? $staffObj['username'] : $targetUser;
+
+        $approver = $_SESSION['admin_full_name'] ?? $_SESSION['admin_username'] ?? 'HR & Admin Management';
+        $now = date('Y-m-d H:i:s');
+
+        $allTasks = ['bank_details', 'offer_letter', 'employment_agreement', 'reference_1', 'reference_2', 'sop', 'staff_handbook', 'id_verification'];
+        foreach ($allTasks as $tKey) {
+            updateUserOnboardingTaskStatus($canonicalTarget, $tKey, 'Approved', [
+                'approved_by' => $approver,
+                'approved_at' => $now
+            ]);
+        }
+
+        $_SESSION['saved_message'] = 'All 8 onboarding tasks verified and approved for ' . ($staffObj['full_name'] ?? ('@' . $canonicalTarget)) . ' by ' . $approver . '!';
+        header('Location: /admin/index.php?section=onboarding&target_user=' . urlencode($canonicalTarget) . '&saved=1');
         exit;
     }
 
@@ -398,23 +447,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if ($action === 'sign_employment_agreement') {
-        $username = $_SESSION['admin_username'] ?? $adminProfile['username'] ?? 'staff';
+        $targetUser = trim($_POST['target_user'] ?? '');
+        if (empty($targetUser)) {
+            $targetUser = $_SESSION['admin_username'] ?? $adminProfile['username'] ?? $username;
+        }
+        $staffObj = getStaffAccountByUsername($targetUser);
+        $canonicalTarget = !empty($staffObj['username']) ? $staffObj['username'] : $targetUser;
+
         $sigData = trim($_POST['signature_data'] ?? '');
 
         if (empty($sigData) || strlen($sigData) < 100) {
             $_SESSION['saved_message'] = 'Digital Signature Required: Please draw your signature on the signature pad before submitting the Employment Agreement.';
-            header('Location: /admin/index.php?section=onboarding');
+            header('Location: /admin/index.php?section=onboarding&target_user=' . urlencode($canonicalTarget));
             exit;
         }
 
-        saveUserOnboardingSection($username, 'employment_agreement', [
+        saveUserOnboardingSection($canonicalTarget, 'employment_agreement', [
             'status' => 'Submitted',
             'signed' => true,
             'signed_at' => date('Y-m-d H:i:s'),
             'signature_data' => $sigData
         ]);
-        $_SESSION['saved_message'] = 'Employment Agreement digitally signed and submitted to HR for verification!';
-        header('Location: /admin/index.php?section=onboarding&saved=1');
+        $_SESSION['saved_message'] = 'Employment Agreement digitally signed and submitted to HR & Admin for verification!';
+        header('Location: /admin/index.php?section=onboarding&target_user=' . urlencode($canonicalTarget) . '&saved=1');
         exit;
     }
 
@@ -895,12 +950,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
     
     if ($action === 'save_onboarding_bank') {
-        $username = $_SESSION['admin_username'] ?? $adminProfile['username'] ?? 'staff';
+        $targetUser = trim($_POST['target_user'] ?? '');
+        if (empty($targetUser)) {
+            $targetUser = $_SESSION['admin_username'] ?? $adminProfile['username'] ?? $username;
+        }
+        $staffObj = getStaffAccountByUsername($targetUser);
+        $canonicalTarget = !empty($staffObj['username']) ? $staffObj['username'] : $targetUser;
+
         $accNo = trim(strip_tags($_POST['account_number'] ?? ''));
         $bankName = trim(strip_tags($_POST['bank_name'] ?? ''));
         $accName = trim(strip_tags($_POST['account_name'] ?? ''));
 
-        saveUserOnboardingSection($username, 'bank_details', [
+        saveUserOnboardingSection($canonicalTarget, 'bank_details', [
             'status' => 'Submitted',
             'account_number' => $accNo,
             'bank_name' => $bankName,
@@ -908,31 +969,43 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         ]);
 
         $_SESSION['saved_message'] = 'Bank Details submitted successfully for payroll processing!';
-        header('Location: /admin/index.php?section=onboarding&saved=1');
+        header('Location: /admin/index.php?section=onboarding&target_user=' . urlencode($canonicalTarget) . '&saved=1');
         exit;
     }
 
     if ($action === 'accept_offer') {
-        $username = $_SESSION['admin_username'] ?? $adminProfile['username'] ?? 'staff';
+        $targetUser = trim($_POST['target_user'] ?? '');
+        if (empty($targetUser)) {
+            $targetUser = $_SESSION['admin_username'] ?? $adminProfile['username'] ?? $username;
+        }
+        $staffObj = getStaffAccountByUsername($targetUser);
+        $canonicalTarget = !empty($staffObj['username']) ? $staffObj['username'] : $targetUser;
+
         $sigData = trim($_POST['signature_data'] ?? '');
-        saveUserOnboardingSection($username, 'offer_letter', [
+        saveUserOnboardingSection($canonicalTarget, 'offer_letter', [
             'status' => 'Accepted',
             'accepted' => true,
             'accepted_at' => date('Y-m-d H:i:s'),
             'signature_data' => $sigData
         ]);
         $_SESSION['saved_message'] = 'Offer Letter digitally signed and accepted successfully!';
-        header('Location: /admin/index.php?section=onboarding&saved=1');
+        header('Location: /admin/index.php?section=onboarding&target_user=' . urlencode($canonicalTarget) . '&saved=1');
         exit;
     }
 
     if ($action === 'save_onboarding_ref1') {
-        $username = $_SESSION['admin_username'] ?? $adminProfile['username'] ?? 'staff';
+        $targetUser = trim($_POST['target_user'] ?? '');
+        if (empty($targetUser)) {
+            $targetUser = $_SESSION['admin_username'] ?? $adminProfile['username'] ?? $username;
+        }
+        $staffObj = getStaffAccountByUsername($targetUser);
+        $canonicalTarget = !empty($staffObj['username']) ? $staffObj['username'] : $targetUser;
+
         $refName = trim(strip_tags($_POST['ref_name'] ?? ''));
         $refContact = trim(strip_tags($_POST['ref_contact'] ?? ''));
         $relationship = trim(strip_tags($_POST['relationship'] ?? ''));
 
-        saveUserOnboardingSection($username, 'reference_1', [
+        saveUserOnboardingSection($canonicalTarget, 'reference_1', [
             'status' => 'Submitted',
             'ref_name' => $refName,
             'ref_contact' => $refContact,
@@ -940,17 +1013,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         ]);
 
         $_SESSION['saved_message'] = 'Reference 1 details submitted successfully!';
-        header('Location: /admin/index.php?section=onboarding&saved=1');
+        header('Location: /admin/index.php?section=onboarding&target_user=' . urlencode($canonicalTarget) . '&saved=1');
         exit;
     }
 
     if ($action === 'save_onboarding_ref2') {
-        $username = $_SESSION['admin_username'] ?? $adminProfile['username'] ?? 'staff';
+        $targetUser = trim($_POST['target_user'] ?? '');
+        if (empty($targetUser)) {
+            $targetUser = $_SESSION['admin_username'] ?? $adminProfile['username'] ?? $username;
+        }
+        $staffObj = getStaffAccountByUsername($targetUser);
+        $canonicalTarget = !empty($staffObj['username']) ? $staffObj['username'] : $targetUser;
+
         $refName = trim(strip_tags($_POST['ref_name'] ?? ''));
         $refContact = trim(strip_tags($_POST['ref_contact'] ?? ''));
         $relationship = trim(strip_tags($_POST['relationship'] ?? ''));
 
-        saveUserOnboardingSection($username, 'reference_2', [
+        saveUserOnboardingSection($canonicalTarget, 'reference_2', [
             'status' => 'Submitted',
             'ref_name' => $refName,
             'ref_contact' => $refContact,
@@ -958,50 +1037,68 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         ]);
 
         $_SESSION['saved_message'] = 'Reference 2 details submitted successfully!';
-        header('Location: /admin/index.php?section=onboarding&saved=1');
+        header('Location: /admin/index.php?section=onboarding&target_user=' . urlencode($canonicalTarget) . '&saved=1');
         exit;
     }
 
     if ($action === 'acknowledge_sop') {
-        $username = $_SESSION['admin_username'] ?? $adminProfile['username'] ?? 'staff';
+        $targetUser = trim($_POST['target_user'] ?? '');
+        if (empty($targetUser)) {
+            $targetUser = $_SESSION['admin_username'] ?? $adminProfile['username'] ?? $username;
+        }
+        $staffObj = getStaffAccountByUsername($targetUser);
+        $canonicalTarget = !empty($staffObj['username']) ? $staffObj['username'] : $targetUser;
+
         $sigData = trim($_POST['signature_data'] ?? '');
         if (empty($sigData)) {
             $_SESSION['saved_error'] = 'Digital signature is required. Please draw your signature on the signature pad before acknowledging the SOP.';
-            header('Location: /admin/index.php?section=onboarding&sop_error=missing_signature');
+            header('Location: /admin/index.php?section=onboarding&target_user=' . urlencode($canonicalTarget) . '&sop_error=missing_signature');
             exit;
         }
-        saveUserOnboardingSection($username, 'sop', [
+        saveUserOnboardingSection($canonicalTarget, 'sop', [
             'status' => 'Submitted',
             'acknowledged' => true,
             'acknowledged_at' => date('Y-m-d H:i:s'),
             'signature_data' => $sigData
         ]);
-        $_SESSION['saved_message'] = 'Studio SOP acknowledged and submitted to HR for verification!';
-        header('Location: /admin/index.php?section=onboarding&saved=1');
+        $_SESSION['saved_message'] = 'Studio SOP acknowledged and submitted to HR & Admin for verification!';
+        header('Location: /admin/index.php?section=onboarding&target_user=' . urlencode($canonicalTarget) . '&saved=1');
         exit;
     }
 
     if ($action === 'acknowledge_handbook') {
-        $username = $_SESSION['admin_username'] ?? $adminProfile['username'] ?? 'staff';
+        $targetUser = trim($_POST['target_user'] ?? '');
+        if (empty($targetUser)) {
+            $targetUser = $_SESSION['admin_username'] ?? $adminProfile['username'] ?? $username;
+        }
+        $staffObj = getStaffAccountByUsername($targetUser);
+        $canonicalTarget = !empty($staffObj['username']) ? $staffObj['username'] : $targetUser;
+
         $sigData = trim($_POST['signature_data'] ?? '');
         if (empty($sigData)) {
             $_SESSION['saved_error'] = 'Digital signature is required. Please draw your signature on the signature pad before acknowledging the Staff Handbook.';
-            header('Location: /admin/index.php?section=onboarding&handbook_error=missing_signature');
+            header('Location: /admin/index.php?section=onboarding&target_user=' . urlencode($canonicalTarget) . '&handbook_error=missing_signature');
             exit;
         }
-        saveUserOnboardingSection($username, 'staff_handbook', [
+        saveUserOnboardingSection($canonicalTarget, 'staff_handbook', [
             'status' => 'Submitted',
             'acknowledged' => true,
             'acknowledged_at' => date('Y-m-d H:i:s'),
             'signature_data' => $sigData
         ]);
-        $_SESSION['saved_message'] = 'Staff Handbook acknowledged and submitted to HR for verification!';
-        header('Location: /admin/index.php?section=onboarding&saved=1');
+        $_SESSION['saved_message'] = 'Staff Handbook acknowledged and submitted to HR & Admin for verification!';
+        header('Location: /admin/index.php?section=onboarding&target_user=' . urlencode($canonicalTarget) . '&saved=1');
         exit;
     }
 
     if ($action === 'save_onboarding_id') {
-        $username = $_SESSION['admin_username'] ?? $adminProfile['username'] ?? 'staff';
+        $targetUser = trim($_POST['target_user'] ?? '');
+        if (empty($targetUser)) {
+            $targetUser = $_SESSION['admin_username'] ?? $adminProfile['username'] ?? $username;
+        }
+        $staffObj = getStaffAccountByUsername($targetUser);
+        $canonicalTarget = !empty($staffObj['username']) ? $staffObj['username'] : $targetUser;
+
         $docUrl = trim(strip_tags($_POST['file_url'] ?? ''));
 
         if (!empty($_FILES['id_document_file']['tmp_name'])) {
@@ -1018,16 +1115,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         if (empty($docUrl)) {
             $_SESSION['saved_message'] = 'Please choose an ID document file to upload or enter a URL.';
-            header('Location: /admin/index.php?section=onboarding');
+            header('Location: /admin/index.php?section=onboarding&target_user=' . urlencode($canonicalTarget));
             exit;
         }
 
-        saveUserOnboardingSection($username, 'id_verification', [
+        saveUserOnboardingSection($canonicalTarget, 'id_verification', [
             'status' => 'Submitted',
             'file_url' => $docUrl
         ]);
         $_SESSION['saved_message'] = 'ID / Tax Verification document uploaded and securely stored on Cloudinary!';
-        header('Location: /admin/index.php?section=onboarding&saved=1');
+        header('Location: /admin/index.php?section=onboarding&target_user=' . urlencode($canonicalTarget) . '&saved=1');
         exit;
     }
     
@@ -8507,16 +8604,23 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
             <?php elseif ($activeSection === 'onboarding'): ?>
                 <!-- SECTION: ONBOARDING -->
                 <?php 
-                $isHRorAdmin = isAdminUser($userRole, $userEmail, $username);
-                $targetUsername = trim($_GET['target_user'] ?? $username);
+                $isHRorAdmin = isAdminUser($userRole, $userEmail, $username) || isHRManager($userRole);
+                $targetParam = trim($_GET['target_user'] ?? $username);
                 
-                // If HR/Admin, allow managing any staff member's onboarding profile
-                $activeOnboardingUser = $isHRorAdmin ? $targetUsername : $username;
-                $isOwnProfile = (strtolower($username) === strtolower($activeOnboardingUser));
+                // Resolve target user object and canonical username
+                $activeUserObj = getStaffAccountByUsername($targetParam);
+                if (!$activeUserObj && !empty($targetParam)) {
+                    $activeUserObj = ['username' => $targetParam, 'full_name' => ucwords(str_replace('.', ' ', $targetParam)), 'role' => 'Staff'];
+                }
+                $activeOnboardingUser = !empty($activeUserObj['username']) ? $activeUserObj['username'] : ($isHRorAdmin ? $targetParam : $username);
+                
+                // Check if the current logged-in user is viewing their own personal profile
+                $currUserObj = getStaffAccountByUsername($username);
+                $currCanonical = !empty($currUserObj['username']) ? strtolower($currUserObj['username']) : strtolower($username);
+                $isOwnProfile = ($currCanonical === strtolower($activeOnboardingUser) || strtolower($userEmail) === strtolower($activeUserObj['email'] ?? ''));
 
                 $onboardingData = getUserOnboardingData($activeOnboardingUser);
                 $onboardingProgress = getOnboardingProgress($activeOnboardingUser);
-                $activeUserObj = getStaffAccountByUsername($activeOnboardingUser);
                 $userFullName = $activeUserObj['full_name'] ?? ucwords(str_replace('.', ' ', $activeOnboardingUser));
                 $allStaffSummary = $isHRorAdmin ? getAllStaffOnboardingSummary() : [];
                 ?>
@@ -8542,7 +8646,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                     <span style="background: #dc2626; color: #ffffff; font-weight: 800; font-size: 0.75rem; padding: 3px 10px; border-radius: 12px; text-transform: uppercase;">HR & Admin Console</span>
                                     <h2 style="font-size: 1.35rem; font-weight: 800; color: #0f172a; margin: 0;">Onboarding Management</h2>
                                 </div>
-                                <p style="font-size: 0.84rem; color: #64748b; margin: 4px 0 0 0;">Administer staff onboarding activities, verify bank details, issue offer letters & employment agreements.</p>
+                                <p style="font-size: 0.84rem; color: #64748b; margin: 4px 0 0 0;">Administer staff onboarding activities, verify bank details, issue offer letters & employment agreements with dual-control governance.</p>
                             </div>
 
                             <!-- STAFF SELECTOR FORM -->
@@ -8551,8 +8655,8 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                 <label style="font-size: 0.82rem; font-weight: 700; color: #475569;">Managing Profile:</label>
                                 <select name="target_user" onchange="this.form.submit()" style="padding: 8px 14px; font-size: 0.84rem; font-weight: 700; border: 1px solid #cbd5e1; border-radius: 8px; background: #ffffff; color: #0f172a;">
                                     <?php foreach ($allStaffSummary as $stSum): ?>
-                                        <option value="<?php echo htmlspecialchars($stSum['username']); ?>" <?php echo ($activeOnboardingUser === $stSum['username']) ? 'selected' : ''; ?>>
-                                            <?php echo htmlspecialchars($stSum['full_name']); ?> &bull; <?php echo $stSum['percent']; ?>%
+                                        <option value="<?php echo htmlspecialchars($stSum['username']); ?>" <?php echo (strtolower($activeOnboardingUser) === strtolower($stSum['username'])) ? 'selected' : ''; ?>>
+                                            <?php echo htmlspecialchars($stSum['full_name']); ?> &bull; <?php echo $stSum['percent']; ?>% <?php echo ($currCanonical === strtolower($stSum['username'])) ? '(You)' : ''; ?>
                                         </option>
                                     <?php endforeach; ?>
                                 </select>
@@ -8564,7 +8668,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px;">
                             <?php foreach ($allStaffSummary as $stSum): ?>
                                 <?php 
-                                $isActiveUser = ($activeOnboardingUser === $stSum['username']);
+                                $isActiveUser = (strtolower($activeOnboardingUser) === strtolower($stSum['username']));
                                 $is100Percent = ($stSum['percent'] >= 100);
 
                                 if ($is100Percent) {
@@ -8589,12 +8693,43 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                 ?>
                                 <a href="/admin/index.php?section=onboarding&target_user=<?php echo urlencode($stSum['username']); ?>" style="display: block; padding: 12px 14px; background: <?php echo $cardBg; ?>; border: 2px solid <?php echo $cardBorder; ?>; border-radius: 10px; text-decoration: none; transition: all 0.2s ease;">
                                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-                                        <div style="font-weight: 800; font-size: 0.86rem; color: #0f172a;"><?php echo htmlspecialchars($stSum['full_name']); ?></div>
+                                        <div style="font-weight: 800; font-size: 0.86rem; color: #0f172a;"><?php echo htmlspecialchars($stSum['full_name']); ?> <?php echo ($currCanonical === strtolower($stSum['username'])) ? '<span style="font-size: 0.72rem; color: #2563eb;">(You)</span>' : ''; ?></div>
                                         <span style="font-size: 0.72rem; font-weight: 800; color: <?php echo $badgeColor; ?>; background: <?php echo $badgeBg; ?>; padding: 2px 8px; border-radius: 10px; border: 1px solid <?php echo $badgeBorder; ?>;"><?php echo $stSum['percent']; ?>%</span>
                                     </div>
                                     <div style="font-size: 0.75rem; color: #64748b;"><?php echo htmlspecialchars($stSum['role']); ?> &bull; <?php echo $stSum['completed']; ?>/<?php echo $stSum['total']; ?> Tasks</div>
                                 </a>
                             <?php endforeach; ?>
+                        </div>
+                    </div>
+                <?php endif; ?>
+
+                <!-- DUAL CONTROL ACTION NOTIFICATION BANNER -->
+                <?php if ($isHRorAdmin && !$isOwnProfile && $onboardingProgress['completed'] < 8): ?>
+                    <div style="background: #ffffff; border: 1px solid #cbd5e1; border-left: 4px solid #16a34a; padding: 16px 20px; border-radius: 14px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.02);">
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <div style="width: 40px; height: 40px; border-radius: 10px; background: #f0fdf4; border: 1px solid #bbf7d0; display: flex; align-items: center; justify-content: center; color: #16a34a; font-size: 1.2rem; flex-shrink: 0;">
+                                <i class="fa-solid fa-user-shield"></i>
+                            </div>
+                            <div>
+                                <strong style="color: #0f172a; font-size: 0.92rem; display: block;">Administrative Review & Dual-Control Approval</strong>
+                                <span style="font-size: 0.8rem; color: #64748b;">You are administering the onboarding file for <strong><?php echo htmlspecialchars($userFullName); ?></strong>. You can verify and approve each individual task or fast-approve all tasks below.</span>
+                            </div>
+                        </div>
+                        <form method="POST" action="/admin/index.php?section=onboarding" onsubmit="return confirm('Verify and approve all 8 onboarding tasks for <?php echo htmlspecialchars(addslashes($userFullName)); ?>?')" style="margin: 0;">
+                            <input type="hidden" name="action" value="admin_approve_all_onboarding_tasks">
+                            <input type="hidden" name="target_user" value="<?php echo htmlspecialchars($activeOnboardingUser); ?>">
+                            <button type="submit" class="btn-save-primary" style="background: #16a34a; border-color: #16a34a; padding: 9px 16px; font-size: 0.84rem; font-weight: 800; display: inline-flex; align-items: center; gap: 6px;">
+                                <i class="fa-solid fa-check-double"></i> Fast-Approve All 8 Tasks
+                            </button>
+                        </form>
+                    </div>
+                <?php elseif ($isOwnProfile): ?>
+                    <div style="background: #ffffff; border: 1px solid #cbd5e1; border-left: 4px solid #2563eb; padding: 14px 18px; border-radius: 12px; margin-bottom: 20px; display: flex; align-items: center; gap: 12px;">
+                        <div style="width: 36px; height: 36px; border-radius: 10px; background: #eff6ff; border: 1px solid #bfdbfe; display: flex; align-items: center; justify-content: center; color: #2563eb; font-size: 1.1rem; flex-shrink: 0;">
+                            <i class="fa-solid fa-user-pen"></i>
+                        </div>
+                        <div style="font-size: 0.82rem; color: #334155;">
+                            <strong>Personal Onboarding Checklist:</strong> Complete your candidate checklist tasks below (Bank Details, Employment Agreement, References, SOP &amp; Handbook, ID Upload). Once submitted, your onboarding file will be reviewed and verified by another Super Admin or HR Manager.
                         </div>
                     </div>
                 <?php endif; ?>
@@ -8631,7 +8766,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                     </div>
                 </div>
 
-                <!-- 7 ONBOARDING TASK CARDS GRID (3 CARDS IN A ROW) -->
+                <!-- 8 ONBOARDING TASK CARDS GRID (3 CARDS IN A ROW) -->
                 <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px;">
 
                     <!-- CARD 1: BANK DETAILS -->
@@ -8659,7 +8794,11 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                 </div>
                                 <?php if ($isBankApproved): ?>
                                     <div style="padding: 12px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px; color: #166534; font-weight: 800; font-size: 0.86rem; text-align: center; margin-bottom: 10px;">
-                                        <i class="fa-solid fa-check-circle" style="color: #16a34a;"></i> Bank Details Verified & Approved by HR
+                                        <i class="fa-solid fa-check-circle" style="color: #16a34a;"></i> Bank Details Verified &amp; Approved by HR &amp; Admin
+                                    </div>
+                                <?php elseif ($isOwnProfile): ?>
+                                    <div style="padding: 10px; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; color: #1e40af; font-size: 0.78rem; font-weight: 700; text-align: center; margin-bottom: 10px;">
+                                        <i class="fa-solid fa-user-shield" style="margin-right: 4px;"></i> Awaiting Review &amp; Approval by another Super Admin or HR Manager
                                     </div>
                                 <?php endif; ?>
 
@@ -8667,14 +8806,14 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                     <i class="fa-solid fa-pen-to-square" style="color: #dc2626;"></i> Edit Bank Details
                                 </a>
 
-                                <?php if ($isHRorAdmin && !$isBankApproved): ?>
+                                <?php if ($isHRorAdmin && !$isBankApproved && !$isOwnProfile): ?>
                                     <form method="POST" action="/admin/index.php?section=onboarding" style="margin-top: 10px;">
                                         <input type="hidden" name="action" value="admin_approve_onboarding_task">
                                         <input type="hidden" name="target_user" value="<?php echo htmlspecialchars($activeOnboardingUser); ?>">
                                         <input type="hidden" name="task_key" value="bank_details">
                                         <input type="hidden" name="new_status" value="Approved">
                                         <button type="submit" class="btn-save-primary" style="width: 100%; justify-content: center; background: #16a34a; border-color: #16a34a;">
-                                            <i class="fa-solid fa-check"></i> HR Approve Bank Details
+                                            <i class="fa-solid fa-check"></i> HR / Admin Approve Bank Details
                                         </button>
                                     </form>
                                 <?php endif; ?>
@@ -8682,6 +8821,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                 <?php if ($isOwnProfile || $isEditingBank): ?>
                                     <form method="POST" action="/admin/index.php?section=onboarding" style="display: flex; flex-direction: column; gap: 10px;">
                                         <input type="hidden" name="action" value="save_onboarding_bank">
+                                        <input type="hidden" name="target_user" value="<?php echo htmlspecialchars($activeOnboardingUser); ?>">
                                         <div>
                                             <label style="font-size: 0.76rem; font-weight: 700; color: #475569; display: block; margin-bottom: 3px;">Account Number</label>
                                             <input type="text" name="account_number" value="<?php echo htmlspecialchars($onboardingData['bank_details']['account_number'] ?? ''); ?>" placeholder="Account Number" required style="width: 100%; padding: 10px; font-size: 0.84rem; border: 1px solid #cbd5e1; border-radius: 8px;">
@@ -8737,11 +8877,11 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
 
                             <?php if ($offerIsApproved): ?>
                                 <div style="padding: 12px 14px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px; text-align: center; color: #166534; font-weight: 800; font-size: 0.88rem; margin-bottom: 12px;">
-                                    <i class="fa-solid fa-check-circle" style="color: #16a34a;"></i> Offer Letter Issued & Approved
+                                    <i class="fa-solid fa-check-circle" style="color: #16a34a;"></i> Offer Letter Issued &amp; Approved
                                 </div>
                             <?php elseif ($offerIsAccepted): ?>
                                 <div style="padding: 12px 14px; background: #e0f2fe; border: 1px solid #bae6fd; border-radius: 10px; text-align: center; color: #0369a1; font-weight: 800; font-size: 0.88rem; margin-bottom: 12px;">
-                                    <i class="fa-solid fa-user-check" style="color: #0284c7;"></i> Offer Letter Accepted by Employee
+                                    <i class="fa-solid fa-user-check" style="color: #0284c7;"></i> Offer Letter Accepted &bull; Awaiting Dual Verification
                                 </div>
                             <?php elseif ($offerIsIssued): ?>
                                 <div style="padding: 12px 14px; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 10px; text-align: center; color: #1e40af; font-weight: 800; font-size: 0.88rem; margin-bottom: 12px;">
@@ -8774,12 +8914,13 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                             <?php if ($offerIsIssued && !$offerIsAccepted && !$offerIsApproved && $isOwnProfile): ?>
                                 <form method="POST" action="/admin/index.php?section=onboarding" style="margin: 0;">
                                     <input type="hidden" name="action" value="accept_offer">
+                                    <input type="hidden" name="target_user" value="<?php echo htmlspecialchars($activeOnboardingUser); ?>">
                                     <button type="submit" class="btn-save-primary" style="width: 100%; justify-content: center; background: #2563eb; border-color: #2563eb; font-weight: 800; font-size: 0.84rem;">
                                         <i class="fa-solid fa-check-circle"></i> Accept Offer Letter & Sign
                                     </button>
                                 </form>
                             <?php endif; ?>
-                            <?php if ($isHRorAdmin): ?>
+                            <?php if ($isHRorAdmin && !$isOwnProfile): ?>
                                 <?php if ($offerIsAccepted && !$offerIsApproved): ?>
                                     <form method="POST" action="/admin/index.php?section=onboarding" style="margin: 0;">
                                         <input type="hidden" name="action" value="admin_approve_onboarding_task">
@@ -8787,7 +8928,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                         <input type="hidden" name="task_key" value="offer_letter">
                                         <input type="hidden" name="new_status" value="Approved">
                                         <button type="submit" class="btn-save-primary" style="width: 100%; justify-content: center; background: #16a34a; border-color: #16a34a; font-weight: 800; font-size: 0.82rem;">
-                                            <i class="fa-solid fa-check-double"></i> HR Verify & Approve Offer
+                                            <i class="fa-solid fa-check-double"></i> HR / Admin Verify & Approve Offer
                                         </button>
                                     </form>
                                 <?php endif; ?>
@@ -8821,7 +8962,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                             <?php if ($isAgrRejected): ?>
                                 <div style="padding: 12px; background: #fef2f2; border: 1px solid #fecaca; border-radius: 10px; color: #991b1b; font-size: 0.84rem; margin-bottom: 10px;">
                                     <div style="font-weight: 800; display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
-                                        <i class="fa-solid fa-circle-xmark" style="color: #ef4444;"></i> Signature Rejected by HR
+                                        <i class="fa-solid fa-circle-xmark" style="color: #ef4444;"></i> Signature Rejected by HR &amp; Admin
                                     </div>
                                     <?php if (!empty($agrRejectionReason)): ?>
                                         <div style="font-size: 0.8rem; color: #7f1d1d; line-height: 1.4;">
@@ -8831,11 +8972,11 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                 </div>
                             <?php elseif ($isAgrApproved): ?>
                                 <div style="padding: 12px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px; color: #166534; font-weight: 800; font-size: 0.88rem; margin-bottom: 10px; text-align: center;">
-                                    <i class="fa-solid fa-check-circle" style="color: #16a34a;"></i> Signed Agreement Verified & Approved by HR
+                                    <i class="fa-solid fa-check-circle" style="color: #16a34a;"></i> Signed Agreement Verified &amp; Approved by HR &amp; Admin
                                 </div>
                             <?php elseif ($isAgrSubmitted): ?>
                                 <div style="padding: 12px; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 10px; color: #1e40af; font-size: 0.84rem; font-weight: 700; display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
-                                    <i class="fa-solid fa-file-circle-check" style="color: #2563eb;"></i> Signed & Submitted — Awaiting HR Verification
+                                    <i class="fa-solid fa-file-circle-check" style="color: #2563eb;"></i> Signed &amp; Submitted &bull; Awaiting Dual Verification
                                 </div>
                             <?php else: ?>
                                 <div style="padding: 12px; background: #fffbe6; border: 1px solid #fef08a; border-radius: 10px; color: #b45309; font-size: 0.84rem; font-weight: 700; display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
@@ -8854,7 +8995,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                 </button>
                             <?php endif; ?>
 
-                            <?php if ($isHRorAdmin): ?>
+                            <?php if ($isHRorAdmin && !$isOwnProfile): ?>
                                 <?php if ($isAgrSubmitted): ?>
                                     <div style="display: flex; gap: 8px;">
                                         <form method="POST" action="/admin/index.php?section=onboarding" style="flex: 1; margin: 0;">
@@ -8872,7 +9013,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                     </div>
                                 <?php endif; ?>
                                 <button type="button" class="btn-save-primary" style="width: 100%; justify-content: center; background: #ffffff; color: #0f172a; border: 1px solid #cbd5e1; font-size: 0.82rem;" onclick="openIssueAgreementModal()">
-                                    <i class="fa-solid fa-pen-to-square" style="color: #dc2626;"></i> Edit Agreement
+                                    <i class="fa-solid fa-pen-to-square" style="color: #dc2626;"></i> Edit Agreement Terms
                                 </button>
                             <?php endif; ?>
                         </div>
@@ -8918,35 +9059,40 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                 </div>
                                 <?php if ($isRef1Approved): ?>
                                     <div style="padding: 12px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px; color: #166534; font-weight: 800; font-size: 0.86rem; text-align: center;">
-                                        <i class="fa-solid fa-check-circle" style="color: #16a34a;"></i> Reference Verified & Approved by HR
+                                        <i class="fa-solid fa-check-circle" style="color: #16a34a;"></i> Reference Verified &amp; Approved by HR
                                     </div>
-                                <?php else: ?>
-                                    <div style="display: flex; flex-direction: column; gap: 8px;">
-                                        <a href="/admin/index.php?section=onboarding&edit_ref1=1&target_user=<?php echo urlencode($activeOnboardingUser); ?>" class="btn-save-primary" style="width: 100%; justify-content: center; background: #ffffff; color: #0f172a; border: 1px solid #cbd5e1; text-decoration: none;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='#ffffff'">
-                                            <i class="fa-solid fa-pen-to-square" style="color: #dc2626;"></i> <?php echo $isRef1Rejected ? 'Edit & Resubmit Reference 1' : 'Edit Reference 1'; ?>
-                                        </a>
-                                        <?php if ($isHRorAdmin): ?>
-                                            <div style="display: flex; gap: 8px;">
-                                                <form method="POST" action="/admin/index.php?section=onboarding" style="flex: 1; margin: 0;">
-                                                    <input type="hidden" name="action" value="admin_approve_onboarding_task">
-                                                    <input type="hidden" name="target_user" value="<?php echo htmlspecialchars($activeOnboardingUser); ?>">
-                                                    <input type="hidden" name="task_key" value="reference_1">
-                                                    <input type="hidden" name="new_status" value="Approved">
-                                                    <button type="submit" class="btn-save-primary" style="width: 100%; justify-content: center; background: #16a34a; border-color: #16a34a; padding: 8px 10px; font-size: 0.8rem;">
-                                                        <i class="fa-solid fa-check"></i> Approve
-                                                    </button>
-                                                </form>
-                                                <button type="button" onclick="openRejectTaskModal('reference_1', 'Reference 1', '<?php echo htmlspecialchars($activeOnboardingUser); ?>')" class="btn-save-primary" style="flex: 1; justify-content: center; background: #ffffff; color: #dc2626; border: 1px solid #fecaca; padding: 8px 10px; font-size: 0.8rem;" onmouseover="this.style.background='#fef2f2'" onmouseout="this.style.background='#ffffff'">
-                                                    <i class="fa-solid fa-xmark"></i> Reject
-                                                </button>
-                                            </div>
-                                        <?php endif; ?>
+                                <?php elseif ($isOwnProfile): ?>
+                                    <div style="padding: 10px; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; color: #1e40af; font-size: 0.78rem; font-weight: 700; text-align: center; margin-bottom: 8px;">
+                                        <i class="fa-solid fa-user-shield" style="margin-right: 4px;"></i> Awaiting Review &amp; Approval by another Super Admin or HR Manager
                                     </div>
                                 <?php endif; ?>
+
+                                <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 8px;">
+                                    <a href="/admin/index.php?section=onboarding&edit_ref1=1&target_user=<?php echo urlencode($activeOnboardingUser); ?>" class="btn-save-primary" style="width: 100%; justify-content: center; background: #ffffff; color: #0f172a; border: 1px solid #cbd5e1; text-decoration: none;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='#ffffff'">
+                                        <i class="fa-solid fa-pen-to-square" style="color: #dc2626;"></i> <?php echo $isRef1Rejected ? 'Edit & Resubmit Reference 1' : 'Edit Reference 1'; ?>
+                                    </a>
+                                    <?php if ($isHRorAdmin && !$isOwnProfile && !$isRef1Approved): ?>
+                                        <div style="display: flex; gap: 8px;">
+                                            <form method="POST" action="/admin/index.php?section=onboarding" style="flex: 1; margin: 0;">
+                                                <input type="hidden" name="action" value="admin_approve_onboarding_task">
+                                                <input type="hidden" name="target_user" value="<?php echo htmlspecialchars($activeOnboardingUser); ?>">
+                                                <input type="hidden" name="task_key" value="reference_1">
+                                                <input type="hidden" name="new_status" value="Approved">
+                                                <button type="submit" class="btn-save-primary" style="width: 100%; justify-content: center; background: #16a34a; border-color: #16a34a; padding: 8px 10px; font-size: 0.8rem;">
+                                                    <i class="fa-solid fa-check"></i> Approve
+                                                </button>
+                                            </form>
+                                            <button type="button" onclick="openRejectTaskModal('reference_1', 'Reference 1', '<?php echo htmlspecialchars($activeOnboardingUser); ?>')" class="btn-save-primary" style="flex: 1; justify-content: center; background: #ffffff; color: #dc2626; border: 1px solid #fecaca; padding: 8px 10px; font-size: 0.8rem;" onmouseover="this.style.background='#fef2f2'" onmouseout="this.style.background='#ffffff'">
+                                                <i class="fa-solid fa-xmark"></i> Reject
+                                            </button>
+                                        </div>
+                                    <?php endif; ?>
+                                </div>
                             <?php else: ?>
                                 <?php if ($isOwnProfile || $isEditingRef1): ?>
                                     <form method="POST" action="/admin/index.php?section=onboarding" style="display: flex; flex-direction: column; gap: 10px;">
                                         <input type="hidden" name="action" value="save_onboarding_ref1">
+                                        <input type="hidden" name="target_user" value="<?php echo htmlspecialchars($activeOnboardingUser); ?>">
                                         <input type="text" name="ref_name" value="<?php echo htmlspecialchars($onboardingData['reference_1']['ref_name'] ?? ''); ?>" placeholder="Full Name" required style="padding: 10px; font-size: 0.84rem; border: 1px solid #cbd5e1; border-radius: 8px;">
                                         <input type="text" name="ref_contact" value="<?php echo htmlspecialchars($onboardingData['reference_1']['ref_contact'] ?? ''); ?>" placeholder="Email / Phone Number" required style="padding: 10px; font-size: 0.84rem; border: 1px solid #cbd5e1; border-radius: 8px;">
                                         <input type="text" name="relationship" value="<?php echo htmlspecialchars($onboardingData['reference_1']['relationship'] ?? ''); ?>" placeholder="Relationship / Title" required style="padding: 10px; font-size: 0.84rem; border: 1px solid #cbd5e1; border-radius: 8px;">
@@ -9013,35 +9159,40 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                 </div>
                                 <?php if ($isRef2Approved): ?>
                                     <div style="padding: 12px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px; color: #166534; font-weight: 800; font-size: 0.86rem; text-align: center;">
-                                        <i class="fa-solid fa-check-circle" style="color: #16a34a;"></i> Reference Verified & Approved by HR
+                                        <i class="fa-solid fa-check-circle" style="color: #16a34a;"></i> Reference Verified &amp; Approved by HR
                                     </div>
-                                <?php else: ?>
-                                    <div style="display: flex; flex-direction: column; gap: 8px;">
-                                        <a href="/admin/index.php?section=onboarding&edit_ref2=1&target_user=<?php echo urlencode($activeOnboardingUser); ?>" class="btn-save-primary" style="width: 100%; justify-content: center; background: #ffffff; color: #0f172a; border: 1px solid #cbd5e1; text-decoration: none;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='#ffffff'">
-                                            <i class="fa-solid fa-pen-to-square" style="color: #dc2626;"></i> <?php echo $isRef2Rejected ? 'Edit & Resubmit Reference 2' : 'Edit Reference 2'; ?>
-                                        </a>
-                                        <?php if ($isHRorAdmin): ?>
-                                            <div style="display: flex; gap: 8px;">
-                                                <form method="POST" action="/admin/index.php?section=onboarding" style="flex: 1; margin: 0;">
-                                                    <input type="hidden" name="action" value="admin_approve_onboarding_task">
-                                                    <input type="hidden" name="target_user" value="<?php echo htmlspecialchars($activeOnboardingUser); ?>">
-                                                    <input type="hidden" name="task_key" value="reference_2">
-                                                    <input type="hidden" name="new_status" value="Approved">
-                                                    <button type="submit" class="btn-save-primary" style="width: 100%; justify-content: center; background: #16a34a; border-color: #16a34a; padding: 8px 10px; font-size: 0.8rem;">
-                                                        <i class="fa-solid fa-check"></i> Approve
-                                                    </button>
-                                                </form>
-                                                <button type="button" onclick="openRejectTaskModal('reference_2', 'Reference 2', '<?php echo htmlspecialchars($activeOnboardingUser); ?>')" class="btn-save-primary" style="flex: 1; justify-content: center; background: #ffffff; color: #dc2626; border: 1px solid #fecaca; padding: 8px 10px; font-size: 0.8rem;" onmouseover="this.style.background='#fef2f2'" onmouseout="this.style.background='#ffffff'">
-                                                    <i class="fa-solid fa-xmark"></i> Reject
-                                                </button>
-                                            </div>
-                                        <?php endif; ?>
+                                <?php elseif ($isOwnProfile): ?>
+                                    <div style="padding: 10px; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; color: #1e40af; font-size: 0.78rem; font-weight: 700; text-align: center; margin-bottom: 8px;">
+                                        <i class="fa-solid fa-user-shield" style="margin-right: 4px;"></i> Awaiting Review &amp; Approval by another Super Admin or HR Manager
                                     </div>
                                 <?php endif; ?>
+
+                                <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 8px;">
+                                    <a href="/admin/index.php?section=onboarding&edit_ref2=1&target_user=<?php echo urlencode($activeOnboardingUser); ?>" class="btn-save-primary" style="width: 100%; justify-content: center; background: #ffffff; color: #0f172a; border: 1px solid #cbd5e1; text-decoration: none;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='#ffffff'">
+                                        <i class="fa-solid fa-pen-to-square" style="color: #dc2626;"></i> <?php echo $isRef2Rejected ? 'Edit & Resubmit Reference 2' : 'Edit Reference 2'; ?>
+                                    </a>
+                                    <?php if ($isHRorAdmin && !$isOwnProfile && !$isRef2Approved): ?>
+                                        <div style="display: flex; gap: 8px;">
+                                            <form method="POST" action="/admin/index.php?section=onboarding" style="flex: 1; margin: 0;">
+                                                <input type="hidden" name="action" value="admin_approve_onboarding_task">
+                                                <input type="hidden" name="target_user" value="<?php echo htmlspecialchars($activeOnboardingUser); ?>">
+                                                <input type="hidden" name="task_key" value="reference_2">
+                                                <input type="hidden" name="new_status" value="Approved">
+                                                <button type="submit" class="btn-save-primary" style="width: 100%; justify-content: center; background: #16a34a; border-color: #16a34a; padding: 8px 10px; font-size: 0.8rem;">
+                                                    <i class="fa-solid fa-check"></i> Approve
+                                                </button>
+                                            </form>
+                                            <button type="button" onclick="openRejectTaskModal('reference_2', 'Reference 2', '<?php echo htmlspecialchars($activeOnboardingUser); ?>')" class="btn-save-primary" style="flex: 1; justify-content: center; background: #ffffff; color: #dc2626; border: 1px solid #fecaca; padding: 8px 10px; font-size: 0.8rem;" onmouseover="this.style.background='#fef2f2'" onmouseout="this.style.background='#ffffff'">
+                                                <i class="fa-solid fa-xmark"></i> Reject
+                                            </button>
+                                        </div>
+                                    <?php endif; ?>
+                                </div>
                             <?php else: ?>
                                 <?php if ($isOwnProfile || $isEditingRef2): ?>
                                     <form method="POST" action="/admin/index.php?section=onboarding" style="display: flex; flex-direction: column; gap: 10px;">
                                         <input type="hidden" name="action" value="save_onboarding_ref2">
+                                        <input type="hidden" name="target_user" value="<?php echo htmlspecialchars($activeOnboardingUser); ?>">
                                         <input type="text" name="ref_name" value="<?php echo htmlspecialchars($onboardingData['reference_2']['ref_name'] ?? ''); ?>" placeholder="Full Name" required style="padding: 10px; font-size: 0.84rem; border: 1px solid #cbd5e1; border-radius: 8px;">
                                         <input type="text" name="ref_contact" value="<?php echo htmlspecialchars($onboardingData['reference_2']['ref_contact'] ?? ''); ?>" placeholder="Email / Phone Number" required style="padding: 10px; font-size: 0.84rem; border: 1px solid #cbd5e1; border-radius: 8px;">
                                         <input type="text" name="relationship" value="<?php echo htmlspecialchars($onboardingData['reference_2']['relationship'] ?? ''); ?>" placeholder="Relationship / Title" required style="padding: 10px; font-size: 0.84rem; border: 1px solid #cbd5e1; border-radius: 8px;">
@@ -9092,7 +9243,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                             <?php if ($isSopRejected): ?>
                                 <div style="padding: 12px; background: #fef2f2; border: 1px solid #fecaca; border-radius: 10px; color: #991b1b; font-size: 0.84rem; margin-bottom: 10px;">
                                     <div style="font-weight: 800; display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
-                                        <i class="fa-solid fa-circle-xmark" style="color: #ef4444;"></i> SOP Signature Rejected by HR
+                                        <i class="fa-solid fa-circle-xmark" style="color: #ef4444;"></i> SOP Signature Rejected by HR &amp; Admin
                                     </div>
                                     <?php if (!empty($sopRejectionReason)): ?>
                                         <div style="font-size: 0.8rem; color: #7f1d1d; line-height: 1.4;">
@@ -9102,11 +9253,11 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                 </div>
                             <?php elseif ($isSopApproved): ?>
                                 <div style="padding: 12px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px; color: #166534; font-weight: 800; font-size: 0.88rem; margin-bottom: 10px; text-align: center;">
-                                    <i class="fa-solid fa-check-circle" style="color: #16a34a;"></i> SOP Verified & Approved by HR
+                                    <i class="fa-solid fa-check-circle" style="color: #16a34a;"></i> SOP Verified &amp; Approved by HR &amp; Admin
                                 </div>
                             <?php elseif ($isSopSubmitted): ?>
                                 <div style="padding: 12px; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 10px; color: #1e40af; font-size: 0.84rem; font-weight: 700; display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
-                                    <i class="fa-solid fa-file-circle-check" style="color: #2563eb;"></i> SOP Acknowledged & Submitted to HR
+                                    <i class="fa-solid fa-file-circle-check" style="color: #2563eb;"></i> SOP Acknowledged &bull; Awaiting Dual Verification
                                 </div>
                             <?php else: ?>
                                 <div style="padding: 12px; background: #fffbe6; border: 1px solid #fef08a; border-radius: 10px; color: #b45309; font-size: 0.84rem; font-weight: 700; display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
@@ -9125,7 +9276,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                 </button>
                             <?php endif; ?>
 
-                            <?php if ($isHRorAdmin): ?>
+                            <?php if ($isHRorAdmin && !$isOwnProfile): ?>
                                 <?php if ($isSopSubmitted): ?>
                                     <div style="display: flex; gap: 8px;">
                                         <form method="POST" action="/admin/index.php?section=onboarding" style="flex: 1; margin: 0;">
@@ -9173,7 +9324,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                             <?php if ($isHandbookRejected): ?>
                                 <div style="padding: 12px; background: #fef2f2; border: 1px solid #fecaca; border-radius: 10px; color: #991b1b; font-size: 0.84rem; margin-bottom: 10px;">
                                     <div style="font-weight: 800; display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
-                                        <i class="fa-solid fa-circle-xmark" style="color: #ef4444;"></i> Handbook Signature Rejected by HR
+                                        <i class="fa-solid fa-circle-xmark" style="color: #ef4444;"></i> Handbook Signature Rejected by HR &amp; Admin
                                     </div>
                                     <?php if (!empty($handbookRejectionReason)): ?>
                                         <div style="font-size: 0.8rem; color: #7f1d1d; line-height: 1.4;">
@@ -9183,11 +9334,11 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                 </div>
                             <?php elseif ($isHandbookApproved): ?>
                                 <div style="padding: 12px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px; color: #166534; font-weight: 800; font-size: 0.88rem; margin-bottom: 10px; text-align: center;">
-                                    <i class="fa-solid fa-check-circle" style="color: #16a34a;"></i> Staff Handbook Verified & Approved by HR
+                                    <i class="fa-solid fa-check-circle" style="color: #16a34a;"></i> Staff Handbook Verified &amp; Approved by HR &amp; Admin
                                 </div>
                             <?php elseif ($isHandbookSubmitted): ?>
                                 <div style="padding: 12px; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 10px; color: #1e40af; font-size: 0.84rem; font-weight: 700; display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
-                                    <i class="fa-solid fa-file-circle-check" style="color: #2563eb;"></i> Handbook Acknowledged & Submitted to HR
+                                    <i class="fa-solid fa-file-circle-check" style="color: #2563eb;"></i> Handbook Acknowledged &bull; Awaiting Dual Verification
                                 </div>
                             <?php else: ?>
                                 <div style="padding: 12px; background: #fffbe6; border: 1px solid #fef08a; border-radius: 10px; color: #b45309; font-size: 0.84rem; font-weight: 700; display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
@@ -9206,7 +9357,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                 </button>
                             <?php endif; ?>
 
-                            <?php if ($isHRorAdmin): ?>
+                            <?php if ($isHRorAdmin && !$isOwnProfile): ?>
                                 <?php if ($isHandbookSubmitted): ?>
                                     <div style="display: flex; gap: 8px;">
                                         <form method="POST" action="/admin/index.php?section=onboarding" style="flex: 1; margin: 0;">
@@ -9253,7 +9404,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                             <?php if ($isIdRejected): ?>
                                 <div style="padding: 12px; background: #fef2f2; border: 1px solid #fecaca; border-radius: 10px; color: #991b1b; font-size: 0.84rem; margin-bottom: 12px;">
                                     <div style="font-weight: 800; display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
-                                        <i class="fa-solid fa-circle-xmark" style="color: #ef4444;"></i> ID Document Rejected by HR
+                                        <i class="fa-solid fa-circle-xmark" style="color: #ef4444;"></i> ID Document Rejected by HR &amp; Admin
                                     </div>
                                     <?php if (!empty($idRejectionReason)): ?>
                                         <div style="font-size: 0.8rem; color: #7f1d1d; line-height: 1.4;">
@@ -9274,35 +9425,40 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                 </div>
                                 <?php if ($isIdApproved): ?>
                                     <div style="padding: 12px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px; color: #166534; font-weight: 800; font-size: 0.86rem; text-align: center;">
-                                        <i class="fa-solid fa-check-circle" style="color: #16a34a;"></i> ID Verified & Approved by HR
+                                        <i class="fa-solid fa-check-circle" style="color: #16a34a;"></i> ID Verified &amp; Approved by HR &amp; Admin
                                     </div>
-                                <?php else: ?>
-                                    <div style="display: flex; flex-direction: column; gap: 8px;">
-                                        <a href="/admin/index.php?section=onboarding&edit_id=1&target_user=<?php echo urlencode($activeOnboardingUser); ?>" class="btn-save-primary" style="width: 100%; justify-content: center; background: #ffffff; color: #0f172a; border: 1px solid #cbd5e1; text-decoration: none;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='#ffffff'">
-                                            <i class="fa-solid fa-arrow-up-from-bracket" style="color: #dc2626;"></i> Re-Upload ID Document
-                                        </a>
-                                        <?php if ($isHRorAdmin): ?>
-                                            <div style="display: flex; gap: 8px;">
-                                                <form method="POST" action="/admin/index.php?section=onboarding" style="flex: 1; margin: 0;">
-                                                    <input type="hidden" name="action" value="admin_approve_onboarding_task">
-                                                    <input type="hidden" name="target_user" value="<?php echo htmlspecialchars($activeOnboardingUser); ?>">
-                                                    <input type="hidden" name="task_key" value="id_verification">
-                                                    <input type="hidden" name="new_status" value="Approved">
-                                                    <button type="submit" class="btn-save-primary" style="width: 100%; justify-content: center; background: #16a34a; border-color: #16a34a; padding: 8px 10px; font-size: 0.8rem;">
-                                                        <i class="fa-solid fa-check"></i> Approve ID
-                                                    </button>
-                                                </form>
-                                                <button type="button" onclick="openRejectTaskModal('id_verification', 'ID Verification', '<?php echo htmlspecialchars($activeOnboardingUser); ?>')" class="btn-save-primary" style="flex: 1; justify-content: center; background: #ffffff; color: #dc2626; border: 1px solid #fecaca; padding: 8px 10px; font-size: 0.8rem;" onmouseover="this.style.background='#fef2f2'" onmouseout="this.style.background='#ffffff'">
-                                                    <i class="fa-solid fa-xmark"></i> Reject ID
-                                                </button>
-                                            </div>
-                                        <?php endif; ?>
+                                <?php elseif ($isOwnProfile): ?>
+                                    <div style="padding: 10px; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; color: #1e40af; font-size: 0.78rem; font-weight: 700; text-align: center; margin-bottom: 8px;">
+                                        <i class="fa-solid fa-user-shield" style="margin-right: 4px;"></i> Awaiting Review &amp; Approval by another Super Admin or HR Manager
                                     </div>
                                 <?php endif; ?>
+
+                                <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 8px;">
+                                    <a href="/admin/index.php?section=onboarding&edit_id=1&target_user=<?php echo urlencode($activeOnboardingUser); ?>" class="btn-save-primary" style="width: 100%; justify-content: center; background: #ffffff; color: #0f172a; border: 1px solid #cbd5e1; text-decoration: none;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='#ffffff'">
+                                        <i class="fa-solid fa-arrow-up-from-bracket" style="color: #dc2626;"></i> Re-Upload ID Document
+                                    </a>
+                                    <?php if ($isHRorAdmin && !$isOwnProfile && !$isIdApproved): ?>
+                                        <div style="display: flex; gap: 8px;">
+                                            <form method="POST" action="/admin/index.php?section=onboarding" style="flex: 1; margin: 0;">
+                                                <input type="hidden" name="action" value="admin_approve_onboarding_task">
+                                                <input type="hidden" name="target_user" value="<?php echo htmlspecialchars($activeOnboardingUser); ?>">
+                                                <input type="hidden" name="task_key" value="id_verification">
+                                                <input type="hidden" name="new_status" value="Approved">
+                                                <button type="submit" class="btn-save-primary" style="width: 100%; justify-content: center; background: #16a34a; border-color: #16a34a; padding: 8px 10px; font-size: 0.8rem;">
+                                                    <i class="fa-solid fa-check"></i> Approve ID
+                                                </button>
+                                            </form>
+                                            <button type="button" onclick="openRejectTaskModal('id_verification', 'ID Verification', '<?php echo htmlspecialchars($activeOnboardingUser); ?>')" class="btn-save-primary" style="flex: 1; justify-content: center; background: #ffffff; color: #dc2626; border: 1px solid #fecaca; padding: 8px 10px; font-size: 0.8rem;" onmouseover="this.style.background='#fef2f2'" onmouseout="this.style.background='#ffffff'">
+                                                <i class="fa-solid fa-xmark"></i> Reject ID
+                                            </button>
+                                        </div>
+                                    <?php endif; ?>
+                                </div>
                             <?php else: ?>
                                 <?php if ($isOwnProfile || $isEditingId): ?>
                                     <form method="POST" action="/admin/index.php?section=onboarding" enctype="multipart/form-data" style="display: flex; flex-direction: column; gap: 10px;">
                                         <input type="hidden" name="action" value="save_onboarding_id">
+                                        <input type="hidden" name="target_user" value="<?php echo htmlspecialchars($activeOnboardingUser); ?>">
                                         
                                         <div>
                                             <label style="display: block; font-size: 0.76rem; font-weight: 700; color: #334155; margin-bottom: 4px;">Select File (PNG, JPG, PDF, DOC)</label>
@@ -9622,6 +9778,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                             <?php if ($offerIsIssued && !$offerIsAccepted && !$offerIsApproved && $isOwnProfile): ?>
                                 <form method="POST" action="/admin/index.php?section=onboarding" style="margin: 0;">
                                     <input type="hidden" name="action" value="accept_offer">
+                                    <input type="hidden" name="target_user" value="<?php echo htmlspecialchars($activeOnboardingUser); ?>">
                                     <button type="submit" class="btn-save-primary" style="padding: 10px 22px; background: #16a34a; border-color: #16a34a; font-weight: 800; font-size: 0.85rem;">
                                         <i class="fa-solid fa-check-circle"></i> Accept & Sign Offer Letter
                                     </button>
@@ -9981,6 +10138,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                 <?php if (!$agrSigned && $isOwnProfile): ?>
                                     <form method="POST" action="/admin/index.php?section=onboarding" onsubmit="return captureAgrSigData(this);" style="margin: 0;">
                                         <input type="hidden" name="action" value="sign_employment_agreement">
+                                        <input type="hidden" name="target_user" value="<?php echo htmlspecialchars($activeOnboardingUser); ?>">
                                         <input type="hidden" name="signature_data" id="agr_sig_data_input">
                                         <button type="submit" class="btn-save-primary" style="padding: 10px 22px; background: #16a34a; border-color: #16a34a; font-weight: 800; font-size: 0.85rem;">
                                             <i class="fa-solid fa-signature"></i> Accept & Sign Agreement
@@ -10490,6 +10648,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                 <?php if (!$sopAck && $isOwnProfile): ?>
                                     <form method="POST" action="/admin/index.php?section=onboarding" onsubmit="return captureSopSigData(this);" style="margin: 0;">
                                         <input type="hidden" name="action" value="acknowledge_sop">
+                                        <input type="hidden" name="target_user" value="<?php echo htmlspecialchars($activeOnboardingUser); ?>">
                                         <input type="hidden" name="signature_data" id="sop_sig_data_input">
                                         <button type="submit" class="btn-save-primary" style="padding: 10px 22px; background: #16a34a; border-color: #16a34a; font-weight: 800; font-size: 0.85rem;">
                                             <i class="fa-solid fa-signature"></i> Acknowledge & Sign SOP
@@ -10996,6 +11155,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                 <?php if (!$handbookAck && $isOwnProfile): ?>
                                     <form method="POST" action="/admin/index.php?section=onboarding" onsubmit="return captureHandbookSigData(this);" style="margin: 0;">
                                         <input type="hidden" name="action" value="acknowledge_handbook">
+                                        <input type="hidden" name="target_user" value="<?php echo htmlspecialchars($activeOnboardingUser); ?>">
                                         <input type="hidden" name="signature_data" id="handbook_sig_data_input">
                                         <button type="submit" class="btn-save-primary" style="padding: 10px 22px; background: #16a34a; border-color: #16a34a; font-weight: 800; font-size: 0.85rem;">
                                             <i class="fa-solid fa-signature"></i> Acknowledge & Sign Handbook

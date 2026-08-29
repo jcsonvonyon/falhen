@@ -1892,13 +1892,25 @@ function getStaffAccountById($id) {
  */
 function getStaffAccountByUsername($username) {
     $repo = getStaffAccountsRepo();
-    $uLower = strtolower(trim($username));
+    $uLower = strtolower(trim((string)$username));
+    if ($uLower === '') return null;
+
+    $uClean = preg_replace('/[^a-z0-9]/', '', $uLower);
     $matched = null;
 
     foreach ($repo as $st) {
         $stUser = strtolower(trim($st['username'] ?? ''));
         $stEmail = strtolower(trim($st['email'] ?? ''));
-        if ($uLower === $stUser || $uLower === $stEmail) {
+        $stFullName = strtolower(trim($st['full_name'] ?? ''));
+        
+        $stUserClean = preg_replace('/[^a-z0-9]/', '', $stUser);
+        $stNameClean = preg_replace('/[^a-z0-9]/', '', $stFullName);
+        
+        // Check reverse names (e.g. oluwatosin.ligali vs ligali.oluwatosin)
+        $parts = explode('.', $stUser);
+        $stRevClean = (count($parts) === 2) ? ($parts[1] . $parts[0]) : '';
+
+        if ($uLower === $stUser || $uLower === $stEmail || $uClean === $stUserClean || $uClean === $stNameClean || (!empty($stRevClean) && $uClean === $stRevClean)) {
             if ($matched === null) {
                 $matched = $st;
             } else {
@@ -2635,26 +2647,32 @@ function recordClockOut($username) {
  */
 function getUserOnboardingData($username) {
     $settings = getSiteSettings();
-    $userLower = strtolower(trim($username));
+    $userLower = strtolower(trim((string)$username));
     $allOnboarding = $settings['user_onboarding'] ?? [];
+
+    $staffObj = getStaffAccountByUsername($username);
+    $canonicalUser = !empty($staffObj['username']) ? strtolower($staffObj['username']) : $userLower;
     
-    $userData = $allOnboarding[$userLower] ?? null;
+    $userData = $allOnboarding[$canonicalUser] ?? ($allOnboarding[$userLower] ?? null);
+
+    $empFullName = $staffObj['full_name'] ?? ucwords(str_replace('.', ' ', $username));
+    $empRole = $staffObj['designation'] ?? ($staffObj['role'] ?? 'Staff');
+    $empPhone = $staffObj['phone'] ?? '08027487449';
+    $empAddress = $staffObj['address'] ?? 'Lagos, Nigeria';
+
+    $sal = (float)($staffObj['base_salary'] ?? 280000);
+    $allow = (float)($staffObj['allowances'] ?? 25000);
+    $tot = $sal + $allow;
 
     if (!$userData) {
-        $staffObj = getStaffAccountByUsername($username);
-        $empFullName = $staffObj['full_name'] ?? ucwords(str_replace('.', ' ', $username));
-        $empRole = $staffObj['role'] ?? 'Staff';
-        $empPhone = $staffObj['phone'] ?? '';
-        $empAddress = $staffObj['address'] ?? '';
-
-        $isMainAdmin = ($userLower === 'admin' || $userLower === 'oluwatosin.ligali' || $userLower === 'oluwatosin ligali');
+        $isMainAdmin = ($canonicalUser === 'admin' || $canonicalUser === 'ligali.oluwatosin' || $canonicalUser === 'oluwatosin.ligali');
 
         $userData = [
             'bank_details' => [
                 'status' => 'Pending',
-                'account_number' => '',
-                'bank_name' => '',
-                'account_name' => $empFullName
+                'account_number' => $staffObj['account_number'] ?? '',
+                'bank_name' => $staffObj['bank_name'] ?? 'Zenith Bank PLC',
+                'account_name' => $staffObj['account_name'] ?? $empFullName
             ],
             'offer_letter' => [
                 'status' => 'Pending',
@@ -2662,25 +2680,25 @@ function getUserOnboardingData($username) {
                 'document_url' => '',
                 'currency' => 'NGN',
                 'job_title' => $empRole,
-                'salary' => '₦300,000 / month',
-                'base_salary' => '₦200,000',
-                'tech_allowance' => '₦80,000',
-                'wellness_allowance' => '₦20,000',
-                'total_earnings' => '₦300,000'
+                'salary' => '₦' . number_format($tot) . ' / month',
+                'base_salary' => '₦' . number_format($sal),
+                'tech_allowance' => '₦' . number_format($allow),
+                'wellness_allowance' => '₦0',
+                'total_earnings' => '₦' . number_format($tot)
             ],
             'employment_agreement' => [
                 'status' => 'Pending',
                 'signed' => false,
                 'signed_at' => null,
                 'document_url' => '',
-                'supervisor_name' => $isMainAdmin ? 'Oluwatosin Ligali' : ($_SESSION['admin_full_name'] ?? $_SESSION['admin_name'] ?? 'Mojisola Emjay'),
-                'supervisor_role' => $isMainAdmin ? 'Admin' : ($_SESSION['admin_role'] ?? 'HR Manager'),
-                'work_location' => 'Remote',
+                'supervisor_name' => ($canonicalUser === 'admin' ? 'Ligali Oluwatosin' : 'Henry Falonipe'),
+                'supervisor_role' => 'Super Admin & Executive Director',
+                'work_location' => 'Remote / Studio Hybrid',
                 'work_days' => 'Monday to Friday',
                 'resumption_time' => '9:00 AM',
                 'closing_time' => '5:00 PM',
-                'address' => $isMainAdmin ? '6 Olorunfunmi Street, Pedro, Gbagada, Lagos' : $empAddress,
-                'phone' => $isMainAdmin ? '08027487449' : $empPhone
+                'address' => $empAddress,
+                'phone' => $empPhone
             ],
             'reference_1' => [
                 'status' => 'Pending',
@@ -2704,10 +2722,26 @@ function getUserOnboardingData($username) {
             ],
             'id_verification' => [
                 'status' => 'Pending',
-                'document_type' => 'Government ID / Tax ID',
+                'document_type' => 'Government ID / Tax ID / Passport',
                 'file_url' => ''
             ]
         ];
+    } else {
+        // Auto-fill bank details if empty in onboarding but set in staff accounts repo
+        if (empty($userData['bank_details']['account_number']) && !empty($staffObj['account_number'])) {
+            $userData['bank_details']['account_number'] = $staffObj['account_number'];
+            $userData['bank_details']['bank_name'] = $staffObj['bank_name'] ?? 'Zenith Bank PLC';
+            $userData['bank_details']['account_name'] = $staffObj['account_name'] ?? $empFullName;
+        }
+        if (empty($userData['offer_letter']['job_title'])) {
+            $userData['offer_letter']['job_title'] = $empRole;
+        }
+        if (empty($userData['offer_letter']['salary']) || $userData['offer_letter']['salary'] === '₦300,000 / month') {
+            $userData['offer_letter']['salary'] = '₦' . number_format($tot) . ' / month';
+            $userData['offer_letter']['base_salary'] = '₦' . number_format($sal);
+            $userData['offer_letter']['tech_allowance'] = '₦' . number_format($allow);
+            $userData['offer_letter']['total_earnings'] = '₦' . number_format($tot);
+        }
     }
 
     return $userData;
@@ -2718,13 +2752,19 @@ function getUserOnboardingData($username) {
  */
 function saveUserOnboardingSection($username, $sectionKey, $sectionData) {
     $settings = getSiteSettings();
-    $userLower = strtolower(trim($username));
+    $userLower = strtolower(trim((string)$username));
     $allOnboarding = $settings['user_onboarding'] ?? [];
+
+    $staffObj = getStaffAccountByUsername($username);
+    $canonicalUser = !empty($staffObj['username']) ? strtolower($staffObj['username']) : $userLower;
 
     $userData = getUserOnboardingData($username);
     $userData[$sectionKey] = array_merge($userData[$sectionKey] ?? [], $sectionData);
 
-    $allOnboarding[$userLower] = $userData;
+    $allOnboarding[$canonicalUser] = $userData;
+    if ($canonicalUser !== $userLower) {
+        $allOnboarding[$userLower] = $userData;
+    }
     $settings['user_onboarding'] = $allOnboarding;
     saveSiteSettings($settings);
 
@@ -2739,42 +2779,42 @@ function getOnboardingProgress($username) {
     $completedCount = 0;
     $totalTasks = 8;
 
-    // 1. Bank Details (Strictly Approved by HR)
+    // 1. Bank Details (Approved by HR / Super Admin)
     if (($data['bank_details']['status'] ?? '') === 'Approved') {
         $completedCount++;
     }
 
-    // 2. Offer Letter (Strictly Approved by HR)
+    // 2. Offer Letter (Approved by HR / Super Admin)
     if (($data['offer_letter']['status'] ?? '') === 'Approved') {
         $completedCount++;
     }
 
-    // 3. Employment Agreement (Strictly Approved by HR)
+    // 3. Employment Agreement (Approved by HR / Super Admin)
     if (($data['employment_agreement']['status'] ?? '') === 'Approved') {
         $completedCount++;
     }
 
-    // 4. Reference 1 (Strictly Approved by HR)
+    // 4. Reference 1 (Approved by HR / Super Admin)
     if (($data['reference_1']['status'] ?? '') === 'Approved') {
         $completedCount++;
     }
 
-    // 5. Reference 2 (Strictly Approved by HR)
+    // 5. Reference 2 (Approved by HR / Super Admin)
     if (($data['reference_2']['status'] ?? '') === 'Approved') {
         $completedCount++;
     }
 
-    // 6. Studio SOP (Strictly Approved by HR)
+    // 6. Studio SOP (Approved by HR / Super Admin)
     if (($data['sop']['status'] ?? '') === 'Approved') {
         $completedCount++;
     }
 
-    // 7. Staff Handbook (Strictly Approved by HR)
+    // 7. Staff Handbook (Approved by HR / Super Admin)
     if (($data['staff_handbook']['status'] ?? '') === 'Approved') {
         $completedCount++;
     }
 
-    // 8. ID Verification (Strictly Approved by HR)
+    // 8. ID Verification (Approved by HR / Super Admin)
     if (($data['id_verification']['status'] ?? '') === 'Approved') {
         $completedCount++;
     }
@@ -2793,8 +2833,11 @@ function getOnboardingProgress($username) {
  */
 function updateUserOnboardingTaskStatus($username, $taskKey, $newStatus, $extraData = []) {
     $settings = getSiteSettings();
-    $userLower = strtolower(trim($username));
+    $userLower = strtolower(trim((string)$username));
     $allOnboarding = $settings['user_onboarding'] ?? [];
+
+    $staffObj = getStaffAccountByUsername($username);
+    $canonicalUser = !empty($staffObj['username']) ? strtolower($staffObj['username']) : $userLower;
 
     $userData = getUserOnboardingData($username);
     if (!isset($userData[$taskKey])) {
@@ -2806,7 +2849,10 @@ function updateUserOnboardingTaskStatus($username, $taskKey, $newStatus, $extraD
         $userData[$taskKey] = array_merge($userData[$taskKey], $extraData);
     }
 
-    $allOnboarding[$userLower] = $userData;
+    $allOnboarding[$canonicalUser] = $userData;
+    if ($canonicalUser !== $userLower) {
+        $allOnboarding[$userLower] = $userData;
+    }
     $settings['user_onboarding'] = $allOnboarding;
     saveSiteSettings($settings);
 
