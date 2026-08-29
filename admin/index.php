@@ -3350,36 +3350,21 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
 
     <!-- 1. LEFT SIDEBAR -->
     <aside class="sidebar">
-        <!-- Mobile Sidebar Header Bar -->
-        <div class="sidebar-header-bar" style="align-items: center; justify-content: space-between; padding: 16px 16px 0 16px;">
-            <div style="display: flex; align-items: center; gap: 8px;">
-                <img src="/assets/img/icons/logo.png" alt="Logo" style="height: 22px; width: auto;">
-                <span style="font-size: 0.95rem; font-weight: 800; color: #0f172a; letter-spacing: -0.5px;">Falhen Admin</span>
-            </div>
+        <!-- Sidebar Brand Logo Header -->
+        <div class="sidebar-brand-header" style="padding: 20px 18px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #f1f5f9; margin-bottom: 10px;">
+            <a href="/admin/index.php" style="display: flex; align-items: center; gap: 12px; text-decoration: none;">
+                <div style="width: 40px; height: 40px; border-radius: 10px; background: #0f172a; display: flex; align-items: center; justify-content: center; padding: 7px; box-shadow: 0 4px 10px rgba(15, 23, 42, 0.12); flex-shrink: 0;">
+                    <img src="/assets/img/icons/logo.png" alt="Falhen Logo" style="width: 100%; height: 100%; object-fit: contain;">
+                </div>
+                <div>
+                    <div style="font-size: 1.15rem; font-weight: 900; color: #0f172a; letter-spacing: -0.5px; line-height: 1.1;">Falhen</div>
+                    <div style="font-size: 0.72rem; font-weight: 700; color: #dc2626; letter-spacing: 0.6px; text-transform: uppercase; margin-top: 2px;">Media Admin</div>
+                </div>
+            </a>
             <button type="button" class="sidebar-close-btn" onclick="toggleMobileSidebar()" aria-label="Close Navigation">
                 <i class="fa-solid fa-xmark"></i>
             </button>
         </div>
-
-        <!-- User Profile Box -->
-        <a href="/admin/index.php?section=profile" class="sidebar-user-box" style="text-decoration: none; cursor: pointer; display: flex; align-items: center; justify-content: space-between; transition: all 0.2s ease;">
-            <div class="user-left" style="display: flex; align-items: center; gap: 10px;">
-                <div id="sidebar_avatar_container" style="width: 38px; height: 38px; border-radius: 50%; overflow: hidden; flex-shrink: 0; display: flex; align-items: center; justify-content: center;">
-                <?php if (!empty($userAvatar)): ?>
-                    <img id="sidebar_avatar_img" src="<?php echo htmlspecialchars(getCloudinaryUrl($userAvatar)); ?>" alt="Profile Avatar" style="width: 38px; height: 38px; border-radius: 50%; object-fit: cover; border: 2px solid #ef4444; flex-shrink: 0;">
-                <?php else: ?>
-                    <div id="sidebar_avatar_initial" style="width: 38px; height: 38px; border-radius: 50%; background: #dc2626; color: #ffffff; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1rem; flex-shrink: 0;">
-                        <?php echo $userInitial; ?>
-                    </div>
-                <?php endif; ?>
-                </div>
-                <div class="user-details" style="overflow: hidden;">
-                    <div class="user-title" style="font-weight: 800; color: #0f172a; font-size: 0.85rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 110px;"><?php echo htmlspecialchars($userFullName); ?></div>
-                    <div class="user-sub" style="font-size: 0.74rem; color: #64748b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 110px;"><?php echo htmlspecialchars($userRole); ?></div>
-                </div>
-            </div>
-            <i class="fa-solid fa-gear user-shield" style="color: #64748b; font-size: 0.9rem;" title="My Profile & Settings"></i>
-        </a>
 
         <!-- Navigation Categories -->
         <?php 
