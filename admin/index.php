@@ -318,6 +318,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $deductions = (float)str_replace(',', '', $rawDeduc);
         $netPay = ($baseSalary + $allowances) - $deductions;
 
+        $currency = trim(strip_tags($_POST['currency'] ?? ($staffObj['currency'] ?? 'NGN')));
+        $currSym = getCurrencySymbol($currency);
         $paymentMethod = trim(strip_tags($_POST['payment_method'] ?? 'Direct Bank Transfer'));
         $txRef = trim(strip_tags($_POST['tx_ref'] ?? ('FAL-PAY-' . date('Ym') . '-' . rand(100, 999))));
         $note = trim(strip_tags($_POST['note'] ?? ''));
@@ -336,7 +338,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'allowances'     => $allowances,
             'deductions'     => $deductions,
             'net_pay'        => $netPay,
-            'currency'       => 'NGN',
+            'currency'       => $currency,
             'status'         => 'Paid',
             'payment_method' => $paymentMethod,
             'tx_ref'         => $txRef,
@@ -345,10 +347,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         ]);
 
         if (!empty($email)) {
-            sendSalaryPayoutNotificationEmail($email, $fullName, $payPeriod, '₦' . number_format($netPay, 2), $txRef);
+            sendSalaryPayoutNotificationEmail($email, $fullName, $payPeriod, $currSym . number_format($netPay, 2), $txRef);
         }
 
-        $_SESSION['saved_message'] = 'Salary payout of ₦' . number_format($netPay, 2) . ' for ' . htmlspecialchars($fullName) . ' (' . htmlspecialchars($payPeriod) . ') processed successfully!';
+        $_SESSION['saved_message'] = 'Salary payout of ' . $currSym . number_format($netPay, 2) . ' for ' . htmlspecialchars($fullName) . ' (' . htmlspecialchars($payPeriod) . ') processed successfully!';
         header('Location: /admin/index.php?section=payroll&saved=1');
         exit;
     }
@@ -896,13 +898,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $cleanSalary = preg_replace('/^[₦$€£\s]+/u', '', $rawSalary);
         $cleanSalary = formatMoneyWithCommas($cleanSalary);
         $currency = trim(strip_tags($_POST['currency'] ?? 'NGN'));
-        $currencySymbols = [
-            'NGN' => '₦',
-            'USD' => '$',
-            'EUR' => '€',
-            'GBP' => '£'
-        ];
-        $sym = $currencySymbols[$currency] ?? '₦';
+        $sym = getCurrencySymbol($currency);
 
         $startDate = trim(strip_tags($_POST['start_date'] ?? date('Y-m-d', strtotime('+7 days'))));
         $probationPeriod = trim(strip_tags($_POST['probation_period'] ?? '3 Months'));
@@ -1181,6 +1177,112 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $_SESSION['saved_message'] = $res['message'];
         $redirectSec = $_GET['section'] ?? 'attendance';
         header('Location: /admin/index.php?section=' . urlencode($redirectSec) . '&saved=1');
+        exit;
+    }
+
+    if ($action === 'process_employee_payment') {
+        if (!isAdminUser($currentRole, $currentEmail, $currentUsername)) {
+            header('Location: /admin/index.php?section=payroll&denied=1');
+            exit;
+        }
+
+        $targetUser = trim($_POST['target_user'] ?? '');
+        $staffObj = getStaffAccountByUsername($targetUser);
+        $canonicalTarget = !empty($staffObj['username']) ? $staffObj['username'] : $targetUser;
+        $empFullName = trim(strip_tags($_POST['full_name'] ?? ($staffObj['full_name'] ?? $canonicalTarget)));
+        $empEmail = trim(strip_tags($_POST['email'] ?? ($staffObj['email'] ?? '')));
+        $empRole = trim(strip_tags($_POST['role'] ?? ($staffObj['role'] ?? 'Staff')));
+        $payPeriod = trim(strip_tags($_POST['pay_period'] ?? date('F Y')));
+        $periodMonth = sprintf('%02d', (int)($_POST['period_month'] ?? date('m')));
+        $periodYear = (string)($_POST['period_year'] ?? date('Y'));
+
+        $baseSalary = (float)($_POST['base_salary'] ?? ($staffObj['base_salary'] ?? 0));
+        $allowances = (float)($_POST['allowances'] ?? ($staffObj['allowances'] ?? 0));
+        $deductions = (float)($_POST['deductions'] ?? ($staffObj['deductions'] ?? 0));
+        $netPay = ($baseSalary + $allowances) - $deductions;
+        if ($netPay < 0) $netPay = 0;
+
+        $currency = trim(strip_tags($_POST['currency'] ?? ($staffObj['currency'] ?? 'NGN')));
+        $paymentMethod = trim(strip_tags($_POST['payment_method'] ?? 'Direct Bank Transfer'));
+        $txRef = trim(strip_tags($_POST['tx_ref'] ?? ('FAL-PAY-' . $periodYear . $periodMonth . '-' . rand(100, 999))));
+        $adminName = $_SESSION['admin_full_name'] ?? $_SESSION['admin_username'] ?? 'HR Manager';
+
+        processEmployeePayment([
+            'username'       => $canonicalTarget,
+            'full_name'      => $empFullName,
+            'email'          => $empEmail,
+            'role'           => $empRole,
+            'pay_period'     => $payPeriod,
+            'period_month'   => $periodMonth,
+            'period_year'    => $periodYear,
+            'base_salary'    => $baseSalary,
+            'allowances'     => $allowances,
+            'deductions'     => $deductions,
+            'net_pay'        => $netPay,
+            'currency'       => $currency,
+            'status'         => 'Paid',
+            'payment_method' => $paymentMethod,
+            'tx_ref'         => $txRef,
+            'processed_by'   => $adminName
+        ]);
+
+        $sym = getCurrencySymbol($currency);
+        $_SESSION['saved_message'] = "Salary payment of {$sym}" . number_format($netPay, 2) . " processed successfully for {$empFullName} ({$payPeriod}) via {$paymentMethod}!";
+        header('Location: /admin/index.php?section=payroll&month=' . urlencode($periodMonth) . '&year=' . urlencode($periodYear) . '&saved=1');
+        exit;
+    }
+
+    if ($action === 'bulk_process_payroll') {
+        if (!isAdminUser($currentRole, $currentEmail, $currentUsername)) {
+            header('Location: /admin/index.php?section=payroll&denied=1');
+            exit;
+        }
+
+        $periodMonth = sprintf('%02d', (int)($_POST['period_month'] ?? date('m')));
+        $periodYear = (string)($_POST['period_year'] ?? date('Y'));
+        $payPeriod = date('F Y', mktime(0, 0, 0, (int)$periodMonth, 1, (int)$periodYear));
+        $bulkMethod = trim(strip_tags($_POST['bulk_payment_method'] ?? 'Direct Bank Transfer'));
+        $adminName = $_SESSION['admin_full_name'] ?? $_SESSION['admin_username'] ?? 'HR Manager';
+
+        $allStaff = getStaffAccountsRepo();
+        $processedCount = 0;
+
+        foreach ($allStaff as $st) {
+            $uName = $st['username'] ?? '';
+            if (empty($uName)) continue;
+            
+            $baseSal = (float)($st['base_salary'] ?? 0);
+            $allow = (float)($st['allowances'] ?? 0);
+            $deduc = (float)($st['deductions'] ?? 0);
+            $net = ($baseSal + $allow) - $deduc;
+            if ($net < 0) $net = 0;
+            $curr = $st['currency'] ?? 'NGN';
+
+            $txRef = 'FAL-BULK-' . $periodYear . $periodMonth . '-' . rand(100, 999);
+
+            processEmployeePayment([
+                'username'       => $uName,
+                'full_name'      => $st['full_name'] ?? $uName,
+                'email'          => $st['email'] ?? '',
+                'role'           => $st['role'] ?? 'Staff',
+                'pay_period'     => $payPeriod,
+                'period_month'   => $periodMonth,
+                'period_year'    => $periodYear,
+                'base_salary'    => $baseSal,
+                'allowances'     => $allow,
+                'deductions'     => $deduc,
+                'net_pay'        => $net,
+                'currency'       => $curr,
+                'status'         => 'Paid',
+                'payment_method' => $bulkMethod,
+                'tx_ref'         => $txRef,
+                'processed_by'   => $adminName
+            ]);
+            $processedCount++;
+        }
+
+        $_SESSION['saved_message'] = "Bulk monthly payroll successfully disbursed and recorded for {$processedCount} active employees for {$payPeriod}!";
+        header('Location: /admin/index.php?section=payroll&month=' . urlencode($periodMonth) . '&year=' . urlencode($periodYear) . '&saved=1');
         exit;
     }
 
@@ -2719,6 +2821,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $deductions   = (float)$rawDeduc;
         $netPay       = ($baseSal + $allowances) - $deductions;
 
+        $currency     = trim($_POST['currency'] ?? ($staffObj['currency'] ?? 'NGN'));
+        $currSym      = getCurrencySymbol($currency);
         $paymentMethod = trim($_POST['payment_method'] ?? 'Direct Bank Transfer');
         $txRef        = trim($_POST['tx_ref'] ?? ('FAL-PAY-' . $periodYear . $periodMonth . '-' . rand(100, 999)));
         $processedBy  = $_SESSION['admin_full_name'] ?? $_SESSION['admin_name'] ?? 'HR & Finance';
@@ -2735,14 +2839,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'allowances'     => $allowances,
             'deductions'     => $deductions,
             'net_pay'        => $netPay,
-            'currency'       => 'NGN',
+            'currency'       => $currency,
             'status'         => 'Paid',
             'payment_method' => $paymentMethod,
             'tx_ref'         => $txRef,
             'processed_by'   => $processedBy
         ]);
 
-        $_SESSION['saved_message'] = 'Salary payment of ₦' . number_format($netPay, 2) . ' via ' . htmlspecialchars($paymentMethod) . ' processed for ' . htmlspecialchars($fullName) . ' (' . htmlspecialchars($payPeriod) . ')!';
+        $_SESSION['saved_message'] = 'Salary payment of ' . $currSym . number_format($netPay, 2) . ' via ' . htmlspecialchars($paymentMethod) . ' processed for ' . htmlspecialchars($fullName) . ' (' . htmlspecialchars($payPeriod) . ')!';
         header('Location: /admin/index.php?section=payroll&month=' . urlencode($periodMonth) . '&year=' . urlencode($periodYear) . '&saved=1');
         exit;
     } else if ($action === 'bulk_process_payroll') {
@@ -9613,12 +9717,14 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                     <div style="display: flex; gap: 6px;">
                                         <select name="currency" style="width: 98px; padding: 10px 8px; font-size: 0.84rem; border: 1px solid #cbd5e1; border-radius: 8px; background: #f8fafc; font-weight: 700; color: #0f172a; box-sizing: border-box;">
                                             <?php 
-                                                $currSelected = $onboardingData['offer_letter']['currency'] ?? 'NGN';
+                                                $currSelected = $onboardingData['offer_letter']['currency'] ?? ($activeTargetObj['currency'] ?? 'NGN');
                                                 $currencies = [
                                                     'NGN' => '₦ (NGN)',
                                                     'USD' => '$ (USD)',
                                                     'EUR' => '€ (EUR)',
-                                                    'GBP' => '£ (GBP)'
+                                                    'GBP' => '£ (GBP)',
+                                                    'CAD' => 'CA$ (CAD)',
+                                                    'AUD' => 'AU$ (AUD)'
                                                 ];
                                                 foreach ($currencies as $cCode => $cLabel):
                                             ?>
@@ -12525,29 +12631,32 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                     $periodDisbursements = getPayrollDisbursements(null, $selectedMonth, $selectedYear);
 
                     $totalPayrollBudget = 0;
-                    $processedAmount = 0;
-                    $pendingAmount = 0;
+                    $budgetByCurrency = [];
+                    $processedByCurrency = [];
+                    $pendingByCurrency = [];
 
-                    $processedMap = [];
-                    foreach ($periodDisbursements as $disb) {
+                    foreach ($monthDisbursements as $disb) {
                         $key = strtolower($disb['username'] ?? $disb['email']);
                         $processedMap[$key] = $disb;
+                        $dCurr = $disb['currency'] ?? 'NGN';
                         if (($disb['status'] ?? '') === 'Paid') {
-                            $processedAmount += (float)($disb['net_pay'] ?? 0);
+                            $net = (float)($disb['net_pay'] ?? 0);
+                            $processedByCurrency[$dCurr] = ($processedByCurrency[$dCurr] ?? 0) + $net;
                         }
                     }
 
                     foreach ($allStaffForPayroll as $st) {
+                        $stCurr = $st['currency'] ?? 'NGN';
                         $baseSal = (float)($st['base_salary'] ?? 250000);
                         $allowVal = (float)($st['allowances'] ?? 20000);
                         $deducVal = (float)($st['deductions'] ?? 10000);
                         $netExpected = ($baseSal + $allowVal) - $deducVal;
 
-                        $totalPayrollBudget += $netExpected;
+                        $budgetByCurrency[$stCurr] = ($budgetByCurrency[$stCurr] ?? 0) + $netExpected;
 
                         $stKey = strtolower($st['username'] ?? $st['email']);
                         if (!isset($processedMap[$stKey])) {
-                            $pendingAmount += $netExpected;
+                            $pendingByCurrency[$stCurr] = ($pendingByCurrency[$stCurr] ?? 0) + $netExpected;
                         }
                     }
                 ?>
@@ -12556,7 +12665,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                     <div>
                         <h1 class="section-header-title" style="font-size: 1.75rem; font-weight: 800; color: #0f172a; margin: 0;">Payroll &amp; Remuneration Management</h1>
                         <p class="section-header-desc" style="font-size: 0.88rem; color: #64748b; margin: 4px 0 0 0;">
-                            Process staff monthly salaries, manage compensation breakdowns, issue payment advice, and track payroll budget for <strong><?php echo htmlspecialchars($selectedPeriodStr); ?></strong>.
+                            Process staff monthly salaries in multiple currencies (NGN, USD, GBP, EUR, CAD), manage compensation breakdowns, issue payment advice, and track payroll budget for <strong><?php echo htmlspecialchars($selectedPeriodStr); ?></strong>.
                         </p>
                     </div>
 
@@ -12582,26 +12691,62 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                     </div>
                 </div>
 
-                <!-- TOP 4 METRIC CARDS -->
+                <!-- TOP 4 METRIC CARDS (MULTI-CURRENCY SUPPORT) -->
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 18px; margin-bottom: 28px;">
                     <div style="background: #ffffff; border: 1px solid #cbd5e1; border-left: 4px solid #2563eb; border-radius: 16px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
                         <div style="font-size: 0.76rem; font-weight: 800; color: #64748b; text-transform: uppercase;">Total Payroll Budget (<?php echo date('M Y', strtotime($selectedYear . '-' . $selectedMonth . '-01')); ?>)</div>
-                        <div style="font-size: 1.55rem; font-weight: 800; color: #0f172a; margin-top: 6px;">&#8358;<?php echo number_format($totalPayrollBudget, 2); ?></div>
+                        <div style="font-size: 1.35rem; font-weight: 800; color: #0f172a; margin-top: 6px; line-height: 1.3;">
+                            <?php 
+                            if (empty($budgetByCurrency)) {
+                                echo '&#8358;0.00';
+                            } else {
+                                $bParts = [];
+                                foreach ($budgetByCurrency as $c => $amt) {
+                                    $bParts[] = getCurrencySymbol($c) . number_format($amt, 2);
+                                }
+                                echo implode('<br>', $bParts);
+                            }
+                            ?>
+                        </div>
                     </div>
 
                     <div style="background: #ffffff; border: 1px solid #cbd5e1; border-left: 4px solid #16a34a; border-radius: 16px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
                         <div style="font-size: 0.76rem; font-weight: 800; color: #166534; text-transform: uppercase;">Processed Payments</div>
-                        <div style="font-size: 1.55rem; font-weight: 800; color: #15803d; margin-top: 6px;">&#8358;<?php echo number_format($processedAmount, 2); ?></div>
+                        <div style="font-size: 1.35rem; font-weight: 800; color: #15803d; margin-top: 6px; line-height: 1.3;">
+                            <?php 
+                            if (empty($processedByCurrency)) {
+                                echo '&#8358;0.00';
+                            } else {
+                                $pParts = [];
+                                foreach ($processedByCurrency as $c => $amt) {
+                                    $pParts[] = getCurrencySymbol($c) . number_format($amt, 2);
+                                }
+                                echo implode('<br>', $pParts);
+                            }
+                            ?>
+                        </div>
                     </div>
 
                     <div style="background: #ffffff; border: 1px solid #cbd5e1; border-left: 4px solid #d97706; border-radius: 16px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
                         <div style="font-size: 0.76rem; font-weight: 800; color: #92400e; text-transform: uppercase;">Pending Disbursements</div>
-                        <div style="font-size: 1.55rem; font-weight: 800; color: #b45309; margin-top: 6px;">&#8358;<?php echo number_format($pendingAmount, 2); ?></div>
+                        <div style="font-size: 1.35rem; font-weight: 800; color: #b45309; margin-top: 6px; line-height: 1.3;">
+                            <?php 
+                            if (empty($pendingByCurrency)) {
+                                echo '<span style="color:#16a34a; font-size:1.1rem;"><i class="fa-solid fa-circle-check"></i> All Paid</span>';
+                            } else {
+                                $pendParts = [];
+                                foreach ($pendingByCurrency as $c => $amt) {
+                                    $pendParts[] = getCurrencySymbol($c) . number_format($amt, 2);
+                                }
+                                echo implode('<br>', $pendParts);
+                            }
+                            ?>
+                        </div>
                     </div>
 
                     <div style="background: #ffffff; border: 1px solid #cbd5e1; border-left: 4px solid #dc2626; border-radius: 16px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
                         <div style="font-size: 0.76rem; font-weight: 800; color: #64748b; text-transform: uppercase;">Payroll Roster</div>
-                        <div style="font-size: 1.55rem; font-weight: 800; color: #0f172a; margin-top: 6px;"><?php echo count($allStaffForPayroll); ?> Active Staff</div>
+                        <div style="font-size: 1.45rem; font-weight: 800; color: #0f172a; margin-top: 6px;"><?php echo count($allStaffForPayroll); ?> Active Staff</div>
                     </div>
                 </div>
 
@@ -12647,6 +12792,9 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                     $hasDisb = isset($processedMap[$stKey]);
                                     $disbData = $hasDisb ? $processedMap[$stKey] : null;
 
+                                    $stCurr = $disbData['currency'] ?? ($st['currency'] ?? 'NGN');
+                                    $currSym = getCurrencySymbol($stCurr);
+
                                     $baseSal = (float)($st['base_salary'] ?? 250000);
                                     $allowVal = $disbData ? (float)$disbData['allowances'] : (float)($st['allowances'] ?? 20000);
                                     $deducVal = $disbData ? (float)$disbData['deductions'] : (float)($st['deductions'] ?? 10000);
@@ -12655,7 +12803,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                     ?>
                                     <tr style="border-bottom: 1px solid #f1f5f9; transition: background 0.15s ease;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
                                         <td style="padding: 14px 18px;">
-                                            <div style="display: flex; align-items: center; gap: 10px;">
+                                             <div style="display: flex; align-items: center; gap: 10px;">
                                                 <?php if (!empty($st['avatar'])): ?>
                                                     <img src="<?php echo htmlspecialchars(getCloudinaryUrl($st['avatar'])); ?>" alt="<?php echo htmlspecialchars($st['full_name']); ?>" style="width: 38px; height: 38px; border-radius: 50%; object-fit: cover; border: 2px solid #e2e8f0; flex-shrink: 0;">
                                                 <?php else: ?>
@@ -12671,19 +12819,22 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                         </td>
                                         <td style="padding: 14px 18px;">
                                             <div style="font-weight: 800; color: #0f172a; font-size: 0.84rem;"><?php echo htmlspecialchars($st['designation'] ?? ($st['role'] ?? 'Staff')); ?></div>
-                                            <div style="font-size: 0.7rem; color: #64748b; font-weight: 700; margin-top: 1px; text-transform: uppercase;"><?php echo htmlspecialchars($st['role'] ?? 'Staff'); ?></div>
+                                            <div style="display: flex; align-items: center; gap: 6px; margin-top: 2px;">
+                                                <span style="font-size: 0.7rem; color: #64748b; font-weight: 700; text-transform: uppercase;"><?php echo htmlspecialchars($st['role'] ?? 'Staff'); ?></span>
+                                                <span style="font-size: 0.68rem; font-weight: 800; background: <?php echo ($stCurr === 'USD' ? '#dbeafe; color: #1d4ed8; border: 1px solid #bfdbfe;' : ($stCurr === 'GBP' ? '#ede9fe; color: #6d28d9; border: 1px solid #ddd6fe;' : ($stCurr === 'EUR' ? '#fef3c7; color: #b45309; border: 1px solid #fde68a;' : '#f1f5f9; color: #475569; border: 1px solid #e2e8f0;'))); ?>; padding: 1px 6px; border-radius: 6px;"><?php echo htmlspecialchars($stCurr); ?></span>
+                                            </div>
                                         </td>
                                         <td style="padding: 14px 18px; font-weight: 800; color: #0f172a;">
-                                            &#8358;<?php echo number_format($baseSal, 2); ?>
+                                            <?php echo $currSym . number_format($baseSal, 2); ?>
                                         </td>
-                                        <td style="padding: 14px 18px; font-weight: 700; color: #16a34a;">
-                                            +&#8358;<?php echo number_format($allowVal, 2); ?>
+                                        <td style="padding: 14px 18px; font-weight: 700; color: #166534;">
+                                            +<?php echo $currSym . number_format($allowVal, 2); ?>
                                         </td>
                                         <td style="padding: 14px 18px; font-weight: 700; color: #dc2626;">
-                                            -&#8358;<?php echo number_format($deducVal, 2); ?>
+                                            -<?php echo $currSym . number_format($deducVal, 2); ?>
                                         </td>
                                         <td style="padding: 14px 18px; font-weight: 800; color: #0f172a; font-size: 0.92rem;">
-                                            &#8358;<?php echo number_format($netVal, 2); ?>
+                                            <?php echo $currSym . number_format($netVal, 2); ?>
                                         </td>
                                         <td style="padding: 14px 18px;">
                                             <?php if ($statusStr === 'Paid'): ?>
@@ -12727,26 +12878,28 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                         <td style="padding: 14px 18px; text-align: right;">
                                             <div style="display: flex; gap: 6px; justify-content: flex-end; align-items: center;">
                                                 <button type="button" onclick="openProcessPaymentModal(<?php echo htmlspecialchars(json_encode([
-                                                    'username'       => $st['username'] ?? '',
-                                                    'full_name'      => $st['full_name'] ?? '',
-                                                    'avatar'         => !empty($st['avatar']) ? getCloudinaryUrl($st['avatar']) : '',
-                                                    'designation'    => $st['designation'] ?? ($st['role'] ?? 'Staff'),
-                                                    'email'          => $st['email'] ?? '',
-                                                    'role'           => $st['role'] ?? 'Staff',
-                                                    'base'           => $baseSal,
-                                                    'allowances'     => $allowVal,
-                                                    'deductions'     => $deducVal,
-                                                    'bank_name'      => $st['bank_name'] ?? 'Zenith Bank PLC',
-                                                    'account_number' => $st['account_number'] ?? '1012345678',
-                                                    'account_name'   => $st['account_name'] ?? ($st['full_name'] ?? ''),
-                                                    'raenest_email'  => $st['raenest_email'] ?? ($st['email'] ?? ''),
-                                                    'raenest_id'     => $st['raenest_id'] ?? ('RAE-' . strtoupper(substr($st['username'] ?? 'USER', 0, 4)) . '-01'),
-                                                    'lemfi_tag'      => $st['lemfi_tag'] ?? ('@' . strtolower(str_replace('.', '', $st['username'] ?? 'falhen'))),
-                                                    'taptap_account' => $st['taptap_account'] ?? ($st['account_number'] ?? ''),
-                                                    'period'         => $selectedPeriodStr,
-                                                    'month'          => $selectedMonth,
-                                                    'year'           => $selectedYear,
-                                                    'is_paid'        => $hasDisb
+                                                    'username'        => $st['username'] ?? '',
+                                                    'full_name'       => $st['full_name'] ?? '',
+                                                    'avatar'          => !empty($st['avatar']) ? getCloudinaryUrl($st['avatar']) : '',
+                                                    'designation'     => $st['designation'] ?? ($st['role'] ?? 'Staff'),
+                                                    'email'           => $st['email'] ?? '',
+                                                    'role'            => $st['role'] ?? 'Staff',
+                                                    'currency'        => $stCurr,
+                                                    'currency_symbol' => $currSym,
+                                                    'base'            => $baseSal,
+                                                    'allowances'      => $allowVal,
+                                                    'deductions'      => $deducVal,
+                                                    'bank_name'       => $st['bank_name'] ?? 'Zenith Bank PLC',
+                                                    'account_number'  => $st['account_number'] ?? '1012345678',
+                                                    'account_name'    => $st['account_name'] ?? ($st['full_name'] ?? ''),
+                                                    'raenest_email'   => $st['raenest_email'] ?? ($st['email'] ?? ''),
+                                                    'raenest_id'      => $st['raenest_id'] ?? ('RAE-' . strtoupper(substr($st['username'] ?? 'USER', 0, 4)) . '-01'),
+                                                    'lemfi_tag'       => $st['lemfi_tag'] ?? ('@' . strtolower(str_replace('.', '', $st['username'] ?? 'falhen'))),
+                                                    'taptap_account'  => $st['taptap_account'] ?? ($st['account_number'] ?? ''),
+                                                    'period'          => $selectedPeriodStr,
+                                                    'month'           => $selectedMonth,
+                                                    'year'            => $selectedYear,
+                                                    'is_paid'         => $hasDisb
                                                 ])); ?>)" style="padding: 8px 16px; font-size: 0.82rem; font-weight: 800; border-radius: 8px; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; transition: all 0.15s ease; <?php echo $hasDisb ? 'background: #ffffff; color: #0f172a; border: 1px solid #cbd5e1;' : 'background: #16a34a; border: 1px solid #16a34a; color: #ffffff; box-shadow: 0 2px 8px rgba(22,163,74,0.3);'; ?>" onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'">
                                                     <i class="fa-solid <?php echo $hasDisb ? 'fa-rotate-right' : 'fa-money-bill-wave'; ?>"></i>
                                                     <?php echo $hasDisb ? 'Re-Process / Edit' : 'Pay Salary'; ?>
@@ -17607,18 +17760,31 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                 <input type="hidden" name="period_month" id="pay_modal_month" value="">
                 <input type="hidden" name="period_year" id="pay_modal_year" value="">
 
+                <!-- Currency Selector -->
+                <div>
+                    <label style="font-size: 0.74rem; font-weight: 700; color: #475569; display: block; margin-bottom: 4px;">Payment Currency *</label>
+                    <select name="currency" id="pay_modal_currency" style="width: 100%; padding: 9px 10px; font-size: 0.86rem; font-weight: 800; border: 1px solid #cbd5e1; border-radius: 8px; background: #ffffff;" onchange="recalculateModalNetPay()">
+                        <option value="NGN">NGN (₦) - Nigerian Naira</option>
+                        <option value="USD">USD ($) - US Dollar</option>
+                        <option value="GBP">GBP (£) - British Pound</option>
+                        <option value="EUR">EUR (€) - Euro</option>
+                        <option value="CAD">CAD (CA$) - Canadian Dollar</option>
+                        <option value="AUD">AUD (AU$) - Australian Dollar</option>
+                    </select>
+                </div>
+
                 <!-- Compensation Inputs Grid -->
                 <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;">
                     <div>
-                        <label style="font-size: 0.74rem; font-weight: 700; color: #475569; display: block; margin-bottom: 4px;">Base Salary (&#8358;) *</label>
+                        <label id="pay_modal_lbl_base" style="font-size: 0.74rem; font-weight: 700; color: #475569; display: block; margin-bottom: 4px;">Base Salary *</label>
                         <input type="number" step="0.01" name="base_salary" id="pay_modal_base" required style="width: 100%; padding: 9px 10px; font-size: 0.86rem; font-weight: 700; border: 1px solid #cbd5e1; border-radius: 8px;" oninput="recalculateModalNetPay()">
                     </div>
                     <div>
-                        <label style="font-size: 0.74rem; font-weight: 700; color: #166534; display: block; margin-bottom: 4px;">Allowances (&#8358;)</label>
+                        <label id="pay_modal_lbl_allowances" style="font-size: 0.74rem; font-weight: 700; color: #166534; display: block; margin-bottom: 4px;">Allowances</label>
                         <input type="number" step="0.01" name="allowances" id="pay_modal_allowances" value="0" style="width: 100%; padding: 9px 10px; font-size: 0.86rem; font-weight: 700; color: #166534; border: 1px solid #bbf7d0; background: #f0fdf4; border-radius: 8px;" oninput="recalculateModalNetPay()">
                     </div>
                     <div>
-                        <label style="font-size: 0.74rem; font-weight: 700; color: #991b1b; display: block; margin-bottom: 4px;">Deductions (&#8358;)</label>
+                        <label id="pay_modal_lbl_deductions" style="font-size: 0.74rem; font-weight: 700; color: #991b1b; display: block; margin-bottom: 4px;">Deductions</label>
                         <input type="number" step="0.01" name="deductions" id="pay_modal_deductions" value="0" style="width: 100%; padding: 9px 10px; font-size: 0.86rem; font-weight: 700; color: #dc2626; border: 1px solid #fecaca; background: #fef2f2; border-radius: 8px;" oninput="recalculateModalNetPay()">
                     </div>
                 </div>
@@ -17706,8 +17872,8 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                         <strong><?php echo isset($allStaffForPayroll) ? count($allStaffForPayroll) : 0; ?> Employees</strong>
                     </div>
                     <div style="display: flex; justify-content: space-between; font-size: 0.88rem; color: #0f172a; font-weight: 800;">
-                        <span>Total Monthly Payout:</span>
-                        <span style="color: #16a34a;">&#8358;<?php echo isset($totalPayrollBudget) ? number_format($totalPayrollBudget, 2) : '0.00'; ?></span>
+                        <span>Active Currencies:</span>
+                        <span style="color: #16a34a;">Multi-Currency Supported</span>
                     </div>
                 </div>
 
@@ -17727,6 +17893,22 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
     <script>
     var currentPaymentStaffData = null;
 
+    function getCurrencySymbolJs(curr) {
+        var c = (curr || 'NGN').toUpperCase();
+        var map = {
+            'NGN': '₦',
+            'USD': '$',
+            'GBP': '£',
+            'EUR': '€',
+            'CAD': 'CA$',
+            'AUD': 'AU$',
+            'GHS': 'GH₵',
+            'KES': 'KSh',
+            'ZAR': 'R'
+        };
+        return map[c] || '₦';
+    }
+
     function openProcessPaymentModal(data) {
         if (!data) return;
         currentPaymentStaffData = data;
@@ -17744,6 +17926,13 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
 
         var fallbackAvatar = '/assets/img/team/team_henry.png';
         document.getElementById('pay_modal_avatar').src = (data.avatar && data.avatar.length > 5) ? data.avatar : fallbackAvatar;
+
+        // Set currency in dropdown
+        var empCurr = (data.currency || 'NGN').toUpperCase();
+        var currSelect = document.getElementById('pay_modal_currency');
+        if (currSelect) {
+            currSelect.value = empCurr;
+        }
 
         document.getElementById('pay_modal_base').value = parseFloat(data.base || 0);
         document.getElementById('pay_modal_allowances').value = parseFloat(data.allowances || 0);
@@ -17772,7 +17961,19 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
         var net = (base + allow) - deduc;
         if (net < 0) net = 0;
 
-        var formatted = '₦' + net.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        var currSelect = document.getElementById('pay_modal_currency');
+        var curr = currSelect ? currSelect.value : (currentPaymentStaffData ? currentPaymentStaffData.currency : 'NGN');
+        var sym = getCurrencySymbolJs(curr);
+
+        // Update input labels
+        var lblBase = document.getElementById('pay_modal_lbl_base');
+        var lblAllow = document.getElementById('pay_modal_lbl_allowances');
+        var lblDeduc = document.getElementById('pay_modal_lbl_deductions');
+        if (lblBase) lblBase.innerText = 'Base Salary (' + sym + ') *';
+        if (lblAllow) lblAllow.innerText = 'Allowances (' + sym + ')';
+        if (lblDeduc) lblDeduc.innerText = 'Deductions (' + sym + ')';
+
+        var formatted = sym + net.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         var display = document.getElementById('pay_modal_net_display');
         if (display) display.innerText = formatted;
         

@@ -1401,7 +1401,26 @@ function saveAdminUserProfile($data) {
 }
 
 /**
- * Get Staff Accounts Repository (Includes distinct Access Role and Corporate Designation)
+ * Universal Currency Symbol Mapper (Multi-Currency Support)
+ */
+function getCurrencySymbol($currency = 'NGN') {
+    $curr = strtoupper(trim((string)$currency));
+    $symbols = [
+        'NGN' => '₦',
+        'USD' => '$',
+        'GBP' => '£',
+        'EUR' => '€',
+        'CAD' => 'CA$',
+        'AUD' => 'AU$',
+        'GHS' => 'GH₵',
+        'KES' => 'KSh',
+        'ZAR' => 'R'
+    ];
+    return $symbols[$curr] ?? '₦';
+}
+
+/**
+ * Get Staff Accounts Repository (Includes distinct Access Role, Multi-Currency, and Corporate Designation)
  */
 function getStaffAccountsRepo() {
     $settings = getSiteSettings();
@@ -1419,6 +1438,7 @@ function getStaffAccountsRepo() {
                 'email'         => 'admin@falhen.com',
                 'role'          => 'Super Admin',
                 'designation'   => 'Creative Director & Founder',
+                'currency'      => 'NGN',
                 'base_salary'   => 450000,
                 'allowances'    => 50000,
                 'deductions'    => 25000,
@@ -1441,6 +1461,7 @@ function getStaffAccountsRepo() {
                 'email'         => 'kingsley@falhen.com',
                 'role'          => 'Production Manager',
                 'designation'   => 'Operations Specialist',
+                'currency'      => 'NGN',
                 'base_salary'   => 350000,
                 'allowances'    => 30000,
                 'deductions'    => 15000,
@@ -1463,6 +1484,7 @@ function getStaffAccountsRepo() {
                 'email'         => 'lisa@falhen.com',
                 'role'          => 'Content Editor',
                 'designation'   => 'Head of Marketing & Client Partnerships',
+                'currency'      => 'NGN',
                 'base_salary'   => 280000,
                 'allowances'    => 25000,
                 'deductions'    => 12000,
@@ -1485,6 +1507,7 @@ function getStaffAccountsRepo() {
                 'email'         => 'mojisola@falhen.com',
                 'role'          => 'HR Manager',
                 'designation'   => 'Resource & HR Manager',
+                'currency'      => 'NGN',
                 'base_salary'   => 300000,
                 'allowances'    => 25000,
                 'deductions'    => 15000,
@@ -1507,6 +1530,7 @@ function getStaffAccountsRepo() {
                 'email'         => 'daniel@falhen.com',
                 'role'          => 'Staff',
                 'designation'   => 'Head of Creative Services',
+                'currency'      => 'NGN',
                 'base_salary'   => 260000,
                 'allowances'    => 20000,
                 'deductions'    => 10000,
@@ -1529,6 +1553,7 @@ function getStaffAccountsRepo() {
                 'email'         => 'victoria@falhen.com',
                 'role'          => 'Content Editor',
                 'designation'   => 'Social Media Manager',
+                'currency'      => 'NGN',
                 'base_salary'   => 220000,
                 'allowances'    => 20000,
                 'deductions'    => 10000,
@@ -1551,6 +1576,7 @@ function getStaffAccountsRepo() {
                 'email'         => 'micheal@falhen.com',
                 'role'          => 'Content Editor',
                 'designation'   => 'Content Manager',
+                'currency'      => 'NGN',
                 'base_salary'   => 220000,
                 'allowances'    => 20000,
                 'deductions'    => 10000,
@@ -1573,6 +1599,7 @@ function getStaffAccountsRepo() {
                 'email'         => 'ligali@falhen.com',
                 'role'          => 'Super Admin',
                 'designation'   => 'IT Support Specialist',
+                'currency'      => 'NGN',
                 'base_salary'   => 120000,
                 'allowances'    => 20000,
                 'deductions'    => 10000,
@@ -1601,6 +1628,11 @@ function getStaffAccountsRepo() {
         $fnLower = strtolower($fn);
         $currRole = $it['role'] ?? 'Staff';
 
+        if (!isset($it['currency']) || empty($it['currency'])) {
+            $it['currency'] = 'NGN';
+            $modified = true;
+        }
+
         // Auto-fix specific key personnel
         if (strpos($fnLower, 'henry') !== false) {
             if (empty($it['designation']) || $it['designation'] === 'Super Admin') {
@@ -1611,10 +1643,11 @@ function getStaffAccountsRepo() {
                 $it['role'] = 'Super Admin';
                 $modified = true;
             }
-            if (empty($it['base_salary']) || (float)$it['base_salary'] < 300000) {
+            if (!isset($it['base_salary']) || $it['base_salary'] === '') {
                 $it['base_salary'] = 450000;
                 $it['allowances'] = 50000;
                 $it['deductions'] = 25000;
+                $it['currency'] = $it['currency'] ?? 'NGN';
                 $modified = true;
             }
             if (empty($it['bank_name'])) {
@@ -1636,10 +1669,11 @@ function getStaffAccountsRepo() {
                 $it['role'] = 'Production Manager';
                 $modified = true;
             }
-            if (empty($it['base_salary']) || (float)$it['base_salary'] < 300000) {
+            if (!isset($it['base_salary']) || $it['base_salary'] === '') {
                 $it['base_salary'] = 350000;
                 $it['allowances'] = 30000;
                 $it['deductions'] = 15000;
+                $it['currency'] = $it['currency'] ?? 'NGN';
                 $modified = true;
             }
             if (empty($it['bank_name'])) {
@@ -1661,10 +1695,11 @@ function getStaffAccountsRepo() {
                 $it['role'] = 'Content Editor';
                 $modified = true;
             }
-            if (empty($it['base_salary']) || (float)$it['base_salary'] < 260000) {
+            if (!isset($it['base_salary']) || $it['base_salary'] === '') {
                 $it['base_salary'] = 280000;
                 $it['allowances'] = 25000;
                 $it['deductions'] = 12000;
+                $it['currency'] = $it['currency'] ?? 'NGN';
                 $modified = true;
             }
             if (empty($it['bank_name'])) {
@@ -1686,10 +1721,11 @@ function getStaffAccountsRepo() {
                 $it['role'] = 'HR Manager';
                 $modified = true;
             }
-            if (empty($it['base_salary']) || (float)$it['base_salary'] < 280000) {
+            if (!isset($it['base_salary']) || $it['base_salary'] === '') {
                 $it['base_salary'] = 300000;
                 $it['allowances'] = 25000;
                 $it['deductions'] = 15000;
+                $it['currency'] = $it['currency'] ?? 'NGN';
                 $modified = true;
             }
             if (empty($it['bank_name'])) {
@@ -1711,10 +1747,11 @@ function getStaffAccountsRepo() {
                 $it['role'] = 'Staff';
                 $modified = true;
             }
-            if (empty($it['base_salary'])) {
+            if (!isset($it['base_salary']) || $it['base_salary'] === '') {
                 $it['base_salary'] = 260000;
                 $it['allowances'] = 20000;
                 $it['deductions'] = 10000;
+                $it['currency'] = $it['currency'] ?? 'NGN';
                 $modified = true;
             }
             if (empty($it['bank_name'])) {
@@ -1736,10 +1773,11 @@ function getStaffAccountsRepo() {
                 $it['role'] = 'Content Editor';
                 $modified = true;
             }
-            if (empty($it['base_salary'])) {
+            if (!isset($it['base_salary']) || $it['base_salary'] === '') {
                 $it['base_salary'] = 220000;
                 $it['allowances'] = 20000;
                 $it['deductions'] = 10000;
+                $it['currency'] = $it['currency'] ?? 'NGN';
                 $modified = true;
             }
             if (empty($it['bank_name'])) {
@@ -1761,10 +1799,11 @@ function getStaffAccountsRepo() {
                 $it['role'] = 'Content Editor';
                 $modified = true;
             }
-            if (empty($it['base_salary'])) {
+            if (!isset($it['base_salary']) || $it['base_salary'] === '') {
                 $it['base_salary'] = 220000;
                 $it['allowances'] = 20000;
                 $it['deductions'] = 10000;
+                $it['currency'] = $it['currency'] ?? 'NGN';
                 $modified = true;
             }
             if (empty($it['bank_name'])) {
@@ -1786,10 +1825,11 @@ function getStaffAccountsRepo() {
                 $it['role'] = 'Super Admin';
                 $modified = true;
             }
-            if (!isset($it['base_salary']) || (float)$it['base_salary'] != 120000) {
+            if (!isset($it['base_salary']) || $it['base_salary'] === '') {
                 $it['base_salary'] = 120000;
                 $it['allowances'] = 20000;
                 $it['deductions'] = 10000;
+                $it['currency'] = $it['currency'] ?? 'NGN';
                 $modified = true;
             }
             if (empty($it['bank_name'])) {
@@ -1812,10 +1852,11 @@ function getStaffAccountsRepo() {
                 }
                 $modified = true;
             }
-            if (empty($it['base_salary'])) {
+            if (!isset($it['base_salary']) || $it['base_salary'] === '') {
                 $it['base_salary'] = 250000;
                 $it['allowances'] = 20000;
                 $it['deductions'] = 10000;
+                $it['currency'] = $it['currency'] ?? 'NGN';
                 $modified = true;
             }
             if (empty($it['bank_name'])) {
@@ -1933,13 +1974,23 @@ function saveStaffAccountByUsername($username, $data) {
     $items = $settings['staff_accounts'] ?? getStaffAccountsRepo();
     $updated = false;
 
-    $uLower = strtolower(trim($username));
+    $uLower = strtolower(trim((string)$username));
+    $uClean = preg_replace('/[^a-z0-9]/', '', $uLower);
     $matchedFullName = '';
 
     foreach ($items as &$st) {
         $stUser = strtolower(trim($st['username'] ?? ''));
         $stEmail = strtolower(trim($st['email'] ?? ''));
-        if ($uLower === $stUser || $uLower === $stEmail) {
+        $stFullName = strtolower(trim($st['full_name'] ?? ''));
+        $stUserClean = preg_replace('/[^a-z0-9]/', '', $stUser);
+        $stNameClean = preg_replace('/[^a-z0-9]/', '', $stFullName);
+
+        $isMatch = ($uLower === $stUser || $uLower === $stEmail || ($uClean !== '' && ($uClean === $stUserClean || $uClean === $stNameClean)));
+        if ($uLower === 'admin' && (strpos($stFullName, 'henry') !== false || $stUser === 'admin' || $stEmail === 'admin@falhen.com')) {
+            $isMatch = true;
+        }
+
+        if ($isMatch) {
             foreach ($data as $k => $v) {
                 if ($v !== null) {
                     $st[$k] = $v;
@@ -2660,6 +2711,9 @@ function getUserOnboardingData($username) {
     $empPhone = $staffObj['phone'] ?? '08027487449';
     $empAddress = $staffObj['address'] ?? 'Lagos, Nigeria';
 
+    $empCurr = $staffObj['currency'] ?? ($userData['offer_letter']['currency'] ?? 'NGN');
+    $currSym = getCurrencySymbol($empCurr);
+
     $sal = (float)($staffObj['base_salary'] ?? 120000);
     $allow = (float)($staffObj['allowances'] ?? 20000);
     $tot = $sal + $allow;
@@ -2678,13 +2732,13 @@ function getUserOnboardingData($username) {
                 'status' => 'Pending',
                 'accepted' => false,
                 'document_url' => '',
-                'currency' => 'NGN',
+                'currency' => $empCurr,
                 'job_title' => $empRole,
-                'salary' => '₦' . number_format($tot) . ' / month',
-                'base_salary' => '₦' . number_format($sal),
-                'tech_allowance' => '₦' . number_format($allow),
-                'wellness_allowance' => '₦0',
-                'total_earnings' => '₦' . number_format($tot)
+                'salary' => $currSym . number_format($tot) . ' / month',
+                'base_salary' => $currSym . number_format($sal),
+                'tech_allowance' => $currSym . number_format($allow),
+                'wellness_allowance' => $currSym . '0',
+                'total_earnings' => $currSym . number_format($tot)
             ],
             'employment_agreement' => [
                 'status' => 'Pending',
@@ -2737,13 +2791,17 @@ function getUserOnboardingData($username) {
             $userData['offer_letter']['job_title'] = $empRole;
         }
         
-        // Strictly synchronize offer letter compensation with authoritative staff accounts data
-        if ($sal > 0) {
-            $userData['offer_letter']['salary'] = '₦' . number_format($tot) . ' / month';
-            $userData['offer_letter']['base_salary'] = '₦' . number_format($sal);
-            $userData['offer_letter']['tech_allowance'] = '₦' . number_format($allow);
-            $userData['offer_letter']['total_earnings'] = '₦' . number_format($tot);
-            $userData['offer_letter']['currency'] = $staffObj['currency'] ?? 'NGN';
+        // If offer letter has NOT been issued yet, keep it synchronized with staff accounts
+        $isOfferIssued = !empty($userData['offer_letter']['issued']) || in_array($userData['offer_letter']['status'] ?? '', ['Issued', 'Accepted', 'Approved'], true);
+        if (!$isOfferIssued) {
+            $userData['offer_letter']['currency'] = $empCurr;
+            $userData['offer_letter']['salary'] = $currSym . number_format($tot) . ' / month';
+            $userData['offer_letter']['base_salary'] = $currSym . number_format($sal);
+            $userData['offer_letter']['tech_allowance'] = $currSym . number_format($allow);
+            $userData['offer_letter']['total_earnings'] = $currSym . number_format($tot);
+        } else {
+            $savedCurr = $userData['offer_letter']['currency'] ?? $empCurr;
+            $userData['offer_letter']['currency'] = $savedCurr;
         }
     }
 
@@ -4413,12 +4471,13 @@ function processEmployeePayment($data) {
     saveSiteSettings($settings);
 
     // Audit log
+    $auditSym = getCurrencySymbol($disbursement['currency'] ?? 'NGN');
     logDatabaseAudit(
         $disbursement['processed_by'],
         'payroll_disbursement',
         'payroll',
         $disbursement['tx_ref'],
-        "Salary payment of ₦" . number_format($disbursement['net_pay'], 2) . " processed for {$disbursement['full_name']} ({$disbursement['pay_period']}) via {$disbursement['payment_method']}."
+        "Salary payment of {$auditSym}" . number_format($disbursement['net_pay'], 2) . " processed for {$disbursement['full_name']} ({$disbursement['pay_period']}) via {$disbursement['payment_method']}."
     );
 
     return $disbursement;

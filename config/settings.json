@@ -1122,11 +1122,16 @@
             "full_name": "Henry Falonipe",
             "username": "admin",
             "email": "admin@falhen.com",
-            "role": "Super Admin",
+            "role": "Creative Director & Founder",
             "status": "active",
             "avatar": "https://res.cloudinary.com/pnabfi91/image/upload/v1786712075/falhen/team/ctxjp9mymgqdh2ecg2hu.jpg",
             "created_at": "2024-01-10",
-            "password_hash": "$2y$10$JXpfSKp9kdnpy8wSqB2iX.sNB2VlRi6.iKose61vMIL131MPHtkny"
+            "password_hash": "$2y$10$JXpfSKp9kdnpy8wSqB2iX.sNB2VlRi6.iKose61vMIL131MPHtkny",
+            "base_salary": 2700,
+            "allowances": 300,
+            "designation": "Creative Director & Founder",
+            "department": "Media Production & Post Studio",
+            "currency": "USD"
         },
         {
             "id": 2,
@@ -1202,10 +1207,28 @@
             "password_hash": "$2y$10$t7bfxh0MFRPZfR3q0yYzFepwVAxwWLrlbYWEhE1DpfFVJmyGvwuZi",
             "bank_name": "Zenith Bank PLC",
             "account_number": "2089123456",
-            "account_name": "Ligali Oluwatosin"
+            "account_name": "Ligali Oluwatosin",
+            "base_salary": 120000,
+            "allowances": 30000,
+            "designation": "Super Admin",
+            "department": "Media Production & Post Studio",
+            "currency": "NGN"
         }
     ],
     "attendance_logs": [
+        {
+            "id": 12,
+            "username": "mojisola.emjay",
+            "full_name": "Mojisola Emjay",
+            "date": "2026-08-29",
+            "clock_in": "01:50 PM",
+            "clock_out": null,
+            "break_start": null,
+            "break_end": null,
+            "duration": "In Progress",
+            "status": "Clocked In",
+            "work_state": "working"
+        },
         {
             "id": 11,
             "username": "admin",
@@ -1459,8 +1482,8 @@
                 "approved_at": "2026-08-29 13:36:24"
             },
             "offer_letter": {
-                "status": "Approved",
-                "accepted": true,
+                "status": "Issued",
+                "accepted": false,
                 "document_url": "/assets/docs/Offer_Letter_Falhen.pdf",
                 "currency": "NGN",
                 "job_title": "Super Admin",
@@ -1470,8 +1493,8 @@
                 "wellness_allowance": "\u20a610,000",
                 "total_earnings": "\u20a6150,000",
                 "issued": true,
-                "issued_at": "2026-08-29 11:44:48",
-                "issued_by": "Oluwatosin Ligali",
+                "issued_at": "2026-08-29 13:51:19",
+                "issued_by": "Mojisola Emjay",
                 "department": "Media Production & Post Studio",
                 "employment_type": "Full-Time",
                 "start_date": "2026-09-05",
@@ -1538,6 +1561,74 @@
                 "file_url": "https://res.cloudinary.com/pnabfi91/image/upload/v1788010349/falhen/id_documents/i3t41v3cumoimvf97vtj.jpg",
                 "approved_by": "Mojisola Emjay",
                 "approved_at": "2026-08-29 13:34:45"
+            }
+        },
+        "admin": {
+            "bank_details": {
+                "status": "Pending",
+                "account_number": "1012345678",
+                "bank_name": "Zenith Bank PLC",
+                "account_name": "Henry Falonipe"
+            },
+            "offer_letter": {
+                "status": "Issued",
+                "accepted": false,
+                "document_url": "/assets/docs/Offer_Letter_Falhen.pdf",
+                "currency": "USD",
+                "job_title": "Creative Director & Founder",
+                "salary": "$3,000 / month",
+                "base_salary": "$2,700",
+                "tech_allowance": "$100",
+                "wellness_allowance": "$200",
+                "total_earnings": "$3,000",
+                "issued": true,
+                "issued_at": "2026-08-29 13:55:32",
+                "issued_by": "Mojisola Emjay",
+                "department": "Media Production & Post Studio",
+                "employment_type": "Full-Time",
+                "start_date": "2026-09-05",
+                "probation_period": "3 Months",
+                "expiry_date": "2026-09-12",
+                "notes": null
+            },
+            "employment_agreement": {
+                "status": "Pending",
+                "signed": false,
+                "signed_at": null,
+                "document_url": "",
+                "supervisor_name": "Ligali Oluwatosin",
+                "supervisor_role": "Super Admin & Executive Director",
+                "work_location": "Remote / Studio Hybrid",
+                "work_days": "Monday to Friday",
+                "resumption_time": "9:00 AM",
+                "closing_time": "5:00 PM",
+                "address": "Lagos, Nigeria",
+                "phone": "08027487449"
+            },
+            "reference_1": {
+                "status": "Pending",
+                "ref_name": "",
+                "ref_contact": "",
+                "relationship": ""
+            },
+            "reference_2": {
+                "status": "Pending",
+                "ref_name": "",
+                "ref_contact": "",
+                "relationship": ""
+            },
+            "sop": {
+                "status": "Pending",
+                "acknowledged": false
+            },
+            "staff_handbook": {
+                "status": "Pending",
+                "acknowledged": false
+            },
+            "id_verification": {
+                "status": "Pending",
+                "document_type": "Government ID / Tax ID / Passport",
+                "file_url": ""
             }
         }
     },

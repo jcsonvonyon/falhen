@@ -28,8 +28,7 @@ $staffObj = getStaffAccountByUsername($targetUser);
 $userFullName = $staffObj['full_name'] ?? ucwords(str_replace('.', ' ', $targetUser));
 
 $currency = $offerInfo['currency'] ?? 'NGN';
-$currencySymbols = ['NGN' => '₦', 'USD' => '$', 'EUR' => '€', 'GBP' => '£'];
-$sym = $currencySymbols[$currency] ?? '₦';
+$sym = getCurrencySymbol($currency);
 
 $jobTitle = $offerInfo['job_title'] ?? 'Senior Video Editor & Cinematographer';
 $department = $offerInfo['department'] ?? 'Media Production & Post Studio';
