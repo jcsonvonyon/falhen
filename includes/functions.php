@@ -37,6 +37,23 @@ function sanitizeInput($data) {
 }
 
 /**
+ * Render Google Analytics (gtag.js) Tag
+ */
+function renderGoogleAnalyticsTag() {
+    ?>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-LJ91C0YXCH"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-LJ91C0YXCH');
+</script>
+<?php
+}
+
+/**
  * Generate CSRF Token
  */
 function generateCSRFToken() {

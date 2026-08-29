@@ -1445,6 +1445,74 @@
                 "document_type": "Government ID / Tax ID",
                 "file_url": "https://res.cloudinary.com/pnabfi91/image/upload/v1787919781/falhen/id_documents/homgifpealr5zollbocn.jpg"
             }
+        },
+        "oluwatosin.ligali": {
+            "bank_details": {
+                "status": "Pending",
+                "account_number": "",
+                "bank_name": "",
+                "account_name": "Ligali Oluwatosin"
+            },
+            "offer_letter": {
+                "status": "Issued",
+                "accepted": false,
+                "document_url": "/assets/docs/Offer_Letter_Falhen.pdf",
+                "currency": "NGN",
+                "job_title": "Super Admin",
+                "salary": "\u20a6150,000 / month",
+                "base_salary": "\u20a6120,000",
+                "tech_allowance": "\u20a620,000",
+                "wellness_allowance": "\u20a610,000",
+                "total_earnings": "\u20a6150,000",
+                "issued": true,
+                "issued_at": "2026-08-29 11:44:48",
+                "issued_by": "Oluwatosin Ligali",
+                "department": "Media Production & Post Studio",
+                "employment_type": "Full-Time",
+                "start_date": "2026-09-05",
+                "probation_period": "3 Months",
+                "expiry_date": "2026-09-12",
+                "notes": null
+            },
+            "employment_agreement": {
+                "status": "Pending",
+                "signed": false,
+                "signed_at": null,
+                "document_url": "",
+                "supervisor_name": "Oluwatosin Ligali",
+                "supervisor_role": "Admin",
+                "work_location": "Remote",
+                "work_days": "Monday to Friday",
+                "resumption_time": "9:00 AM",
+                "closing_time": "5:00 PM",
+                "address": "6 Olorunfunmi Street, Pedro, Gbagada, Lagos",
+                "phone": "08027487449"
+            },
+            "reference_1": {
+                "status": "Pending",
+                "ref_name": "",
+                "ref_contact": "",
+                "relationship": ""
+            },
+            "reference_2": {
+                "status": "Pending",
+                "ref_name": "",
+                "ref_contact": "",
+                "relationship": ""
+            },
+            "sop": {
+                "status": "Pending",
+                "acknowledged": false
+            },
+            "staff_handbook": {
+                "status": "Pending",
+                "acknowledged": false
+            },
+            "id_verification": {
+                "status": "Pending",
+                "document_type": "Government ID / Tax ID",
+                "file_url": ""
+            }
         }
     },
     "site_announcements": [
