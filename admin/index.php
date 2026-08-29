@@ -8813,7 +8813,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                         <input type="hidden" name="task_key" value="bank_details">
                                         <input type="hidden" name="new_status" value="Approved">
                                         <button type="submit" class="btn-save-primary" style="width: 100%; justify-content: center; background: #16a34a; border-color: #16a34a;">
-                                            <i class="fa-solid fa-check"></i> HR / Admin Approve Bank Details
+                                            <i class="fa-solid fa-check"></i> Approve Bank Details
                                         </button>
                                     </form>
                                 <?php endif; ?>
