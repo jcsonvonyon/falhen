@@ -4259,14 +4259,9 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                             <h1 class="section-header-title">Stats Counter</h1>
                             <p class="section-header-desc">Edit the "By the Numbers" section &mdash; syncs across all devices via Supabase</p>
                         </div>
-                        <div style="display: flex; gap: 10px;">
-                            <a href="/" target="_blank" class="btn-live-site" style="text-decoration: none;">
-                                <i class="fa-solid fa-eye"></i> Preview
-                            </a>
-                            <button type="submit" class="btn-save-primary">
-                                <i class="fa-solid fa-floppy-disk"></i> Save Changes
-                            </button>
-                        </div>
+                        <button type="submit" class="btn-save-primary">
+                            <i class="fa-solid fa-floppy-disk"></i> Save Changes
+                        </button>
                     </div>
 
                     <div class="form-grid-two">
