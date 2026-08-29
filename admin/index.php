@@ -942,10 +942,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         // Keep staff accounts compensation & role in strict two-way synchronization
         $numericBase = (float)str_replace(',', '', $rawBase);
-        $numericAllow = (float)str_replace(',', '', $rawTech) + (float)str_replace(',', '', $rawWell);
+        $numericTech = (float)str_replace(',', '', $rawTech);
+        $numericWell = (float)str_replace(',', '', $rawWell);
         saveStaffAccountByUsername($targetUser, [
             'base_salary'  => $numericBase,
-            'allowances'   => $numericAllow,
+            'allowances'   => $numericTech,
+            'deductions'   => $numericWell,
             'role'         => $jobTitle,
             'designation'  => $jobTitle,
             'department'   => $department,
@@ -2866,10 +2868,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $totalPaidSum = 0;
 
         foreach ($allStaff as $idx => $st) {
+            $stCurr     = $st['currency'] ?? 'NGN';
+            $defaultDeduc = in_array($stCurr, ['USD', 'EUR', 'GBP', 'CAD', 'AUD'], true) ? 0 : 10000;
+            $defaultAllow = in_array($stCurr, ['USD', 'EUR', 'GBP', 'CAD', 'AUD'], true) ? 0 : 20000;
             $baseSal    = (float)($st['base_salary'] ?? 250000);
-            $allowances = (float)($st['allowances'] ?? 20000);
-            $deductions = (float)($st['deductions'] ?? 10000);
+            $allowances = (float)($st['allowances'] ?? $defaultAllow);
+            $deductions = (float)($st['deductions'] ?? $defaultDeduc);
             $netPay     = ($baseSal + $allowances) - $deductions;
+            if ($netPay < 0) $netPay = 0;
             $txRef      = 'FAL-PAY-' . $periodYear . $periodMonth . '-' . sprintf('%03d', $idx + 1);
 
             processEmployeePayment([
@@ -2884,7 +2890,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'allowances'     => $allowances,
                 'deductions'     => $deductions,
                 'net_pay'        => $netPay,
-                'currency'       => 'NGN',
+                'currency'       => $stCurr,
                 'status'         => 'Paid',
                 'payment_method' => $paymentMethod,
                 'tx_ref'         => $txRef,
@@ -2894,7 +2900,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $totalPaidSum += $netPay;
         }
 
-        $_SESSION['saved_message'] = "Bulk monthly payroll processed successfully! {$countPaid} active team members disbursed total of ₦" . number_format($totalPaidSum, 2) . " for {$payPeriod}.";
+        $_SESSION['saved_message'] = "Bulk monthly payroll processed successfully for {$countPaid} active team members for {$payPeriod}!";
         header('Location: /admin/index.php?section=payroll&month=' . urlencode($periodMonth) . '&year=' . urlencode($periodYear) . '&saved=1');
         exit;
     }
@@ -12647,9 +12653,11 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
 
                     foreach ($allStaffForPayroll as $st) {
                         $stCurr = $st['currency'] ?? 'NGN';
+                        $defaultDeduc = in_array($stCurr, ['USD', 'EUR', 'GBP', 'CAD', 'AUD'], true) ? 0 : 10000;
+                        $defaultAllow = in_array($stCurr, ['USD', 'EUR', 'GBP', 'CAD', 'AUD'], true) ? 0 : 20000;
                         $baseSal = (float)($st['base_salary'] ?? 250000);
-                        $allowVal = (float)($st['allowances'] ?? 20000);
-                        $deducVal = (float)($st['deductions'] ?? 10000);
+                        $allowVal = (float)($st['allowances'] ?? $defaultAllow);
+                        $deducVal = (float)($st['deductions'] ?? $defaultDeduc);
                         $netExpected = ($baseSal + $allowVal) - $deducVal;
 
                         $budgetByCurrency[$stCurr] = ($budgetByCurrency[$stCurr] ?? 0) + $netExpected;
@@ -12794,10 +12802,12 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
 
                                     $stCurr = $disbData['currency'] ?? ($st['currency'] ?? 'NGN');
                                     $currSym = getCurrencySymbol($stCurr);
+                                    $defaultDeduc = in_array($stCurr, ['USD', 'EUR', 'GBP', 'CAD', 'AUD'], true) ? 0 : 10000;
+                                    $defaultAllow = in_array($stCurr, ['USD', 'EUR', 'GBP', 'CAD', 'AUD'], true) ? 0 : 20000;
 
                                     $baseSal = (float)($st['base_salary'] ?? 250000);
-                                    $allowVal = $disbData ? (float)$disbData['allowances'] : (float)($st['allowances'] ?? 20000);
-                                    $deducVal = $disbData ? (float)$disbData['deductions'] : (float)($st['deductions'] ?? 10000);
+                                    $allowVal = $disbData ? (float)$disbData['allowances'] : (float)($st['allowances'] ?? $defaultAllow);
+                                    $deducVal = $disbData ? (float)$disbData['deductions'] : (float)($st['deductions'] ?? $defaultDeduc);
                                     $netVal = $disbData ? (float)$disbData['net_pay'] : ($baseSal + $allowVal - $deducVal);
                                     $statusStr = $disbData ? ($disbData['status'] ?? 'Paid') : 'Pending';
                                     ?>

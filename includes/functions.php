@@ -1438,10 +1438,10 @@ function getStaffAccountsRepo() {
                 'email'         => 'admin@falhen.com',
                 'role'          => 'Super Admin',
                 'designation'   => 'Creative Director & Founder',
-                'currency'      => 'NGN',
-                'base_salary'   => 450000,
-                'allowances'    => 50000,
-                'deductions'    => 25000,
+                'currency'      => 'USD',
+                'base_salary'   => 2700,
+                'allowances'    => 100,
+                'deductions'    => 200,
                 'bank_name'     => 'Zenith Bank PLC',
                 'account_number'=> '1012345678',
                 'account_name'  => 'Henry Falonipe',
@@ -1643,11 +1643,11 @@ function getStaffAccountsRepo() {
                 $it['role'] = 'Super Admin';
                 $modified = true;
             }
-            if (!isset($it['base_salary']) || $it['base_salary'] === '') {
-                $it['base_salary'] = 450000;
-                $it['allowances'] = 50000;
-                $it['deductions'] = 25000;
-                $it['currency'] = $it['currency'] ?? 'NGN';
+            if (!isset($it['base_salary']) || $it['base_salary'] === '' || (($it['currency'] ?? '') === 'USD' && (float)$it['deductions'] > 500)) {
+                $it['base_salary'] = 2700;
+                $it['allowances'] = 100;
+                $it['deductions'] = 200;
+                $it['currency'] = 'USD';
                 $modified = true;
             }
             if (empty($it['bank_name'])) {
@@ -1872,6 +1872,34 @@ function getStaffAccountsRepo() {
         }
     }
     unset($it);
+
+    // Synchronize staff compensation and currency with active onboarding offer letters
+    $allOnboarding = $settings['user_onboarding'] ?? [];
+    if (!empty($allOnboarding) && is_array($allOnboarding)) {
+        foreach ($items as &$it) {
+            $uLower = strtolower($it['username'] ?? '');
+            $onb = $allOnboarding[$uLower] ?? ($uLower === 'admin' ? ($allOnboarding['henry.falonipe'] ?? null) : null);
+            if ($onb && (!empty($onb['offer_letter']['issued']) || in_array($onb['offer_letter']['status'] ?? '', ['Issued', 'Accepted', 'Approved'], true))) {
+                $off = $onb['offer_letter'];
+                $rawBase = (float)str_replace(',', '', preg_replace('/^[₦$€£\s]+/u', '', $off['base_salary'] ?? '0'));
+                $rawTech = (float)str_replace(',', '', preg_replace('/^[₦$€£\s]+/u', '', $off['tech_allowance'] ?? '0'));
+                $rawWell = (float)str_replace(',', '', preg_replace('/^[₦$€£\s]+/u', '', $off['wellness_allowance'] ?? '0'));
+                $offCurr = $off['currency'] ?? ($it['currency'] ?? 'NGN');
+
+                if ($rawBase > 0) {
+                    $it['base_salary'] = $rawBase;
+                    $it['allowances'] = $rawTech;
+                    $it['deductions'] = $rawWell;
+                    $it['currency'] = $offCurr;
+                    if (!empty($off['job_title'])) {
+                        $it['designation'] = $off['job_title'];
+                    }
+                    $modified = true;
+                }
+            }
+        }
+        unset($it);
+    }
 
     // Fallback sync of initial avatars from Team (Content) menu if empty
     $teamMembers = getTeamMembers();
