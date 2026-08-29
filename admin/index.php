@@ -3167,12 +3167,173 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
             from { transform: translateY(-20px); opacity: 0; }
             to { transform: translateY(0); opacity: 1; }
         }
+
+        /* -------------------------------------------------------------
+           MOBILE & TABLET RESPONSIVE SYSTEM
+           ------------------------------------------------------------- */
+        .mobile-nav-toggle {
+            display: none;
+            background: none;
+            border: none;
+            font-size: 1.25rem;
+            color: #0f172a;
+            cursor: pointer;
+            padding: 6px;
+            border-radius: 8px;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            transition: background 0.15s;
+        }
+
+        .mobile-nav-toggle:hover {
+            background: #f1f5f9;
+        }
+
+        .sidebar-header-bar {
+            display: none;
+        }
+
+        .sidebar-close-btn {
+            background: none;
+            border: none;
+            font-size: 1.15rem;
+            color: #64748b;
+            cursor: pointer;
+            padding: 6px 8px;
+            border-radius: 8px;
+            margin-left: auto;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.15s;
+        }
+
+        .sidebar-close-btn:hover {
+            color: #dc2626;
+            background: #fef2f2;
+        }
+
+        .sidebar-backdrop {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.55);
+            backdrop-filter: blur(2px);
+            z-index: 1040;
+            opacity: 0;
+            transition: opacity 0.25s ease;
+        }
+
+        .sidebar-backdrop.active {
+            display: block;
+            opacity: 1;
+        }
+
+        @media (max-width: 992px) {
+            .mobile-nav-toggle {
+                display: inline-flex;
+            }
+
+            .sidebar-header-bar {
+                display: flex !important;
+            }
+
+            .sidebar {
+                position: fixed;
+                top: 0;
+                bottom: 0;
+                left: 0;
+                width: 280px;
+                max-width: 85vw;
+                z-index: 1050;
+                transform: translateX(-100%);
+                transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+                box-shadow: 4px 0 25px rgba(0, 0, 0, 0.2);
+            }
+
+            .sidebar.mobile-open {
+                transform: translateX(0);
+            }
+
+            .main-wrapper {
+                margin-left: 0 !important;
+                width: 100% !important;
+                max-width: 100vw;
+            }
+
+            .top-header {
+                left: 0 !important;
+                width: 100% !important;
+                padding: 0 14px;
+                gap: 10px;
+            }
+
+            .top-header .breadcrumb {
+                gap: 8px;
+                font-size: 0.82rem;
+            }
+
+            .topbar-primary-nav {
+                display: none !important;
+            }
+
+            .content-body {
+                padding: 16px 12px !important;
+                width: 100% !important;
+                box-sizing: border-box;
+            }
+
+            .form-grid-two,
+            .form-grid-three {
+                grid-template-columns: 1fr !important;
+                gap: 14px !important;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr) !important;
+                gap: 12px !important;
+            }
+
+            .table-responsive {
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .stats-grid {
+                grid-template-columns: 1fr !important;
+            }
+
+            .top-header .breadcrumb > div:first-child {
+                max-width: 130px;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+            
+            .header-actions .header-link span {
+                display: none;
+            }
+        }
     </style>
 </head>
 <body>
 
     <!-- 1. LEFT SIDEBAR -->
     <aside class="sidebar">
+        <!-- Mobile Sidebar Header Bar -->
+        <div class="sidebar-header-bar" style="align-items: center; justify-content: space-between; padding: 16px 16px 0 16px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <img src="/assets/img/icons/logo.png" alt="Logo" style="height: 22px; width: auto;">
+                <span style="font-size: 0.95rem; font-weight: 800; color: #0f172a; letter-spacing: -0.5px;">Falhen Admin</span>
+            </div>
+            <button type="button" class="sidebar-close-btn" onclick="toggleMobileSidebar()" aria-label="Close Navigation">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+
         <!-- User Profile Box -->
         <a href="/admin/index.php?section=profile" class="sidebar-user-box" style="text-decoration: none; cursor: pointer; display: flex; align-items: center; justify-content: space-between; transition: all 0.2s ease;">
             <div class="user-left" style="display: flex; align-items: center; gap: 10px;">
@@ -3493,16 +3654,21 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
             </a>
             <div style="margin-top: 6px; font-size: 0.7rem; color: #cbd5e1;">
                 Hero, Awards &amp; BTS save to DB &amp; settings file.
-            </div>
         </div>
     </aside>
+
+    <!-- Mobile Sidebar Backdrop Overlay -->
+    <div class="sidebar-backdrop" id="sidebarBackdrop" onclick="toggleMobileSidebar()"></div>
 
     <!-- 2. MAIN WRAPPER -->
     <main class="main-wrapper">
 
         <!-- Top Navigation Header -->
         <header class="top-header">
-            <div class="breadcrumb" style="display: flex; align-items: center; gap: 16px; flex-wrap: wrap;">
+            <div class="breadcrumb" style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+                <button type="button" class="mobile-nav-toggle" id="mobileNavToggle" onclick="toggleMobileSidebar()" aria-label="Toggle Navigation">
+                    <i class="fa-solid fa-bars"></i>
+                </button>
                 <?php 
                 $sectionTitles = [
                     'hero' => 'Hero',
@@ -14484,8 +14650,19 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
     }
     </script>
 
-    <!-- GLOBAL SIDEBAR COLLAPSE SCRIPT -->
+    <!-- GLOBAL SIDEBAR & MOBILE RESPONSIVE SCRIPT -->
     <script>
+    function toggleMobileSidebar() {
+        var sidebar = document.querySelector('.sidebar');
+        var backdrop = document.getElementById('sidebarBackdrop');
+        if (sidebar) {
+            sidebar.classList.toggle('mobile-open');
+        }
+        if (backdrop) {
+            backdrop.classList.toggle('active');
+        }
+    }
+
     function toggleNavCategory(header) {
         if (!header) return;
         header.classList.toggle('collapsed');
