@@ -1,6 +1,7 @@
 <?php
 $pageTitle = "Falhen Video Production | Visual Storytelling";
 require_once __DIR__ . '/config/db.php';
+require_once __DIR__ . '/includes/functions.php';
 require_once __DIR__ . '/includes/header.php';
 
 // Fetch services from DB if available
@@ -20,7 +21,6 @@ if ($pdo) {
 
 <!-- Hero Section (Dynamic Admin Settings Integration) -->
 <?php 
-require_once __DIR__ . '/includes/functions.php';
 $settings = getSiteSettings();
 $showreelId = $settings['showreel_youtube_id'] ?? 'Tf8rNMZ-Bw0';
 if (preg_match('/(?:v=|\/embed\/|\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/', $showreelId, $matches)) {
