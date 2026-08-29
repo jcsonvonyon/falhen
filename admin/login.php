@@ -964,10 +964,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <div class="portal-icon-box">
                                 <i class="fa-solid fa-user-plus"></i>
                             </div>
-                            <div style="display: flex; align-items: center; justify-content: flex-start; gap: 8px; margin-bottom: 6px;">
-                                <h2 class="portal-card-title" style="margin-bottom: 0;">Vendor Sign-Up</h2>
-                                <span class="badge-new">New</span>
-                            </div>
+                            <h2 class="portal-card-title">Vendor Sign-Up</h2>
                             <p class="portal-card-desc">Photographers, interns &amp; volunteers &mdash; complete onboarding, NDA &amp; MSA</p>
                         </div>
                     </div>
