@@ -866,6 +866,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             border: 1px solid rgba(34, 197, 94, 0.35);
             color: #4ade80;
         }
+
+        /* Mobile Typography & Layout Optimization */
+        @media (max-width: 640px) {
+            .portal-grid {
+                gap: 12px;
+                margin-bottom: 14px;
+            }
+            .portal-card {
+                padding: 16px 14px;
+                border-radius: 12px;
+            }
+            .portal-icon-box {
+                width: 36px;
+                height: 36px;
+                font-size: 1rem;
+                margin-bottom: 12px;
+                border-radius: 8px;
+            }
+            .portal-card-title {
+                font-size: 0.92rem;
+                line-height: 1.25;
+                margin-bottom: 4px;
+            }
+            .portal-card-desc {
+                font-size: 0.74rem;
+                line-height: 1.35;
+            }
+        }
     </style>
 </head>
 <body>
