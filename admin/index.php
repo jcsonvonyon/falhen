@@ -3176,13 +3176,15 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
         <!-- User Profile Box -->
         <a href="/admin/index.php?section=profile" class="sidebar-user-box" style="text-decoration: none; cursor: pointer; display: flex; align-items: center; justify-content: space-between; transition: all 0.2s ease;">
             <div class="user-left" style="display: flex; align-items: center; gap: 10px;">
+                <div id="sidebar_avatar_container" style="width: 38px; height: 38px; border-radius: 50%; overflow: hidden; flex-shrink: 0; display: flex; align-items: center; justify-content: center;">
                 <?php if (!empty($userAvatar)): ?>
-                    <img src="<?php echo htmlspecialchars(getCloudinaryUrl($userAvatar)); ?>" alt="Profile Avatar" style="width: 38px; height: 38px; border-radius: 50%; object-fit: cover; border: 2px solid #ef4444; flex-shrink: 0;">
+                    <img id="sidebar_avatar_img" src="<?php echo htmlspecialchars(getCloudinaryUrl($userAvatar)); ?>" alt="Profile Avatar" style="width: 38px; height: 38px; border-radius: 50%; object-fit: cover; border: 2px solid #ef4444; flex-shrink: 0;">
                 <?php else: ?>
-                    <div style="width: 38px; height: 38px; border-radius: 50%; background: #dc2626; color: #ffffff; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1rem; flex-shrink: 0;">
+                    <div id="sidebar_avatar_initial" style="width: 38px; height: 38px; border-radius: 50%; background: #dc2626; color: #ffffff; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1rem; flex-shrink: 0;">
                         <?php echo $userInitial; ?>
                     </div>
                 <?php endif; ?>
+                </div>
                 <div class="user-details" style="overflow: hidden;">
                     <div class="user-title" style="font-weight: 800; color: #0f172a; font-size: 0.85rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 110px;"><?php echo htmlspecialchars($userFullName); ?></div>
                     <div class="user-sub" style="font-size: 0.74rem; color: #64748b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 110px;"><?php echo htmlspecialchars($userRole); ?></div>
@@ -3608,11 +3610,11 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                 <a href="/admin/login.php?action=logout" class="header-link" style="color: var(--text-secondary);">
                     <i class="fa-solid fa-right-from-bracket"></i> Sign Out
                 </a>
-                <a href="/admin/index.php?section=profile" class="user-avatar-circle" title="My Profile Settings" style="text-decoration: none; overflow: hidden; display: flex; align-items: center; justify-content: center; cursor: pointer; border: 2px solid #dc2626;">
+                <a href="/admin/index.php?section=profile" class="user-avatar-circle" id="topbar_avatar_circle" title="My Profile Settings" style="width: 36px; height: 36px; border-radius: 50%; text-decoration: none; overflow: hidden; display: flex; align-items: center; justify-content: center; cursor: pointer; border: 2px solid #dc2626; flex-shrink: 0;">
                     <?php if (!empty($userAvatar)): ?>
-                        <img src="<?php echo htmlspecialchars(getCloudinaryUrl($userAvatar)); ?>" alt="Profile" style="width: 100%; height: 100%; object-fit: cover;">
+                        <img id="topbar_avatar_img" src="<?php echo htmlspecialchars(getCloudinaryUrl($userAvatar)); ?>" alt="Profile" style="width: 100%; height: 100%; object-fit: cover;">
                     <?php else: ?>
-                        <?php echo $userInitial; ?>
+                        <span id="topbar_avatar_initial"><?php echo $userInitial; ?></span>
                     <?php endif; ?>
                 </a>
             </div>
@@ -7018,15 +7020,17 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                 existingInput.value = data.url;
                                 previewContainer.innerHTML = '<img id="profile_avatar_img" src="' + data.url + '" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 3px solid #dc2626; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">';
                                 
-                                // Also update sidebar and header topbar avatars immediately in DOM
-                                document.querySelectorAll('.sidebar-user-box img, .user-avatar-circle img').forEach(img => {
-                                    img.src = data.url;
-                                });
-                                document.querySelectorAll('.sidebar-user-box .user-left div:first-child, .user-avatar-circle').forEach(el => {
-                                    if (el.tagName !== 'IMG' && !el.querySelector('img')) {
-                                        el.innerHTML = '<img src="' + data.url + '" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">';
-                                    }
-                                });
+                                // Safely update sidebar avatar without affecting user details card
+                                const sidebarAvatarBox = document.getElementById('sidebar_avatar_container');
+                                if (sidebarAvatarBox) {
+                                    sidebarAvatarBox.innerHTML = '<img id="sidebar_avatar_img" src="' + data.url + '" alt="Profile Avatar" style="width: 38px; height: 38px; border-radius: 50%; object-fit: cover; border: 2px solid #ef4444; flex-shrink: 0;">';
+                                }
+                                
+                                // Safely update topbar header avatar circle
+                                const topbarAvatarCircle = document.getElementById('topbar_avatar_circle');
+                                if (topbarAvatarCircle) {
+                                    topbarAvatarCircle.innerHTML = '<img id="topbar_avatar_img" src="' + data.url + '" alt="Profile" style="width: 100%; height: 100%; object-fit: cover;">';
+                                }
                             } else {
                                 alert('Avatar Upload Error: ' + data.message);
                             }
