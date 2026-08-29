@@ -120,7 +120,38 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         $res = uploadToCloudinary($fileToUpload, $folder);
         if (!empty($res['success']) && !empty($res['url'])) {
-            echo json_encode(['success' => true, 'url' => $res['url']]);
+            $newAvatarUrl = $res['url'];
+
+            // Auto-persist immediately if uploading a profile photo
+            if ($folder === 'falhen/profile' || !empty($_POST['is_profile_avatar'])) {
+                $_SESSION['admin_avatar'] = $newAvatarUrl;
+
+                $curUser = $_SESSION['admin_username'] ?? '';
+                $curEmail = $_SESSION['admin_email'] ?? '';
+                $curRole = $_SESSION['admin_role'] ?? 'Staff';
+
+                if (isAdminUser($curRole, $curEmail, $curUser)) {
+                    saveAdminUserProfile(['avatar' => $newAvatarUrl]);
+                    saveStaffAccountByUsername('admin', ['avatar' => $newAvatarUrl]);
+                    saveStaffAccountByUsername('oluwatosin.ligali', ['avatar' => $newAvatarUrl]);
+                }
+
+                if (!empty($curUser)) {
+                    saveStaffAccountByUsername($curUser, ['avatar' => $newAvatarUrl]);
+                }
+                if (!empty($curEmail)) {
+                    saveStaffAccountByUsername($curEmail, ['avatar' => $newAvatarUrl]);
+                }
+
+                if ($pdo) {
+                    try {
+                        $stmt = $pdo->prepare("UPDATE `admin_users` SET `avatar` = ? WHERE `username` = ? OR `email` = ?");
+                        $stmt->execute([$newAvatarUrl, $curUser, $curEmail]);
+                    } catch (Exception $e) {}
+                }
+            }
+
+            echo json_encode(['success' => true, 'url' => $newAvatarUrl]);
         } else {
             echo json_encode(['success' => false, 'message' => $res['message'] ?? 'Cloudinary upload failed.']);
         }
@@ -2048,6 +2079,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
             $_SESSION['admin_role'] = $role;
             $_SESSION['admin_alt_email'] = $altEmail;
+        }
+
+        if ($pdo && !empty($avatar)) {
+            try {
+                $stmt = $pdo->prepare("UPDATE `admin_users` SET `avatar` = ? WHERE `username` = ? OR `email` = ?");
+                $stmt->execute([$avatar, $targetUser, $email]);
+            } catch (Exception $e) {}
         }
 
         header('Location: index.php?section=my_profile&saved=1');
