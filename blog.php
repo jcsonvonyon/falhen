@@ -605,9 +605,6 @@ $gridPosts = array_filter($blogPosts, fn($p) => $featuredPost && $p['id'] !== $f
                 <img src="/assets/img/icons/logo.png" alt="Falhen Logo">
             </a>
             <div class="blog-nav-right">
-                <a href="/admin/index.php?section=blog" class="btn-manage-posts" style="text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">
-                    <i class="fa-regular fa-pen-to-square"></i> Manage Posts
-                </a>
                 <a href="/contact.php" class="btn-blog-contact">
                     Contact Us
                 </a>
