@@ -4470,13 +4470,13 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                             </p>
                         </div>
                         <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
-                            <button type="button" class="btn-live-site" style="color: #ef4444; border-color: rgba(239,68,68,0.3); background: rgba(239,68,68,0.05); font-size: 0.82rem;">
+                            <button type="button" onclick="syncBtsGallery()" class="btn-live-site" style="color: #ef4444; border-color: rgba(239,68,68,0.3); background: rgba(239,68,68,0.05); font-size: 0.82rem;" title="Sync gallery order">
                                 <i class="fa-solid fa-rotate"></i> Sync
                             </button>
-                            <button type="button" class="btn-live-site" style="color: #16a34a; border-color: rgba(22,163,74,0.3); background: rgba(22,163,74,0.05); font-size: 0.82rem;">
+                            <button type="button" onclick="openDriveFolderModal()" class="btn-live-site" style="color: #16a34a; border-color: rgba(22,163,74,0.3); background: rgba(22,163,74,0.05); font-size: 0.82rem;" title="Import from Google Drive Folder">
                                 <i class="fa-brands fa-google-drive"></i> Drive Folder
                             </button>
-                            <button type="button" class="btn-live-site" style="color: #16a34a; border-color: rgba(22,163,74,0.3); background: rgba(22,163,74,0.05); font-size: 0.82rem;">
+                            <button type="button" onclick="openDriveUrlsModal()" class="btn-live-site" style="color: #16a34a; border-color: rgba(22,163,74,0.3); background: rgba(22,163,74,0.05); font-size: 0.82rem;" title="Paste multiple image/Drive links">
                                 <i class="fa-solid fa-link"></i> Drive URLs
                             </button>
                             <button type="button" onclick="openAddBtsCard()" class="btn-save-primary" style="font-size: 0.82rem; padding: 8px 14px;">
@@ -4492,19 +4492,19 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                     </div>
 
                     <!-- Drag & Drop Upload Container Card -->
-                    <div style="border: 1px dashed #cbd5e1; border-radius: 14px; padding: 28px; text-align: center; margin-bottom: 24px; background: #ffffff; cursor: pointer;" onclick="document.getElementById('btsDropInput').click()">
-                        <div style="width: 44px; height: 44px; border-radius: 50%; background: #f1f5f9; color: #64748b; display: inline-flex; align-items: center; justify-content: center; font-size: 1.2rem; margin-bottom: 10px;">
+                    <div id="btsDropZone" style="border: 2px dashed #cbd5e1; border-radius: 14px; padding: 28px; text-align: center; margin-bottom: 24px; background: #ffffff; cursor: pointer; transition: all 0.2s ease;" onclick="document.getElementById('btsDropInput').click()" ondragover="handleBtsDropzoneOver(event)" ondragleave="handleBtsDropzoneLeave(event)" ondrop="handleBtsDropzoneDrop(event)">
+                        <div style="width: 48px; height: 48px; border-radius: 50%; background: #f8fafc; color: #dc2626; display: inline-flex; align-items: center; justify-content: center; font-size: 1.3rem; margin-bottom: 10px; border: 1px solid #e2e8f0;">
                             <i class="fa-solid fa-cloud-arrow-up"></i>
                         </div>
-                        <h4 style="font-size: 0.95rem; font-weight: 700; color: var(--text-primary); margin-bottom: 4px;">Drag &amp; drop photos here</h4>
-                        <p style="font-size: 0.8rem; color: var(--text-muted); margin: 0;">or click to browse &middot; JPG, PNG, WebP, GIF &middot; max 5 MB per file</p>
-                        <input type="file" id="btsDropInput" name="bts_file" accept="image/*" style="display: none;" onchange="uploadBtsFileDirect(this)">
+                        <h4 style="font-size: 0.98rem; font-weight: 800; color: var(--text-primary); margin-bottom: 4px;">Drag &amp; drop photos here</h4>
+                        <p style="font-size: 0.82rem; color: var(--text-muted); margin: 0;">or click to browse &middot; JPG, PNG, WebP, GIF &middot; max 10 MB per file &middot; auto uploads to Cloudinary</p>
+                        <input type="file" id="btsDropInput" name="bts_files[]" accept="image/*" multiple style="display: none;" onchange="handleBtsFileInput(this)">
                     </div>
 
                     <!-- Photo Grid Container (3 Columns) -->
                     <div id="btsPhotoGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px;">
                         <?php foreach ($btsItems as $index => $photo): ?>
-                            <div class="bts-photo-card" style="background: #ffffff; border: 1px solid var(--card-border); border-radius: 14px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.05); display: flex; flex-direction: column;">
+                            <div class="bts-photo-card" draggable="true" ondragstart="handleBtsDragStart(event, this)" ondragover="handleBtsDragOver(event, this)" ondrop="handleBtsDrop(event, this)" ondragend="handleBtsDragEnd(event, this)" style="background: #ffffff; border: 1px solid var(--card-border); border-radius: 14px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.05); display: flex; flex-direction: column; cursor: grab; transition: transform 0.15s, box-shadow 0.15s;">
                                 
                                 <!-- Image Box with Overlay Tags -->
                                 <div style="position: relative; aspect-ratio: 16/10; overflow: hidden; background: #0f172a;">
@@ -4521,8 +4521,8 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                     </div>
 
                                     <!-- Top Right Status Pill -->
-                                    <div style="position: absolute; top: 10px; right: 10px; background: rgba(15, 23, 42, 0.85); color: #ffffff; font-size: 0.7rem; font-weight: 700; padding: 3px 8px; border-radius: 6px;">
-                                        #<?php echo ($index + 1); ?> &middot; visible
+                                    <div class="bts-status-pill" style="position: absolute; top: 10px; right: 10px; background: rgba(15, 23, 42, 0.85); color: #ffffff; font-size: 0.7rem; font-weight: 700; padding: 3px 8px; border-radius: 6px;">
+                                        #<?php echo ($index + 1); ?> &middot; <?php echo ($index < 6) ? 'visible on home' : 'extra'; ?>
                                     </div>
                                 </div>
 
@@ -13005,7 +13005,170 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
             renderQuickPreview();
         });
 
-        // Production BTS Section Helpers
+        // Production BTS Section Helpers & Drag-and-Drop
+        let draggedBtsCard = null;
+
+        function handleBtsDragStart(e, card) {
+            draggedBtsCard = card;
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/plain', '');
+            card.style.opacity = '0.4';
+            card.style.transform = 'scale(0.98)';
+        }
+
+        function handleBtsDragOver(e, card) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            if (draggedBtsCard && draggedBtsCard !== card) {
+                card.style.border = '2px dashed #dc2626';
+            }
+        }
+
+        function handleBtsDrop(e, card) {
+            e.preventDefault();
+            card.style.border = '';
+            if (draggedBtsCard && draggedBtsCard !== card) {
+                const grid = document.getElementById('btsPhotoGrid');
+                if (grid) {
+                    const cards = Array.from(grid.querySelectorAll('.bts-photo-card'));
+                    const fromIndex = cards.indexOf(draggedBtsCard);
+                    const toIndex = cards.indexOf(card);
+                    if (fromIndex < toIndex) {
+                        grid.insertBefore(draggedBtsCard, card.nextSibling);
+                    } else {
+                        grid.insertBefore(draggedBtsCard, card);
+                    }
+                    updateBtsCountBadge();
+                }
+            }
+        }
+
+        function handleBtsDragEnd(e, card) {
+            card.style.opacity = '1';
+            card.style.transform = '';
+            const grid = document.getElementById('btsPhotoGrid');
+            if (grid) {
+                grid.querySelectorAll('.bts-photo-card').forEach(c => c.style.border = '');
+            }
+            draggedBtsCard = null;
+            updateBtsCountBadge();
+        }
+
+        // Dropzone Drag & Drop
+        function handleBtsDropzoneOver(e) {
+            e.preventDefault();
+            const zone = document.getElementById('btsDropZone');
+            if (zone) {
+                zone.style.borderColor = '#dc2626';
+                zone.style.backgroundColor = '#fef2f2';
+            }
+        }
+
+        function handleBtsDropzoneLeave(e) {
+            e.preventDefault();
+            const zone = document.getElementById('btsDropZone');
+            if (zone) {
+                zone.style.borderColor = '#cbd5e1';
+                zone.style.backgroundColor = '#ffffff';
+            }
+        }
+
+        function handleBtsDropzoneDrop(e) {
+            e.preventDefault();
+            handleBtsDropzoneLeave(e);
+            if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+                uploadBtsFiles(e.dataTransfer.files);
+            }
+        }
+
+        function handleBtsFileInput(input) {
+            if (input.files && input.files.length > 0) {
+                uploadBtsFiles(input.files);
+                input.value = '';
+            }
+        }
+
+        function uploadBtsFiles(files) {
+            const grid = document.getElementById('btsPhotoGrid');
+            if (!grid) return;
+
+            Array.from(files).forEach((file, i) => {
+                if (!file.type.startsWith('image/')) return;
+
+                const tempId = 'temp_bts_' + Date.now() + '_' + i;
+                const count = grid.querySelectorAll('.bts-photo-card').length + 1;
+                const previewSrc = URL.createObjectURL(file);
+                const defaultTitle = file.name.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' ');
+
+                const cardHtml = `
+                    <div id="${tempId}" class="bts-photo-card" draggable="true" ondragstart="handleBtsDragStart(event, this)" ondragover="handleBtsDragOver(event, this)" ondrop="handleBtsDrop(event, this)" ondragend="handleBtsDragEnd(event, this)" style="background: #ffffff; border: 1px solid var(--card-border); border-radius: 14px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.05); display: flex; flex-direction: column; cursor: grab; transition: transform 0.15s, box-shadow 0.15s;">
+                        <div style="position: relative; aspect-ratio: 16/10; overflow: hidden; background: #0f172a;">
+                            <img src="${previewSrc}" style="width: 100%; height: 100%; object-fit: cover; opacity: 0.7;">
+                            <div class="uploading-spinner" style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(15,23,42,0.5); color: #ffffff; font-weight: 700; font-size: 0.85rem; gap: 8px;">
+                                <i class="fa-solid fa-spinner fa-spin"></i> Uploading to CDN...
+                            </div>
+                            <div style="position: absolute; top: 10px; left: 10px; width: 26px; height: 26px; border-radius: 6px; background: rgba(15, 23, 42, 0.7); color: #ffffff; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; cursor: move;"><i class="fa-solid fa-arrows-up-down-left-right"></i></div>
+                            <div class="bts-status-pill" style="position: absolute; top: 10px; right: 10px; background: rgba(15, 23, 42, 0.85); color: #ffffff; font-size: 0.7rem; font-weight: 700; padding: 3px 8px; border-radius: 6px;">#${count} &middot; uploading</div>
+                        </div>
+                        <div style="padding: 14px 16px; flex-grow: 1;">
+                            <input type="hidden" name="bts_image[]" value="" class="bts-img-val">
+                            <div style="font-size: 0.88rem; font-weight: 700; color: var(--text-primary); margin-bottom: 4px;">
+                                <input type="text" name="bts_title[]" value="${defaultTitle}" class="form-text-input" style="padding: 6px 10px; font-weight: 700; font-size: 0.85rem;" placeholder="Photo Title">
+                            </div>
+                            <div style="font-size: 0.78rem; color: var(--text-muted);">
+                                <input type="text" name="bts_subtitle[]" value="Behind the scenes shoot" class="form-text-input" style="padding: 4px 10px; font-size: 0.78rem;" placeholder="Subtitle / Caption">
+                            </div>
+                        </div>
+                        <div style="padding: 10px 16px; border-top: 1px solid #f1f5f9; display: flex; align-items: center; justify-content: space-between; font-size: 0.78rem; background: #fafafa;">
+                            <span style="color: #94a3b8; font-weight: 500;">+ drag to reorder</span>
+                            <div style="display: flex; gap: 12px;">
+                                <button type="button" onclick="editBtsCard(this)" style="background: none; border: none; color: var(--text-secondary); font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;"><i class="fa-solid fa-pen" style="font-size: 0.72rem;"></i> Edit</button>
+                                <button type="button" onclick="deleteBtsCard(this)" style="background: none; border: none; color: #94a3b8; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;"><i class="fa-regular fa-trash-can" style="font-size: 0.72rem;"></i> Del</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                grid.insertAdjacentHTML('beforeend', cardHtml);
+                updateBtsCountBadge();
+
+                // AJAX Upload to Cloudinary
+                const formData = new FormData();
+                formData.append('file', file);
+                formData.append('folder', 'falhen/bts');
+
+                fetch('/admin/index.php?ajax=upload_cloudinary', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(r => r.json())
+                .then(data => {
+                    const el = document.getElementById(tempId);
+                    if (el) {
+                        const spinner = el.querySelector('.uploading-spinner');
+                        if (spinner) spinner.remove();
+                        const img = el.querySelector('img');
+                        if (img) {
+                            img.src = data.url || previewSrc;
+                            img.style.opacity = '1';
+                        }
+                        const valInput = el.querySelector('.bts-img-val');
+                        if (valInput) valInput.value = data.url || previewSrc;
+                        updateBtsCountBadge();
+                    }
+                })
+                .catch(err => {
+                    const el = document.getElementById(tempId);
+                    if (el) {
+                        const spinner = el.querySelector('.uploading-spinner');
+                        if (spinner) {
+                            spinner.innerHTML = '<i class="fa-solid fa-triangle-exclamation" style="color: #ef4444;"></i> Upload failed';
+                        }
+                    }
+                });
+            });
+        }
+
         function openAddBtsCard() {
             const grid = document.getElementById('btsPhotoGrid');
             if (!grid) return;
@@ -13020,11 +13183,11 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
             const randomImg = sampleImages[Math.floor(Math.random() * sampleImages.length)];
 
             const cardHtml = `
-                <div class="bts-photo-card" style="background: #ffffff; border: 1px solid var(--card-border); border-radius: 14px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.05); display: flex; flex-direction: column;">
+                <div class="bts-photo-card" draggable="true" ondragstart="handleBtsDragStart(event, this)" ondragover="handleBtsDragOver(event, this)" ondrop="handleBtsDrop(event, this)" ondragend="handleBtsDragEnd(event, this)" style="background: #ffffff; border: 1px solid var(--card-border); border-radius: 14px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.05); display: flex; flex-direction: column; cursor: grab; transition: transform 0.15s, box-shadow 0.15s;">
                     <div style="position: relative; aspect-ratio: 16/10; overflow: hidden; background: #0f172a;">
                         <img src="${randomImg}" style="width: 100%; height: 100%; object-fit: cover;">
                         <div style="position: absolute; top: 10px; left: 10px; width: 26px; height: 26px; border-radius: 6px; background: rgba(15, 23, 42, 0.7); color: #ffffff; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; cursor: move;"><i class="fa-solid fa-arrows-up-down-left-right"></i></div>
-                        <div style="position: absolute; top: 10px; right: 10px; background: rgba(15, 23, 42, 0.85); color: #ffffff; font-size: 0.7rem; font-weight: 700; padding: 3px 8px; border-radius: 6px;">#${count} &middot; visible</div>
+                        <div class="bts-status-pill" style="position: absolute; top: 10px; right: 10px; background: rgba(15, 23, 42, 0.85); color: #ffffff; font-size: 0.7rem; font-weight: 700; padding: 3px 8px; border-radius: 6px;">#${count} &middot; ${count <= 6 ? 'visible on home' : 'extra'}</div>
                     </div>
                     <div style="padding: 14px 16px; flex-grow: 1;">
                         <input type="hidden" name="bts_image[]" value="${randomImg}" class="bts-img-val">
@@ -13069,30 +13232,111 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
             if (!card) return;
             const imgInput = card.querySelector('.bts-img-val');
             const currentUrl = imgInput ? imgInput.value : '';
-            const newUrl = prompt('Enter new Image URL for this photo:', currentUrl);
+            const newUrl = prompt('Enter new Image URL (or Google Drive sharing link):', currentUrl);
             if (newUrl !== null && newUrl.trim() !== '') {
-                if (imgInput) imgInput.value = newUrl.trim();
+                let parsedUrl = newUrl.trim();
+                const driveMatch = parsedUrl.match(/(?:id=|\/d\/)([a-zA-Z0-9_-]+)/);
+                if (driveMatch && driveMatch[1]) {
+                    parsedUrl = 'https://lh3.googleusercontent.com/d/' + driveMatch[1];
+                }
+                if (imgInput) imgInput.value = parsedUrl;
                 const img = card.querySelector('img');
-                if (img) img.src = newUrl.trim();
+                if (img) img.src = parsedUrl;
             }
         }
 
         function updateBtsCountBadge() {
             const grid = document.getElementById('btsPhotoGrid');
             const text = document.getElementById('btsCountText');
-            if (grid && text) {
-                const total = grid.querySelectorAll('.bts-photo-card').length;
-                text.innerText = total + ' photos';
+            if (grid) {
+                const cards = grid.querySelectorAll('.bts-photo-card');
+                cards.forEach((c, idx) => {
+                    const pill = c.querySelector('.bts-status-pill');
+                    if (pill) {
+                        pill.innerText = '#' + (idx + 1) + ' · ' + (idx < 6 ? 'visible on home' : 'extra');
+                    }
+                });
+                if (text) {
+                    text.innerText = cards.length + ' photos · first 6 shown on homepage · drag to reorder';
+                }
             }
         }
 
-        function uploadBtsFileDirect(input) {
-            if (input.files && input.files[0]) {
-                const form = document.getElementById('btsForm');
-                const actionInput = form.querySelector('input[name="action"]');
-                if (actionInput) actionInput.value = 'upload_bts_photo';
-                form.submit();
-            }
+        function syncBtsGallery() {
+            updateBtsCountBadge();
+            alert('✓ Production BTS gallery synchronized! Click "Save Changes" to persist your gallery.');
+        }
+
+        function openDriveUrlsModal() {
+            const m = document.getElementById('btsDriveUrlsModal');
+            if (m) m.style.display = 'flex';
+        }
+
+        function closeDriveUrlsModal() {
+            const m = document.getElementById('btsDriveUrlsModal');
+            if (m) m.style.display = 'none';
+        }
+
+        function importDriveUrls() {
+            const textarea = document.getElementById('driveUrlsTextarea');
+            if (!textarea || !textarea.value.trim()) return;
+
+            const lines = textarea.value.split('\n');
+            const grid = document.getElementById('btsPhotoGrid');
+            if (!grid) return;
+
+            lines.forEach((line) => {
+                let raw = line.trim();
+                if (!raw) return;
+
+                const driveMatch = raw.match(/(?:id=|\/d\/)([a-zA-Z0-9_-]+)/);
+                let directImg = raw;
+                if (driveMatch && driveMatch[1]) {
+                    directImg = 'https://lh3.googleusercontent.com/d/' + driveMatch[1];
+                }
+
+                const count = grid.querySelectorAll('.bts-photo-card').length + 1;
+                const cardHtml = `
+                    <div class="bts-photo-card" draggable="true" ondragstart="handleBtsDragStart(event, this)" ondragover="handleBtsDragOver(event, this)" ondrop="handleBtsDrop(event, this)" ondragend="handleBtsDragEnd(event, this)" style="background: #ffffff; border: 1px solid var(--card-border); border-radius: 14px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.05); display: flex; flex-direction: column; cursor: grab; transition: transform 0.15s, box-shadow 0.15s;">
+                        <div style="position: relative; aspect-ratio: 16/10; overflow: hidden; background: #0f172a;">
+                            <img src="${directImg}" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.src='/assets/img/hero.jpg';">
+                            <div style="position: absolute; top: 10px; left: 10px; width: 26px; height: 26px; border-radius: 6px; background: rgba(15, 23, 42, 0.7); color: #ffffff; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; cursor: move;"><i class="fa-solid fa-arrows-up-down-left-right"></i></div>
+                            <div class="bts-status-pill" style="position: absolute; top: 10px; right: 10px; background: rgba(15, 23, 42, 0.85); color: #ffffff; font-size: 0.7rem; font-weight: 700; padding: 3px 8px; border-radius: 6px;">#${count} &middot; ${count <= 6 ? 'visible on home' : 'extra'}</div>
+                        </div>
+                        <div style="padding: 14px 16px; flex-grow: 1;">
+                            <input type="hidden" name="bts_image[]" value="${directImg}" class="bts-img-val">
+                            <div style="font-size: 0.88rem; font-weight: 700; color: var(--text-primary); margin-bottom: 4px;">
+                                <input type="text" name="bts_title[]" value="Imported Drive Photo #${count}" class="form-text-input" style="padding: 6px 10px; font-weight: 700; font-size: 0.85rem;" placeholder="Photo Title">
+                            </div>
+                            <div style="font-size: 0.78rem; color: var(--text-muted);">
+                                <input type="text" name="bts_subtitle[]" value="Behind the scenes footage" class="form-text-input" style="padding: 4px 10px; font-size: 0.78rem;" placeholder="Subtitle / Caption">
+                            </div>
+                        </div>
+                        <div style="padding: 10px 16px; border-top: 1px solid #f1f5f9; display: flex; align-items: center; justify-content: space-between; font-size: 0.78rem; background: #fafafa;">
+                            <span style="color: #94a3b8; font-weight: 500;">+ drag to reorder</span>
+                            <div style="display: flex; gap: 12px;">
+                                <button type="button" onclick="editBtsCard(this)" style="background: none; border: none; color: var(--text-secondary); font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;"><i class="fa-solid fa-pen" style="font-size: 0.72rem;"></i> Edit</button>
+                                <button type="button" onclick="deleteBtsCard(this)" style="background: none; border: none; color: #94a3b8; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;"><i class="fa-regular fa-trash-can" style="font-size: 0.72rem;"></i> Del</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                grid.insertAdjacentHTML('beforeend', cardHtml);
+            });
+
+            textarea.value = '';
+            closeDriveUrlsModal();
+            updateBtsCountBadge();
+        }
+
+        function openDriveFolderModal() {
+            const m = document.getElementById('btsDriveFolderModal');
+            if (m) m.style.display = 'flex';
+        }
+
+        function closeDriveFolderModal() {
+            const m = document.getElementById('btsDriveFolderModal');
+            if (m) m.style.display = 'none';
         }
 
         // Featured Work Video Preview Helper
@@ -13151,6 +13395,70 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                         <i class="fa-solid fa-check"></i> Apply Crop
                     </button>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- BTS DRIVE URLS MODAL DIALOG -->
+    <div id="btsDriveUrlsModal" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.65); backdrop-filter: blur(5px); z-index: 99999; align-items: center; justify-content: center; padding: 20px;">
+        <div style="background: #ffffff; border-radius: 16px; width: 100%; max-width: 540px; overflow: hidden; box-shadow: 0 25px 60px rgba(0,0,0,0.3);">
+            <div style="padding: 20px 24px; border-bottom: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: space-between;">
+                <h3 style="font-size: 1.15rem; font-weight: 800; color: #0f172a; margin: 0; display: flex; align-items: center; gap: 10px;">
+                    <i class="fa-solid fa-link" style="color: #16a34a;"></i> Import Drive / Image URLs
+                </h3>
+                <button type="button" onclick="closeDriveUrlsModal()" style="background: none; border: none; font-size: 1.2rem; color: #94a3b8; cursor: pointer;">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <div style="padding: 20px 24px;">
+                <p style="font-size: 0.84rem; color: #64748b; margin-top: 0; margin-bottom: 12px;">
+                    Paste one or more image links or Google Drive share URLs below (<strong>one URL per line</strong>). They will automatically convert to direct image previews:
+                </p>
+                <textarea id="driveUrlsTextarea" rows="6" placeholder="https://drive.google.com/file/d/.../view&#10;https://images.unsplash.com/...&#10;https://res.cloudinary.com/..." class="form-text-input" style="width: 100%; box-sizing: border-box; font-family: monospace; font-size: 0.82rem; padding: 10px; line-height: 1.5; resize: vertical;"></textarea>
+            </div>
+            <div style="padding: 14px 24px; background: #f8fafc; border-top: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: flex-end; gap: 10px;">
+                <button type="button" onclick="closeDriveUrlsModal()" class="btn-live-site" style="padding: 8px 18px; font-size: 0.85rem;">Cancel</button>
+                <button type="button" onclick="importDriveUrls()" class="btn-save-primary" style="padding: 8px 20px; background-color: #16a34a; font-size: 0.85rem; font-weight: 700;">
+                    <i class="fa-solid fa-file-import"></i> Import Photos
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- BTS GOOGLE DRIVE FOLDER MODAL -->
+    <div id="btsDriveFolderModal" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.65); backdrop-filter: blur(5px); z-index: 99999; align-items: center; justify-content: center; padding: 20px;">
+        <div style="background: #ffffff; border-radius: 16px; width: 100%; max-width: 520px; overflow: hidden; box-shadow: 0 25px 60px rgba(0,0,0,0.3);">
+            <div style="padding: 20px 24px; border-bottom: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: space-between;">
+                <h3 style="font-size: 1.15rem; font-weight: 800; color: #0f172a; margin: 0; display: flex; align-items: center; gap: 10px;">
+                    <i class="fa-brands fa-google-drive" style="color: #16a34a;"></i> Google Drive Folder Sync
+                </h3>
+                <button type="button" onclick="closeDriveFolderModal()" style="background: none; border: none; font-size: 1.2rem; color: #94a3b8; cursor: pointer;">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <div style="padding: 22px 24px;">
+                <div style="display: flex; gap: 14px; align-items: flex-start; margin-bottom: 16px;">
+                    <div style="width: 36px; height: 36px; border-radius: 50%; background: #ecfdf5; color: #16a34a; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                        <i class="fa-solid fa-cloud-arrow-down"></i>
+                    </div>
+                    <div>
+                        <h4 style="font-size: 0.92rem; font-weight: 700; color: #0f172a; margin: 0 0 4px 0;">Google Drive Integration</h4>
+                        <p style="font-size: 0.82rem; color: #64748b; line-height: 1.5; margin: 0;">
+                            To load raw photos from your production drive, set your Drive Folder or files to <strong>"Anyone with the link can view"</strong>, copy their share links, and paste them into <strong>Drive URLs</strong>.
+                        </p>
+                    </div>
+                </div>
+                <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 12px 16px; font-size: 0.8rem; color: #475569;">
+                    <i class="fa-solid fa-circle-info" style="color: #2563eb; margin-right: 6px;"></i> Drag &amp; drop directly from your computer to upload straight to high-speed Cloudinary CDN automatically.
+                </div>
+            </div>
+            <div style="padding: 14px 24px; background: #f8fafc; border-top: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: space-between;">
+                <a href="https://drive.google.com" target="_blank" class="btn-live-site" style="text-decoration: none; font-size: 0.82rem;">
+                    <i class="fa-solid fa-arrow-up-right-from-square"></i> Open Google Drive
+                </a>
+                <button type="button" onclick="closeDriveFolderModal(); openDriveUrlsModal();" class="btn-save-primary" style="padding: 8px 18px; background-color: #16a34a; font-size: 0.85rem; font-weight: 700;">
+                    Paste Drive URLs &rarr;
+                </button>
             </div>
         </div>
     </div>
