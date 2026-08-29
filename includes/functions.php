@@ -1247,18 +1247,19 @@ function saveAdminUserProfile($data) {
     $settings['admin_profile'] = $updated;
 
     if (!empty($data['avatar'])) {
-        $teamMembers = $settings['team_members'] ?? [];
-        if (is_array($teamMembers)) {
-            $adminNameLower = strtolower(trim($updated['full_name'] ?? 'admin'));
-            $adminUserLower = strtolower(trim($updated['username'] ?? 'admin'));
-            foreach ($teamMembers as &$tm) {
-                $tmNameLower = strtolower(trim($tm['name'] ?? ''));
-                if (!empty($tmNameLower) && ($tmNameLower === $adminNameLower || $tmNameLower === $adminUserLower || strpos($adminNameLower, $tmNameLower) !== false || strpos($tmNameLower, $adminNameLower) !== false || strpos($tmNameLower, 'admin') !== false || strpos($tmNameLower, 'oluwatosin') !== false || strpos($tmNameLower, 'henry') !== false)) {
-                    $tm['image'] = $data['avatar'];
+        $adminNameLower = strtolower(trim($updated['full_name'] ?? 'admin'));
+        $adminUserLower = strtolower(trim($updated['username'] ?? 'admin'));
+
+        foreach (['team_items', 'team_members'] as $teamKey) {
+            if (isset($settings[$teamKey]) && is_array($settings[$teamKey])) {
+                foreach ($settings[$teamKey] as &$tm) {
+                    $tmNameLower = strtolower(trim($tm['name'] ?? ''));
+                    if (!empty($tmNameLower) && ($tmNameLower === $adminNameLower || $tmNameLower === $adminUserLower || strpos($adminNameLower, $tmNameLower) !== false || strpos($tmNameLower, $adminNameLower) !== false || strpos($tmNameLower, 'admin') !== false || strpos($tmNameLower, 'oluwatosin') !== false || strpos($tmNameLower, 'henry') !== false)) {
+                        $tm['image'] = $data['avatar'];
+                    }
                 }
+                unset($tm);
             }
-            unset($tm);
-            $settings['team_members'] = $teamMembers;
         }
     }
 
@@ -1482,21 +1483,21 @@ function saveStaffAccountByUsername($username, $data) {
     unset($st);
 
     if ($updated) {
-        // Sync avatar photo to team_members array if present
+        // Sync avatar photo to team_items and team_members array if present
         if (!empty($data['avatar'])) {
-            $teamMembers = $settings['team_members'] ?? [];
-            if (is_array($teamMembers)) {
-                $targetNameLower = strtolower(trim($matchedFullName ?: $username));
-                $targetUserLower = strtolower(trim($username));
+            $targetNameLower = strtolower(trim($matchedFullName ?: $username));
+            $targetUserLower = strtolower(trim($username));
 
-                foreach ($teamMembers as &$tm) {
-                    $tmNameLower = strtolower(trim($tm['name'] ?? ''));
-                    if ($tmNameLower === $targetNameLower || $tmNameLower === $targetUserLower || strpos($targetNameLower, $tmNameLower) !== false || strpos($tmNameLower, $targetNameLower) !== false) {
-                        $tm['image'] = $data['avatar'];
+            foreach (['team_items', 'team_members'] as $teamKey) {
+                if (isset($settings[$teamKey]) && is_array($settings[$teamKey])) {
+                    foreach ($settings[$teamKey] as &$tm) {
+                        $tmNameLower = strtolower(trim($tm['name'] ?? ''));
+                        if (!empty($tmNameLower) && ($tmNameLower === $targetNameLower || $tmNameLower === $targetUserLower || strpos($targetNameLower, $tmNameLower) !== false || strpos($tmNameLower, $targetNameLower) !== false)) {
+                            $tm['image'] = $data['avatar'];
+                        }
                     }
+                    unset($tm);
                 }
-                unset($tm);
-                $settings['team_members'] = $teamMembers;
             }
         }
 
