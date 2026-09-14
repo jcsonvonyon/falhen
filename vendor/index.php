@@ -1512,25 +1512,7 @@ $displayBreadcrumb = $sectionTitles[$activeSection] ?? 'Dashboard';
                     Vendor Portal &rsaquo; <strong><?php echo htmlspecialchars($displayBreadcrumb); ?></strong>
                 </div>
 
-                <!-- Primary Topbar Menu Navigation Pills -->
-                <nav class="topbar-primary-nav">
-                    <a href="/vendor/index.php?section=gigs_assigned" class="topbar-nav-link <?php echo ($activeSection === 'gigs_assigned') ? 'active' : ''; ?>">
-                        <i class="fa-solid fa-clapperboard"></i>
-                        <span>Gigs Assigned (<?php echo $assignedCount; ?>)</span>
-                    </a>
-                    <a href="/vendor/index.php?section=gigs_done" class="topbar-nav-link <?php echo ($activeSection === 'gigs_done') ? 'active' : ''; ?>">
-                        <i class="fa-solid fa-circle-check"></i>
-                        <span>Gigs Done (<?php echo $doneCount; ?>)</span>
-                    </a>
-                    <a href="/vendor/index.php?section=calendar" class="topbar-nav-link <?php echo ($activeSection === 'calendar') ? 'active' : ''; ?>">
-                        <i class="fa-solid fa-calendar-days"></i>
-                        <span>Calendar</span>
-                    </a>
-                    <a href="/vendor/index.php?section=call_sheets" class="topbar-nav-link <?php echo ($activeSection === 'call_sheets') ? 'active' : ''; ?>">
-                        <i class="fa-solid fa-file-pdf"></i>
-                        <span>Call Sheets</span>
-                    </a>
-                </nav>
+
             </div>
 
             <div class="header-actions">
