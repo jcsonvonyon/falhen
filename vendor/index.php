@@ -1558,21 +1558,21 @@ $displayBreadcrumb = $sectionTitles[$activeSection] ?? 'Dashboard';
             <?php if ($activeSection === 'dashboard'): ?>
 
                 <!-- SECTION HEADER -->
-                <div class="section-header-bar">
-                    <div>
-                        <h1 class="section-header-title">Vendor Production Dashboard</h1>
-                        <p class="section-header-desc">
-                            Welcome back, <strong><?php echo htmlspecialchars($fullName); ?></strong> &mdash; manage your assigned shoots, download official studio call sheets, submit wrap reports, and update calendar bookings.
-                        </p>
+                <div style="margin-bottom: 24px;">
+                    <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; margin-bottom: 8px;">
+                        <h1 class="section-header-title" style="margin-bottom: 0;">Vendor Production Dashboard</h1>
+                        <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                            <a href="/vendor/index.php?section=calendar" class="btn-header-action">
+                                <i class="fa-solid fa-calendar-days"></i> Booking Calendar
+                            </a>
+                            <a href="/vendor/index.php?section=gigs_assigned" class="btn-save-primary">
+                                <i class="fa-solid fa-clapperboard"></i> View Assigned Gigs (<?php echo $assignedCount; ?>)
+                            </a>
+                        </div>
                     </div>
-                    <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-                        <a href="/vendor/index.php?section=calendar" class="btn-header-action">
-                            <i class="fa-solid fa-calendar-days"></i> Booking Calendar
-                        </a>
-                        <a href="/vendor/index.php?section=gigs_assigned" class="btn-save-primary">
-                            <i class="fa-solid fa-clapperboard"></i> View Assigned Gigs (<?php echo $assignedCount; ?>)
-                        </a>
-                    </div>
+                    <p class="section-header-desc" style="margin: 0; max-width: 960px;">
+                        Welcome back, <strong><?php echo htmlspecialchars($fullName); ?></strong> &mdash; manage your assigned shoots, download official studio call sheets, submit wrap reports, and update calendar bookings.
+                    </p>
                 </div>
 
                 <!-- 4 KPI QUICK STATUS METRIC CARDS -->
@@ -1807,16 +1807,16 @@ $displayBreadcrumb = $sectionTitles[$activeSection] ?? 'Dashboard';
             <!-- ========================================================= -->
             <?php elseif ($activeSection === 'gigs_assigned'): ?>
 
-                <div class="section-header-bar">
-                    <div>
-                        <h1 class="section-header-title">Assigned Production Gigs</h1>
-                        <p class="section-header-desc">
-                            All active and confirmed shoot assignments for <strong><?php echo htmlspecialchars($fullName); ?></strong>. Download official call sheets, confirm call times, and upload signed sheets.
-                        </p>
+                <div style="margin-bottom: 24px;">
+                    <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; margin-bottom: 8px;">
+                        <h1 class="section-header-title" style="margin-bottom: 0;">Assigned Production Gigs</h1>
+                        <a href="/vendor/index.php?section=calendar" class="btn-save-primary">
+                            <i class="fa-solid fa-calendar-days"></i> Open Booking Calendar
+                        </a>
                     </div>
-                    <a href="/vendor/index.php?section=calendar" class="btn-save-primary">
-                        <i class="fa-solid fa-calendar-days"></i> Open Booking Calendar
-                    </a>
+                    <p class="section-header-desc" style="margin: 0; max-width: 960px;">
+                        All active and confirmed shoot assignments for <strong><?php echo htmlspecialchars($fullName); ?></strong>. Download official call sheets, confirm call times, and upload signed sheets.
+                    </p>
                 </div>
 
                 <?php if (empty($assignedGigs)): ?>
@@ -2027,18 +2027,16 @@ $displayBreadcrumb = $sectionTitles[$activeSection] ?? 'Dashboard';
             <!-- ========================================================= -->
             <?php elseif ($activeSection === 'calendar'): ?>
 
-                <div class="section-header-bar">
-                    <div>
-                        <h1 class="section-header-title">Calendar Booking &amp; Schedule</h1>
-                        <p class="section-header-desc">
-                            View all scheduled production call dates, manage your contractor availability, and submit booking requests for upcoming commercial shoots.
-                        </p>
-                    </div>
-                    <div style="display: flex; gap: 10px;">
+                <div style="margin-bottom: 24px;">
+                    <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; margin-bottom: 8px;">
+                        <h1 class="section-header-title" style="margin-bottom: 0;">Calendar Booking &amp; Schedule</h1>
                         <button type="button" class="btn-save-primary" onclick="openAvailabilityModal()">
                             <i class="fa-solid fa-calendar-check"></i> Set Availability Dates
                         </button>
                     </div>
+                    <p class="section-header-desc" style="margin: 0; max-width: 960px;">
+                        View all scheduled production call dates, manage your contractor availability, and submit booking requests for upcoming commercial shoots.
+                    </p>
                 </div>
 
                 <div class="dashboard-card">
