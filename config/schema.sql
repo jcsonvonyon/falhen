@@ -98,3 +98,37 @@ CREATE TABLE IF NOT EXISTS `audit_logs` (
     INDEX `idx_audit_action` (`action_type`),
     INDEX `idx_audit_created` (`created_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 7. Vendors & Independent Contractors Onboarding Table
+CREATE TABLE IF NOT EXISTS `vendors` (
+    `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    `reference_code` VARCHAR(50) NOT NULL UNIQUE,
+    `role` VARCHAR(50) NOT NULL,
+    `role_label` VARCHAR(100) NOT NULL,
+    `full_name` VARCHAR(150) NOT NULL,
+    `email` VARCHAR(150) NOT NULL,
+    `phone` VARCHAR(50) NOT NULL,
+    `address` TEXT DEFAULT NULL,
+    `id_type` VARCHAR(50) DEFAULT NULL,
+    `tax_id` VARCHAR(100) DEFAULT NULL,
+    `id_document_url` VARCHAR(500) DEFAULT NULL,
+    `currency` VARCHAR(10) DEFAULT 'NGN',
+    `bank_name` VARCHAR(100) DEFAULT NULL,
+    `account_number` VARCHAR(50) DEFAULT NULL,
+    `account_name` VARCHAR(150) DEFAULT NULL,
+    `emergency_name` VARCHAR(150) DEFAULT NULL,
+    `emergency_relationship` VARCHAR(80) DEFAULT NULL,
+    `emergency_phone` VARCHAR(50) DEFAULT NULL,
+    `workplace_policy_agreed` TINYINT(1) NOT NULL DEFAULT 1,
+    `nda_agreed` TINYINT(1) NOT NULL DEFAULT 1,
+    `msa_agreed` TINYINT(1) NOT NULL DEFAULT 1,
+    `signature_name` VARCHAR(150) NOT NULL,
+    `signature_date` DATE NOT NULL,
+    `status` ENUM('active', 'under_review', 'completed', 'suspended') NOT NULL DEFAULT 'active',
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    `deleted_at` DATETIME DEFAULT NULL,
+    INDEX `idx_vendor_role` (`role`),
+    INDEX `idx_vendor_email` (`email`),
+    INDEX `idx_vendor_status` (`status`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

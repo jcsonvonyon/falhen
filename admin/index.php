@@ -2903,6 +2903,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $_SESSION['saved_message'] = "Bulk monthly payroll processed successfully for {$countPaid} active team members for {$payPeriod}!";
         header('Location: /admin/index.php?section=payroll&month=' . urlencode($periodMonth) . '&year=' . urlencode($periodYear) . '&saved=1');
         exit;
+    } else if ($action === 'delete_vendor') {
+        $vendorId = trim($_POST['vendor_id'] ?? '');
+        if (!empty($vendorId)) {
+            deleteVendorRecord($vendorId);
+            $_SESSION['saved_message'] = 'Vendor record deleted successfully.';
+        }
+        header('Location: /admin/index.php?section=vendors&saved=1');
+        exit;
+    } else if ($action === 'update_vendor_status') {
+        $vendorId = trim($_POST['vendor_id'] ?? '');
+        $newStatus = trim($_POST['status'] ?? 'active');
+        if (!empty($vendorId)) {
+            updateVendorStatus($vendorId, $newStatus);
+            $_SESSION['saved_message'] = 'Vendor status updated to ' . ucfirst($newStatus) . '.';
+        }
+        header('Location: /admin/index.php?section=vendors&saved=1');
+        exit;
+    } else if ($action === 'save_vendor') {
+        saveVendorRecord($_POST);
+        $_SESSION['saved_message'] = 'Vendor details updated successfully.';
+        header('Location: /admin/index.php?section=vendors&saved=1');
+        exit;
     }
 }
 
@@ -14954,7 +14976,228 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                         btn.style.color = '#ffffff';
                     }
                 }
-                </script>
+            <?php elseif ($activeSection === 'vendors'): ?>
+                <!-- SECTION: VENDORS & CONTRACTORS ONBOARDING -->
+                <?php
+                $allVendors = getVendorsList();
+                $filterRole = trim($_GET['role'] ?? 'all');
+                $searchQuery = trim(strtolower($_GET['q'] ?? ''));
+
+                $filteredVendors = $allVendors;
+                if ($filterRole !== 'all') {
+                    $filteredVendors = array_filter($filteredVendors, function($v) use ($filterRole) {
+                        return ($v['role'] ?? '') === $filterRole;
+                    });
+                }
+
+                if (!empty($searchQuery)) {
+                    $filteredVendors = array_filter($filteredVendors, function($v) use ($searchQuery) {
+                        $haystack = strtolower(($v['full_name'] ?? '') . ' ' . ($v['email'] ?? '') . ' ' . ($v['reference_code'] ?? '') . ' ' . ($v['phone'] ?? ''));
+                        return strpos($haystack, $searchQuery) !== false;
+                    });
+                }
+
+                $totalVendors = count($allVendors);
+                $photographersCount = count(array_filter($allVendors, fn($v) => in_array($v['role'] ?? '', ['photographer_videographer', 'contractor'], true)));
+                $internsCount = count(array_filter($allVendors, fn($v) => ($v['role'] ?? '') === 'intern'));
+                $volunteersCount = count(array_filter($allVendors, fn($v) => ($v['role'] ?? '') === 'volunteer'));
+                ?>
+
+                <div class="section-header-bar">
+                    <div>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <span style="background: #e11d48; color: #ffffff; font-weight: 800; font-size: 0.75rem; padding: 3px 10px; border-radius: 12px; text-transform: uppercase;">Talent &amp; Crew Operations</span>
+                            <h1 class="section-header-title">Vendors &amp; Contractor Onboarding</h1>
+                        </div>
+                        <p class="section-header-desc">Manage all formal onboarding submissions, signed Master Services Agreements (MSA), NDAs, tax records, and payout accounts for photographers, videographers, interns, and volunteers.</p>
+                    </div>
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                        <a href="/vendor-onboarding.php" target="_blank" class="btn-save-primary" style="background: #e11d48; border-color: #e11d48; text-decoration: none; display: inline-flex; align-items: center; gap: 8px;">
+                            <i class="fa-solid fa-arrow-up-right-from-square"></i> Open Public Onboarding Portal
+                        </a>
+                    </div>
+                </div>
+
+                <!-- METRICS ROW -->
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px;">
+                    <div class="dashboard-card" style="padding: 20px; display: flex; align-items: center; gap: 16px;">
+                        <div style="width: 48px; height: 48px; border-radius: 12px; background: #fff1f2; color: #e11d48; display: flex; align-items: center; justify-content: center; font-size: 1.3rem;">
+                            <i class="fa-solid fa-users"></i>
+                        </div>
+                        <div>
+                            <div style="font-size: 0.8rem; color: #64748b; font-weight: 700; text-transform: uppercase;">Total Onboarded</div>
+                            <div style="font-size: 1.6rem; font-weight: 800; color: #0f172a;"><?php echo $totalVendors; ?></div>
+                        </div>
+                    </div>
+
+                    <div class="dashboard-card" style="padding: 20px; display: flex; align-items: center; gap: 16px;">
+                        <div style="width: 48px; height: 48px; border-radius: 12px; background: #fef2f2; color: #dc2626; display: flex; align-items: center; justify-content: center; font-size: 1.3rem;">
+                            <i class="fa-solid fa-camera"></i>
+                        </div>
+                        <div>
+                            <div style="font-size: 0.8rem; color: #64748b; font-weight: 700; text-transform: uppercase;">Photo / Video Crew</div>
+                            <div style="font-size: 1.6rem; font-weight: 800; color: #0f172a;"><?php echo $photographersCount; ?></div>
+                        </div>
+                    </div>
+
+                    <div class="dashboard-card" style="padding: 20px; display: flex; align-items: center; gap: 16px;">
+                        <div style="width: 48px; height: 48px; border-radius: 12px; background: #eff6ff; color: #2563eb; display: flex; align-items: center; justify-content: center; font-size: 1.3rem;">
+                            <i class="fa-solid fa-graduation-cap"></i>
+                        </div>
+                        <div>
+                            <div style="font-size: 0.8rem; color: #64748b; font-weight: 700; text-transform: uppercase;">Interns</div>
+                            <div style="font-size: 1.6rem; font-weight: 800; color: #0f172a;"><?php echo $internsCount; ?></div>
+                        </div>
+                    </div>
+
+                    <div class="dashboard-card" style="padding: 20px; display: flex; align-items: center; gap: 16px;">
+                        <div style="width: 48px; height: 48px; border-radius: 12px; background: #faf5ff; color: #9333ea; display: flex; align-items: center; justify-content: center; font-size: 1.3rem;">
+                            <i class="fa-solid fa-heart"></i>
+                        </div>
+                        <div>
+                            <div style="font-size: 0.8rem; color: #64748b; font-weight: 700; text-transform: uppercase;">Volunteers</div>
+                            <div style="font-size: 1.6rem; font-weight: 800; color: #0f172a;"><?php echo $volunteersCount; ?></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- FILTER & SEARCH BAR -->
+                <div class="dashboard-card" style="padding: 16px 20px; margin-bottom: 20px;">
+                    <form method="GET" action="/admin/index.php" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;">
+                        <input type="hidden" name="section" value="vendors">
+                        
+                        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                            <a href="/admin/index.php?section=vendors&role=all" style="padding: 8px 16px; border-radius: 8px; font-size: 0.84rem; font-weight: 700; text-decoration: none; <?php echo ($filterRole === 'all') ? 'background: #e11d48; color: #ffffff;' : 'background: #f1f5f9; color: #475569;'; ?>">
+                                All Roles (<?php echo $totalVendors; ?>)
+                            </a>
+                            <a href="/admin/index.php?section=vendors&role=photographer_videographer" style="padding: 8px 16px; border-radius: 8px; font-size: 0.84rem; font-weight: 700; text-decoration: none; <?php echo ($filterRole === 'photographer_videographer') ? 'background: #e11d48; color: #ffffff;' : 'background: #f1f5f9; color: #475569;'; ?>">
+                                Photographers / Videographers
+                            </a>
+                            <a href="/admin/index.php?section=vendors&role=intern" style="padding: 8px 16px; border-radius: 8px; font-size: 0.84rem; font-weight: 700; text-decoration: none; <?php echo ($filterRole === 'intern') ? 'background: #e11d48; color: #ffffff;' : 'background: #f1f5f9; color: #475569;'; ?>">
+                                Interns
+                            </a>
+                            <a href="/admin/index.php?section=vendors&role=volunteer" style="padding: 8px 16px; border-radius: 8px; font-size: 0.84rem; font-weight: 700; text-decoration: none; <?php echo ($filterRole === 'volunteer') ? 'background: #e11d48; color: #ffffff;' : 'background: #f1f5f9; color: #475569;'; ?>">
+                                Volunteers
+                            </a>
+                        </div>
+
+                        <div style="display: flex; gap: 8px;">
+                            <input type="text" name="q" value="<?php echo htmlspecialchars($_GET['q'] ?? ''); ?>" placeholder="Search name, email, ref..." style="padding: 8px 14px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.85rem; width: 220px;">
+                            <button type="submit" style="padding: 8px 14px; background: #0f172a; color: #ffffff; border: none; border-radius: 8px; font-weight: 700; cursor: pointer;">
+                                <i class="fa-solid fa-magnifying-glass"></i>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- ROSTER TABLE -->
+                <div class="dashboard-card" style="padding: 0; overflow: hidden;">
+                    <div style="padding: 18px 24px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center;">
+                        <h2 style="font-size: 1.1rem; font-weight: 800; color: #0f172a; margin: 0;">Onboarded Vendor Records</h2>
+                        <span style="font-size: 0.85rem; color: #64748b; font-weight: 600;">Showing <?php echo count($filteredVendors); ?> entries</span>
+                    </div>
+
+                    <?php if (empty($filteredVendors)): ?>
+                        <div style="padding: 60px 20px; text-align: center;">
+                            <div style="width: 56px; height: 56px; border-radius: 50%; background: #f1f5f9; color: #94a3b8; display: inline-flex; align-items: center; justify-content: center; font-size: 1.5rem; margin-bottom: 14px;">
+                                <i class="fa-solid fa-id-card"></i>
+                            </div>
+                            <h3 style="font-size: 1.1rem; font-weight: 800; color: #0f172a; margin-bottom: 6px;">No Vendor Records Found</h3>
+                            <p style="font-size: 0.88rem; color: #64748b; max-width: 420px; margin: 0 auto 16px auto;">New contractors, interns, and volunteers will appear here as soon as they complete the 5-minute onboarding flow.</p>
+                            <a href="/vendor-onboarding.php" target="_blank" style="display: inline-flex; align-items: center; gap: 8px; background: #e11d48; color: #ffffff; padding: 9px 18px; border-radius: 8px; font-weight: 700; font-size: 0.88rem; text-decoration: none;">
+                                <i class="fa-solid fa-plus"></i> Launch Vendor Onboarding Form
+                            </a>
+                        </div>
+                    <?php else: ?>
+                        <div style="overflow-x: auto;">
+                            <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.88rem;">
+                                <thead>
+                                    <tr style="background: #f8fafc; border-bottom: 1px solid #e2e8f0; color: #64748b; font-weight: 700; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.5px;">
+                                        <th style="padding: 14px 20px;">Ref Code</th>
+                                        <th style="padding: 14px 20px;">Vendor / Talent</th>
+                                        <th style="padding: 14px 20px;">Role</th>
+                                        <th style="padding: 14px 20px;">Payout &amp; Bank</th>
+                                        <th style="padding: 14px 20px;">Execution Date</th>
+                                        <th style="padding: 14px 20px;">Status</th>
+                                        <th style="padding: 14px 20px; text-align: right;">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <?php foreach ($filteredVendors as $vnd): 
+                                        $vId = $vnd['id'] ?? '';
+                                        $vRef = $vnd['reference_code'] ?? 'FAL-VND';
+                                        $vName = $vnd['full_name'] ?? 'Vendor';
+                                        $vEmail = $vnd['email'] ?? '';
+                                        $vPhone = $vnd['phone'] ?? '';
+                                        $vRole = $vnd['role'] ?? '';
+                                        $vRoleLabel = $vnd['role_label'] ?? ucwords(str_replace('_', ' ', $vRole));
+                                        $vStatus = $vnd['status'] ?? 'active';
+                                        $vDate = !empty($vnd['signature_date']) ? date('M j, Y', strtotime($vnd['signature_date'])) : date('M j, Y');
+                                        $vBank = $vnd['bank_name'] ?? '';
+                                        $vAcc = $vnd['account_number'] ?? '';
+                                        $vCurr = $vnd['currency'] ?? 'NGN';
+                                        $roleBadgeColor = ($vRole === 'intern') ? '#2563eb' : (($vRole === 'volunteer') ? '#9333ea' : '#e11d48');
+                                        $roleBadgeBg = ($vRole === 'intern') ? '#eff6ff' : (($vRole === 'volunteer') ? '#faf5ff' : '#fff1f2');
+                                    ?>
+                                    <tr style="border-bottom: 1px solid #f1f5f9; transition: background 0.15s ease;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
+                                        <td style="padding: 14px 20px;">
+                                            <span style="font-family: monospace; font-size: 0.84rem; font-weight: 800; color: #0f172a; background: #f1f5f9; padding: 4px 8px; border-radius: 6px; border: 1px solid #e2e8f0;">
+                                                <?php echo htmlspecialchars($vRef); ?>
+                                            </span>
+                                        </td>
+                                        <td style="padding: 14px 20px;">
+                                            <div style="font-weight: 700; color: #0f172a;"><?php echo htmlspecialchars($vName); ?></div>
+                                            <div style="font-size: 0.78rem; color: #64748b;"><?php echo htmlspecialchars($vEmail); ?> &bull; <?php echo htmlspecialchars($vPhone); ?></div>
+                                        </td>
+                                        <td style="padding: 14px 20px;">
+                                            <span style="display: inline-block; padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 800; background: <?php echo $roleBadgeBg; ?>; color: <?php echo $roleBadgeColor; ?>;">
+                                                <?php echo htmlspecialchars($vRoleLabel); ?>
+                                            </span>
+                                        </td>
+                                        <td style="padding: 14px 20px;">
+                                            <?php if (!empty($vBank) || !empty($vAcc)): ?>
+                                                <div style="font-weight: 700; color: #0f172a;"><?php echo htmlspecialchars($vBank); ?></div>
+                                                <div style="font-size: 0.78rem; color: #64748b; font-family: monospace;"><?php echo htmlspecialchars($vCurr . ' ' . $vAcc); ?></div>
+                                            <?php else: ?>
+                                                <span style="color: #94a3b8; font-size: 0.8rem; font-style: italic;">Non-payroll / Volunteer</span>
+                                            <?php endif; ?>
+                                        </td>
+                                        <td style="padding: 14px 20px; color: #475569; font-weight: 600;">
+                                            <?php echo htmlspecialchars($vDate); ?>
+                                        </td>
+                                        <td style="padding: 14px 20px;">
+                                            <form method="POST" action="/admin/index.php?section=vendors" style="display: inline-block;">
+                                                <input type="hidden" name="action" value="update_vendor_status">
+                                                <input type="hidden" name="vendor_id" value="<?php echo htmlspecialchars($vId); ?>">
+                                                <select name="status" onchange="this.form.submit()" style="padding: 4px 8px; border-radius: 6px; font-size: 0.78rem; font-weight: 700; border: 1px solid #cbd5e1; background: #ffffff; cursor: pointer; color: <?php echo ($vStatus === 'active') ? '#15803d' : '#b45309'; ?>;">
+                                                    <option value="active" <?php echo ($vStatus === 'active') ? 'selected' : ''; ?>>🟢 Active</option>
+                                                    <option value="under_review" <?php echo ($vStatus === 'under_review') ? 'selected' : ''; ?>>🟡 Under Review</option>
+                                                    <option value="completed" <?php echo ($vStatus === 'completed') ? 'selected' : ''; ?>>🔵 Completed</option>
+                                                    <option value="suspended" <?php echo ($vStatus === 'suspended') ? 'selected' : ''; ?>>🔴 Suspended</option>
+                                                </select>
+                                            </form>
+                                        </td>
+                                        <td style="padding: 14px 20px; text-align: right;">
+                                            <div style="display: inline-flex; gap: 8px;">
+                                                <a href="/download_vendor_agreement.php?ref=<?php echo urlencode($vRef); ?>" target="_blank" title="View &amp; Print Agreement" style="padding: 6px 12px; background: #0f172a; color: #ffffff; border-radius: 6px; text-decoration: none; font-size: 0.8rem; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;">
+                                                    <i class="fa-solid fa-file-pdf"></i> Agreement
+                                                </a>
+                                                <form method="POST" action="/admin/index.php?section=vendors" onsubmit="return confirm('Are you sure you want to delete vendor record for <?php echo htmlspecialchars(addslashes($vName)); ?>?');" style="display: inline-block;">
+                                                    <input type="hidden" name="action" value="delete_vendor">
+                                                    <input type="hidden" name="vendor_id" value="<?php echo htmlspecialchars($vId); ?>">
+                                                    <button type="submit" style="padding: 6px 10px; background: #fff1f2; color: #e11d48; border: 1px solid #fecdd3; border-radius: 6px; font-size: 0.8rem; font-weight: 700; cursor: pointer;">
+                                                        <i class="fa-solid fa-trash"></i>
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <?php endforeach; ?>
+                                </tbody>
+                            </table>
+                        </div>
+                    <?php endif; ?>
+                </div>
 
             <!-- OTHER SECTIONS FALLBACK MANAGER -->
             <?php else: ?>

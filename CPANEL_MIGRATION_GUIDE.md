@@ -2,6 +2,8 @@
 
 This step-by-step guide walks you through migrating and deploying the **Falhen Media PHP Application** to a live cPanel web hosting server.
 
+> ℹ️ For quick SSH access credentials and commands, see [`SSH_CONFIG.md`](file:///c:/Users/USER/Documents/Mine/Website/PHP/Falhen/SSH_CONFIG.md).
+
 ---
 
 ## 📋 Prerequisites & System Requirements

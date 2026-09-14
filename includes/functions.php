@@ -25,6 +25,9 @@ require_once __DIR__ . '/cloudinary_helper.php';
 if (file_exists(__DIR__ . '/../config/gdrive.php')) {
     require_once __DIR__ . '/../config/gdrive.php';
 }
+if (file_exists(__DIR__ . '/../config/db.php')) {
+    require_once __DIR__ . '/../config/db.php';
+}
 
 /**
  * Sanitize string input for XSS prevention
@@ -4538,4 +4541,257 @@ function calculateEmployeeYTDMetrics($username = null, $year = '2026') {
         'taxes'        => $ytdTaxes,
         'pension'      => $ytdPension
     ];
+}
+
+/**
+ * ============================================================
+ * VENDORS & INDEPENDENT CONTRACTOR ONBOARDING HELPERS
+ * ============================================================
+ */
+
+/**
+ * Generate Unique Vendor Reference Code (e.g., FAL-VND-2026-4821)
+ */
+function generateVendorReference() {
+    return 'FAL-VND-' . date('Y') . '-' . str_pad((string)mt_rand(1000, 9999), 4, '0', STR_PAD_LEFT);
+}
+
+/**
+ * Get All Onboarded Vendors (Database + Settings Fallback)
+ */
+function getVendorsList() {
+    $pdo = getDBConnection();
+    if ($pdo) {
+        try {
+            $stmt = $pdo->query("SELECT * FROM `vendors` WHERE `deleted_at` IS NULL ORDER BY `id` DESC");
+            $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            if (!empty($rows)) {
+                return $rows;
+            }
+        } catch (Exception $e) {
+            error_log("Failed to fetch vendors from DB: " . $e->getMessage());
+        }
+    }
+
+    $settings = getSiteSettings();
+    $vendors = $settings['vendors'] ?? [];
+    if (!is_array($vendors)) {
+        $vendors = [];
+    }
+    return array_values($vendors);
+}
+
+/**
+ * Get Single Vendor by ID or Reference Code
+ */
+function getVendorById($idOrRef) {
+    if (empty($idOrRef)) return null;
+
+    $pdo = getDBConnection();
+    if ($pdo) {
+        try {
+            $stmt = $pdo->prepare("SELECT * FROM `vendors` WHERE (`id` = ? OR `reference_code` = ?) AND `deleted_at` IS NULL LIMIT 1");
+            $stmt->execute([$idOrRef, $idOrRef]);
+            $row = $stmt->fetch(PDO::FETCH_ASSOC);
+            if ($row) return $row;
+        } catch (Exception $e) {}
+    }
+
+    $vendors = getVendorsList();
+    foreach ($vendors as $v) {
+        if ((string)($v['id'] ?? '') === (string)$idOrRef || (string)($v['reference_code'] ?? '') === (string)$idOrRef) {
+            return $v;
+        }
+    }
+    return null;
+}
+
+/**
+ * Save Vendor Record (Onboarding Submission or Admin Edit)
+ */
+function saveVendorRecord($data) {
+    $pdo = getDBConnection();
+    $refCode = !empty($data['reference_code']) ? $data['reference_code'] : generateVendorReference();
+    $now = date('Y-m-d H:i:s');
+
+    $role = $data['role'] ?? 'photographer_videographer';
+    $roleLabels = [
+        'photographer_videographer' => 'Photographer / Videographer',
+        'contractor'                => 'Photographer / Videographer',
+        'intern'                    => 'Intern',
+        'volunteer'                 => 'Volunteer'
+    ];
+    $roleLabel = $roleLabels[$role] ?? ucwords(str_replace('_', ' ', $role));
+
+    $record = [
+        'reference_code'          => $refCode,
+        'role'                    => $role,
+        'role_label'              => $roleLabel,
+        'full_name'               => trim($data['full_name'] ?? ''),
+        'email'                   => trim(strtolower($data['email'] ?? '')),
+        'phone'                   => trim($data['phone'] ?? ''),
+        'address'                 => trim($data['address'] ?? ''),
+        'id_type'                 => trim($data['id_type'] ?? 'National ID'),
+        'tax_id'                  => trim($data['tax_id'] ?? ''),
+        'id_document_url'         => trim($data['id_document_url'] ?? ''),
+        'currency'                => trim($data['currency'] ?? 'NGN'),
+        'bank_name'               => trim($data['bank_name'] ?? ''),
+        'account_number'          => trim($data['account_number'] ?? ''),
+        'account_name'            => trim($data['account_name'] ?? ''),
+        'emergency_name'          => trim($data['emergency_name'] ?? ''),
+        'emergency_relationship'  => trim($data['emergency_relationship'] ?? ''),
+        'emergency_phone'         => trim($data['emergency_phone'] ?? ''),
+        'workplace_policy_agreed' => !empty($data['workplace_policy_agreed']) ? 1 : 0,
+        'nda_agreed'              => !empty($data['nda_agreed']) ? 1 : 0,
+        'msa_agreed'              => !empty($data['msa_agreed']) ? 1 : 0,
+        'signature_name'          => trim($data['signature_name'] ?? $data['full_name'] ?? ''),
+        'signature_date'          => !empty($data['signature_date']) ? $data['signature_date'] : date('Y-m-d'),
+        'status'                  => !empty($data['status']) ? $data['status'] : 'active',
+        'created_at'              => !empty($data['created_at']) ? $data['created_at'] : $now,
+        'updated_at'              => $now
+    ];
+
+    $savedInDB = false;
+    $recordId = $data['id'] ?? null;
+
+    if ($pdo) {
+        try {
+            if ($recordId) {
+                $stmt = $pdo->prepare("UPDATE `vendors` SET 
+                    `role` = ?, `role_label` = ?, `full_name` = ?, `email` = ?, `phone` = ?, `address` = ?,
+                    `id_type` = ?, `tax_id` = ?, `id_document_url` = ?, `currency` = ?, `bank_name` = ?,
+                    `account_number` = ?, `account_name` = ?, `emergency_name` = ?, `emergency_relationship` = ?,
+                    `emergency_phone` = ?, `status` = ?, `updated_at` = ?
+                    WHERE `id` = ? OR `reference_code` = ?");
+                $stmt->execute([
+                    $record['role'], $record['role_label'], $record['full_name'], $record['email'], $record['phone'],
+                    $record['address'], $record['id_type'], $record['tax_id'], $record['id_document_url'],
+                    $record['currency'], $record['bank_name'], $record['account_number'], $record['account_name'],
+                    $record['emergency_name'], $record['emergency_relationship'], $record['emergency_phone'],
+                    $record['status'], $record['updated_at'], $recordId, $refCode
+                ]);
+                $savedInDB = true;
+            } else {
+                $stmt = $pdo->prepare("INSERT INTO `vendors` (
+                    `reference_code`, `role`, `role_label`, `full_name`, `email`, `phone`, `address`,
+                    `id_type`, `tax_id`, `id_document_url`, `currency`, `bank_name`, `account_number`,
+                    `account_name`, `emergency_name`, `emergency_relationship`, `emergency_phone`,
+                    `workplace_policy_agreed`, `nda_agreed`, `msa_agreed`, `signature_name`, `signature_date`,
+                    `status`, `created_at`, `updated_at`
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                $stmt->execute([
+                    $record['reference_code'], $record['role'], $record['role_label'], $record['full_name'],
+                    $record['email'], $record['phone'], $record['address'], $record['id_type'], $record['tax_id'],
+                    $record['id_document_url'], $record['currency'], $record['bank_name'], $record['account_number'],
+                    $record['account_name'], $record['emergency_name'], $record['emergency_relationship'],
+                    $record['emergency_phone'], $record['workplace_policy_agreed'], $record['nda_agreed'],
+                    $record['msa_agreed'], $record['signature_name'], $record['signature_date'], $record['status'],
+                    $record['created_at'], $record['updated_at']
+                ]);
+                $record['id'] = (int)$pdo->lastInsertId();
+                $savedInDB = true;
+            }
+        } catch (Exception $e) {
+            error_log("DB Vendor Save Error: " . $e->getMessage());
+        }
+    }
+
+    // Always mirror to config/settings.json
+    $settings = getSiteSettings();
+    $vendors = $settings['vendors'] ?? [];
+    if (!is_array($vendors)) {
+        $vendors = [];
+    }
+
+    if (empty($record['id'])) {
+        $record['id'] = time() + mt_rand(10, 99);
+    }
+
+    $foundIndex = -1;
+    foreach ($vendors as $idx => $v) {
+        if ((!empty($recordId) && (string)($v['id'] ?? '') === (string)$recordId) || 
+            (!empty($refCode) && (string)($v['reference_code'] ?? '') === (string)$refCode)) {
+            $foundIndex = $idx;
+            break;
+        }
+    }
+
+    if ($foundIndex >= 0) {
+        $vendors[$foundIndex] = array_merge($vendors[$foundIndex], $record);
+    } else {
+        array_unshift($vendors, $record);
+    }
+
+    $settings['vendors'] = $vendors;
+    saveSiteSettings($settings);
+
+    // Audit log
+    $actor = $_SESSION['admin_username'] ?? $record['full_name'] ?? 'System';
+    logDatabaseAudit($actor, 'vendor_onboarded', 'vendor', $refCode, "Vendor onboarded: {$record['full_name']} as {$record['role_label']} ({$refCode}).");
+
+    return $record;
+}
+
+/**
+ * Delete / Soft-Delete Vendor Record
+ */
+function deleteVendorRecord($idOrRef) {
+    $pdo = getDBConnection();
+    if ($pdo) {
+        try {
+            $stmt = $pdo->prepare("UPDATE `vendors` SET `deleted_at` = NOW() WHERE `id` = ? OR `reference_code` = ?");
+            $stmt->execute([$idOrRef, $idOrRef]);
+        } catch (Exception $e) {}
+    }
+
+    $settings = getSiteSettings();
+    $vendors = $settings['vendors'] ?? [];
+    if (is_array($vendors)) {
+        $vendors = array_values(array_filter($vendors, function($v) use ($idOrRef) {
+            return (string)($v['id'] ?? '') !== (string)$idOrRef && (string)($v['reference_code'] ?? '') !== (string)$idOrRef;
+        }));
+        $settings['vendors'] = $vendors;
+        saveSiteSettings($settings);
+    }
+
+    $actor = $_SESSION['admin_username'] ?? 'Admin';
+    logDatabaseAudit($actor, 'vendor_deleted', 'vendor', (string)$idOrRef, "Vendor #{$idOrRef} deleted.");
+    return true;
+}
+
+/**
+ * Update Vendor Status (active, under_review, suspended)
+ */
+function updateVendorStatus($idOrRef, $newStatus) {
+    $allowed = ['active', 'under_review', 'completed', 'suspended'];
+    if (!in_array($newStatus, $allowed, true)) {
+        return false;
+    }
+
+    $pdo = getDBConnection();
+    if ($pdo) {
+        try {
+            $stmt = $pdo->prepare("UPDATE `vendors` SET `status` = ?, `updated_at` = NOW() WHERE `id` = ? OR `reference_code` = ?");
+            $stmt->execute([$newStatus, $idOrRef, $idOrRef]);
+        } catch (Exception $e) {}
+    }
+
+    $settings = getSiteSettings();
+    $vendors = $settings['vendors'] ?? [];
+    if (is_array($vendors)) {
+        foreach ($vendors as &$v) {
+            if ((string)($v['id'] ?? '') === (string)$idOrRef || (string)($v['reference_code'] ?? '') === (string)$idOrRef) {
+                $v['status'] = $newStatus;
+                $v['updated_at'] = date('Y-m-d H:i:s');
+                break;
+            }
+        }
+        unset($v);
+        $settings['vendors'] = $vendors;
+        saveSiteSettings($settings);
+    }
+
+    $actor = $_SESSION['admin_username'] ?? 'Admin';
+    logDatabaseAudit($actor, 'vendor_status_update', 'vendor', (string)$idOrRef, "Vendor #{$idOrRef} status updated to {$newStatus}.");
+    return true;
 }

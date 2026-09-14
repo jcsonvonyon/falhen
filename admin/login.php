@@ -970,7 +970,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         </div>
 
                         <!-- Vendor Sign-Up Card -->
-                        <div class="portal-card" onclick="window.location.href='/careers.php';">
+                        <div class="portal-card" onclick="window.location.href='/vendor-onboarding.php';">
                             <div class="portal-icon-box">
                                 <i class="fa-solid fa-user-plus"></i>
                             </div>

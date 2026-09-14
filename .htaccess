@@ -19,6 +19,7 @@
     RewriteRule ^cookies/?$ cookies.php [L]
     RewriteRule ^dpa/?$ dpa.php [L]
     RewriteRule ^faq/?$ faq.php [L]
+    RewriteRule ^vendor-onboarding/?$ vendor-onboarding.php [L]
     RewriteRule ^services/([^/]+)/?$ service-single.php?slug=$1 [QSA,L]
 
     # Remove .php extension from URLs
