@@ -219,14 +219,29 @@ $csrfToken = generateCSRFToken();
         }
 
         .step-item.completed .step-icon-circle {
-            background: var(--primary);
+            background: #10b981;
             color: var(--white);
-            border-color: var(--primary);
+            border-color: #10b981;
         }
 
         .step-item.completed .step-label {
-            color: var(--dark);
+            color: #10b981;
             font-weight: 600;
+        }
+
+        /* Final Step 5 ("Done") State - Always Green */
+        .step-item#stepIndicator5.active .step-icon-circle,
+        .step-item#stepIndicator5.completed .step-icon-circle {
+            background: #10b981 !important;
+            color: var(--white) !important;
+            border-color: #10b981 !important;
+            box-shadow: 0 0 0 5px rgba(16, 185, 129, 0.18) !important;
+        }
+
+        .step-item#stepIndicator5.active .step-label,
+        .step-item#stepIndicator5.completed .step-label {
+            color: #10b981 !important;
+            font-weight: 700 !important;
         }
 
         /* Connecting lines */
@@ -241,7 +256,51 @@ $csrfToken = generateCSRFToken();
         }
 
         .stepper-line.completed {
-            background: var(--primary);
+            background: #10b981;
+        }
+
+        /* Step 2 Input Grid */
+        .step2-input-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        @media (max-width: 640px) {
+            .step2-input-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .section-subheading-caps {
+            font-size: 0.76rem;
+            font-weight: 700;
+            color: #94a3b8;
+            letter-spacing: 0.6px;
+            text-transform: uppercase;
+            margin-bottom: 14px;
+            display: block;
+        }
+
+        .address-grid-3 {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .emergency-grid-3 {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-bottom: 22px;
+        }
+
+        @media (max-width: 640px) {
+            .address-grid-3, .emergency-grid-3 {
+                grid-template-columns: 1fr;
+            }
         }
 
         /* Step Section Headers */
@@ -343,13 +402,12 @@ $csrfToken = generateCSRFToken();
             display: flex;
             justify-content: space-between;
             align-items: center;
-            border-top: 1px solid var(--slate-200);
-            padding-top: 24px;
-            margin-top: 28px;
+            padding-top: 16px;
+            margin-top: 24px;
         }
 
         .btn-continue {
-            background: var(--primary);
+            background: #dc2626;
             color: var(--white);
             border: none;
             padding: 14px 28px;
@@ -365,9 +423,9 @@ $csrfToken = generateCSRFToken();
         }
 
         .btn-continue:hover {
-            background: var(--primary-hover);
+            background: #b91c1c;
             transform: translateY(-1px);
-            box-shadow: 0 4px 14px rgba(225, 29, 72, 0.3);
+            box-shadow: 0 4px 14px rgba(220, 38, 38, 0.3);
         }
 
         .btn-continue:disabled {
@@ -379,11 +437,11 @@ $csrfToken = generateCSRFToken();
 
         .btn-back-step {
             background: transparent;
-            color: var(--slate-600);
-            border: 1px solid var(--slate-200);
-            padding: 13px 22px;
-            border-radius: 10px;
-            font-size: 0.92rem;
+            color: #475569;
+            border: none;
+            padding: 12px 16px;
+            border-radius: 8px;
+            font-size: 0.95rem;
             font-weight: 600;
             cursor: pointer;
             display: inline-flex;
@@ -393,8 +451,9 @@ $csrfToken = generateCSRFToken();
         }
 
         .btn-back-step:hover {
-            background: var(--slate-100);
+            background: #f1f5f9;
             color: var(--dark);
+            transform: translateX(-2px);
         }
 
         /* Policy & Agreement Box (Step 2 & 3) */
@@ -605,14 +664,14 @@ $csrfToken = generateCSRFToken();
         }
 
         .badge-ref-code {
-            background: var(--primary-light);
-            color: var(--primary);
+            background: #ecfdf5;
+            color: #059669;
             font-family: monospace;
             font-size: 0.92rem;
             font-weight: 800;
-            padding: 4px 8px;
+            padding: 4px 10px;
             border-radius: 6px;
-            border: 1px solid var(--primary-border);
+            border: 1px solid #a7f3d0;
         }
 
         /* Step Panels */
@@ -677,12 +736,12 @@ $csrfToken = generateCSRFToken();
 
     <!-- MAIN ONBOARDING CARD -->
     <div class="onboarding-wrapper">
-        <div class="onboarding-intro">
-            <div class="badge-vendor">
+        <div class="onboarding-intro" id="onboardingIntroHeader">
+            <div class="badge-vendor" id="introBadge">
                 <i class="fa-solid fa-building-user"></i> Vendor Onboarding
             </div>
-            <h1 class="onboarding-title">Join the Falhen Media Team</h1>
-            <p class="onboarding-subtitle">Complete this secure onboarding process to formalize your engagement. Takes about 5 minutes.</p>
+            <h1 class="onboarding-title" id="introTitle">Join the Falhen Media Team</h1>
+            <p class="onboarding-subtitle" id="introSubtitle">Complete this secure onboarding process to formalize your engagement. Takes about 5 minutes.</p>
         </div>
 
         <div class="onboarding-card">
@@ -786,41 +845,71 @@ $csrfToken = generateCSRFToken();
             <!-- STEP 2: WORKPLACE POLICY -->
             <div class="step-panel" id="stepPanel2">
                 <div class="step-header">
-                    <h2 class="step-title">Workplace Policy &amp; On-Set Code of Conduct</h2>
-                    <p class="step-desc">Please review our standards for safety, on-set conduct, media handling, and professional ethics.</p>
+                    <h2 class="step-title">Workplace Policy</h2>
+                    <p class="step-desc">Read and acknowledge Falhen Media's intellectual property and conduct policy.</p>
                 </div>
 
                 <div class="policy-scroll-box">
-                    <div class="policy-item">
-                        <div class="policy-item-title"><i class="fa-solid fa-shield-virus"></i> 1. On-Set Safety &amp; Zero-Tolerance Conduct</div>
-                        <p>Falhen Media sets are professional, creative, and safe environments. All crew, contractors, interns, and volunteers must strictly comply with safety protocols surrounding lighting fixtures, heavy grip gear, electrical lines, and drone operations. We maintain strict zero-tolerance for harassment, discrimination, intoxication, or unsafe equipment handling.</p>
+                    <div style="font-weight: 700; color: #0f172a; margin-bottom: 14px; font-size: 0.95rem;">
+                        Henad Innovations and Global Services LLC DBA Falhenmedia and Productions — Vendor Workplace Policy
                     </div>
 
                     <div class="policy-item">
-                        <div class="policy-item-title"><i class="fa-solid fa-camera-rotate"></i> 2. Equipment Care &amp; Responsibility</div>
-                        <p>High-end cinema packages (RED, Sony FX cinema line, prime cinema lenses, wireless video links) must be handled with utmost diligence. Immediately report any gear irregularities, damaged cables, or malfunctioning gimbal motors to the Lead Producer.</p>
+                        <p style="margin-bottom: 12px; font-size: 0.88rem; line-height: 1.6; color: #334155;">
+                            <strong>1. IP Ownership.</strong> All photographs, video footage, raw files, edited files, motion graphics, audio recordings, and any derivative works created during your engagement are the <strong>sole and exclusive property of Henad Innovations and Global Services LLC DBA Falhenmedia and Productions</strong>. You waive moral rights and may not use, reproduce, or distribute any such materials without written consent.
+                        </p>
                     </div>
 
                     <div class="policy-item">
-                        <div class="policy-item-title"><i class="fa-solid fa-hard-drive"></i> 3. Media Asset Security &amp; SD Card Ingestion</div>
-                        <p>Captured footage represents significant client investment. Never format an SD/CFexpress card until footage has been dual-verified and offloaded to primary and backup production arrays. Transferring raw client footage to personal cloud storage is strictly prohibited.</p>
+                        <p style="margin-bottom: 12px; font-size: 0.88rem; line-height: 1.6; color: #334155;">
+                            <strong>2. Equipment.</strong> Henad Innovations and Global Services LLC DBA Falhenmedia and Productions equipment must be handled with care and returned in the same condition. Loss or damage due to negligence may result in liability.
+                        </p>
                     </div>
 
                     <div class="policy-item">
-                        <div class="policy-item-title"><i class="fa-solid fa-lock"></i> 4. Client Confidentiality &amp; Social Media Embargo</div>
-                        <p>Unreleased commercial projects, brand treatments, and celebrity talent shoots are strictly embargoed. You may not post behind-the-scenes clips, photos, or teaser stories to Instagram, TikTok, or personal websites until the project has officially premiered.</p>
+                        <p style="margin-bottom: 12px; font-size: 0.88rem; line-height: 1.6; color: #334155;">
+                            <strong>3. Conduct.</strong> All vendors, interns, and volunteers must maintain professional conduct on set, in client interactions, and on social media. Representing Henad Innovations and Global Services LLC DBA Falhenmedia and Productions without written approval is prohibited.
+                        </p>
+                    </div>
+
+                    <div class="policy-item">
+                        <p style="margin-bottom: 12px; font-size: 0.88rem; line-height: 1.6; color: #334155;">
+                            <strong>4. Confidentiality.</strong> Client names, project details, rates, and internal processes are strictly confidential during and after your engagement.
+                        </p>
+                    </div>
+
+                    <div class="policy-item">
+                        <p style="margin-bottom: 12px; font-size: 0.88rem; line-height: 1.6; color: #334155;">
+                            <strong>5. Deliverables.</strong> All deliverables must be submitted in the agreed format and timeline. Unauthorized retention of raw or edited files is prohibited.
+                        </p>
+                    </div>
+
+                    <div class="policy-item">
+                        <p style="margin-bottom: 0; font-size: 0.88rem; line-height: 1.6; color: #334155;">
+                            <strong>6. Termination.</strong> Henad Innovations and Global Services LLC DBA Falhenmedia and Productions reserves the right to terminate any engagement at any time for policy violations. All materials must be surrendered immediately upon termination.
+                        </p>
                     </div>
                 </div>
 
-                <div style="margin-bottom: 24px;">
-                    <label class="compliance-check">
-                        <input type="checkbox" id="checkPolicyCode" onchange="validateStep2()">
-                        <span class="compliance-label">I have read, understood, and agree to uphold the Falhen Media Workplace Policies &amp; On-Set Safety Guidelines.</span>
-                    </label>
+                <!-- Input Fields for Full Legal Name & Email Address -->
+                <div class="step2-input-grid">
+                    <div>
+                        <label class="form-label">Full Legal Name <span class="req">*</span></label>
+                        <input type="text" id="step2LegalName" class="form-control" placeholder="Your legal name" oninput="syncFromStep2Name(this.value)">
+                    </div>
+                    <div>
+                        <label class="form-label">Email Address <span class="req">*</span></label>
+                        <input type="email" id="step2Email" class="form-control" placeholder="you@email.com" oninput="syncFromStep2Email(this.value)">
+                    </div>
+                </div>
 
-                    <label class="compliance-check">
-                        <input type="checkbox" id="checkPolicyConfidentiality" onchange="validateStep2()">
-                        <span class="compliance-label">I commit to absolute media confidentiality and agree not to publish unreleased client assets or behind-the-scenes materials without prior written consent.</span>
+                <!-- Checkbox -->
+                <div style="margin-bottom: 24px;">
+                    <label class="compliance-check" style="display: flex; align-items: flex-start; gap: 12px; cursor: pointer; user-select: none;">
+                        <input type="checkbox" id="checkPolicyAgreement" onchange="validateStep2()" style="margin-top: 3px; accent-color: var(--primary); width: 18px; height: 18px; flex-shrink: 0; cursor: pointer;">
+                        <span class="compliance-label" style="font-size: 0.88rem; line-height: 1.55; color: var(--slate-700);">
+                            I have read and agree to the Henad Innovations and Global Services LLC DBA Falhenmedia and Productions Workplace Policy. I acknowledge that all creative work during my engagement is the <strong>exclusive property of Henad Innovations and Global Services LLC DBA Falhenmedia and Productions</strong>.
+                        </span>
                     </label>
                 </div>
 
@@ -829,7 +918,7 @@ $csrfToken = generateCSRFToken();
                         <i class="fa-solid fa-arrow-left"></i> Back
                     </button>
                     <button type="button" class="btn-continue" id="btnStep2Continue" disabled onclick="goToStep(3)">
-                        Continue <i class="fa-solid fa-arrow-right"></i>
+                        Sign &amp; Continue <i class="fa-solid fa-arrow-right"></i>
                     </button>
                 </div>
             </div>
@@ -837,12 +926,74 @@ $csrfToken = generateCSRFToken();
             <!-- STEP 3: LEGAL AGREEMENTS & NDA -->
             <div class="step-panel" id="stepPanel3">
                 <div class="step-header">
-                    <h2 class="step-title">Legal Agreements &amp; Non-Disclosure (NDA)</h2>
-                    <p class="step-desc">Review and digitally execute your tailored engagement agreement as a <strong id="roleBadgeText" style="color: var(--primary);">Photographer / Videographer</strong>.</p>
+                    <h2 class="step-title">Legal Agreements</h2>
+                    <p class="step-desc">Read each agreement, check your acceptance, then draw your signature to legally bind it.</p>
                 </div>
 
-                <div class="policy-scroll-box" id="legalAgreementTextContainer">
-                    <!-- Dynamic Agreement Content Injected via JS based on selected role -->
+                <!-- ESIGN Act and UETA Notice Banner -->
+                <div style="background: #fffbeb; border: 1px solid #fde68a; border-radius: 10px; padding: 14px 18px; margin-bottom: 22px; display: flex; align-items: center; gap: 12px; color: #92400e; font-size: 0.88rem; line-height: 1.5;">
+                    <i class="fa-solid fa-shield-halved" style="color: #d97706; font-size: 1.15rem; flex-shrink: 0;"></i>
+                    <span>Your drawn signatures are legally binding under the <strong>ESIGN Act</strong> and <strong>UETA</strong>. Timestamp and metadata are recorded.</span>
+                </div>
+
+                <!-- Input Fields for Full Legal Name & Email Address -->
+                <div class="step2-input-grid" style="margin-bottom: 22px;">
+                    <div>
+                        <label class="form-label">Full Legal Name <span class="req">*</span></label>
+                        <input type="text" id="step3LegalName" class="form-control" placeholder="As on your government ID" oninput="syncFromStep3Name(this.value)">
+                    </div>
+                    <div>
+                        <label class="form-label">Email Address <span class="req">*</span></label>
+                        <input type="email" id="step3Email" class="form-control" placeholder="you@email.com" oninput="syncFromStep3Email(this.value)">
+                    </div>
+                </div>
+
+                <!-- Agreement Card 1: Non-Disclosure Agreement (NDA) -->
+                <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; margin-bottom: 22px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
+                    <div style="background: #f8fafc; border-bottom: 1px solid #e2e8f0; padding: 14px 20px; display: flex; justify-content: space-between; align-items: center;">
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <div style="width: 38px; height: 38px; border-radius: 8px; background: #ffffff; border: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: center; color: #475569; font-size: 0.95rem; box-shadow: 0 1px 2px rgba(0,0,0,0.03);">
+                                <i class="fa-solid fa-lock"></i>
+                            </div>
+                            <span style="font-weight: 700; font-size: 0.98rem; color: #0f172a;">Non-Disclosure Agreement (NDA)</span>
+                        </div>
+                        <span style="background: #ffedd5; color: #c2410c; font-size: 0.75rem; font-weight: 700; padding: 4px 12px; border-radius: 9999px;">
+                            Confidentiality
+                        </span>
+                    </div>
+                    <div style="padding: 22px 20px; color: #334155; font-size: 0.88rem; line-height: 1.65;">
+                        All client identities, project briefs, production schedules, pricing, methodologies, and proprietary workflows disclosed during your engagement are strictly confidential. You agree not to disclose any such information to third parties without prior written consent. These obligations survive termination for three (3) years. Upon request or termination, you agree to promptly return or destroy all materials containing Confidential Information.
+                    </div>
+                    <div style="background: #f8fafc; border-top: 1px solid #e2e8f0; padding: 14px 20px;">
+                        <label class="compliance-check" style="display: flex; align-items: center; gap: 10px; margin-bottom: 0; cursor: pointer; user-select: none;">
+                            <input type="checkbox" id="checkNdaAgreement" onchange="validateStep3()" style="accent-color: #dc2626; width: 18px; height: 18px; cursor: pointer;">
+                            <span class="compliance-label" style="font-size: 0.86rem; color: #334155;">I have read and agree to be legally bound by this Non-Disclosure Agreement.</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Agreement Card 2: Master Service Agreement (MSA) -->
+                <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; margin-bottom: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
+                    <div style="background: #f8fafc; border-bottom: 1px solid #e2e8f0; padding: 14px 20px; display: flex; justify-content: space-between; align-items: center;">
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <div style="width: 38px; height: 38px; border-radius: 8px; background: #ffffff; border: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: center; color: #475569; font-size: 0.95rem; box-shadow: 0 1px 2px rgba(0,0,0,0.03);">
+                                <i class="fa-regular fa-file-lines"></i>
+                            </div>
+                            <span style="font-weight: 700; font-size: 0.98rem; color: #0f172a;">Master Service Agreement (MSA)</span>
+                        </div>
+                        <span style="background: #dcfce7; color: #15803d; font-size: 0.75rem; font-weight: 700; padding: 4px 12px; border-radius: 9999px;">
+                            Service Terms
+                        </span>
+                    </div>
+                    <div style="padding: 22px 20px; color: #334155; font-size: 0.88rem; line-height: 1.65; max-height: 140px; overflow-y: auto;">
+                        You are engaged as an independent contractor, not an employee. Services are described in individual Statements of Work (SOWs). All work product, including raw and edited media, is assigned to Henad Innovations and Global Services LLC DBA Falhenmedia and Productions upon creation. You retain no license or ownership rights. Compensation is outlined in individual SOWs. You agree to indemnify Henad Innovations and Global Services LLC DBA Falhenmedia and Productions against claims arising from your negligence or breach of this Agreement.
+                    </div>
+                    <div style="background: #f8fafc; border-top: 1px solid #e2e8f0; padding: 14px 20px;">
+                        <label class="compliance-check" style="display: flex; align-items: center; gap: 10px; margin-bottom: 0; cursor: pointer; user-select: none;">
+                            <input type="checkbox" id="checkMsaAgreement" onchange="validateStep3()" style="accent-color: #dc2626; width: 18px; height: 18px; cursor: pointer;">
+                            <span class="compliance-label" style="font-size: 0.86rem; color: #334155;">I have read and agree to be legally bound by this Master Service Agreement.</span>
+                        </label>
+                    </div>
                 </div>
 
                 <!-- Signature Capture Block (Dual Mode: Typed Signature & Screen Signature) -->
@@ -862,11 +1013,8 @@ $csrfToken = generateCSRFToken();
                         </button>
                     </div>
 
-                    <!-- Full Legal Name Input (Shared across both modes) -->
-                    <div style="margin-bottom: 16px;">
-                        <label class="form-label">Full Legal Name <span class="req">*</span></label>
-                        <input type="text" id="signatureNameInput" class="form-control" placeholder="e.g. John Doe" oninput="updateSignaturePreview(this.value)">
-                    </div>
+                    <!-- Hidden input to maintain compat if referenced -->
+                    <input type="hidden" id="signatureNameInput">
 
                     <!-- OPTION 1: AS TYPED SIGNATURE -->
                     <div id="sigTypeModeContainer">
@@ -901,8 +1049,8 @@ $csrfToken = generateCSRFToken();
                         </div>
                     </div>
 
-                    <label class="compliance-check" style="margin-bottom: 0;">
-                        <input type="checkbox" id="checkLegalAcceptance" onchange="validateStep3()">
+                    <label class="compliance-check" style="margin-bottom: 0; display: flex; align-items: flex-start; gap: 10px; cursor: pointer;">
+                        <input type="checkbox" id="checkLegalAcceptance" onchange="validateStep3()" style="margin-top: 3px; accent-color: var(--primary); width: 18px; height: 18px; cursor: pointer;">
                         <span class="compliance-label">I certify that this digital signature is legally binding and has the full legal effect and enforceability of a physical handwritten signature.</span>
                     </label>
                 </div>
@@ -912,7 +1060,7 @@ $csrfToken = generateCSRFToken();
                         <i class="fa-solid fa-arrow-left"></i> Back
                     </button>
                     <button type="button" class="btn-continue" id="btnStep3Continue" disabled onclick="goToStep(4)">
-                        Continue <i class="fa-solid fa-arrow-right"></i>
+                        Confirm &amp; Continue <i class="fa-solid fa-arrow-right"></i>
                     </button>
                 </div>
             </div>
@@ -920,125 +1068,121 @@ $csrfToken = generateCSRFToken();
             <!-- STEP 4: TAX & INFO -->
             <div class="step-panel" id="stepPanel4">
                 <div class="step-header">
-                    <h2 class="step-title">Personal Information &amp; Payout Details</h2>
-                    <p class="step-desc">Provide your contact, identification, and bank remittance information for record-keeping and project remuneration.</p>
+                    <h2 class="step-title">Tax &amp; Personal Info</h2>
+                    <p class="step-desc">Securely submit required documentation. All data is encrypted and handled in compliance with applicable privacy regulations.</p>
                 </div>
 
                 <form id="onboardingForm" onsubmit="submitOnboarding(event)">
                     <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrfToken); ?>">
                     <input type="hidden" name="role" id="formRoleInput" value="photographer_videographer">
 
-                    <!-- Personal Information -->
-                    <div class="form-section-divider">
-                        <i class="fa-solid fa-user-check"></i> Personal &amp; Contact Details
-                    </div>
+                    <!-- PERSONAL INFORMATION -->
+                    <span class="section-subheading-caps">PERSONAL INFORMATION</span>
 
-                    <div class="form-grid">
+                    <!-- Row 1: Full Legal Name & Email Address -->
+                    <div class="step2-input-grid" style="margin-bottom: 18px;">
                         <div>
                             <label class="form-label">Full Legal Name <span class="req">*</span></label>
-                            <input type="text" name="full_name" id="fieldFullName" class="form-control" placeholder="First &amp; Last Name" required oninput="syncSignatureName(this.value)">
+                            <input type="text" name="full_name" id="fieldFullName" class="form-control" placeholder="As on your government ID" required oninput="syncSignatureName(this.value)">
                         </div>
-
                         <div>
                             <label class="form-label">Email Address <span class="req">*</span></label>
-                            <input type="email" name="email" id="fieldEmail" class="form-control" placeholder="you@falhenmedia.com" required>
-                        </div>
-
-                        <div>
-                            <label class="form-label">Phone Number (WhatsApp) <span class="req">*</span></label>
-                            <input type="tel" name="phone" id="fieldPhone" class="form-control" placeholder="+234 802 748 7449" required>
-                        </div>
-
-                        <div>
-                            <label class="form-label">Residential Address / City</label>
-                            <input type="text" name="address" id="fieldAddress" class="form-control" placeholder="e.g. Lagos, Nigeria">
+                            <input type="email" name="email" id="fieldEmail" class="form-control" placeholder="you@email.com" required oninput="syncFromFormEmail(this.value)">
                         </div>
                     </div>
 
-                    <!-- Identification & Tax -->
-                    <div class="form-section-divider">
-                        <i class="fa-solid fa-id-card"></i> Identification &amp; Tax Information
+                    <!-- Row 2: Phone Number & Street Address -->
+                    <div class="step2-input-grid" style="margin-bottom: 18px;">
+                        <div>
+                            <label class="form-label">Phone Number <span class="req">*</span></label>
+                            <input type="tel" name="phone" id="fieldPhone" class="form-control" placeholder="+1 (555) 000-0000" required>
+                        </div>
+                        <div>
+                            <label class="form-label">Street Address <span class="req">*</span></label>
+                            <input type="text" name="address" id="fieldAddress" class="form-control" placeholder="123 Main St" required>
+                        </div>
                     </div>
 
-                    <div class="form-grid">
+                    <!-- Row 3: City, State, ZIP -->
+                    <div class="address-grid-3">
                         <div>
-                            <label class="form-label">Identification Document Type</label>
-                            <select name="id_type" class="form-control">
-                                <option value="National ID / NIN">National Identity Card / NIN</option>
-                                <option value="Driver's License">Driver's License</option>
-                                <option value="International Passport">International Passport</option>
-                                <option value="Voter's Card">Voter's Card</option>
+                            <label class="form-label">City <span class="req">*</span></label>
+                            <input type="text" name="city" id="fieldCity" class="form-control" placeholder="Miami" required>
+                        </div>
+                        <div>
+                            <label class="form-label">State <span class="req">*</span></label>
+                            <input type="text" name="state" id="fieldState" class="form-control" placeholder="FL" required>
+                        </div>
+                        <div>
+                            <label class="form-label">ZIP <span class="req">*</span></label>
+                            <input type="text" name="zip" id="fieldZip" class="form-control" placeholder="33101" required>
+                        </div>
+                    </div>
+
+                    <!-- TAX INFORMATION -->
+                    <span class="section-subheading-caps">TAX INFORMATION</span>
+
+                    <div class="step2-input-grid" style="margin-bottom: 24px;">
+                        <div>
+                            <label class="form-label">Tax Form Type</label>
+                            <select name="tax_form_type" id="fieldTaxFormType" class="form-control">
+                                <option value="W-9">W-9</option>
+                                <option value="W-8BEN (non-US contractor)">W-8BEN (non-US contractor)</option>
                             </select>
                         </div>
-
                         <div>
-                            <label class="form-label">Tax ID / NIN Number</label>
-                            <input type="text" name="tax_id" class="form-control" placeholder="e.g. 11-digit NIN or Tax ID">
-                        </div>
-                    </div>
-
-                    <!-- Payout & Bank Info (For Contractors & Interns) -->
-                    <div id="payoutSectionBlock">
-                        <div class="form-section-divider">
-                            <i class="fa-solid fa-building-columns"></i> Remuneration &amp; Bank Settlement Account
-                        </div>
-
-                        <div class="form-grid">
-                            <div>
-                                <label class="form-label">Preferred Currency</label>
-                                <select name="currency" class="form-control">
-                                    <option value="NGN">NGN - Nigerian Naira (₦)</option>
-                                    <option value="USD">USD - US Dollar ($)</option>
-                                    <option value="GBP">GBP - British Pound (£)</option>
-                                    <option value="EUR">EUR - Euro (€)</option>
-                                </select>
-                            </div>
-
-                            <div>
-                                <label class="form-label">Bank / Provider Name</label>
-                                <input type="text" name="bank_name" class="form-control" placeholder="e.g. Access Bank, Zenith, Raenest, Wise">
-                            </div>
-
-                            <div>
-                                <label class="form-label">Account Number / IBAN</label>
-                                <input type="text" name="account_number" class="form-control" placeholder="10-digit Account No or IBAN">
-                            </div>
-
-                            <div>
-                                <label class="form-label">Account Holder Name</label>
-                                <input type="text" name="account_name" class="form-control" placeholder="Name on Bank Account">
+                            <label class="form-label">SSN / EIN (last 4 digits) <span class="req">*</span></label>
+                            <input type="text" name="tax_id" id="fieldTaxId" class="form-control" placeholder="XXXX" maxlength="4" required>
+                            <div style="font-size: 0.76rem; color: #64748b; margin-top: 5px;">
+                                Full forms are submitted via DocuSign. Only last 4 digits collected here.
                             </div>
                         </div>
                     </div>
 
-                    <!-- Emergency Contact -->
-                    <div class="form-section-divider">
-                        <i class="fa-solid fa-phone-volume"></i> Emergency Contact
+                    <!-- Secure Direct Deposit via Stripe Callout Box -->
+                    <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 12px; padding: 18px 20px; display: flex; align-items: flex-start; gap: 14px; margin-bottom: 24px;">
+                        <div style="width: 38px; height: 38px; border-radius: 8px; background: #dcfce7; display: flex; align-items: center; justify-content: center; color: #16a34a; font-size: 1.1rem; flex-shrink: 0;">
+                            <i class="fa-solid fa-building-columns"></i>
+                        </div>
+                        <div>
+                            <div style="font-weight: 700; color: #15803d; font-size: 0.95rem; margin-bottom: 4px;">Secure Direct Deposit via Stripe</div>
+                            <div style="color: #166534; font-size: 0.85rem; line-height: 1.55;">
+                                No bank details are collected here. After your onboarding is approved, Falhen Media will email you a secure link to connect your bank account through <strong>Stripe</strong> — your routing and account numbers are tokenized and never stored on our systems.
+                            </div>
+                        </div>
                     </div>
 
-                    <div class="form-grid">
-                        <div>
-                            <label class="form-label">Emergency Contact Name</label>
-                            <input type="text" name="emergency_name" class="form-control" placeholder="Contact Full Name">
-                        </div>
+                    <!-- EMERGENCY CONTACT -->
+                    <span class="section-subheading-caps">EMERGENCY CONTACT</span>
 
+                    <div class="emergency-grid-3">
                         <div>
-                            <label class="form-label">Relationship</label>
-                            <input type="text" name="emergency_relationship" class="form-control" placeholder="e.g. Spouse, Parent, Sibling, Colleague">
+                            <label class="form-label">Full Name <span class="req">*</span></label>
+                            <input type="text" name="emergency_name" id="fieldEmergencyName" class="form-control" placeholder="Contact name" required>
                         </div>
+                        <div>
+                            <label class="form-label">Phone Number <span class="req">*</span></label>
+                            <input type="tel" name="emergency_phone" id="fieldEmergencyPhone" class="form-control" placeholder="+1 (555) 000-0000" required>
+                        </div>
+                        <div>
+                            <label class="form-label">Relationship <span class="req">*</span></label>
+                            <input type="text" name="emergency_relationship" id="fieldEmergencyRel" class="form-control" placeholder="Spouse, Parent..." required>
+                        </div>
+                    </div>
 
-                        <div class="form-group-full">
-                            <label class="form-label">Emergency Contact Phone Number</label>
-                            <input type="tel" name="emergency_phone" class="form-control" placeholder="Emergency Phone Number">
-                        </div>
+                    <!-- Additional Notes -->
+                    <div style="margin-bottom: 24px;">
+                        <label class="form-label">Additional Notes <span style="font-size: 0.82rem; font-weight: 500; color: #64748b;">(optional)</span></label>
+                        <textarea name="additional_notes" id="fieldNotes" class="form-control" rows="3" placeholder="Anything else Falhen Media should know..." maxlength="500" oninput="updateNotesCount(this.value)"></textarea>
+                        <div style="font-size: 0.75rem; color: #94a3b8; margin-top: 5px;" id="notesCounter">0/500 characters</div>
                     </div>
 
                     <div class="step-action-bar">
                         <button type="button" class="btn-back-step" onclick="goToStep(3)">
                             <i class="fa-solid fa-arrow-left"></i> Back
                         </button>
-                        <button type="submit" class="btn-continue" id="btnSubmitOnboarding">
-                            <i class="fa-solid fa-circle-check"></i> Complete Onboarding
+                        <button type="submit" class="btn-continue" id="btnSubmitOnboarding" style="background: #dc2626; color: #ffffff;">
+                            Submit &amp; Finish <i class="fa-solid fa-arrow-right"></i>
                         </button>
                     </div>
                 </form>
@@ -1079,7 +1223,7 @@ $csrfToken = generateCSRFToken();
                         <a href="/" class="btn-back-step" style="text-decoration: none;">
                             <i class="fa-solid fa-house"></i> Return to Home
                         </a>
-                        <a href="/admin/login.php" class="btn-back-step" style="text-decoration: none;">
+                        <a href="/admin/login.php?view=vendor" class="btn-back-step" style="text-decoration: none;">
                             <i class="fa-solid fa-arrow-right-to-bracket"></i> Portal Login
                         </a>
                     </div>
@@ -1170,19 +1314,60 @@ $csrfToken = generateCSRFToken();
             }
         }
 
+        const stepDefaultIcons = [
+            '',
+            '<i class="fa-solid fa-user"></i>',
+            '<i class="fa-solid fa-shield-halved"></i>',
+            '<i class="fa-regular fa-file-lines"></i>',
+            '<i class="fa-regular fa-id-card"></i>',
+            '<i class="fa-regular fa-circle-check"></i>'
+        ];
+
         // Stepper Navigation
         function goToStep(stepNum) {
             if (stepNum < 1 || stepNum > 5) return;
 
             // Step validations
             if (stepNum > 2 && !isStep2Valid()) {
-                alert('Please accept the workplace policies and confidentiality terms before proceeding.');
+                alert('Please enter your full legal name, email address, and agree to the Workplace Policy before proceeding.');
                 return;
             }
 
             if (stepNum > 3 && !isStep3Valid()) {
-                alert('Please enter your legal name and accept the e-signature terms to proceed.');
+                alert('Please confirm your legal name, email address, accept both agreements (NDA & MSA), and provide your signature to proceed.');
                 return;
+            }
+
+            // Prefill Step 3 if entering from Step 2
+            if (stepNum === 3) {
+                const s2Name = document.getElementById('step2LegalName');
+                const s3Name = document.getElementById('step3LegalName');
+                if (s2Name && s2Name.value && s3Name && !s3Name.value) {
+                    s3Name.value = s2Name.value;
+                    updateSignaturePreview(s2Name.value);
+                }
+                const s2Email = document.getElementById('step2Email');
+                const s3Email = document.getElementById('step3Email');
+                if (s2Email && s2Email.value && s3Email && !s3Email.value) {
+                    s3Email.value = s2Email.value;
+                }
+                validateStep3();
+            }
+
+            // Prefill Step 4 if entering from Step 3
+            if (stepNum === 4) {
+                const sName = (document.getElementById('step3LegalName') && document.getElementById('step3LegalName').value) ||
+                              (document.getElementById('step2LegalName') && document.getElementById('step2LegalName').value);
+                const fieldFull = document.getElementById('fieldFullName');
+                if (sName && fieldFull && !fieldFull.value) {
+                    fieldFull.value = sName;
+                }
+                const sEmail = (document.getElementById('step3Email') && document.getElementById('step3Email').value) ||
+                               (document.getElementById('step2Email') && document.getElementById('step2Email').value);
+                const fieldEmail = document.getElementById('fieldEmail');
+                if (sEmail && fieldEmail && !fieldEmail.value) {
+                    fieldEmail.value = sEmail;
+                }
             }
 
             currentStep = stepNum;
@@ -1199,10 +1384,18 @@ $csrfToken = generateCSRFToken();
 
                 if (indicator) {
                     indicator.classList.remove('active', 'completed');
-                    if (i === currentStep) {
+                    const iconBox = indicator.querySelector('.step-icon-circle');
+                    if (currentStep === 5 && i === 5) {
+                        indicator.classList.add('completed');
+                        if (iconBox) iconBox.innerHTML = '<i class="fa-solid fa-check"></i>';
+                    } else if (i === currentStep) {
                         indicator.classList.add('active');
+                        if (iconBox && stepDefaultIcons[i]) iconBox.innerHTML = stepDefaultIcons[i];
                     } else if (i < currentStep) {
                         indicator.classList.add('completed');
+                        if (iconBox) iconBox.innerHTML = '<i class="fa-solid fa-check"></i>';
+                    } else {
+                        if (iconBox && stepDefaultIcons[i]) iconBox.innerHTML = stepDefaultIcons[i];
                     }
                 }
 
@@ -1211,20 +1404,134 @@ $csrfToken = generateCSRFToken();
                 }
             }
 
-            window.scrollTo({ top: 120, behavior: 'smooth' });
+            // Update page top header for Step 5 vs earlier steps
+            const introBadge = document.getElementById('introBadge');
+            const introTitle = document.getElementById('introTitle');
+            const introSubtitle = document.getElementById('introSubtitle');
+
+            if (currentStep === 5) {
+                if (introBadge) introBadge.innerHTML = '<i class="fa-solid fa-circle-check"></i> Onboarding Complete';
+                if (introTitle) introTitle.innerText = 'Welcome to Falhen Media!';
+                if (introSubtitle) introSubtitle.innerText = 'Your vendor profile has been recorded and your signed agreement is ready for download.';
+                window.scrollTo({ top: 60, behavior: 'smooth' });
+            } else {
+                if (introBadge) introBadge.innerHTML = '<i class="fa-solid fa-building-user"></i> Vendor Onboarding';
+                if (introTitle) introTitle.innerText = 'Join the Falhen Media Team';
+                if (introSubtitle) introSubtitle.innerText = 'Complete this secure onboarding process to formalize your engagement. Takes about 5 minutes.';
+                window.scrollTo({ top: 120, behavior: 'smooth' });
+            }
+        }
+
+        // Two-way synchronization helpers between Step 2, Step 3, and Step 4
+        function syncFromStep2Name(val) {
+            const trimmed = val.trim();
+            const step3Name = document.getElementById('step3LegalName');
+            if (step3Name && step3Name.value !== val) {
+                step3Name.value = val;
+            }
+            const sigInput = document.getElementById('signatureNameInput');
+            if (sigInput) {
+                sigInput.value = trimmed;
+            }
+            const fieldFull = document.getElementById('fieldFullName');
+            if (fieldFull && fieldFull.value !== val) {
+                fieldFull.value = val;
+            }
+            updateSignaturePreview(trimmed);
+            validateStep2();
+            validateStep3();
+        }
+
+        function syncFromStep2Email(val) {
+            const trimmed = val.trim();
+            const step3Email = document.getElementById('step3Email');
+            if (step3Email && step3Email.value !== val) {
+                step3Email.value = val;
+            }
+            const fieldEmail = document.getElementById('fieldEmail');
+            if (fieldEmail && fieldEmail.value !== val) {
+                fieldEmail.value = val;
+            }
+            validateStep2();
+            validateStep3();
+        }
+
+        function syncFromStep3Name(val) {
+            const trimmed = val.trim();
+            const step2Name = document.getElementById('step2LegalName');
+            if (step2Name && step2Name.value !== val) {
+                step2Name.value = val;
+            }
+            const sigInput = document.getElementById('signatureNameInput');
+            if (sigInput) {
+                sigInput.value = trimmed;
+            }
+            const fieldFull = document.getElementById('fieldFullName');
+            if (fieldFull && fieldFull.value !== val) {
+                fieldFull.value = val;
+            }
+            updateSignaturePreview(trimmed);
+            validateStep2();
+            validateStep3();
+        }
+
+        function syncFromStep3Email(val) {
+            const trimmed = val.trim();
+            const step2Email = document.getElementById('step2Email');
+            if (step2Email && step2Email.value !== val) {
+                step2Email.value = val;
+            }
+            const fieldEmail = document.getElementById('fieldEmail');
+            if (fieldEmail && fieldEmail.value !== val) {
+                fieldEmail.value = val;
+            }
+            validateStep2();
+            validateStep3();
+        }
+
+        function syncFromFormEmail(val) {
+            const trimmed = val.trim();
+            const s2Email = document.getElementById('step2Email');
+            if (s2Email && s2Email.value !== val) {
+                s2Email.value = val;
+            }
+            const s3Email = document.getElementById('step3Email');
+            if (s3Email && s3Email.value !== val) {
+                s3Email.value = val;
+            }
+            validateStep2();
+            validateStep3();
+        }
+
+        function updateNotesCount(val) {
+            const counter = document.getElementById('notesCounter');
+            if (counter) {
+                counter.innerText = val.length + '/500 characters';
+            }
         }
 
         // Validate Step 2
         function validateStep2() {
-            const c1 = document.getElementById('checkPolicyCode').checked;
-            const c2 = document.getElementById('checkPolicyConfidentiality').checked;
+            const nameEl = document.getElementById('step2LegalName');
+            const emailEl = document.getElementById('step2Email');
+            const chkEl = document.getElementById('checkPolicyAgreement');
             const btn = document.getElementById('btnStep2Continue');
-            btn.disabled = !(c1 && c2);
+
+            const name = nameEl ? nameEl.value.trim() : '';
+            const email = emailEl ? emailEl.value.trim() : '';
+            const checked = chkEl ? chkEl.checked : false;
+
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            const isValid = (name.length >= 2) && emailRegex.test(email) && checked;
+
+            if (btn) {
+                btn.disabled = !isValid;
+            }
+            return isValid;
         }
 
         function isStep2Valid() {
-            return document.getElementById('checkPolicyCode').checked && 
-                   document.getElementById('checkPolicyConfidentiality').checked;
+            return validateStep2();
         }
 
         // Dual Signature Mode State & Canvas Logic
@@ -1358,27 +1665,33 @@ $csrfToken = generateCSRFToken();
 
         // Validate Step 3
         function validateStep3() {
-            const name = document.getElementById('signatureNameInput').value.trim();
-            const checked = document.getElementById('checkLegalAcceptance').checked;
+            const nameEl = document.getElementById('step3LegalName') || document.getElementById('step2LegalName');
+            const emailEl = document.getElementById('step3Email') || document.getElementById('step2Email');
+            const name = nameEl ? nameEl.value.trim() : '';
+            const email = emailEl ? emailEl.value.trim() : '';
+
+            const ndaChecked = document.getElementById('checkNdaAgreement') ? document.getElementById('checkNdaAgreement').checked : false;
+            const msaChecked = document.getElementById('checkMsaAgreement') ? document.getElementById('checkMsaAgreement').checked : false;
+            const certChecked = document.getElementById('checkLegalAcceptance') ? document.getElementById('checkLegalAcceptance').checked : false;
             const btn = document.getElementById('btnStep3Continue');
 
-            let isValid = false;
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            let sigValid = false;
             if (currentSigMode === 'type') {
-                isValid = (name.length > 2 && checked);
+                sigValid = (name.length >= 2);
             } else {
-                isValid = (hasDrawnSignature && name.length > 2 && checked);
+                sigValid = (hasDrawnSignature && name.length >= 2);
             }
-            btn.disabled = !isValid;
+
+            const isValid = (name.length >= 2 && emailRegex.test(email) && ndaChecked && msaChecked && certChecked && sigValid);
+            if (btn) {
+                btn.disabled = !isValid;
+            }
+            return isValid;
         }
 
         function isStep3Valid() {
-            const name = document.getElementById('signatureNameInput').value.trim();
-            const checked = document.getElementById('checkLegalAcceptance').checked;
-            if (currentSigMode === 'type') {
-                return name.length > 2 && checked;
-            } else {
-                return hasDrawnSignature && name.length > 2 && checked;
-            }
+            return validateStep3();
         }
 
         // Live Signature Text Preview
@@ -1388,20 +1701,44 @@ $csrfToken = generateCSRFToken();
                 rendered.innerText = val.trim() || 'John Doe';
             }
 
-            // Also sync to form full name if full name is currently empty
-            const fieldFull = document.getElementById('fieldFullName');
-            if (fieldFull && !fieldFull.value.trim()) {
-                fieldFull.value = val.trim();
+            // Sync with Step 2 Legal Name
+            const step2Name = document.getElementById('step2LegalName');
+            if (step2Name && step2Name.value !== val) {
+                step2Name.value = val;
             }
+
+            // Sync with Step 3 Legal Name
+            const step3Name = document.getElementById('step3LegalName');
+            if (step3Name && step3Name.value !== val) {
+                step3Name.value = val;
+            }
+
+            // Sync with form full name
+            const fieldFull = document.getElementById('fieldFullName');
+            if (fieldFull && fieldFull.value !== val) {
+                fieldFull.value = val;
+            }
+
+            // Sync with hidden signatureNameInput
+            const sigHidden = document.getElementById('signatureNameInput');
+            if (sigHidden && sigHidden.value !== val) {
+                sigHidden.value = val;
+            }
+
             validateStep3();
+            validateStep2();
         }
 
         function syncSignatureName(val) {
+            const step2Name = document.getElementById('step2LegalName');
+            if (step2Name) step2Name.value = val;
+            const step3Name = document.getElementById('step3LegalName');
+            if (step3Name) step3Name.value = val;
             const sigInput = document.getElementById('signatureNameInput');
-            if (sigInput && !sigInput.value.trim()) {
-                sigInput.value = val;
-                updateSignaturePreview(val);
-            }
+            if (sigInput) sigInput.value = val;
+            updateSignaturePreview(val);
+            validateStep2();
+            validateStep3();
         }
 
         // Final Form Submission
@@ -1416,7 +1753,10 @@ $csrfToken = generateCSRFToken();
             formData.append('nda_agreed', '1');
             formData.append('msa_agreed', '1');
 
-            const legalName = document.getElementById('signatureNameInput').value.trim();
+            const legalName = (document.getElementById('signatureNameInput') && document.getElementById('signatureNameInput').value.trim()) ||
+                              (document.getElementById('step3LegalName') && document.getElementById('step3LegalName').value.trim()) ||
+                              (document.getElementById('step2LegalName') && document.getElementById('step2LegalName').value.trim()) ||
+                              (document.getElementById('fieldFullName') && document.getElementById('fieldFullName').value.trim()) || 'Contractor';
             formData.append('signature_name', legalName);
             formData.append('signature_type', currentSigMode);
 
@@ -1441,21 +1781,28 @@ $csrfToken = generateCSRFToken();
                 const res = await response.json();
                 overlay.classList.remove('active');
 
-                if (res.success) {
-                    // Populate Step 5 confirmation
-                    document.getElementById('doneRefCode').innerText = res.data.reference_code;
-                    document.getElementById('doneRoleLabel').innerText = res.data.role_label;
-                    document.getElementById('doneFullName').innerText = res.data.full_name;
-                    document.getElementById('btnDownloadAgreement').href = res.data.download_url;
+                if (res && res.success) {
+                    const info = res.data || res;
+                    const refEl = document.getElementById('doneRefCode');
+                    if (refEl) refEl.innerText = info.reference_code || '';
+                    
+                    const roleEl = document.getElementById('doneRoleLabel');
+                    if (roleEl) roleEl.innerText = info.role_label || 'Vendor';
+
+                    const nameEl = document.getElementById('doneFullName');
+                    if (nameEl) nameEl.innerText = info.full_name || '';
+
+                    const dlBtn = document.getElementById('btnDownloadAgreement');
+                    if (dlBtn) dlBtn.href = info.download_url || '#';
 
                     goToStep(5);
                 } else {
-                    alert('Submission error: ' + (res.message || 'Please check your inputs and try again.'));
+                    alert('Submission error: ' + ((res && res.message) || 'Please check your inputs and try again.'));
                 }
             } catch (err) {
                 overlay.classList.remove('active');
                 console.error(err);
-                alert('A network error occurred while submitting onboarding. Please try again.');
+                alert('An error occurred while submitting onboarding: ' + (err.message || 'Please try again.'));
             }
         }
 

@@ -34,7 +34,13 @@ if (!in_array($role, $validRoles, true)) {
 $fullName = sanitizeInput($input['full_name'] ?? '');
 $email = sanitizeInput(strtolower($input['email'] ?? ''));
 $phone = sanitizeInput($input['phone'] ?? '');
-$address = sanitizeInput($input['address'] ?? '');
+$streetAddress = sanitizeInput($input['address'] ?? '');
+$city = sanitizeInput($input['city'] ?? '');
+$state = sanitizeInput($input['state'] ?? '');
+$zip = sanitizeInput($input['zip'] ?? '');
+
+$addrParts = array_filter([$streetAddress, $city, ($state && $zip) ? "$state $zip" : ($state ?: $zip)]);
+$address = !empty($addrParts) ? implode(', ', $addrParts) : $streetAddress;
 
 if (empty($fullName)) {
     sendJSONResponse(false, 'Please enter your Full Legal Name.');
@@ -49,8 +55,10 @@ if (empty($phone)) {
 }
 
 // 3. Identification & Tax
-$idType = sanitizeInput($input['id_type'] ?? 'National ID');
+$idType = sanitizeInput($input['id_type'] ?? 'W-9');
+$taxFormType = sanitizeInput($input['tax_form_type'] ?? 'W-9');
 $taxId = sanitizeInput($input['tax_id'] ?? '');
+$additionalNotes = sanitizeInput($input['additional_notes'] ?? '');
 $idDocUrl = '';
 
 // Handle File Upload if present
@@ -112,8 +120,14 @@ $vendorData = [
     'email'                   => $email,
     'phone'                   => $phone,
     'address'                 => $address,
+    'street_address'          => $streetAddress,
+    'city'                    => $city,
+    'state'                   => $state,
+    'zip'                     => $zip,
     'id_type'                 => $idType,
+    'tax_form_type'           => $taxFormType,
     'tax_id'                  => $taxId,
+    'additional_notes'        => $additionalNotes,
     'id_document_url'         => $idDocUrl,
     'currency'                => $currency,
     'bank_name'               => $bankName,
@@ -143,5 +157,13 @@ sendJSONResponse(true, 'Vendor onboarding submitted successfully! Welcome to the
     'full_name'      => $fullName,
     'email'          => $email,
     'download_url'   => $downloadUrl,
-    'created_at'     => $saved['created_at'] ?? date('Y-m-d H:i:s')
+    'created_at'     => $saved['created_at'] ?? date('Y-m-d H:i:s'),
+    'data'           => [
+        'reference_code' => $refCode,
+        'role_label'     => $saved['role_label'] ?? 'Vendor',
+        'full_name'      => $fullName,
+        'email'          => $email,
+        'download_url'   => $downloadUrl,
+        'created_at'     => $saved['created_at'] ?? date('Y-m-d H:i:s')
+    ]
 ]);

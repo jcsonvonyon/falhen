@@ -4631,8 +4631,14 @@ function saveVendorRecord($data) {
         'email'                   => trim(strtolower($data['email'] ?? '')),
         'phone'                   => trim($data['phone'] ?? ''),
         'address'                 => trim($data['address'] ?? ''),
-        'id_type'                 => trim($data['id_type'] ?? 'National ID'),
+        'street_address'          => trim($data['street_address'] ?? ''),
+        'city'                    => trim($data['city'] ?? ''),
+        'state'                   => trim($data['state'] ?? ''),
+        'zip'                     => trim($data['zip'] ?? ''),
+        'id_type'                 => trim($data['id_type'] ?? 'W-9'),
+        'tax_form_type'           => trim($data['tax_form_type'] ?? 'W-9'),
         'tax_id'                  => trim($data['tax_id'] ?? ''),
+        'additional_notes'        => trim($data['additional_notes'] ?? ''),
         'id_document_url'         => trim($data['id_document_url'] ?? ''),
         'currency'                => trim($data['currency'] ?? 'NGN'),
         'bank_name'               => trim($data['bank_name'] ?? ''),
@@ -4649,6 +4655,7 @@ function saveVendorRecord($data) {
         'signature_name'          => trim($data['signature_name'] ?? $data['full_name'] ?? ''),
         'signature_date'          => !empty($data['signature_date']) ? $data['signature_date'] : date('Y-m-d'),
         'status'                  => !empty($data['status']) ? $data['status'] : 'active',
+        'password_hash'           => !empty($data['password_hash']) ? $data['password_hash'] : null,
         'created_at'              => !empty($data['created_at']) ? $data['created_at'] : $now,
         'updated_at'              => $now
     ];
@@ -4663,14 +4670,14 @@ function saveVendorRecord($data) {
                     `role` = ?, `role_label` = ?, `full_name` = ?, `email` = ?, `phone` = ?, `address` = ?,
                     `id_type` = ?, `tax_id` = ?, `id_document_url` = ?, `currency` = ?, `bank_name` = ?,
                     `account_number` = ?, `account_name` = ?, `emergency_name` = ?, `emergency_relationship` = ?,
-                    `emergency_phone` = ?, `status` = ?, `updated_at` = ?
+                    `emergency_phone` = ?, `status` = ?, `password_hash` = COALESCE(?, `password_hash`), `updated_at` = ?
                     WHERE `id` = ? OR `reference_code` = ?");
                 $stmt->execute([
                     $record['role'], $record['role_label'], $record['full_name'], $record['email'], $record['phone'],
                     $record['address'], $record['id_type'], $record['tax_id'], $record['id_document_url'],
                     $record['currency'], $record['bank_name'], $record['account_number'], $record['account_name'],
                     $record['emergency_name'], $record['emergency_relationship'], $record['emergency_phone'],
-                    $record['status'], $record['updated_at'], $recordId, $refCode
+                    $record['status'], $record['password_hash'], $record['updated_at'], $recordId, $refCode
                 ]);
                 $savedInDB = true;
             } else {
@@ -4795,5 +4802,462 @@ function updateVendorStatus($idOrRef, $newStatus) {
 
     $actor = $_SESSION['admin_username'] ?? 'Admin';
     logDatabaseAudit($actor, 'vendor_status_update', 'vendor', (string)$idOrRef, "Vendor #{$idOrRef} status updated to {$newStatus}.");
+    return true;
+}
+
+/**
+ * Get Vendor by Email Address
+ */
+function getVendorByEmail($email) {
+    if (empty($email)) return null;
+    $email = strtolower(trim($email));
+    $pdo = getDBConnection();
+    if ($pdo) {
+        try {
+            $stmt = $pdo->prepare("SELECT * FROM `vendors` WHERE LOWER(`email`) = ? AND `deleted_at` IS NULL LIMIT 1");
+            $stmt->execute([$email]);
+            $row = $stmt->fetch(PDO::FETCH_ASSOC);
+            if ($row) return $row;
+        } catch (Exception $e) {}
+    }
+
+    $vendors = getVendorsList();
+    foreach ($vendors as $v) {
+        if (strtolower(trim($v['email'] ?? '')) === $email) {
+            return $v;
+        }
+    }
+    return null;
+}
+
+/**
+ * Authenticate Vendor by Email and Reference Code / Password
+ */
+function authenticateVendor($email, $refOrPassword) {
+    if (empty($email) || empty($refOrPassword)) {
+        return ['success' => false, 'message' => 'Please provide both email address and reference code / password.'];
+    }
+
+    $email = strtolower(trim($email));
+    $inputCred = trim($refOrPassword);
+
+    $pdo = getDBConnection();
+    $vendor = null;
+
+    if ($pdo) {
+        try {
+            // Check direct reference code match
+            $stmt = $pdo->prepare("SELECT * FROM `vendors` WHERE LOWER(`email`) = ? AND UPPER(`reference_code`) = ? AND `deleted_at` IS NULL ORDER BY `id` DESC LIMIT 1");
+            $stmt->execute([$email, strtoupper($inputCred)]);
+            $vendor = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            // If not found by ref code, check password
+            if (!$vendor) {
+                $stmt = $pdo->prepare("SELECT * FROM `vendors` WHERE LOWER(`email`) = ? AND `deleted_at` IS NULL ORDER BY `id` DESC");
+                $stmt->execute([$email]);
+                $candidates = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                foreach ($candidates as $cand) {
+                    if (!empty($cand['password_hash']) && password_verify($inputCred, $cand['password_hash'])) {
+                        $vendor = $cand;
+                        break;
+                    }
+                }
+            }
+        } catch (Exception $e) {}
+    }
+
+    // Fallback to JSON if not found via DB
+    if (!$vendor) {
+        $vendors = getVendorsList();
+        foreach ($vendors as $cand) {
+            if (strtolower(trim($cand['email'] ?? '')) === $email) {
+                $cleanRef = strtoupper(trim($cand['reference_code'] ?? ''));
+                if (!empty($cleanRef) && strtoupper($inputCred) === $cleanRef) {
+                    $vendor = $cand;
+                    break;
+                }
+                if (!empty($cand['password_hash']) && password_verify($inputCred, $cand['password_hash'])) {
+                    $vendor = $cand;
+                    break;
+                }
+            }
+        }
+    }
+
+    if (!$vendor) {
+        $exists = getVendorByEmail($email);
+        if (!$exists) {
+            return ['success' => false, 'message' => 'No vendor record found with this email address. Please ensure you have completed vendor onboarding.'];
+        }
+        return ['success' => false, 'message' => 'Invalid reference code or password. Please verify and try again.'];
+    }
+
+    // Check status
+    if (in_array(strtolower($vendor['status'] ?? ''), ['suspended', 'inactive'], true)) {
+        return ['success' => false, 'message' => 'Your vendor account is currently suspended. Please contact Falhen Media management.'];
+    }
+
+    // Set vendor session
+    if (session_status() === PHP_SESSION_NONE) {
+        session_start();
+    }
+    $_SESSION['vendor_logged_in']  = true;
+    $_SESSION['vendor_id']         = $vendor['id'];
+    $_SESSION['vendor_ref']        = $vendor['reference_code'];
+    $_SESSION['vendor_email']      = $vendor['email'];
+    $_SESSION['vendor_name']       = $vendor['full_name'];
+    $_SESSION['vendor_role']       = $vendor['role'];
+    $_SESSION['vendor_role_label'] = $vendor['role_label'] ?? 'Vendor';
+
+    logDatabaseAudit($vendor['full_name'], 'vendor_login', 'vendor', $vendor['reference_code'], "Vendor logged in: {$vendor['full_name']} ({$vendor['reference_code']}).");
+
+    return ['success' => true, 'vendor' => $vendor];
+}
+
+/**
+ * Check if a Vendor is Logged In
+ */
+function isVendorLoggedIn() {
+    if (session_status() === PHP_SESSION_NONE) {
+        session_start();
+    }
+    return !empty($_SESSION['vendor_logged_in']) && (!empty($_SESSION['vendor_id']) || !empty($_SESSION['vendor_ref']));
+}
+
+/**
+ * Get Current Logged-In Vendor Record
+ */
+function getLoggedInVendor() {
+    if (!isVendorLoggedIn()) return null;
+    $ref = $_SESSION['vendor_ref'] ?? $_SESSION['vendor_id'] ?? null;
+    if (!$ref) return null;
+    return getVendorById($ref);
+}
+
+/**
+ * Clear Vendor Session (Logout)
+ */
+function clearVendorSession() {
+    if (session_status() === PHP_SESSION_NONE) {
+        session_start();
+    }
+    unset(
+        $_SESSION['vendor_logged_in'],
+        $_SESSION['vendor_id'],
+        $_SESSION['vendor_ref'],
+        $_SESSION['vendor_email'],
+        $_SESSION['vendor_name'],
+        $_SESSION['vendor_role'],
+        $_SESSION['vendor_role_label']
+    );
+}
+
+/**
+ * Update Vendor Profile Info
+ */
+function updateVendorProfile($idOrRef, $data) {
+    $vendor = getVendorById($idOrRef);
+    if (!$vendor) return false;
+
+    $fields = ['phone', 'address', 'street_address', 'city', 'state', 'zip', 'emergency_name', 'emergency_relationship', 'emergency_phone', 'bank_name', 'account_number', 'account_name', 'currency'];
+    foreach ($fields as $f) {
+        if (isset($data[$f])) {
+            $vendor[$f] = trim($data[$f]);
+        }
+    }
+    if (isset($data['street_address']) || isset($data['city']) || isset($data['state']) || isset($data['zip'])) {
+        $parts = array_filter([$vendor['street_address'] ?? '', $vendor['city'] ?? '', trim(($vendor['state'] ?? '') . ' ' . ($vendor['zip'] ?? ''))]);
+        if (!empty($parts)) {
+            $vendor['address'] = implode(', ', $parts);
+        }
+    }
+
+    return saveVendorRecord($vendor);
+}
+
+/**
+ * Set or Change Vendor Password
+ */
+function setVendorPassword($idOrRef, $newPassword) {
+    if (strlen($newPassword) < 6) return false;
+    $vendor = getVendorById($idOrRef);
+    if (!$vendor) return false;
+
+    $hash = password_hash($newPassword, PASSWORD_DEFAULT);
+    $vendor['password_hash'] = $hash;
+
+    $pdo = getDBConnection();
+    if ($pdo) {
+        try {
+            $stmt = $pdo->prepare("UPDATE `vendors` SET `password_hash` = ?, `updated_at` = NOW() WHERE `id` = ? OR `reference_code` = ?");
+            $stmt->execute([$hash, $idOrRef, $idOrRef]);
+        } catch (Exception $e) {
+            try {
+                $pdo->exec("ALTER TABLE `vendors` ADD COLUMN `password_hash` VARCHAR(255) NULL AFTER `signature_date`");
+                $stmt = $pdo->prepare("UPDATE `vendors` SET `password_hash` = ?, `updated_at` = NOW() WHERE `id` = ? OR `reference_code` = ?");
+                $stmt->execute([$hash, $idOrRef, $idOrRef]);
+            } catch (Exception $e2) {}
+        }
+    }
+
+    return saveVendorRecord($vendor);
+}
+
+/**
+ * Get Global Vendor Gigs Repository from settings.json
+ */
+function getVendorGigsRepository() {
+    $settings = getSiteSettings();
+    if (!empty($settings['vendor_gigs']) && is_array($settings['vendor_gigs'])) {
+        return $settings['vendor_gigs'];
+    }
+
+    // Default Seed Gigs for Studio Operations
+    $defaultGigs = [
+        [
+            'id'                  => 'GIG-2026-091',
+            'title'               => 'Lagos Fashion Showcase - Runway & Editorial Shoot',
+            'client'              => 'Vogue West Africa / Falhen Media',
+            'shoot_date'          => date('Y-m-d', strtotime('+3 days')),
+            'end_date'            => date('Y-m-d', strtotime('+3 days')),
+            'call_time'           => '08:00 AM',
+            'wrap_time'           => '06:00 PM',
+            'location'            => 'Studio A - 6 Olorunfunmi Street, Pedro, Gbagada, Lagos',
+            'role'                => 'Lead Videographer & Director of Photography',
+            'day_rate'            => '₦180,000 / day',
+            'status'              => 'assigned', // assigned, confirmed, done
+            'assigned_to_ref'     => '',
+            'assigned_to_email'   => '',
+            'call_sheet_name'     => 'CallSheet_LagosFashionShowcase_Sep2026.pdf',
+            'call_sheet_url'      => '/download_call_sheet.php?gig_id=GIG-2026-091',
+            'uploaded_call_sheet' => '',
+            'uploaded_call_sheet_name' => '',
+            'deliverables_status' => 'Pending Shoot Execution',
+            'notes'               => 'Arrive 30 mins early for gimbal calibration and wireless monitor setup. 4K 60fps 10-bit color profile.',
+            'director'            => 'Oluwatosin Ligali (Executive Producer)',
+            'director_phone'      => '08027487449'
+        ],
+        [
+            'id'                  => 'GIG-2026-092',
+            'title'               => 'Mercedes-Benz Brand Commercial BTS & Social Teasers',
+            'client'              => 'Henad Innovations / Luxury Brand Series',
+            'shoot_date'          => date('Y-m-d', strtotime('+8 days')),
+            'end_date'            => date('Y-m-d', strtotime('+8 days')),
+            'call_time'           => '09:30 AM',
+            'wrap_time'           => '05:30 PM',
+            'location'            => 'Falhen Soundstage & Outdoor Track, Lekki Phase 1, Lagos',
+            'role'                => 'B-Camera Operator & BTS Videographer',
+            'day_rate'            => '₦140,000 / day',
+            'status'              => 'confirmed',
+            'assigned_to_ref'     => '',
+            'assigned_to_email'   => '',
+            'call_sheet_name'     => 'CallSheet_MercedesCommercial_BTS.pdf',
+            'call_sheet_url'      => '/download_call_sheet.php?gig_id=GIG-2026-092',
+            'uploaded_call_sheet' => '',
+            'uploaded_call_sheet_name' => '',
+            'deliverables_status' => 'Call Sheet Confirmed by Vendor',
+            'notes'               => 'Prime prime lenses (35mm / 50mm). Capture slow motion hero shots and candid director interactions.',
+            'director'            => 'Henry Falonipe (Creative Director)',
+            'director_phone'      => '08027487449'
+        ],
+        [
+            'id'                  => 'GIG-2026-085',
+            'title'               => 'Urban Beats Live Studio Session & Music Video',
+            'client'              => 'Pulse Media / Afrobeats Series',
+            'shoot_date'          => date('Y-m-d', strtotime('-5 days')),
+            'end_date'            => date('Y-m-d', strtotime('-5 days')),
+            'call_time'           => '10:00 AM',
+            'wrap_time'           => '08:00 PM',
+            'location'            => 'Studio B Sound Stage, Falhen Production Center, Gbagada',
+            'role'                => 'Lead Cinematographer',
+            'day_rate'            => '₦200,000 / day',
+            'status'              => 'done',
+            'assigned_to_ref'     => '',
+            'assigned_to_email'   => '',
+            'call_sheet_name'     => 'CallSheet_UrbanBeats_StudioB.pdf',
+            'call_sheet_url'      => '/download_call_sheet.php?gig_id=GIG-2026-085',
+            'uploaded_call_sheet' => '/uploads/callsheets/UrbanBeats_SignedCallSheet.pdf',
+            'uploaded_call_sheet_name' => 'UrbanBeats_SignedCallSheet.pdf',
+            'deliverables_status' => 'Footage Transferred & Verified (100%)',
+            'payment_status'      => 'Disbursed via Stripe Direct Deposit',
+            'notes'               => 'Multi-camera studio session with synchronized timecode audio.',
+            'director'            => 'Oluwatosin Ligali (Producer)',
+            'director_phone'      => '08027487449'
+        ],
+        [
+            'id'                  => 'GIG-2026-082',
+            'title'               => 'Corporate Leadership Documentary & Executive Portraits',
+            'client'              => 'Zenith Capital Group',
+            'shoot_date'          => date('Y-m-d', strtotime('-14 days')),
+            'end_date'            => date('Y-m-d', strtotime('-14 days')),
+            'call_time'           => '07:30 AM',
+            'wrap_time'           => '04:00 PM',
+            'location'            => 'Zenith Headquarters, Victoria Island, Lagos',
+            'role'                => 'Director of Photography',
+            'day_rate'            => '₦220,000 / day',
+            'status'              => 'done',
+            'assigned_to_ref'     => '',
+            'assigned_to_email'   => '',
+            'call_sheet_name'     => 'CallSheet_ZenithLeadership_Doc.pdf',
+            'call_sheet_url'      => '/download_call_sheet.php?gig_id=GIG-2026-082',
+            'uploaded_call_sheet' => '/uploads/callsheets/Zenith_SignedCallSheet_Wrapped.pdf',
+            'uploaded_call_sheet_name' => 'Zenith_SignedCallSheet_Wrapped.pdf',
+            'deliverables_status' => 'Color Graded & Archived',
+            'payment_status'      => 'Disbursed via Stripe Direct Deposit',
+            'notes'               => 'Soft 3-point interview lighting setup. Clean audio lavs.',
+            'director'            => 'Kingsley Falonipe (Operations Specialist)',
+            'director_phone'      => '08027487449'
+        ]
+    ];
+
+    saveSiteSettings(['vendor_gigs' => $defaultGigs]);
+    return $defaultGigs;
+}
+
+/**
+ * Get Gigs Assigned to a Specific Vendor
+ */
+function getVendorGigs($vendorRefOrEmail) {
+    $allGigs = getVendorGigsRepository();
+    $vendorKey = strtolower(trim($vendorRefOrEmail));
+
+    $matched = [];
+    $unassigned = [];
+
+    foreach ($allGigs as $g) {
+        $gRef = strtolower(trim($g['assigned_to_ref'] ?? ''));
+        $gEmail = strtolower(trim($g['assigned_to_email'] ?? ''));
+
+        if ((!empty($gRef) && $gRef === $vendorKey) || (!empty($gEmail) && $gEmail === $vendorKey)) {
+            $matched[] = $g;
+        } else if (empty($gRef) && empty($gEmail)) {
+            $unassigned[] = $g;
+        }
+    }
+
+    // If no specific gigs were mapped, attach default gigs to this vendor and save
+    if (empty($matched) && !empty($unassigned)) {
+        foreach ($allGigs as &$g) {
+            if (empty($g['assigned_to_ref']) && empty($g['assigned_to_email'])) {
+                $g['assigned_to_ref'] = $vendorRefOrEmail;
+                $g['assigned_to_email'] = $vendorRefOrEmail;
+                $matched[] = $g;
+            }
+        }
+        unset($g);
+        saveSiteSettings(['vendor_gigs' => $allGigs]);
+    }
+
+    // Sort: upcoming dates first, then done
+    usort($matched, function($a, $b) {
+        $statusWeight = [
+            'in_progress' => 1,
+            'assigned'    => 2,
+            'confirmed'   => 3,
+            'done'        => 4
+        ];
+        $wA = $statusWeight[$a['status'] ?? 'assigned'] ?? 5;
+        $wB = $statusWeight[$b['status'] ?? 'assigned'] ?? 5;
+        if ($wA !== $wB) return $wA <=> $wB;
+        return strcmp($b['shoot_date'] ?? '', $a['shoot_date'] ?? '');
+    });
+
+    return $matched;
+}
+
+/**
+ * Get Single Gig by ID
+ */
+function getVendorGigById($gigId) {
+    $allGigs = getVendorGigsRepository();
+    foreach ($allGigs as $g) {
+        if (($g['id'] ?? '') === $gigId) {
+            return $g;
+        }
+    }
+    return null;
+}
+
+/**
+ * Save / Update Single Gig in Repository
+ */
+function saveVendorGig($gigData) {
+    $allGigs = getVendorGigsRepository();
+    $found = false;
+    foreach ($allGigs as $idx => $g) {
+        if (($g['id'] ?? '') === ($gigData['id'] ?? '')) {
+            $allGigs[$idx] = array_merge($g, $gigData);
+            $found = true;
+            break;
+        }
+    }
+    if (!$found) {
+        $allGigs[] = $gigData;
+    }
+    saveSiteSettings(['vendor_gigs' => $allGigs]);
+    return true;
+}
+
+/**
+ * Update Gig Status (assigned -> confirmed -> done)
+ */
+function updateVendorGigStatus($gigId, $status, $extraNotes = '') {
+    $gig = getVendorGigById($gigId);
+    if (!$gig) return false;
+
+    $gig['status'] = $status;
+    if (!empty($extraNotes)) {
+        $gig['vendor_notes'] = $extraNotes;
+    }
+    if ($status === 'done') {
+        $gig['completed_at'] = date('Y-m-d H:i:s');
+        $gig['deliverables_status'] = 'Marked Done by Vendor (Ready for Handover)';
+    } else if ($status === 'confirmed') {
+        $gig['confirmed_at'] = date('Y-m-d H:i:s');
+    }
+
+    return saveVendorGig($gig);
+}
+
+/**
+ * Save Vendor Uploaded Call Sheet / Wrap Report
+ */
+function saveVendorCallSheetUpload($gigId, $fileUrl, $fileName) {
+    $gig = getVendorGigById($gigId);
+    if (!$gig) return false;
+
+    $gig['uploaded_call_sheet'] = $fileUrl;
+    $gig['uploaded_call_sheet_name'] = $fileName;
+    $gig['uploaded_call_sheet_at'] = date('Y-m-d H:i:s');
+
+    return saveVendorGig($gig);
+}
+
+/**
+ * Get Vendor Calendar Bookings & Availability
+ */
+function getVendorAvailability($vendorRef) {
+    $settings = getSiteSettings();
+    $availRepo = $settings['vendor_availability'] ?? [];
+    return $availRepo[$vendorRef] ?? [
+        'available_dates'   => [],
+        'unavailable_dates' => [],
+        'notes'             => ''
+    ];
+}
+
+/**
+ * Save Vendor Calendar Availability
+ */
+function saveVendorAvailability($vendorRef, $availableDates, $unavailableDates = [], $notes = '') {
+    $settings = getSiteSettings();
+    $availRepo = $settings['vendor_availability'] ?? [];
+    $availRepo[$vendorRef] = [
+        'available_dates'   => array_values(array_unique($availableDates)),
+        'unavailable_dates' => array_values(array_unique($unavailableDates)),
+        'notes'             => trim($notes),
+        'updated_at'        => date('Y-m-d H:i:s')
+    ];
+    saveSiteSettings(['vendor_availability' => $availRepo]);
     return true;
 }

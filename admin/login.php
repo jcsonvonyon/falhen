@@ -84,6 +84,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $error = 'Please enter a valid client email address.';
                 $view = 'client';
             }
+        } else if ($portalType === 'vendor') {
+            $view = 'vendor';
+            $vendorEmail = sanitizeInput($_POST['email'] ?? '');
+            $vendorCred = trim($_POST['vendor_cred'] ?? $_POST['password'] ?? '');
+
+            if (empty($vendorEmail) || empty($vendorCred)) {
+                $error = 'Please enter your email address and reference code or password.';
+            } else {
+                $authRes = authenticateVendor($vendorEmail, $vendorCred);
+                if ($authRes['success']) {
+                    header('Location: /vendor/index.php');
+                    exit;
+                } else {
+                    $error = $authRes['message'];
+                }
+            }
         } else {
             // Staff portal authentication logic
             $view = 'staff';
@@ -969,13 +985,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <p class="portal-card-desc">View &amp; download your private photo gallery with your email</p>
                         </div>
 
-                        <!-- Vendor Sign-Up Card -->
-                        <div class="portal-card" onclick="window.location.href='/vendor-onboarding.php';">
-                            <div class="portal-icon-box">
-                                <i class="fa-solid fa-user-plus"></i>
+                        <!-- Vendor Portal Card -->
+                        <div class="portal-card" onclick="switchView('vendor')">
+                            <div class="portal-icon-box" style="background: rgba(16, 185, 129, 0.12); border-color: rgba(16, 185, 129, 0.35); color: #10b981;">
+                                <i class="fa-solid fa-id-card-clip"></i>
                             </div>
-                            <h2 class="portal-card-title">Vendor Sign-Up</h2>
-                            <p class="portal-card-desc">Photographers, interns &amp; volunteers &mdash; complete onboarding, NDA &amp; MSA</p>
+                            <h2 class="portal-card-title">Vendor Portal</h2>
+                            <p class="portal-card-desc">Contractors, interns &amp; volunteers &mdash; sign in to dashboard, view agreements &amp; payouts</p>
                         </div>
                     </div>
 
@@ -1152,6 +1168,75 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             Access Private Gallery
                         </button>
                     </form>
+                </div>
+
+                <!-- VIEW 6: VENDOR PORTAL SIGN IN FORM -->
+                <div id="vendorView" class="view-section <?php echo ($view === 'vendor') ? 'active' : ''; ?>">
+                    <!-- Back Link Left-Aligned -->
+                    <a href="#" onclick="switchView('choice'); return false;" class="back-link-left">
+                        <i class="fa-solid fa-arrow-left"></i> Back
+                    </a>
+
+                    <!-- Vendor Badge Icon -->
+                    <div class="shield-icon-box" style="background: rgba(16, 185, 129, 0.15); border-color: rgba(16, 185, 129, 0.35); color: #10b981;">
+                        <i class="fa-solid fa-id-card-clip"></i>
+                    </div>
+
+                    <h1 class="section-title">Vendor Portal</h1>
+                    <p class="section-subtitle">Sign in to your contractor dashboard</p>
+
+                    <form method="POST" action="/admin/login.php?view=vendor" style="width: 100%;">
+                        <input type="hidden" name="action" value="login">
+                        <input type="hidden" name="portal_type" value="vendor">
+                        <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrfToken); ?>">
+
+                        <!-- Email Address -->
+                        <div class="form-group">
+                            <label for="vendor_email" class="form-label">Email address</label>
+                            <input 
+                                type="email" 
+                                id="vendor_email" 
+                                name="email" 
+                                class="form-input" 
+                                placeholder="you@email.com"
+                                value="<?php echo htmlspecialchars($_POST['email'] ?? ''); ?>"
+                                required 
+                            >
+                        </div>
+
+                        <!-- Reference Code or Password -->
+                        <div class="form-group">
+                            <label for="vendor_cred" class="form-label">Reference Code or Password</label>
+                            <div class="password-field-wrapper">
+                                <input 
+                                    type="text" 
+                                    id="vendor_cred" 
+                                    name="vendor_cred" 
+                                    class="form-input" 
+                                    placeholder="e.g. FAL-VND-2026-XXXX or password" 
+                                    required
+                                >
+                            </div>
+                            <div style="font-size: 0.76rem; color: #64748b; margin-top: 6px;">
+                                Use the Reference Code received upon onboarding, or your personal account password.
+                            </div>
+                        </div>
+
+                        <!-- Submit Button -->
+                        <button type="submit" class="btn-submit" style="background: #10b981;">
+                            Sign In to Portal <i class="fa-solid fa-arrow-right" style="margin-left: 6px;"></i>
+                        </button>
+                    </form>
+
+                    <div class="form-divider-line"></div>
+
+                    <!-- Footer Callout -->
+                    <div class="account-setup-container">
+                        <p class="setup-prompt-text">Not onboarded yet?</p>
+                        <a href="/vendor-onboarding.php" class="setup-action-link" style="color: #10b981;">
+                            <i class="fa-solid fa-user-plus"></i> Complete Vendor Onboarding
+                        </a>
+                    </div>
                 </div>
 
                 <!-- VIEW 5: ACCOUNT ACTIVATION CODE ENTRY -->

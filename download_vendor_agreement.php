@@ -286,45 +286,31 @@ $status = ucfirst($vendor['status'] ?? 'Active');
 
         <!-- LEGAL TERMS & CONDITIONS -->
         <div class="legal-section">
-            <h2 class="legal-section-title">1. Recitals &amp; Engagement Scope</h2>
+            <h2 class="legal-section-title">1. Master Service Agreement (MSA)</h2>
             <p class="legal-text">
-                This Agreement is entered into between <strong>Falhen Media Ltd</strong> (hereinafter "Company") and the undersigned individual or corporate entity (hereinafter "Contractor / Vendor"). The Company hereby engages the Contractor to render professional production, photography, cinematography, post-production, or project support services on an assigned project-by-project or term basis.
-            </p>
-            <p class="legal-text">
-                The Contractor agrees to perform all duties with high artistic and technical standards, adhering strictly to production call-sheets, technical camera specifications, and director treatments provided by the Company.
+                You are engaged as an independent contractor, not an employee. Services are described in individual Statements of Work (SOWs). All work product, including raw and edited media, is assigned to Henad Innovations and Global Services LLC DBA Falhenmedia and Productions upon creation. You retain no license or ownership rights. Compensation is outlined in individual SOWs. You agree to indemnify Henad Innovations and Global Services LLC DBA Falhenmedia and Productions against claims arising from your negligence or breach of this Agreement.
             </p>
         </div>
 
         <div class="legal-section">
-            <h2 class="legal-section-title">2. Workplace Conduct, Set Safety &amp; Media Handling</h2>
+            <h2 class="legal-section-title">2. Henad Innovations and Global Services LLC DBA Falhenmedia and Productions — Vendor Workplace Policy</h2>
             <p class="legal-text">
-                The Contractor has acknowledged and agreed to the Falhen Media Workplace Policies:
+                The Contractor / Vendor has reviewed, acknowledged, and agreed to the Henad Innovations and Global Services LLC DBA Falhenmedia and Productions Workplace Policy:
             </p>
-            <ul style="color: #334155; font-size: 0.88rem; line-height: 1.7; padding-left: 20px;">
-                <li><strong>On-Set Safety:</strong> Strict adherence to workplace safety protocols around cinema rigs, lighting stands, and drone operations. Zero tolerance for harassment, discrimination, or substance misuse.</li>
-                <li><strong>Equipment Diligence:</strong> Rigorous handling of cinema cameras, lenses, audio gear, and lighting packages. Prompt reporting of equipment wear or malfunctions.</li>
-                <li><strong>Media Security:</strong> Memory cards (SD/CFexpress) must never be formatted without verified dual-copy redundant ingestion into project primary and backup arrays.</li>
-            </ul>
+            <ol style="color: #334155; font-size: 0.88rem; line-height: 1.7; padding-left: 20px; margin-bottom: 12px;">
+                <li style="margin-bottom: 8px;"><strong>IP Ownership:</strong> All photographs, video footage, raw files, edited files, motion graphics, audio recordings, and any derivative works created during your engagement are the sole and exclusive property of Henad Innovations and Global Services LLC DBA Falhenmedia and Productions. You waive moral rights and may not use, reproduce, or distribute any such materials without written consent.</li>
+                <li style="margin-bottom: 8px;"><strong>Equipment:</strong> Henad Innovations and Global Services LLC DBA Falhenmedia and Productions equipment must be handled with care and returned in the same condition. Loss or damage due to negligence may result in liability.</li>
+                <li style="margin-bottom: 8px;"><strong>Conduct:</strong> All vendors, interns, and volunteers must maintain professional conduct on set, in client interactions, and on social media. Representing Henad Innovations and Global Services LLC DBA Falhenmedia and Productions without written approval is prohibited.</li>
+                <li style="margin-bottom: 8px;"><strong>Confidentiality:</strong> Client names, project details, rates, and internal processes are strictly confidential during and after your engagement.</li>
+                <li style="margin-bottom: 8px;"><strong>Deliverables:</strong> All deliverables must be submitted in the agreed format and timeline. Unauthorized retention of raw or edited files is prohibited.</li>
+                <li><strong>Termination:</strong> Henad Innovations and Global Services LLC DBA Falhenmedia and Productions reserves the right to terminate any engagement at any time for policy violations. All materials must be surrendered immediately upon termination.</li>
+            </ol>
         </div>
 
         <div class="legal-section">
-            <h2 class="legal-section-title">3. Intellectual Property, Work-for-Hire &amp; Assignment</h2>
+            <h2 class="legal-section-title">3. Non-Disclosure Agreement (NDA) &amp; Confidentiality</h2>
             <p class="legal-text">
-                All video footage, audio recordings, RAW photographic files, rough cuts, color grades, and creative outputs captured or created during this engagement constitute "Work Made for Hire". To the extent any deliverables do not qualify as work-for-hire, the Contractor hereby unconditionally transfers and assigns to Falhen Media Ltd all worldwide right, title, and interest, including copyrights, moral rights, and distribution licenses in perpetuity.
-            </p>
-        </div>
-
-        <div class="legal-section">
-            <h2 class="legal-section-title">4. Non-Disclosure Agreement (NDA) &amp; Social Media Embargo</h2>
-            <p class="legal-text">
-                The Contractor covenants to hold in strictest confidence all Company and client proprietary information, including but not limited to unreleased client campaigns, footage, budgets, creative treatments, scripts, and trade secrets. No footage, behind-the-scenes material, or social media teasers may be published without explicit written release from Falhen Media management.
-            </p>
-        </div>
-
-        <div class="legal-section">
-            <h2 class="legal-section-title">5. Independent Relationship &amp; Remuneration</h2>
-            <p class="legal-text">
-                The Contractor is an independent service provider (or volunteer/intern as specified in the engagement classification) and shall not be deemed an employee for tax, statutory benefits, or insurance purposes. Agreed day-rates or milestone stipends shall be settled according to the payment details recorded during onboarding upon satisfactory deliverable sign-off.
+                All client identities, project briefs, production schedules, pricing, methodologies, and proprietary workflows disclosed during your engagement are strictly confidential. You agree not to disclose any such information to third parties without prior written consent. These obligations survive termination for three (3) years. Upon request or termination, you agree to promptly return or destroy all materials containing Confidential Information.
             </p>
         </div>
 
