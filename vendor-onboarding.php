@@ -845,29 +845,59 @@ $csrfToken = generateCSRFToken();
                     <!-- Dynamic Agreement Content Injected via JS based on selected role -->
                 </div>
 
-                <!-- Signature Capture Block -->
-                <div style="background: #ffffff; border: 1px solid var(--slate-200); border-radius: var(--radius-md); padding: 20px; margin-bottom: 20px;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
-                        <span style="font-weight: 700; font-size: 0.92rem; color: var(--dark);"><i class="fa-solid fa-signature" style="color: var(--primary); margin-right: 6px;"></i> Legal E-Signature Attestation</span>
+                <!-- Signature Capture Block (Dual Mode: Typed Signature & Screen Signature) -->
+                <div style="background: #ffffff; border: 1px solid var(--slate-200); border-radius: var(--radius-md); padding: 22px 24px; margin-bottom: 20px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 8px;">
+                        <span style="font-weight: 700; font-size: 0.94rem; color: var(--dark);"><i class="fa-solid fa-signature" style="color: var(--primary); margin-right: 6px;"></i> Legal E-Signature Attestation</span>
                         <span style="font-size: 0.8rem; color: var(--slate-500);">Date: <strong id="currentDateDisplay"><?php echo date('F j, Y'); ?></strong></span>
                     </div>
 
-                    <div style="margin-bottom: 14px;">
-                        <label class="form-label">Full Legal Name (as typed signature) <span class="req">*</span></label>
+                    <!-- Signature Mode Tabs -->
+                    <div class="sig-tabs-bar" style="display: flex; background: var(--slate-100); padding: 4px; border-radius: 10px; margin-bottom: 18px; width: fit-content; gap: 4px;">
+                        <button type="button" id="btnSigModeType" class="sig-tab-btn" onclick="switchSignatureMode('type')" style="padding: 8px 18px; font-size: 0.85rem; font-weight: 700; border-radius: 8px; border: none; background: #ffffff; color: var(--primary); cursor: pointer; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 2px 6px rgba(15, 23, 42, 0.06); transition: var(--transition);">
+                            <i class="fa-solid fa-keyboard"></i> As Typed Signature
+                        </button>
+                        <button type="button" id="btnSigModeDraw" class="sig-tab-btn" onclick="switchSignatureMode('draw')" style="padding: 8px 18px; font-size: 0.85rem; font-weight: 700; border-radius: 8px; border: none; background: transparent; color: var(--slate-500); cursor: pointer; display: inline-flex; align-items: center; gap: 8px; transition: var(--transition);">
+                            <i class="fa-solid fa-pen-nib"></i> Screen Signature
+                        </button>
+                    </div>
+
+                    <!-- Full Legal Name Input (Shared across both modes) -->
+                    <div style="margin-bottom: 16px;">
+                        <label class="form-label">Full Legal Name <span class="req">*</span></label>
                         <input type="text" id="signatureNameInput" class="form-control" placeholder="e.g. John Doe" oninput="updateSignaturePreview(this.value)">
                     </div>
 
-                    <!-- Calligraphic Signature Preview -->
-                    <div class="sig-preview-card">
-                        <div>
-                            <div style="font-size: 0.75rem; color: var(--slate-400); text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px;">E-Signature Preview</div>
-                            <div class="sig-rendered-text" id="sigRenderedText">John Doe</div>
+                    <!-- OPTION 1: AS TYPED SIGNATURE -->
+                    <div id="sigTypeModeContainer">
+                        <!-- Calligraphic Signature Preview -->
+                        <div class="sig-preview-card" style="margin-top: 0; margin-bottom: 18px;">
+                            <div>
+                                <div style="font-size: 0.75rem; color: var(--slate-400); text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px;">Typed Signature Preview</div>
+                                <div class="sig-rendered-text" id="sigRenderedText">John Doe</div>
+                            </div>
+                            <div style="text-align: right;">
+                                <span style="display: inline-flex; align-items: center; gap: 4px; font-size: 0.78rem; color: var(--success); font-weight: 700;">
+                                    <i class="fa-solid fa-circle-check"></i> Verified Digital ID
+                                </span>
+                                <div style="font-size: 0.72rem; color: var(--slate-400); margin-top: 2px;">Falhen Media Digital Engine</div>
+                            </div>
                         </div>
-                        <div style="text-align: right;">
-                            <span style="display: inline-flex; align-items: center; gap: 4px; font-size: 0.78rem; color: var(--success); font-weight: 700;">
-                                <i class="fa-solid fa-circle-check"></i> Verified Digital ID
-                            </span>
-                            <div style="font-size: 0.72rem; color: var(--slate-400); margin-top: 2px;">Falhen Media Digital Engine</div>
+                    </div>
+
+                    <!-- OPTION 2: NORMAL SCREEN SIGNATURE (CANVAS DRAWING) -->
+                    <div id="sigDrawModeContainer" style="display: none; margin-bottom: 18px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                            <label class="form-label" style="margin-bottom: 0;">Sign on Screen (Mouse, Stylus, or Touch) <span class="req">*</span></label>
+                            <button type="button" onclick="clearSignatureCanvas()" style="background: var(--slate-100); color: var(--slate-600); border: 1px solid var(--slate-200); padding: 5px 12px; border-radius: 6px; font-size: 0.78rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; transition: var(--transition);">
+                                <i class="fa-solid fa-rotate-left"></i> Clear Pad
+                            </button>
+                        </div>
+                        <div style="background: #ffffff; border: 1.5px dashed var(--slate-300); border-radius: var(--radius-md); position: relative; overflow: hidden; touch-action: none;">
+                            <canvas id="signatureCanvas" width="760" height="170" style="display: block; width: 100%; height: 170px; cursor: crosshair; background: #fafafa;"></canvas>
+                            <div style="position: absolute; bottom: 8px; left: 16px; font-size: 0.75rem; color: var(--slate-400); pointer-events: none; display: flex; align-items: center; gap: 6px;">
+                                <i class="fa-solid fa-pen"></i> Sign above using your mouse, stylus, or finger
+                            </div>
                         </div>
                     </div>
 
@@ -1197,24 +1227,166 @@ $csrfToken = generateCSRFToken();
                    document.getElementById('checkPolicyConfidentiality').checked;
         }
 
+        // Dual Signature Mode State & Canvas Logic
+        let currentSigMode = 'type';
+        let hasDrawnSignature = false;
+
+        function switchSignatureMode(mode) {
+            currentSigMode = mode;
+            const btnType = document.getElementById('btnSigModeType');
+            const btnDraw = document.getElementById('btnSigModeDraw');
+            const typeContainer = document.getElementById('sigTypeModeContainer');
+            const drawContainer = document.getElementById('sigDrawModeContainer');
+
+            if (mode === 'type') {
+                btnType.style.background = '#ffffff';
+                btnType.style.color = 'var(--primary)';
+                btnType.style.boxShadow = '0 2px 6px rgba(15, 23, 42, 0.06)';
+                btnDraw.style.background = 'transparent';
+                btnDraw.style.color = 'var(--slate-500)';
+                btnDraw.style.boxShadow = 'none';
+
+                if (typeContainer) typeContainer.style.display = 'block';
+                if (drawContainer) drawContainer.style.display = 'none';
+            } else {
+                btnDraw.style.background = '#ffffff';
+                btnDraw.style.color = 'var(--primary)';
+                btnDraw.style.boxShadow = '0 2px 6px rgba(15, 23, 42, 0.06)';
+                btnType.style.background = 'transparent';
+                btnType.style.color = 'var(--slate-500)';
+                btnType.style.boxShadow = 'none';
+
+                if (drawContainer) drawContainer.style.display = 'block';
+                if (typeContainer) typeContainer.style.display = 'none';
+
+                resizeSignatureCanvas();
+            }
+            validateStep3();
+        }
+
+        // Initialize Screen Signature Canvas
+        function initSignatureCanvas() {
+            const canvas = document.getElementById('signatureCanvas');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+
+            let isDrawing = false;
+            let lastX = 0;
+            let lastY = 0;
+
+            function getCoords(e) {
+                const rect = canvas.getBoundingClientRect();
+                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                const scaleX = canvas.width / rect.width;
+                const scaleY = canvas.height / rect.height;
+                return {
+                    x: (clientX - rect.left) * scaleX,
+                    y: (clientY - rect.top) * scaleY
+                };
+            }
+
+            function startDrawing(e) {
+                isDrawing = true;
+                const pos = getCoords(e);
+                lastX = pos.x;
+                lastY = pos.y;
+            }
+
+            function draw(e) {
+                if (!isDrawing) return;
+                if (e.touches && e.cancelable) e.preventDefault();
+                const pos = getCoords(e);
+
+                ctx.strokeStyle = '#0F172A';
+                ctx.lineWidth = 2.5;
+                ctx.lineCap = 'round';
+                ctx.lineJoin = 'round';
+
+                ctx.beginPath();
+                ctx.moveTo(lastX, lastY);
+                ctx.lineTo(pos.x, pos.y);
+                ctx.stroke();
+
+                lastX = pos.x;
+                lastY = pos.y;
+                hasDrawnSignature = true;
+                validateStep3();
+            }
+
+            function stopDrawing() {
+                if (isDrawing) {
+                    isDrawing = false;
+                    validateStep3();
+                }
+            }
+
+            canvas.addEventListener('mousedown', startDrawing);
+            canvas.addEventListener('mousemove', draw);
+            window.addEventListener('mouseup', stopDrawing);
+
+            canvas.addEventListener('touchstart', startDrawing, { passive: false });
+            canvas.addEventListener('touchmove', draw, { passive: false });
+            window.addEventListener('touchend', stopDrawing);
+        }
+
+        function resizeSignatureCanvas() {
+            const canvas = document.getElementById('signatureCanvas');
+            if (!canvas) return;
+            const rect = canvas.getBoundingClientRect();
+            if (rect.width > 0 && canvas.width !== rect.width * 2) {
+                const temp = canvas.toDataURL();
+                canvas.width = rect.width * 2;
+                canvas.height = 170 * 2;
+                const ctx = canvas.getContext('2d');
+                if (hasDrawnSignature) {
+                    const img = new Image();
+                    img.onload = () => ctx.drawImage(img, 0, 0);
+                    img.src = temp;
+                }
+            }
+        }
+
+        function clearSignatureCanvas() {
+            const canvas = document.getElementById('signatureCanvas');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            hasDrawnSignature = false;
+            validateStep3();
+        }
+
         // Validate Step 3
         function validateStep3() {
             const name = document.getElementById('signatureNameInput').value.trim();
             const checked = document.getElementById('checkLegalAcceptance').checked;
             const btn = document.getElementById('btnStep3Continue');
-            btn.disabled = !(name.length > 2 && checked);
+
+            let isValid = false;
+            if (currentSigMode === 'type') {
+                isValid = (name.length > 2 && checked);
+            } else {
+                isValid = (hasDrawnSignature && name.length > 2 && checked);
+            }
+            btn.disabled = !isValid;
         }
 
         function isStep3Valid() {
             const name = document.getElementById('signatureNameInput').value.trim();
             const checked = document.getElementById('checkLegalAcceptance').checked;
-            return name.length > 2 && checked;
+            if (currentSigMode === 'type') {
+                return name.length > 2 && checked;
+            } else {
+                return hasDrawnSignature && name.length > 2 && checked;
+            }
         }
 
         // Live Signature Text Preview
         function updateSignaturePreview(val) {
             const rendered = document.getElementById('sigRenderedText');
-            rendered.innerText = val.trim() || 'Your Signature';
+            if (rendered) {
+                rendered.innerText = val.trim() || 'John Doe';
+            }
 
             // Also sync to form full name if full name is currently empty
             const fieldFull = document.getElementById('fieldFullName');
@@ -1243,7 +1415,18 @@ $csrfToken = generateCSRFToken();
             formData.append('workplace_policy_agreed', '1');
             formData.append('nda_agreed', '1');
             formData.append('msa_agreed', '1');
-            formData.append('signature_name', document.getElementById('signatureNameInput').value.trim());
+
+            const legalName = document.getElementById('signatureNameInput').value.trim();
+            formData.append('signature_name', legalName);
+            formData.append('signature_type', currentSigMode);
+
+            if (currentSigMode === 'draw') {
+                const canvas = document.getElementById('signatureCanvas');
+                formData.append('signature_data', canvas ? canvas.toDataURL('image/png') : '');
+            } else {
+                formData.append('signature_data', legalName);
+            }
+
             formData.append('signature_date', '<?php echo date('Y-m-d'); ?>');
 
             const overlay = document.getElementById('loadingOverlay');
@@ -1276,10 +1459,12 @@ $csrfToken = generateCSRFToken();
             }
         }
 
-        // Initialize agreement text on load
+        // Initialize agreement text and canvas on load
         document.addEventListener('DOMContentLoaded', () => {
             renderLegalAgreement();
             updateSignaturePreview('');
+            initSignatureCanvas();
+            window.addEventListener('resize', resizeSignatureCanvas);
         });
     </script>
 </body>

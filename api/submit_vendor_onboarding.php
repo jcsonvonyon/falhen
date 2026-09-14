@@ -88,6 +88,8 @@ $emergencyPhone = sanitizeInput($input['emergency_phone'] ?? '');
 $workplacePolicyAgreed = !empty($input['workplace_policy_agreed']);
 $ndaAgreed = !empty($input['nda_agreed']) || !empty($input['legal_agreements_agreed']);
 $msaAgreed = !empty($input['msa_agreed']) || !empty($input['legal_agreements_agreed']);
+$signatureType = trim($input['signature_type'] ?? 'typed');
+$signatureData = trim($input['signature_data'] ?? '');
 $signatureName = sanitizeInput($input['signature_name'] ?? $fullName);
 $signatureDate = sanitizeInput($input['signature_date'] ?? date('Y-m-d'));
 
@@ -123,6 +125,8 @@ $vendorData = [
     'workplace_policy_agreed' => 1,
     'nda_agreed'              => 1,
     'msa_agreed'              => 1,
+    'signature_type'          => $signatureType,
+    'signature_data'          => $signatureData,
     'signature_name'          => $signatureName,
     'signature_date'          => $signatureDate,
     'status'                  => 'active'

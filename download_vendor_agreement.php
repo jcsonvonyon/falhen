@@ -343,7 +343,13 @@ $status = ucfirst($vendor['status'] ?? 'Active');
 
             <div class="sig-col">
                 <div class="sig-title">Contractor / Vendor Signature</div>
-                <div class="sig-script"><?php echo htmlspecialchars($sigName); ?></div>
+                <?php if (!empty($vendor['signature_data']) && strpos($vendor['signature_data'], 'data:image') === 0): ?>
+                    <div style="min-height: 48px; display: flex; align-items: center;">
+                        <img src="<?php echo htmlspecialchars($vendor['signature_data']); ?>" alt="Contractor Signature" style="max-height: 48px; max-width: 220px; object-fit: contain;">
+                    </div>
+                <?php else: ?>
+                    <div class="sig-script"><?php echo htmlspecialchars($sigName); ?></div>
+                <?php endif; ?>
                 <div class="sig-line"></div>
                 <div style="font-weight: 700; font-size: 0.88rem;"><?php echo htmlspecialchars($fullName); ?></div>
                 <div class="sig-subtext"><?php echo htmlspecialchars($roleLabel); ?> &bull; <?php echo htmlspecialchars($sigDate); ?></div>

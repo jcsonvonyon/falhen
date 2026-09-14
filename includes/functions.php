@@ -4644,6 +4644,8 @@ function saveVendorRecord($data) {
         'workplace_policy_agreed' => !empty($data['workplace_policy_agreed']) ? 1 : 0,
         'nda_agreed'              => !empty($data['nda_agreed']) ? 1 : 0,
         'msa_agreed'              => !empty($data['msa_agreed']) ? 1 : 0,
+        'signature_type'          => !empty($data['signature_type']) ? trim($data['signature_type']) : 'typed',
+        'signature_data'          => !empty($data['signature_data']) ? trim($data['signature_data']) : '',
         'signature_name'          => trim($data['signature_name'] ?? $data['full_name'] ?? ''),
         'signature_date'          => !empty($data['signature_date']) ? $data['signature_date'] : date('Y-m-d'),
         'status'                  => !empty($data['status']) ? $data['status'] : 'active',
