@@ -15182,13 +15182,9 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                                 <a href="/download_vendor_agreement.php?ref=<?php echo urlencode($vRef); ?>" target="_blank" title="View &amp; Print Agreement" style="padding: 6px 12px; background: #0f172a; color: #ffffff; border-radius: 6px; text-decoration: none; font-size: 0.8rem; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;">
                                                     <i class="fa-solid fa-file-pdf"></i> Agreement
                                                 </a>
-                                                <form method="POST" action="/admin/index.php?section=vendors" onsubmit="return confirm('Are you sure you want to delete vendor record for <?php echo htmlspecialchars(addslashes($vName)); ?>?');" style="display: inline-block;">
-                                                    <input type="hidden" name="action" value="delete_vendor">
-                                                    <input type="hidden" name="vendor_id" value="<?php echo htmlspecialchars($vId); ?>">
-                                                    <button type="submit" style="padding: 6px 10px; background: #fff1f2; color: #e11d48; border: 1px solid #fecdd3; border-radius: 6px; font-size: 0.8rem; font-weight: 700; cursor: pointer;">
-                                                        <i class="fa-solid fa-trash"></i>
-                                                    </button>
-                                                </form>
+                                                <button type="button" onclick="openDeleteVendorModal('<?php echo htmlspecialchars($vId, ENT_QUOTES); ?>', '<?php echo htmlspecialchars(addslashes($vName), ENT_QUOTES); ?>')" title="Delete Vendor Record" style="padding: 6px 10px; background: #fff1f2; color: #e11d48; border: 1px solid #fecdd3; border-radius: 6px; font-size: 0.8rem; font-weight: 700; cursor: pointer;">
+                                                    <i class="fa-solid fa-trash"></i>
+                                                </button>
                                             </div>
                                         </td>
                                     </tr>
@@ -15197,6 +15193,66 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                             </table>
                         </div>
                     <?php endif; ?>
+
+                    <!-- DELETE VENDOR CONFIRMATION MODAL OVERLAY -->
+                    <div id="deleteVendorModal" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.75); backdrop-filter: blur(6px); z-index: 100000; align-items: center; justify-content: center; padding: 20px; animation: fadeInModal 0.2s ease;">
+                        <div style="background: #ffffff; border-radius: 20px; max-width: 440px; width: 100%; padding: 32px 28px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.3); border: 1px solid #e2e8f0; position: relative; text-align: center;">
+                            
+                            <button type="button" onclick="closeDeleteVendorModal()" style="position: absolute; top: 16px; right: 16px; background: #f1f5f9; border: none; width: 32px; height: 32px; border-radius: 50%; color: #64748b; font-size: 1rem; cursor: pointer; display: flex; align-items: center; justify-content: center;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='#f1f5f9'">
+                                <i class="fa-solid fa-xmark"></i>
+                            </button>
+
+                            <div style="width: 56px; height: 56px; border-radius: 50%; background: #fff1f2; border: 1px solid #fecdd3; color: #e11d48; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px auto; font-size: 1.5rem;">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </div>
+                            
+                            <h3 style="font-size: 1.25rem; font-weight: 800; color: #0f172a; margin: 0 0 8px 0;">Delete Vendor Record?</h3>
+                            <p style="font-size: 0.88rem; color: #64748b; margin: 0 0 24px 0; line-height: 1.5;">
+                                Are you sure you want to delete vendor record for <strong id="deleteVendorTargetName" style="color: #0f172a;"></strong>? This action cannot be undone.
+                            </p>
+
+                            <form id="deleteVendorForm" method="POST" action="/admin/index.php?section=vendors">
+                                <input type="hidden" name="action" value="delete_vendor">
+                                <input type="hidden" name="vendor_id" id="deleteVendorTargetId" value="">
+                                
+                                <div style="display: flex; gap: 12px;">
+                                    <button type="button" onclick="closeDeleteVendorModal()" style="flex: 1; padding: 12px; background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 10px; font-weight: 700; color: #475569; cursor: pointer; transition: all 0.15s ease;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='#f1f5f9'">
+                                        Cancel
+                                    </button>
+                                    <button type="submit" style="flex: 1; padding: 12px; background: #dc2626; border: 1px solid #dc2626; border-radius: 10px; font-weight: 800; color: #ffffff; cursor: pointer; box-shadow: 0 4px 12px rgba(220,38,38,0.3); transition: all 0.15s ease;" onmouseover="this.style.background='#b91c1c'" onmouseout="this.style.background='#dc2626'">
+                                        Yes, Delete Vendor
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                    <script>
+                    function openDeleteVendorModal(vendorId, vendorName) {
+                        var modal = document.getElementById('deleteVendorModal');
+                        var idInput = document.getElementById('deleteVendorTargetId');
+                        var nameEl = document.getElementById('deleteVendorTargetName');
+                        if (idInput) idInput.value = vendorId;
+                        if (nameEl) nameEl.textContent = vendorName;
+                        if (modal) modal.style.display = 'flex';
+                    }
+
+                    function closeDeleteVendorModal() {
+                        var modal = document.getElementById('deleteVendorModal');
+                        if (modal) modal.style.display = 'none';
+                    }
+
+                    document.addEventListener('DOMContentLoaded', function() {
+                        var modal = document.getElementById('deleteVendorModal');
+                        if (modal) {
+                            modal.addEventListener('click', function(e) {
+                                if (e.target === modal) {
+                                    closeDeleteVendorModal();
+                                }
+                            });
+                        }
+                    });
+                    </script>
                 </div>
 
             <!-- OTHER SECTIONS FALLBACK MANAGER -->
