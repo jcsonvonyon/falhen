@@ -1473,8 +1473,6 @@ $displayBreadcrumb = $sectionTitles[$activeSection] ?? 'Dashboard';
                 <div class="breadcrumb">
                     Vendor Portal &rsaquo; <strong><?php echo htmlspecialchars($displayBreadcrumb); ?></strong>
                 </div>
-
-
             </div>
 
             <div class="header-actions">
