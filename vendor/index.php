@@ -580,44 +580,6 @@ $displayBreadcrumb = $sectionTitles[$activeSection] ?? 'Dashboard';
             font-weight: 700;
         }
 
-        /* Topbar Primary Nav Pills */
-        .topbar-primary-nav {
-            display: flex;
-            align-items: center;
-            gap: 4px;
-            background: #f1f5f9;
-            padding: 4px;
-            border-radius: 10px;
-            border: 1px solid #cbd5e1;
-            margin-left: 8px;
-        }
-
-        .topbar-nav-link {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            padding: 6px 14px;
-            font-size: 0.82rem;
-            font-weight: 700;
-            text-decoration: none;
-            border-radius: 7px;
-            transition: all 0.15s ease;
-            color: #475569;
-        }
-
-        .topbar-nav-link:hover {
-            color: #0f172a;
-        }
-
-        .topbar-nav-link.active {
-            background: #ffffff;
-            color: var(--accent-red);
-            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
-        }
-
-        .topbar-nav-link.active i {
-            color: var(--accent-red);
-        }
 
         .header-actions {
             display: flex;
