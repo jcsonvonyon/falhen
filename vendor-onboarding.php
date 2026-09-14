@@ -854,14 +854,14 @@ $csrfToken = generateCSRFToken();
 
                     <div style="margin-bottom: 14px;">
                         <label class="form-label">Full Legal Name (as typed signature) <span class="req">*</span></label>
-                        <input type="text" id="signatureNameInput" class="form-control" placeholder="e.g. Oluwatosin Ligali" oninput="updateSignaturePreview(this.value)">
+                        <input type="text" id="signatureNameInput" class="form-control" placeholder="e.g. John Doe" oninput="updateSignaturePreview(this.value)">
                     </div>
 
                     <!-- Calligraphic Signature Preview -->
                     <div class="sig-preview-card">
                         <div>
                             <div style="font-size: 0.75rem; color: var(--slate-400); text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px;">E-Signature Preview</div>
-                            <div class="sig-rendered-text" id="sigRenderedText">Oluwatosin Ligali</div>
+                            <div class="sig-rendered-text" id="sigRenderedText">John Doe</div>
                         </div>
                         <div style="text-align: right;">
                             <span style="display: inline-flex; align-items: center; gap: 4px; font-size: 0.78rem; color: var(--success); font-weight: 700;">
@@ -1034,7 +1034,7 @@ $csrfToken = generateCSRFToken();
                         </div>
                         <div class="done-ref-row">
                             <span class="done-ref-label">Vendor Name</span>
-                            <span class="done-ref-val" id="doneFullName">Oluwatosin Ligali</span>
+                            <span class="done-ref-val" id="doneFullName">John Doe</span>
                         </div>
                         <div class="done-ref-row">
                             <span class="done-ref-label">Status</span>
