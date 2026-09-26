@@ -255,7 +255,6 @@ $heroVideoUrl = 'https://www.youtube.com/embed/' . $heroYtId;
     <div class="container">
         <!-- Section Header -->
         <div class="section-title-wrapper" style="margin-bottom: 30px;">
-            <div class="section-badge-pill">FEATURED WORK</div>
             <h2 class="section-title" style="font-size: 2.75rem; font-weight: 800;">Stories We've <span style="color: #ff4d4d;">Told.</span></h2>
         </div>
 
@@ -343,11 +342,10 @@ $heroVideoUrl = 'https://www.youtube.com/embed/' . $heroYtId;
     </div>
 </section>
 
-<!-- Client Stories Section (Replicated from falhen.com screenshots) -->
+<!-- Testimonials Section -->
 <section class="section" id="testimonials" style="background: #09090b; border-top: 1px solid rgba(255, 255, 255, 0.08);">
     <div class="container">
         <div class="section-title-wrapper" style="text-align: center; margin-bottom: 50px;">
-            <div class="section-badge-pill">Client Stories</div>
             <h2 class="section-title" style="font-size: 2.75rem; font-weight: 800;">What Our Clients <span style="color: #ff4d4d;">Say</span></h2>
             <p class="section-subtitle" style="max-width: 620px; margin: 0 auto; color: var(--text-muted); font-size: 1.05rem;">Don't take our word for it — here's what the brands we've worked with have to say.</p>
         </div>
