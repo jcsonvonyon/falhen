@@ -113,7 +113,6 @@ $heroDirectVideo = $settings['hero_direct_video_url'] ?? '';
 <section class="section" id="services">
     <div class="container">
         <div class="section-title-wrapper" style="text-align: center;">
-            <div class="section-badge-pill">What We Do</div>
             <h2 class="section-title" style="font-size: 2.75rem; font-weight: 800;">Our Services</h2>
             <p class="section-subtitle" style="max-width: 620px; margin: 0 auto; color: var(--text-muted); font-size: 1.05rem;">From concept to completion, we bring your vision to life with creativity and precision.</p>
         </div>
@@ -161,23 +160,23 @@ $heroDirectVideo = $settings['hero_direct_video_url'] ?? '';
     </div>
 </section>
 
-<!-- By the Numbers Section (Dynamic Admin Settings Integration) -->
+<!-- Impact Section (Dynamic Admin Settings Integration) -->
 <?php 
-$statsBadge = !empty($settings['stats_badge_label']) ? $settings['stats_badge_label'] : 'By the Numbers';
 $statsWhite = !empty($settings['stats_headline_white']) ? $settings['stats_headline_white'] : 'A Decade of';
 $statsRed = !empty($settings['stats_headline_red']) ? $settings['stats_headline_red'] : 'Impact';
 $statsDesc = !empty($settings['stats_description']) ? $settings['stats_description'] : "The numbers behind Falhen's reputation as one of Africa's most awarded and globally recognised production houses.";
 $statsItems = $settings['stats_items'] ?? [
     ['number' => '250', 'suffix' => '+', 'prefix' => '', 'label' => 'Projects Delivered', 'sublabel' => 'Across commercial, film & events', 'icon' => 'ri-film-line'],
     ['number' => '12', 'suffix' => '+', 'prefix' => '', 'label' => 'Years Experience', 'sublabel' => 'Delivering world-class productions', 'icon' => 'ri-history-line'],
-    ['number' => '7', 'suffix' => '+', 'prefix' => '', 'label' => 'Industries Served', 'sublabel' => 'From tech to luxury to social', 'icon' => 'ri-earth-line'],
-    ['number' => '4', 'suffix' => '+', 'prefix' => '', 'label' => 'Industry Awards', 'sublabel' => 'SHH, Webby & more', 'icon' => 'ri-trophy-line']
+    ['number' => '7', 'suffix' => '+', 'prefix' => '', 'label' => 'Industries Served', 'sublabel' => 'From tech to luxury to social', 'icon' => 'ri-earth-line']
 ];
+$statsItems = array_values(array_filter($statsItems, function($item) {
+    return stripos($item['label'] ?? '', 'Awards') === false;
+}));
 ?>
 <section class="section" id="impact" style="background: #09090b; border-top: 1px solid rgba(255, 255, 255, 0.08);">
     <div class="container">
         <div class="section-title-wrapper" style="text-align: center; margin-bottom: 50px;">
-            <div class="section-badge-pill"><?php echo htmlspecialchars($statsBadge); ?></div>
             <h2 class="section-title" style="font-size: 2.75rem; font-weight: 800;">
                 <?php echo htmlspecialchars($statsWhite); ?> <span style="color: #ff4d4d;"><?php echo htmlspecialchars($statsRed); ?></span>
             </h2>
@@ -394,104 +393,6 @@ $heroVideoUrl = 'https://www.youtube.com/embed/' . $heroYtId;
         </div>
 </section>
 
-<!-- The People Section (Replicated from falhen.com screenshots) -->
-<section class="section" id="team" style="background: #000000; border-top: 1px solid rgba(255, 255, 255, 0.08);">
-    <div class="container">
-        <!-- Section Header Flex -->
-        <div class="team-header-flex">
-            <div class="team-header-left">
-                <div class="section-badge-pill">The People</div>
-                <h2 class="section-title" style="font-size: 3.2rem; font-weight: 800; margin: 0; line-height: 1.1;">Meet the <span style="color: #ff4d4d;">Team</span></h2>
-            </div>
-            <div class="team-header-right">
-                <p class="team-header-desc">8 specialists, one shared obsession — making content that the world can't stop watching. Combined 23+ skills across 3+ average years of experience.</p>
-            </div>
-        </div>
-
-        <!-- Dynamic Team Grid -->
-        <div class="team-grid">
-            <?php 
-            $homepageTeamMembers = getTeamMembers();
-            foreach ($homepageTeamMembers as $tm): 
-                $numBadge = !empty($tm['number']) ? $tm['number'] : sprintf("%02d", $tm['id']);
-                $deptClass = strtolower($tm['department'] ?? 'creative');
-                $imgUrl = getCloudinaryUrl(!empty($tm['image']) ? $tm['image'] : '/assets/img/team/team_henry.png');
-            ?>
-                <!-- Team Card -->
-                <a href="/team-single.php?id=<?php echo $tm['id']; ?>" class="team-card">
-                    <div class="team-card-thumb">
-                        <img src="<?php echo htmlspecialchars($imgUrl); ?>" alt="<?php echo htmlspecialchars($tm['name']); ?>" onerror="this.src='/assets/img/team/team_henry.png';">
-                        <span class="team-number-badge"><?php echo htmlspecialchars($numBadge); ?></span>
-                        
-                        <!-- Normal Overlay -->
-                        <div class="team-card-overlay normal-overlay">
-                            <div class="team-name-row">
-                                <h3 class="team-name"><?php echo htmlspecialchars($tm['name']); ?></h3>
-                                <span class="team-dept-pill <?php echo htmlspecialchars($deptClass); ?>"><?php echo htmlspecialchars($tm['department'] ?? 'Creative'); ?></span>
-                            </div>
-                            <div class="team-role"><?php echo htmlspecialchars(strtoupper($tm['role'])); ?></div>
-                            <div class="team-meta">
-                                <?php if (!empty($tm['location'])): ?>
-                                    <i class="fa-solid fa-location-dot"></i> <?php echo htmlspecialchars($tm['location']); ?> &nbsp;&nbsp;
-                                <?php endif; ?>
-                                <?php if (!empty($tm['experience'])): ?>
-                                    <i class="fa-solid fa-clock"></i> <?php echo htmlspecialchars($tm['experience']); ?>
-                                <?php endif; ?>
-                            </div>
-                        </div>
-
-                        <!-- Hover Profile Overlay -->
-                        <div class="team-card-overlay hover-profile-overlay">
-                            <div class="team-name-row">
-                                <h3 class="team-name"><?php echo htmlspecialchars($tm['name']); ?></h3>
-                                <span class="team-dept-pill <?php echo htmlspecialchars($deptClass); ?>"><?php echo htmlspecialchars($tm['department'] ?? 'Creative'); ?></span>
-                            </div>
-                            <div class="team-role"><?php echo htmlspecialchars(strtoupper($tm['role'])); ?></div>
-                            <?php if (!empty($tm['skills']) && is_array($tm['skills'])): ?>
-                                <div class="team-skills-pills">
-                                    <?php foreach ($tm['skills'] as $sk): ?>
-                                        <span class="skill-pill"><?php echo htmlspecialchars($sk); ?></span>
-                                    <?php endforeach; ?>
-                                </div>
-                            <?php endif; ?>
-                        </div>
-                    </div>
-                    <?php if (!empty($tm['bio'])): ?>
-                        <div class="team-hover-bio-box">
-                            <p>"<?php echo htmlspecialchars($tm['bio']); ?>"</p>
-                        </div>
-                    <?php endif; ?>
-                </a>
-            <?php endforeach; ?>
-        </div>
-
-        <!-- Mobile Team Carousel Navigation Controls -->
-        <div class="team-mobile-controls">
-            <button type="button" class="team-carousel-btn" id="teamPrevBtn" aria-label="Previous Team Member">
-                <i class="fa-solid fa-chevron-left"></i>
-            </button>
-
-            <div class="team-carousel-dots" id="teamDots">
-                <?php foreach ($homepageTeamMembers as $idx => $tm): ?>
-                    <span class="team-dot <?php echo ($idx === 0) ? 'active' : ''; ?>" data-index="<?php echo $idx; ?>"></span>
-                <?php endforeach; ?>
-            </div>
-
-            <button type="button" class="team-carousel-btn" id="teamNextBtn" aria-label="Next Team Member">
-                <i class="fa-solid fa-chevron-right"></i>
-            </button>
-        </div>
-
-        <!-- Talent Recruitment Banner -->
-        <div class="team-talent-banner">
-            <div class="talent-banner-text">
-                <h3>We're always looking for extraordinary talent.</h3>
-                <p>If you live and breathe visual storytelling, we want to hear from you.</p>
-            </div>
-            <a href="/contact.php" class="talent-banner-btn">Work With Us</a>
-        </div>
-    </div>
-</section>
 
 <!-- Production BTS Section (Dynamic Admin Settings Integration) -->
 <?php 

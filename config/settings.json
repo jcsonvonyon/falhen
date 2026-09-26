@@ -11,7 +11,7 @@
     "hero_primary_cta_text": "Explore Our Projects",
     "hero_primary_cta_url": "/portfolio.php",
     "hero_secondary_cta_text": "Watch Showreel",
-    "stats_badge_label": "By the Numbers",
+    "stats_badge_label": "",
     "stats_headline_white": "A Decade of",
     "stats_headline_red": "Impact",
     "stats_description": "The numbers behind Falhen's reputation as one of Africa's most awarded and globally recognised production houses.",
@@ -39,14 +39,6 @@
             "label": "Industries Served",
             "sublabel": "From tech to luxury to social",
             "icon": "ri-earth-line"
-        },
-        {
-            "number": "4",
-            "suffix": "+",
-            "prefix": "",
-            "label": "Industry Awards",
-            "sublabel": "SHH, Webby & more",
-            "icon": "ri-trophy-line"
         }
     ],
     "bts_badge_label": "Production BTS",
