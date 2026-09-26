@@ -305,8 +305,7 @@ require_once __DIR__ . '/includes/header.php';
 <!-- Hero Section -->
 <section class="contact-hero-stage">
     <div class="container">
-        <div class="contact-hero-badge">Get in Touch</div>
-        <h1 class="contact-hero-title">Let's Create Something<br><span style="color: #ef4444;">Extraordinary</span></h1>
+        <h1 class="contact-hero-title">Let's Create Something<br><span style="color: #dc2626;">Extraordinary</span></h1>
         
         <div class="contact-trust-row">
             <div class="contact-trust-item"><i class="fa-regular fa-clock"></i> 48hr Response</div>
@@ -318,7 +317,6 @@ require_once __DIR__ . '/includes/header.php';
 <!-- Sub-Header Section -->
 <section class="contact-subheader-section">
     <div class="container">
-        <div class="contact-sub-badge">Contact Us</div>
         <p class="contact-sub-desc">Ready to bring your vision to life? Tell us about your project and we'll get back to you within 48 hours.</p>
 
         <!-- Main 2-Column Section -->

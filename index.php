@@ -392,9 +392,8 @@ $heroVideoUrl = 'https://www.youtube.com/embed/' . $heroYtId;
 </section>
 
 
-<!-- Production BTS Section (Dynamic Admin Settings Integration) -->
+<!-- BTS Section (Dynamic Admin Settings Integration) -->
 <?php 
-$btsBadge = !empty($settings['bts_badge_label']) ? $settings['bts_badge_label'] : 'Production BTS';
 $btsWhite = !empty($settings['bts_headline_white']) ? $settings['bts_headline_white'] : 'Every Frame';
 $btsRed = !empty($settings['bts_headline_red']) ? $settings['bts_headline_red'] : 'Speaks';
 $btsDesc = !empty($settings['bts_description']) ? $settings['bts_description'] : 'A raw look at what it takes to create world-class content — from location scouts to post-production suites.';
@@ -412,12 +411,11 @@ $btsItems = $settings['bts_items'] ?? [
         <!-- Section Header Flex -->
         <div class="team-header-flex" style="margin-bottom: 40px;">
             <div class="team-header-left">
-                <div class="section-badge-pill"><?php echo htmlspecialchars($btsBadge); ?></div>
                 <h2 class="section-title" style="font-size: 2.75rem; font-weight: 800;">
                     <?php echo htmlspecialchars($btsWhite); ?> <span style="color: #dc2626;"><?php echo htmlspecialchars($btsRed); ?></span>
                 </h2>
             </div>
-            <div class="team-header-right">
+            <div class="team-header-right" style="max-width: 368px;">
                 <p class="team-header-desc"><?php echo htmlspecialchars($btsDesc); ?></p>
             </div>
         </div>
@@ -451,12 +449,11 @@ $btsItems = $settings['bts_items'] ?? [
     </div>
 </div>
 
-<!-- Let's Talk / Book a Discovery Call Section (Replicated from falhen.com screenshots) -->
+<!-- Book a Discovery Call Section (Replicated from falhen.com screenshots) -->
 <section class="section" id="lets-talk" style="background: #09090b; border-top: 1px solid rgba(255, 255, 255, 0.08);">
     <div class="container">
         <!-- Section Header -->
         <div class="section-title-wrapper" style="text-align: center; margin-bottom: 50px;">
-            <div class="section-badge-pill">Let's Talk</div>
             <h2 class="section-title" style="font-size: 2.75rem; font-weight: 800;">Book a <span style="color: #dc2626;">Discovery Call</span></h2>
             <p class="section-subtitle" style="max-width: 620px; margin: 0 auto; color: var(--text-muted); font-size: 1.05rem;">30 minutes. No sales pitch. Just a candid conversation about your project.</p>
         </div>
@@ -506,19 +503,6 @@ $btsItems = $settings['bts_items'] ?? [
                     </div>
                 </div>
 
-                <!-- Bottom Social Proof Bar -->
-                <div class="discovery-proof-bar">
-                    <div class="discovery-avatars-group">
-                        <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=100&auto=format&fit=crop" alt="Client 1">
-                        <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=100&auto=format&fit=crop" alt="Client 2">
-                        <img src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=100&auto=format&fit=crop" alt="Client 3">
-                        <img src="https://images.unsplash.com/photo-1580489944761-15a19d654956?q=80&w=100&auto=format&fit=crop" alt="Client 4">
-                    </div>
-                    <div class="discovery-proof-text">
-                        <strong>250+ calls booked</strong>
-                        <small>with brands across country</small>
-                    </div>
-                </div>
             </div>
 
             <!-- Right Side: Booking Form Card -->

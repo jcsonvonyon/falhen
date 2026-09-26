@@ -1561,7 +1561,7 @@ margin-bottom: 24px;
 }
 
 .team-header-right {
-  max-width: 460px;
+  max-width: 368px;
   margin-bottom: 4px;
 }
 
@@ -2442,7 +2442,7 @@ a.team-card {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 16px;
-  margin-bottom: 24px;
+  margin-bottom: 0;
 }
 
 @media (max-width: 600px) {
