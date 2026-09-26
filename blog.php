@@ -624,7 +624,6 @@ $gridPosts = array_filter($blogPosts, fn($p) => $featuredPost && $p['id'] !== $f
 
     <!-- Hero Header -->
     <section class="blog-hero-section">
-        <span class="blog-hero-badge">Insights & Ideas</span>
         <h1 class="blog-hero-title">The Falhen Blog</h1>
         <p class="blog-hero-subtitle">Behind the lens, beyond the frame &mdash; production insights, strategy guides, and creative inspiration.</p>
     </section>
