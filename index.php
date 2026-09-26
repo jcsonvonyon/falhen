@@ -451,47 +451,6 @@ $btsItems = $settings['bts_items'] ?? [
     </div>
 </div>
 
-<!-- Insights / Latest from the Blog Section (Replicated from falhen.com screenshots) -->
-<section class="section" id="blog" style="background: #000000; border-top: 1px solid rgba(255, 255, 255, 0.08);">
-    <div class="container">
-        <!-- Section Header Flex -->
-        <div class="insights-header-flex">
-            <div class="insights-header-left">
-                <div class="section-badge-pill">Insights</div>
-                <h2 class="section-title" style="font-size: 2.75rem; font-weight: 800;">Latest from the <span style="color: #dc2626;">Blog</span></h2>
-            </div>
-            <a href="/blog.php" class="insights-view-all">View All <i class="fa-solid fa-arrow-right"></i></a>
-        </div>
-
-        <!-- 3-Card Blog Grid -->
-        <div class="blog-grid">
-            <?php 
-            $homeBlogItems = array_slice(array_values(getBlogRepo()), 0, 3);
-            foreach ($homeBlogItems as $hBlog): 
-            ?>
-                <article class="blog-card">
-                    <div class="blog-card-thumb">
-                        <img 
-                            src="<?php echo htmlspecialchars(getCloudinaryUrl(!empty($hBlog['image']) ? $hBlog['image'] : '/assets/img/services/service_video.png')); ?>" 
-                            alt="<?php echo htmlspecialchars($hBlog['title']); ?>"
-                            onerror="this.src='/assets/img/services/service_video.png';"
-                        >
-                        <span class="blog-cat-pill"><?php echo htmlspecialchars($hBlog['category'] ?? 'Social Media'); ?></span>
-                    </div>
-                    <div class="blog-card-body">
-                        <div class="blog-meta"><i class="fa-regular fa-calendar"></i> <?php echo htmlspecialchars($hBlog['date'] ?? ''); ?> &nbsp;·&nbsp; <i class="fa-regular fa-clock"></i> <?php echo htmlspecialchars($hBlog['read_time'] ?? ''); ?></div>
-                        <h3 class="blog-title"><a href="/blog-single.php?id=<?php echo $hBlog['id']; ?>"><?php echo htmlspecialchars($hBlog['title']); ?></a></h3>
-                        <div class="blog-footer">
-                            <span class="blog-author"><?php echo htmlspecialchars($hBlog['author'] ?? 'Falhen Team'); ?></span>
-                            <a href="/blog-single.php?id=<?php echo $hBlog['id']; ?>" class="blog-read-link">Read <i class="fa-solid fa-arrow-right"></i></a>
-                        </div>
-                    </div>
-                </article>
-            <?php endforeach; ?>
-        </div>
-    </div>
-</section>
-
 <!-- Let's Talk / Book a Discovery Call Section (Replicated from falhen.com screenshots) -->
 <section class="section" id="lets-talk" style="background: #09090b; border-top: 1px solid rgba(255, 255, 255, 0.08);">
     <div class="container">
