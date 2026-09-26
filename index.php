@@ -178,7 +178,7 @@ $statsItems = array_values(array_filter($statsItems, function($item) {
     <div class="container">
         <div class="section-title-wrapper" style="text-align: center; margin-bottom: 50px;">
             <h2 class="section-title" style="font-size: 2.75rem; font-weight: 800;">
-                <?php echo htmlspecialchars($statsWhite); ?> <span style="color: #ff4d4d;"><?php echo htmlspecialchars($statsRed); ?></span>
+                <?php echo htmlspecialchars($statsWhite); ?> <span style="color: #dc2626;"><?php echo htmlspecialchars($statsRed); ?></span>
             </h2>
             <p class="section-subtitle" style="max-width: 650px; margin: 0 auto; color: var(--text-muted); font-size: 1.05rem;">
                 <?php echo htmlspecialchars($statsDesc); ?>
@@ -255,7 +255,7 @@ $heroVideoUrl = 'https://www.youtube.com/embed/' . $heroYtId;
     <div class="container">
         <!-- Section Header -->
         <div class="section-title-wrapper" style="margin-bottom: 30px;">
-            <h2 class="section-title" style="font-size: 2.75rem; font-weight: 800;">Stories We've <span style="color: #ff4d4d;">Told.</span></h2>
+            <h2 class="section-title" style="font-size: 2.75rem; font-weight: 800;">Stories We've <span style="color: #dc2626;">Told.</span></h2>
         </div>
 
         <!-- Dynamic Filter Pill Tabs -->
@@ -346,7 +346,7 @@ $heroVideoUrl = 'https://www.youtube.com/embed/' . $heroYtId;
 <section class="section" id="testimonials" style="background: #09090b; border-top: 1px solid rgba(255, 255, 255, 0.08);">
     <div class="container">
         <div class="section-title-wrapper" style="text-align: center; margin-bottom: 50px;">
-            <h2 class="section-title" style="font-size: 2.75rem; font-weight: 800;">What Our Clients <span style="color: #ff4d4d;">Say</span></h2>
+            <h2 class="section-title" style="font-size: 2.75rem; font-weight: 800;">What Our Clients <span style="color: #dc2626;">Say</span></h2>
             <p class="section-subtitle" style="max-width: 620px; margin: 0 auto; color: var(--text-muted); font-size: 1.05rem;">Don't take our word for it — here's what the brands we've worked with have to say.</p>
         </div>
 
@@ -414,7 +414,7 @@ $btsItems = $settings['bts_items'] ?? [
             <div class="team-header-left">
                 <div class="section-badge-pill"><?php echo htmlspecialchars($btsBadge); ?></div>
                 <h2 class="section-title" style="font-size: 2.75rem; font-weight: 800;">
-                    <?php echo htmlspecialchars($btsWhite); ?> <span style="color: #ff4d4d;"><?php echo htmlspecialchars($btsRed); ?></span>
+                    <?php echo htmlspecialchars($btsWhite); ?> <span style="color: #dc2626;"><?php echo htmlspecialchars($btsRed); ?></span>
                 </h2>
             </div>
             <div class="team-header-right">
@@ -458,7 +458,7 @@ $btsItems = $settings['bts_items'] ?? [
         <div class="insights-header-flex">
             <div class="insights-header-left">
                 <div class="section-badge-pill">Insights</div>
-                <h2 class="section-title" style="font-size: 2.75rem; font-weight: 800;">Latest from the <span style="color: #ff4d4d;">Blog</span></h2>
+                <h2 class="section-title" style="font-size: 2.75rem; font-weight: 800;">Latest from the <span style="color: #dc2626;">Blog</span></h2>
             </div>
             <a href="/blog.php" class="insights-view-all">View All <i class="fa-solid fa-arrow-right"></i></a>
         </div>
@@ -498,7 +498,7 @@ $btsItems = $settings['bts_items'] ?? [
         <!-- Section Header -->
         <div class="section-title-wrapper" style="text-align: center; margin-bottom: 50px;">
             <div class="section-badge-pill">Let's Talk</div>
-            <h2 class="section-title" style="font-size: 2.75rem; font-weight: 800;">Book a <span style="color: #ff4d4d;">Discovery Call</span></h2>
+            <h2 class="section-title" style="font-size: 2.75rem; font-weight: 800;">Book a <span style="color: #dc2626;">Discovery Call</span></h2>
             <p class="section-subtitle" style="max-width: 620px; margin: 0 auto; color: var(--text-muted); font-size: 1.05rem;">30 minutes. No sales pitch. Just a candid conversation about your project.</p>
         </div>
 

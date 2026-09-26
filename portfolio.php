@@ -154,9 +154,7 @@ $featuredAllProjects = array_filter($allProjects, function($item) {
         }
 
         .port-hero-title span {
-            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+            color: #dc2626;
         }
 
         .port-hero-subtitle {
