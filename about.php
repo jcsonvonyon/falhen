@@ -663,7 +663,6 @@ foreach ($rawMembers as $m) {
     <!-- Hero Section -->
     <section class="about-hero-section">
         <div class="about-container">
-            <div class="story-badge">Our Story</div>
             <h1 class="about-hero-title">About Falhen Media</h1>
             <p class="about-hero-subtitle">A passionate team of storytellers, creators, and innovators dedicated to transforming ideas into captivating visual experiences.</p>
         </div>
@@ -674,7 +673,6 @@ foreach ($rawMembers as $m) {
         <div class="about-container">
             <div class="who-we-are-grid">
                 <div>
-                    <div class="story-badge">Who We Are</div>
                     <h2 class="who-we-are-title">Creating Impact Through Visual Storytelling</h2>
                     <p class="who-we-are-p">Founded with a vision to revolutionize digital media production, Falhen Media has grown into a leading creative agency specializing in video production, content creation, and brand storytelling. Our team combines technical expertise with artistic vision to deliver exceptional results.</p>
                     <p class="who-we-are-p">We believe that every brand has a unique story to tell, and our mission is to help you tell yours in the most compelling way possible. From concept development to final delivery, we work closely with our clients to ensure their vision comes to life.</p>
@@ -697,7 +695,6 @@ foreach ($rawMembers as $m) {
     <!-- Section 3: Our Core Values -->
     <section class="core-values-section">
         <div class="about-container">
-            <div class="story-badge">What Drives Us</div>
             <h2 class="section-header-title">Our Core Values</h2>
             <p class="section-header-desc">These principles guide every decision we make, every project we take on, and every relationship we build.</p>
 
@@ -732,7 +729,6 @@ foreach ($rawMembers as $m) {
     <!-- Section 4: Meet Our Team -->
     <section class="team-preview-section">
         <div class="about-container">
-            <div class="story-badge">The People</div>
             <h2 class="section-header-title">Meet Our Team</h2>
             <p class="section-header-desc">Our talented team brings diverse skills and expertise to every project.</p>
 
@@ -773,7 +769,6 @@ foreach ($rawMembers as $m) {
         <div class="about-container">
             <div class="about-contact-grid">
                 <div style="text-align: left;">
-                    <div class="story-badge">Get In Touch</div>
                     <h2 class="about-contact-title">Ready to Create Something Great?</h2>
                     <p class="about-contact-desc">Let's talk about your project. Fill in the form and we'll get back to you within 24 hours.</p>
 
