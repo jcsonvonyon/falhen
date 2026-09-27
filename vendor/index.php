@@ -228,10 +228,19 @@ $displayBreadcrumb = $sectionTitles[$activeSection] ?? 'Dashboard';
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Falhen Media &mdash; Vendor Portal (<?php echo htmlspecialchars($displayBreadcrumb); ?>)</title>
     <link rel="icon" type="image/png" href="/assets/img/icons/favicon.png">
     <link rel="shortcut icon" type="image/png" href="/assets/img/icons/favicon.png">
+
+    <!-- Progressive Web App (PWA) Meta & Icons -->
+    <link rel="manifest" href="/vendor/manifest.json">
+    <meta name="theme-color" content="#dc2626">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Falhen Vendor">
+    <link rel="apple-touch-icon" href="/assets/img/icons/pwa-192.png">
 
     <!-- Fonts & Icons matching Staff Admin -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -1259,7 +1268,111 @@ $displayBreadcrumb = $sectionTitles[$activeSection] ?? 'Dashboard';
             cursor: pointer;
         }
 
-        /* Responsive Breakpoints */
+        /* Mobile Bottom Ergonomic Navigation Bar */
+        .mobile-bottom-nav {
+            display: none;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 64px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            border-top: 1px solid var(--sidebar-border);
+            z-index: 990;
+            padding-bottom: env(safe-area-inset-bottom, 0px);
+            box-shadow: 0 -4px 20px rgba(15, 23, 42, 0.08);
+        }
+
+        .mobile-bottom-nav-inner {
+            display: flex;
+            align-items: center;
+            justify-content: space-around;
+            height: 100%;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 0 4px;
+        }
+
+        .mobile-nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            flex: 1;
+            min-height: 48px;
+            text-decoration: none;
+            color: var(--text-secondary);
+            font-size: 0.72rem;
+            font-weight: 600;
+            position: relative;
+            padding: 4px 2px;
+            -webkit-tap-highlight-color: transparent;
+            background: none;
+            border: none;
+            cursor: pointer;
+            transition: color 0.15s ease;
+        }
+
+        .mobile-nav-item i {
+            font-size: 1.2rem;
+            margin-bottom: 2px;
+            transition: transform 0.15s ease;
+        }
+
+        .mobile-nav-item:active i {
+            transform: scale(0.9);
+        }
+
+        .mobile-nav-item.active {
+            color: var(--accent-red);
+            font-weight: 800;
+        }
+
+        .mobile-nav-item.active::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            width: 28px;
+            height: 3px;
+            background: var(--accent-red);
+            border-radius: 0 0 4px 4px;
+        }
+
+        .mobile-nav-badge {
+            position: absolute;
+            top: 2px;
+            right: 50%;
+            margin-right: -18px;
+            background: var(--accent-red);
+            color: #ffffff;
+            font-size: 0.65rem;
+            font-weight: 800;
+            padding: 1px 5px;
+            border-radius: 10px;
+            line-height: 1.2;
+            min-width: 16px;
+            text-align: center;
+        }
+
+        /* PWA In-App Prompt Banner */
+        .pwa-banner {
+            display: none;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            color: #ffffff;
+            padding: 12px 16px;
+            border-radius: var(--radius-md);
+            margin-bottom: 18px;
+            box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            animation: modalFadeIn 0.3s ease;
+        }
+
+        /* Responsive Breakpoints & Mobile Ergonomics */
         @media (max-width: 992px) {
             .sidebar {
                 transform: translateX(-100%);
@@ -1268,14 +1381,18 @@ $displayBreadcrumb = $sectionTitles[$activeSection] ?? 'Dashboard';
                 transform: translateX(0);
             }
             .sidebar-close-btn {
-                display: block;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                min-width: 44px;
+                min-height: 44px;
             }
             .sidebar-backdrop {
                 display: none;
                 position: fixed;
                 inset: 0;
-                background: rgba(15, 23, 42, 0.5);
-                backdrop-filter: blur(2px);
+                background: rgba(15, 23, 42, 0.55);
+                backdrop-filter: blur(3px);
                 z-index: 998;
             }
             .sidebar-backdrop.open {
@@ -1290,17 +1407,33 @@ $displayBreadcrumb = $sectionTitles[$activeSection] ?? 'Dashboard';
                 padding: 0 16px;
             }
             .mobile-nav-toggle {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                min-width: 44px;
+                min-height: 44px;
+            }
+            .mobile-bottom-nav {
                 display: block;
             }
             .content-body {
-                padding: 20px 16px;
+                padding: 18px 16px calc(88px + env(safe-area-inset-bottom, 0px)) 16px;
             }
             .form-grid-two {
                 grid-template-columns: 1fr;
             }
+            .stat-grid-four {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 12px;
+            }
+            .stat-kpi-card {
+                padding: 14px;
+            }
             .spotlight-banner {
                 flex-direction: column;
                 align-items: flex-start;
+                padding: 22px 18px;
+                gap: 16px;
             }
             .calendar-grid {
                 gap: 4px;
@@ -1308,6 +1441,154 @@ $displayBreadcrumb = $sectionTitles[$activeSection] ?? 'Dashboard';
             .cal-cell {
                 min-height: 65px;
                 padding: 4px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            /* Prevent iOS automatic zoom on focus */
+            input, select, textarea {
+                font-size: 16px !important;
+            }
+
+            .section-header-title {
+                font-size: 1.35rem;
+            }
+            .section-header-desc {
+                font-size: 0.88rem;
+            }
+
+            /* Responsive Table-to-Card transformation */
+            .cs-vault-table thead {
+                display: none;
+            }
+            .cs-vault-table,
+            .cs-vault-table tbody,
+            .cs-vault-table tr,
+            .cs-vault-table td {
+                display: block;
+                width: 100%;
+            }
+            .cs-vault-table tr {
+                background: #ffffff;
+                border: 1px solid #e2e8f0;
+                border-radius: var(--radius-md);
+                margin-bottom: 14px;
+                padding: 14px 16px;
+                box-shadow: 0 1px 4px rgba(0, 0, 0, 0.03);
+            }
+            .cs-vault-table tr:hover {
+                background: #ffffff;
+            }
+            .cs-vault-table td {
+                border: none;
+                border-bottom: 1px dashed #f1f5f9;
+                padding: 10px 0;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                text-align: right;
+            }
+            .cs-vault-table td:last-child {
+                border-bottom: none;
+                padding-top: 12px;
+                justify-content: flex-end;
+            }
+            .cs-vault-table td::before {
+                content: attr(data-label);
+                font-weight: 700;
+                font-size: 0.74rem;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+                color: #64748b;
+                text-align: left;
+                margin-right: 12px;
+                flex-shrink: 0;
+            }
+
+            /* Gig Items & Detail Cards */
+            .gig-details-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 12px;
+            }
+            .gig-action-toolbar {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 10px;
+            }
+            .gig-action-toolbar > div {
+                width: 100%;
+                justify-content: stretch;
+            }
+            .gig-action-toolbar a,
+            .gig-action-toolbar button {
+                flex: 1;
+                justify-content: center;
+                text-align: center;
+            }
+            .spotlight-banner > div:last-child {
+                width: 100%;
+            }
+            .spotlight-banner > div:last-child a,
+            .spotlight-banner > div:last-child button {
+                flex: 1;
+                justify-content: center;
+                text-align: center;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .breadcrumb-prefix {
+                display: none;
+            }
+            .ref-pill-btn {
+                padding: 5px 8px;
+                font-size: 0.74rem;
+            }
+            .ref-pill-text-full {
+                display: none;
+            }
+            .stat-grid-four {
+                gap: 8px;
+            }
+            .stat-kpi-card {
+                padding: 12px 10px;
+                gap: 10px;
+                border-radius: 10px;
+            }
+            .stat-icon-box {
+                width: 38px;
+                height: 38px;
+                font-size: 1rem;
+            }
+            .stat-info-title {
+                font-size: 0.88rem;
+            }
+            .stat-info-sub {
+                font-size: 0.72rem;
+            }
+            .gig-item-card {
+                padding: 16px 14px;
+            }
+            .gig-details-grid {
+                grid-template-columns: 1fr;
+                gap: 8px;
+            }
+            .modal-dialog {
+                padding: 20px 16px;
+                border-radius: 14px;
+                margin: 12px;
+            }
+        }
+
+        /* Standalone PWA adjustments for notch and home bar */
+        @media all and (display-mode: standalone) {
+            .top-header {
+                padding-top: max(12px, env(safe-area-inset-top));
+                height: calc(64px + max(12px, env(safe-area-inset-top)));
+            }
+            .mobile-bottom-nav {
+                height: calc(64px + max(8px, env(safe-area-inset-bottom)));
+                padding-bottom: max(8px, env(safe-area-inset-bottom));
             }
         }
     </style>
@@ -1345,6 +1626,21 @@ $displayBreadcrumb = $sectionTitles[$activeSection] ?? 'Dashboard';
             </div>
             <span class="user-pill-tag">Active</span>
         </div>
+
+        <!-- Category: DASHBOARD OVERVIEW -->
+        <div class="nav-category">
+            <span>Overview</span>
+        </div>
+        <ul class="nav-list">
+            <li class="nav-item <?php echo ($activeSection === 'dashboard') ? 'active' : ''; ?>">
+                <a href="/vendor/index.php?section=dashboard">
+                    <span style="display: flex; align-items: center; gap: 10px;">
+                        <i class="fa-solid fa-gauge-high nav-icon"></i>
+                        <span>Dashboard Overview</span>
+                    </span>
+                </a>
+            </li>
+        </ul>
 
         <!-- Category: PRODUCTION & GIG OPERATIONS (CORE FOCUS) -->
         <div class="nav-category">
@@ -1384,21 +1680,6 @@ $displayBreadcrumb = $sectionTitles[$activeSection] ?? 'Dashboard';
                         <span>Call Sheets Vault</span>
                     </span>
                     <span class="nav-badge-pill"><?php echo $totalGigsCount; ?></span>
-                </a>
-            </li>
-        </ul>
-
-        <!-- Category: DASHBOARD OVERVIEW -->
-        <div class="nav-category">
-            <span>Overview</span>
-        </div>
-        <ul class="nav-list">
-            <li class="nav-item <?php echo ($activeSection === 'dashboard') ? 'active' : ''; ?>">
-                <a href="/vendor/index.php?section=dashboard">
-                    <span style="display: flex; align-items: center; gap: 10px;">
-                        <i class="fa-solid fa-gauge-high nav-icon"></i>
-                        <span>Dashboard Overview</span>
-                    </span>
                 </a>
             </li>
         </ul>
@@ -1471,14 +1752,14 @@ $displayBreadcrumb = $sectionTitles[$activeSection] ?? 'Dashboard';
                     <i class="fa-solid fa-bars"></i>
                 </button>
                 <div class="breadcrumb">
-                    Vendor Portal &rsaquo; <strong><?php echo htmlspecialchars($displayBreadcrumb); ?></strong>
+                    <span class="breadcrumb-prefix">Vendor Portal &rsaquo; </span><strong><?php echo htmlspecialchars($displayBreadcrumb); ?></strong>
                 </div>
             </div>
 
             <div class="header-actions">
                 <button type="button" class="ref-pill-btn" onclick="copyRef('<?php echo htmlspecialchars($refCode); ?>')" title="Click to copy your unique reference code">
                     <i class="fa-regular fa-copy"></i>
-                    <span>Ref: <code><?php echo htmlspecialchars($refCode); ?></code></span>
+                    <span><span class="ref-pill-text-full">Ref: </span><code><?php echo htmlspecialchars($refCode); ?></code></span>
                 </button>
 
                 <!-- Avatar Dropdown Wrapper -->
@@ -1536,6 +1817,25 @@ $displayBreadcrumb = $sectionTitles[$activeSection] ?? 'Dashboard';
 
         <!-- PAGE CONTENT BODY -->
         <div class="content-body">
+
+            <!-- PWA IN-APP INSTALL BANNER -->
+            <div id="pwaInstallBanner" class="pwa-banner">
+                <div style="display: flex; align-items: center; gap: 12px; min-width: 0;">
+                    <img src="/assets/img/icons/pwa-192.png" alt="Falhen Icon" style="width: 42px; height: 42px; border-radius: 10px; flex-shrink: 0; box-shadow: 0 2px 8px rgba(0,0,0,0.3);">
+                    <div style="min-width: 0;">
+                        <div style="font-weight: 800; font-size: 0.92rem; color: #ffffff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Install Falhen Vendor Portal</div>
+                        <div style="font-size: 0.76rem; color: #94a3b8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Quick mobile access, call sheets &amp; schedule alerts</div>
+                    </div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 8px; flex-shrink: 0;">
+                    <button type="button" id="btnPwaInstall" class="btn-save-primary" style="padding: 7px 14px; font-size: 0.8rem; background: var(--accent-red); border-color: var(--accent-red); border-radius: 8px; font-weight: 800; color: #ffffff;">
+                        <i class="fa-solid fa-download"></i> Install App
+                    </button>
+                    <button type="button" id="btnPwaDismiss" aria-label="Dismiss banner" style="background: none; border: none; color: #94a3b8; font-size: 1.15rem; padding: 6px 8px; cursor: pointer;">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+            </div>
 
             <!-- ALERTS -->
             <?php if ($successMsg): ?>
@@ -1976,21 +2276,21 @@ $displayBreadcrumb = $sectionTitles[$activeSection] ?? 'Dashboard';
                             <tbody>
                                 <?php foreach ($doneGigs as $gig): ?>
                                     <tr>
-                                        <td>
+                                        <td data-label="Production">
                                             <div style="font-weight: 800; color: #0f172a;"><?php echo htmlspecialchars($gig['title']); ?></div>
                                             <div style="font-size: 0.78rem; color: #64748b; margin-top: 2px;">
                                                 Client: <?php echo htmlspecialchars($gig['client']); ?> &bull; Ref: <?php echo htmlspecialchars($gig['id']); ?>
                                             </div>
                                         </td>
-                                        <td>
+                                        <td data-label="Date">
                                             <div style="font-weight: 700; color: #0f172a;"><?php echo date('M d, Y', strtotime($gig['shoot_date'])); ?></div>
                                             <div style="font-size: 0.74rem; color: #64748b;">Wrapped at <?php echo htmlspecialchars($gig['wrap_time'] ?? '06:00 PM'); ?></div>
                                         </td>
-                                        <td>
+                                        <td data-label="Role &amp; Rate">
                                             <div style="font-weight: 700; color: #0f172a;"><?php echo htmlspecialchars($gig['role']); ?></div>
                                             <div style="font-size: 0.76rem; color: #15803d; font-weight: 800;"><?php echo htmlspecialchars($gig['day_rate'] ?? 'Per SOW'); ?></div>
                                         </td>
-                                        <td>
+                                        <td data-label="Deliverables">
                                             <div style="font-size: 0.84rem; font-weight: 700; color: #0f172a;">
                                                 <i class="fa-solid fa-cloud-arrow-up" style="color: #2563eb;"></i> <?php echo htmlspecialchars($gig['deliverables_status'] ?? 'Delivered'); ?>
                                             </div>
@@ -1998,7 +2298,7 @@ $displayBreadcrumb = $sectionTitles[$activeSection] ?? 'Dashboard';
                                                 <?php echo htmlspecialchars($gig['payment_status'] ?? 'Processed via Stripe Direct Deposit'); ?>
                                             </div>
                                         </td>
-                                        <td>
+                                        <td data-label="Call Sheet">
                                             <a href="/download_call_sheet.php?gig_id=<?php echo urlencode($gig['id']); ?>" target="_blank" class="btn-header-action" style="font-size: 0.78rem; padding: 6px 10px;">
                                                 <i class="fa-solid fa-file-pdf" style="color: var(--accent-red);"></i> Call Sheet
                                             </a>
@@ -2010,7 +2310,7 @@ $displayBreadcrumb = $sectionTitles[$activeSection] ?? 'Dashboard';
                                                 </div>
                                             <?php endif; ?>
                                         </td>
-                                        <td>
+                                        <td data-label="Status">
                                             <span style="font-size: 0.72rem; font-weight: 800; background: #dcfce7; color: #15803d; padding: 3px 9px; border-radius: 20px; display: inline-flex; align-items: center; gap: 4px;">
                                                 <i class="fa-solid fa-circle-check"></i> Wrapped
                                             </span>
@@ -2156,24 +2456,24 @@ $displayBreadcrumb = $sectionTitles[$activeSection] ?? 'Dashboard';
                         <tbody>
                             <?php foreach ($allVendorGigs as $gig): ?>
                                 <tr>
-                                    <td>
+                                    <td data-label="Production">
                                         <div style="font-weight: 800; color: #0f172a;"><?php echo htmlspecialchars($gig['title']); ?></div>
                                         <div style="font-size: 0.76rem; color: #64748b;">Ref: <?php echo htmlspecialchars($gig['id']); ?> &bull; <?php echo htmlspecialchars($gig['location']); ?></div>
                                     </td>
-                                    <td>
+                                    <td data-label="Call Time">
                                         <div style="font-weight: 800; color: var(--accent-red);"><?php echo htmlspecialchars($gig['call_time']); ?></div>
                                         <div style="font-size: 0.74rem; color: #0f172a;"><?php echo date('M d, Y', strtotime($gig['shoot_date'])); ?></div>
                                     </td>
-                                    <td>
+                                    <td data-label="Director">
                                         <div style="font-weight: 700; color: #0f172a; font-size: 0.84rem;"><?php echo htmlspecialchars($gig['director'] ?? 'Oluwatosin Ligali'); ?></div>
                                         <div style="font-size: 0.74rem; color: #64748b;"><?php echo htmlspecialchars($gig['director_phone'] ?? '08027487449'); ?></div>
                                     </td>
-                                    <td>
+                                    <td data-label="Call Sheet">
                                         <a href="/download_call_sheet.php?gig_id=<?php echo urlencode($gig['id']); ?>" target="_blank" class="btn-save-primary" style="padding: 6px 12px; font-size: 0.8rem;">
                                             <i class="fa-solid fa-download"></i> Download PDF
                                         </a>
                                     </td>
-                                    <td>
+                                    <td data-label="Signed Copy">
                                         <?php if (!empty($gig['uploaded_call_sheet'])): ?>
                                             <a href="<?php echo htmlspecialchars($gig['uploaded_call_sheet']); ?>" target="_blank" style="color: #15803d; font-weight: 700; font-size: 0.82rem; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">
                                                 <i class="fa-solid fa-file-check"></i> <?php echo htmlspecialchars($gig['uploaded_call_sheet_name'] ?? 'Signed.pdf'); ?>
@@ -2182,7 +2482,7 @@ $displayBreadcrumb = $sectionTitles[$activeSection] ?? 'Dashboard';
                                             <span style="font-size: 0.76rem; color: #94a3b8; font-style: italic;">Not yet uploaded</span>
                                         <?php endif; ?>
                                     </td>
-                                    <td>
+                                    <td data-label="Actions">
                                         <button type="button" class="btn-header-action" onclick="openUploadModal('<?php echo htmlspecialchars($gig['id']); ?>', '<?php echo htmlspecialchars(addslashes($gig['title'])); ?>')">
                                             <i class="fa-solid fa-upload"></i> Upload
                                         </button>
@@ -2435,6 +2735,38 @@ $displayBreadcrumb = $sectionTitles[$activeSection] ?? 'Dashboard';
             <?php endif; ?>
 
         </div>
+
+        <!-- MOBILE BOTTOM NAVIGATION (Ergonomic Thumb-Zone Navigation) -->
+        <nav class="mobile-bottom-nav" id="mobileBottomNav" aria-label="Mobile Navigation">
+            <div class="mobile-bottom-nav-inner">
+                <a href="/vendor/index.php?section=dashboard" class="mobile-nav-item <?php echo ($activeSection === 'dashboard') ? 'active' : ''; ?>">
+                    <i class="fa-solid fa-gauge-high"></i>
+                    <span>Overview</span>
+                </a>
+                <a href="/vendor/index.php?section=gigs_assigned" class="mobile-nav-item <?php echo ($activeSection === 'gigs_assigned') ? 'active' : ''; ?>">
+                    <i class="fa-solid fa-clapperboard"></i>
+                    <span>Gigs</span>
+                    <?php if ($assignedCount > 0): ?>
+                        <span class="mobile-nav-badge"><?php echo $assignedCount; ?></span>
+                    <?php endif; ?>
+                </a>
+                <a href="/vendor/index.php?section=calendar" class="mobile-nav-item <?php echo ($activeSection === 'calendar') ? 'active' : ''; ?>">
+                    <i class="fa-solid fa-calendar-days"></i>
+                    <span>Schedule</span>
+                </a>
+                <a href="/vendor/index.php?section=call_sheets" class="mobile-nav-item <?php echo ($activeSection === 'call_sheets') ? 'active' : ''; ?>">
+                    <i class="fa-solid fa-file-pdf"></i>
+                    <span>Sheets</span>
+                    <?php if ($totalGigsCount > 0): ?>
+                        <span class="mobile-nav-badge" style="background: #9333ea;"><?php echo $totalGigsCount; ?></span>
+                    <?php endif; ?>
+                </a>
+                <button type="button" class="mobile-nav-item" onclick="toggleMobileSidebar()" aria-label="Open Sidebar Menu">
+                    <i class="fa-solid fa-bars-staggered"></i>
+                    <span>Menu</span>
+                </button>
+            </div>
+        </nav>
     </main>
 
     <!-- MODAL 1: UPLOAD SIGNED CALL SHEET / WRAP REPORT -->
@@ -2602,6 +2934,59 @@ $displayBreadcrumb = $sectionTitles[$activeSection] ?? 'Dashboard';
             const inspector = document.getElementById('dateInspectorCard');
             if (inspector) inspector.style.display = 'none';
         }
+
+        // ==========================================
+        // Progressive Web App (PWA) Client Logic
+        // ==========================================
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function() {
+                navigator.serviceWorker.register('/vendor/sw.js', { scope: '/vendor/' })
+                    .then(function(reg) {
+                        console.log('Falhen Vendor PWA Service Worker active:', reg.scope);
+                    })
+                    .catch(function(err) {
+                        console.warn('Falhen Vendor PWA Service Worker registration error:', err);
+                    });
+            });
+        }
+
+        let deferredPwaPrompt = null;
+        const pwaBanner = document.getElementById('pwaInstallBanner');
+        const btnPwaInstall = document.getElementById('btnPwaInstall');
+        const btnPwaDismiss = document.getElementById('btnPwaDismiss');
+
+        window.addEventListener('beforeinstallprompt', function(e) {
+            e.preventDefault();
+            deferredPwaPrompt = e;
+            if (!sessionStorage.getItem('pwa_banner_dismissed') && pwaBanner) {
+                pwaBanner.style.display = 'flex';
+            }
+        });
+
+        if (btnPwaInstall) {
+            btnPwaInstall.addEventListener('click', async function() {
+                if (!deferredPwaPrompt) return;
+                deferredPwaPrompt.prompt();
+                const choiceResult = await deferredPwaPrompt.userChoice;
+                if (choiceResult.outcome === 'accepted') {
+                    console.log('User installed Falhen Vendor PWA');
+                }
+                deferredPwaPrompt = null;
+                if (pwaBanner) pwaBanner.style.display = 'none';
+            });
+        }
+
+        if (btnPwaDismiss) {
+            btnPwaDismiss.addEventListener('click', function() {
+                if (pwaBanner) pwaBanner.style.display = 'none';
+                sessionStorage.setItem('pwa_banner_dismissed', '1');
+            });
+        }
+
+        window.addEventListener('appinstalled', function() {
+            if (pwaBanner) pwaBanner.style.display = 'none';
+            deferredPwaPrompt = null;
+        });
     </script>
 </body>
 </html>

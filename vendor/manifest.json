@@ -1,0 +1,56 @@
+{
+  "id": "/vendor/",
+  "name": "Falhen Media Vendor Portal",
+  "short_name": "Falhen Crew",
+  "description": "Mobile Production Call Sheets, Shoot Schedules & Gigs for Falhen Media Talent & Crew",
+  "start_url": "/vendor/index.php",
+  "scope": "/vendor/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0f172a",
+  "theme_color": "#dc2626",
+  "categories": ["business", "productivity", "utilities"],
+  "icons": [
+    {
+      "src": "/assets/img/icons/pwa-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/assets/img/icons/pwa-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/assets/img/icons/pwa-maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "My Assigned Gigs",
+      "short_name": "Gigs",
+      "description": "View active and upcoming production shoots",
+      "url": "/vendor/index.php?section=gigs_assigned",
+      "icons": [{ "src": "/assets/img/icons/pwa-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Calendar Schedule",
+      "short_name": "Calendar",
+      "description": "Manage availability and shoot calendar",
+      "url": "/vendor/index.php?section=calendar",
+      "icons": [{ "src": "/assets/img/icons/pwa-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Call Sheets Vault",
+      "short_name": "Call Sheets",
+      "description": "Download production call sheets and upload signed reports",
+      "url": "/vendor/index.php?section=call_sheets",
+      "icons": [{ "src": "/assets/img/icons/pwa-192.png", "sizes": "192x192" }]
+    }
+  ]
+}
