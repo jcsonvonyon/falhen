@@ -615,6 +615,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             transform: translateY(-2px);
         }
 
+        .portal-card-featured {
+            grid-column: 1 / -1;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            padding: 22px 24px;
+        }
+
+        .portal-card-featured .portal-icon-box {
+            margin-bottom: 0;
+            flex-shrink: 0;
+        }
+
+        .portal-card-featured .portal-card-content {
+            flex: 1;
+        }
+
         .portal-icon-box {
             width: 42px;
             height: 42px;
@@ -958,22 +975,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <p class="section-subtitle">Choose how you'd like to sign in</p>
 
                     <div class="portal-grid">
-                        <!-- Staff Portal Card -->
-                        <div class="portal-card" onclick="switchView('staff')">
+                        <!-- Staff Portal Card (Top Full-Width Card) -->
+                        <div class="portal-card portal-card-featured" onclick="switchView('staff')">
                             <div class="portal-icon-box">
                                 <i class="fa-solid fa-shield-halved"></i>
                             </div>
-                            <h2 class="portal-card-title">Staff Portal</h2>
-                            <p class="portal-card-desc">Admin &amp; team members &mdash; manage content, galleries, and settings</p>
-                        </div>
-
-                        <!-- Falhen HR Portal Card -->
-                        <div class="portal-card" onclick="switchView('staff')">
-                            <div class="portal-icon-box">
-                                <i class="fa-solid fa-users-gear" style="color: #ef4444;"></i>
+                            <div class="portal-card-content">
+                                <h2 class="portal-card-title">Staff Portal</h2>
+                                <p class="portal-card-desc">Admin &amp; team members &mdash; manage content, galleries, and settings</p>
                             </div>
-                            <h2 class="portal-card-title">Falhen HR Portal</h2>
-                            <p class="portal-card-desc">HR Management &mdash; employee directory, candidate applications, &amp; staff accounts</p>
                         </div>
 
                         <!-- Client Gallery Card -->

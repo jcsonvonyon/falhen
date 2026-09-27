@@ -5183,6 +5183,16 @@ function getVendorGigById($gigId) {
  */
 function saveVendorGig($gigData) {
     $allGigs = getVendorGigsRepository();
+    if (empty($gigData['id'])) {
+        $gigData['id'] = 'GIG-' . date('Y') . '-' . str_pad((string)mt_rand(100, 999), 3, '0', STR_PAD_LEFT);
+    }
+    if (!empty($gigData['assigned_to_ref'])) {
+        $vendor = getVendorById($gigData['assigned_to_ref']);
+        if ($vendor) {
+            $gigData['assigned_to_name'] = $vendor['full_name'];
+            $gigData['assigned_to_email'] = $vendor['email'];
+        }
+    }
     $found = false;
     foreach ($allGigs as $idx => $g) {
         if (($g['id'] ?? '') === ($gigData['id'] ?? '')) {
@@ -5192,10 +5202,33 @@ function saveVendorGig($gigData) {
         }
     }
     if (!$found) {
-        $allGigs[] = $gigData;
+        array_unshift($allGigs, $gigData);
     }
     saveSiteSettings(['vendor_gigs' => $allGigs]);
-    return true;
+    return $gigData;
+}
+
+/**
+ * Delete Production Gig from Repository
+ */
+function deleteVendorGig($gigId) {
+    $allGigs = getVendorGigsRepository();
+    $found = false;
+    $filtered = [];
+    foreach ($allGigs as $g) {
+        if (($g['id'] ?? '') === $gigId) {
+            $found = true;
+        } else {
+            $filtered[] = $g;
+        }
+    }
+    if ($found) {
+        saveSiteSettings(['vendor_gigs' => $filtered]);
+        $actor = $_SESSION['admin_username'] ?? 'Admin';
+        logDatabaseAudit($actor, 'vendor_gig_deleted', 'vendor_gig', (string)$gigId, "Production Gig #{$gigId} deleted.");
+        return true;
+    }
+    return false;
 }
 
 /**

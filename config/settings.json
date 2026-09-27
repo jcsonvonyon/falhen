@@ -1210,6 +1210,19 @@
     ],
     "attendance_logs": [
         {
+            "id": 14,
+            "username": "admin",
+            "full_name": "Oluwatosin Ligali",
+            "date": "2026-09-27",
+            "clock_in": "12:02 AM",
+            "clock_out": null,
+            "break_start": null,
+            "break_end": null,
+            "duration": "In Progress",
+            "status": "Clocked In",
+            "work_state": "working"
+        },
+        {
             "id": 13,
             "username": "mojisola.emjay",
             "full_name": "Mojisola Emjay",

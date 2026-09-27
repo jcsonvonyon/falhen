@@ -2909,21 +2909,158 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             deleteVendorRecord($vendorId);
             $_SESSION['saved_message'] = 'Vendor record deleted successfully.';
         }
-        header('Location: /admin/index.php?section=vendors&saved=1');
+        header('Location: /admin/index.php?section=vendors&tab=' . urlencode($_POST['redirect_tab'] ?? 'directory') . '&saved=1');
         exit;
     } else if ($action === 'update_vendor_status') {
         $vendorId = trim($_POST['vendor_id'] ?? '');
         $newStatus = trim($_POST['status'] ?? 'active');
         if (!empty($vendorId)) {
             updateVendorStatus($vendorId, $newStatus);
-            $_SESSION['saved_message'] = 'Vendor status updated to ' . ucfirst($newStatus) . '.';
+            $_SESSION['saved_message'] = 'Vendor status updated to ' . ucfirst(str_replace('_', ' ', $newStatus)) . '.';
         }
-        header('Location: /admin/index.php?section=vendors&saved=1');
+        header('Location: /admin/index.php?section=vendors&tab=' . urlencode($_POST['redirect_tab'] ?? 'directory') . '&saved=1');
         exit;
     } else if ($action === 'save_vendor') {
-        saveVendorRecord($_POST);
-        $_SESSION['saved_message'] = 'Vendor details updated successfully.';
-        header('Location: /admin/index.php?section=vendors&saved=1');
+        $vendorData = $_POST;
+        if (empty($vendorData['reference_code']) && empty($vendorData['id'])) {
+            $vendorData['reference_code'] = generateVendorReference();
+        }
+        if (empty($vendorData['signature_date'])) {
+            $vendorData['signature_date'] = date('Y-m-d');
+        }
+        if (empty($vendorData['signature_name'])) {
+            $vendorData['signature_name'] = trim($vendorData['full_name'] ?? 'Admin Added');
+        }
+        $vendorData['msa_agreed'] = 1;
+        $vendorData['nda_agreed'] = 1;
+        $vendorData['workplace_policy_agreed'] = 1;
+
+        // Auto combine street, city, state, zip into address if not explicitly passed
+        if (empty($vendorData['address']) && (!empty($vendorData['street_address']) || !empty($vendorData['city']))) {
+            $parts = array_filter([$vendorData['street_address'] ?? '', $vendorData['city'] ?? '', trim(($vendorData['state'] ?? '') . ' ' . ($vendorData['zip'] ?? ''))]);
+            $vendorData['address'] = implode(', ', $parts);
+        }
+
+        saveVendorRecord($vendorData);
+        $_SESSION['saved_message'] = 'Vendor details for "' . htmlspecialchars($vendorData['full_name'] ?? 'Vendor') . '" saved successfully.';
+        header('Location: /admin/index.php?section=vendors&tab=' . urlencode($_POST['redirect_tab'] ?? 'directory') . '&saved=1');
+        exit;
+    } else if ($action === 'save_vendor_gig') {
+        $gigId = trim($_POST['id'] ?? '');
+        if (empty($gigId)) {
+            $gigId = 'GIG-' . date('Y') . '-' . str_pad((string)mt_rand(100, 999), 3, '0', STR_PAD_LEFT);
+        }
+
+        $assignedRef = trim($_POST['assigned_to_ref'] ?? '');
+        $vendor = !empty($assignedRef) ? getVendorById($assignedRef) : null;
+
+        $gigData = [
+            'id'                  => $gigId,
+            'title'               => trim($_POST['title'] ?? 'Production Shoot'),
+            'client'              => trim($_POST['client'] ?? 'Falhen Media Production'),
+            'shoot_date'          => trim($_POST['shoot_date'] ?? date('Y-m-d')),
+            'end_date'            => trim($_POST['end_date'] ?? $_POST['shoot_date'] ?? date('Y-m-d')),
+            'call_time'           => trim($_POST['call_time'] ?? '08:00 AM'),
+            'wrap_time'           => trim($_POST['wrap_time'] ?? '06:00 PM'),
+            'location'            => trim($_POST['location'] ?? 'Falhen Soundstage, Lagos'),
+            'role'                => trim($_POST['role'] ?? 'Lead Videographer'),
+            'day_rate'            => trim($_POST['day_rate'] ?? '₦150,000 / day'),
+            'status'              => trim($_POST['status'] ?? 'assigned'),
+            'assigned_to_ref'     => $vendor['reference_code'] ?? $assignedRef,
+            'assigned_to_email'   => $vendor['email'] ?? '',
+            'assigned_to_name'    => $vendor['full_name'] ?? '',
+            'director'            => trim($_POST['director'] ?? 'Oluwatosin Ligali (Executive Producer)'),
+            'director_phone'      => trim($_POST['director_phone'] ?? '08027487449'),
+            'deliverables_status' => trim($_POST['deliverables_status'] ?? 'Pending Shoot Execution'),
+            'payment_status'      => trim($_POST['payment_status'] ?? 'Pending'),
+            'notes'               => trim($_POST['notes'] ?? '')
+        ];
+
+        // Preserve existing call sheet URLs if not replaced
+        $existingGig = getVendorGigById($gigId);
+        if ($existingGig) {
+            $gigData['call_sheet_name'] = $existingGig['call_sheet_name'] ?? ('CallSheet_' . $gigId . '.pdf');
+            $gigData['call_sheet_url'] = $existingGig['call_sheet_url'] ?? ('/download_call_sheet.php?gig_id=' . urlencode($gigId));
+            $gigData['uploaded_call_sheet'] = $existingGig['uploaded_call_sheet'] ?? '';
+            $gigData['uploaded_call_sheet_name'] = $existingGig['uploaded_call_sheet_name'] ?? '';
+            $gigData['uploaded_call_sheet_at'] = $existingGig['uploaded_call_sheet_at'] ?? '';
+        } else {
+            $gigData['call_sheet_name'] = 'CallSheet_' . $gigId . '.pdf';
+            $gigData['call_sheet_url'] = '/download_call_sheet.php?gig_id=' . urlencode($gigId);
+            $gigData['uploaded_call_sheet'] = '';
+            $gigData['uploaded_call_sheet_name'] = '';
+        }
+
+        // Handle Call Sheet File Upload if provided
+        if (!empty($_FILES['call_sheet_file']['name']) && $_FILES['call_sheet_file']['error'] === UPLOAD_ERR_OK) {
+            $f = $_FILES['call_sheet_file'];
+            $ext = strtolower(pathinfo($f['name'], PATHINFO_EXTENSION));
+            $allowed = ['pdf', 'docx', 'doc', 'jpg', 'png'];
+            if (in_array($ext, $allowed, true)) {
+                $targetDir = __DIR__ . '/../uploads/callsheets/';
+                if (!is_dir($targetDir)) {
+                    @mkdir($targetDir, 0777, true);
+                }
+                $safeName = 'CallSheet_' . preg_replace('/[^a-zA-Z0-9_\.-]/', '_', $gigId) . '_' . time() . '.' . $ext;
+                if (move_uploaded_file($f['tmp_name'], $targetDir . $safeName)) {
+                    $gigData['call_sheet_url'] = '/uploads/callsheets/' . $safeName;
+                    $gigData['call_sheet_name'] = $f['name'];
+                }
+            }
+        }
+
+        saveVendorGig($gigData);
+        $_SESSION['saved_message'] = 'Production Gig "' . htmlspecialchars($gigData['title']) . '" saved successfully!';
+        header('Location: /admin/index.php?section=vendors&tab=gigs&saved=1');
+        exit;
+    } else if ($action === 'assign_gig_to_vendor') {
+        $gigId = trim($_POST['gig_id'] ?? '');
+        $vendorRef = trim($_POST['vendor_ref'] ?? '');
+        $gig = getVendorGigById($gigId);
+        if ($gig) {
+            $vendor = !empty($vendorRef) ? getVendorById($vendorRef) : null;
+            $gig['assigned_to_ref'] = $vendor ? $vendor['reference_code'] : '';
+            $gig['assigned_to_email'] = $vendor ? $vendor['email'] : '';
+            $gig['assigned_to_name'] = $vendor ? $vendor['full_name'] : '';
+            if ($vendor && ($gig['status'] ?? '') === '') {
+                $gig['status'] = 'assigned';
+            }
+            saveVendorGig($gig);
+            $_SESSION['saved_message'] = 'Gig assigned to ' . ($vendor ? htmlspecialchars($vendor['full_name']) : 'unassigned') . ' successfully.';
+        }
+        $redirectTab = $_POST['redirect_tab'] ?? 'gigs';
+        header('Location: /admin/index.php?section=vendors&tab=' . urlencode($redirectTab) . '&saved=1');
+        exit;
+    } else if ($action === 'update_gig_status') {
+        $gigId = trim($_POST['gig_id'] ?? '');
+        $newStatus = trim($_POST['status'] ?? 'assigned');
+        $delivStatus = trim($_POST['deliverables_status'] ?? '');
+        $payStatus = trim($_POST['payment_status'] ?? '');
+
+        $gig = getVendorGigById($gigId);
+        if ($gig) {
+            $gig['status'] = $newStatus;
+            if (!empty($delivStatus)) {
+                $gig['deliverables_status'] = $delivStatus;
+            }
+            if (!empty($payStatus)) {
+                $gig['payment_status'] = $payStatus;
+            }
+            if ($newStatus === 'done' && empty($gig['completed_at'])) {
+                $gig['completed_at'] = date('Y-m-d H:i:s');
+            }
+            saveVendorGig($gig);
+            $_SESSION['saved_message'] = 'Gig #' . htmlspecialchars($gigId) . ' status updated to ' . ucfirst($newStatus) . '.';
+        }
+        header('Location: /admin/index.php?section=vendors&tab=' . urlencode($_POST['redirect_tab'] ?? 'gigs') . '&saved=1');
+        exit;
+    } else if ($action === 'delete_vendor_gig') {
+        $gigId = trim($_POST['gig_id'] ?? '');
+        if (!empty($gigId)) {
+            deleteVendorGig($gigId);
+            $_SESSION['saved_message'] = 'Production Gig #' . htmlspecialchars($gigId) . ' deleted successfully.';
+        }
+        header('Location: /admin/index.php?section=vendors&tab=gigs&saved=1');
         exit;
     }
 }
@@ -14977,283 +15114,1352 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                     }
                 }
             <?php elseif ($activeSection === 'vendors'): ?>
-                <!-- SECTION: VENDORS & CONTRACTORS ONBOARDING -->
+                <!-- SECTION: VENDORS & CONTRACTORS MANAGEMENT -->
                 <?php
                 $allVendors = getVendorsList();
+                $allGigs = getVendorGigsRepository();
+                $activeTab = trim($_GET['tab'] ?? 'directory');
                 $filterRole = trim($_GET['role'] ?? 'all');
+                $filterGigStatus = trim($_GET['gig_status'] ?? 'all');
                 $searchQuery = trim(strtolower($_GET['q'] ?? ''));
 
+                // Calculate metrics
+                $totalVendors = count($allVendors);
+                $photographersCount = count(array_filter($allVendors, fn($v) => in_array($v['role'] ?? '', ['photographer_videographer', 'contractor'], true)));
+                $internsCount = count(array_filter($allVendors, fn($v) => ($v['role'] ?? '') === 'intern'));
+                $volunteersCount = count(array_filter($allVendors, fn($v) => ($v['role'] ?? '') === 'volunteer'));
+
+                $totalGigs = count($allGigs);
+                $activeGigsCount = count(array_filter($allGigs, fn($g) => in_array($g['status'] ?? '', ['assigned', 'confirmed', 'in_progress'], true)));
+                $doneGigsCount = count(array_filter($allGigs, fn($g) => ($g['status'] ?? '') === 'done'));
+
+                // Filtered Vendors for Directory
                 $filteredVendors = $allVendors;
                 if ($filterRole !== 'all') {
                     $filteredVendors = array_filter($filteredVendors, function($v) use ($filterRole) {
                         return ($v['role'] ?? '') === $filterRole;
                     });
                 }
-
-                if (!empty($searchQuery)) {
+                if (!empty($searchQuery) && $activeTab === 'directory') {
                     $filteredVendors = array_filter($filteredVendors, function($v) use ($searchQuery) {
                         $haystack = strtolower(($v['full_name'] ?? '') . ' ' . ($v['email'] ?? '') . ' ' . ($v['reference_code'] ?? '') . ' ' . ($v['phone'] ?? ''));
                         return strpos($haystack, $searchQuery) !== false;
                     });
                 }
 
-                $totalVendors = count($allVendors);
-                $photographersCount = count(array_filter($allVendors, fn($v) => in_array($v['role'] ?? '', ['photographer_videographer', 'contractor'], true)));
-                $internsCount = count(array_filter($allVendors, fn($v) => ($v['role'] ?? '') === 'intern'));
-                $volunteersCount = count(array_filter($allVendors, fn($v) => ($v['role'] ?? '') === 'volunteer'));
+                // Filtered Gigs for Production Gigs Tab
+                $filteredGigs = $allGigs;
+                if ($filterGigStatus !== 'all') {
+                    $filteredGigs = array_filter($filteredGigs, function($g) use ($filterGigStatus) {
+                        return ($g['status'] ?? '') === $filterGigStatus;
+                    });
+                }
+                if (!empty($searchQuery) && $activeTab === 'gigs') {
+                    $filteredGigs = array_filter($filteredGigs, function($g) use ($searchQuery) {
+                        $haystack = strtolower(($g['title'] ?? '') . ' ' . ($g['client'] ?? '') . ' ' . ($g['id'] ?? '') . ' ' . ($g['location'] ?? '') . ' ' . ($g['assigned_to_name'] ?? '') . ' ' . ($g['assigned_to_ref'] ?? ''));
+                        return strpos($haystack, $searchQuery) !== false;
+                    });
+                }
                 ?>
 
-                <div class="section-header-bar">
+                <!-- SECTION HEADER -->
+                <div class="section-header-bar" style="margin-bottom: 22px;">
                     <div>
-                        <div style="display: flex; align-items: center; gap: 8px;">
-                            <span style="background: #e11d48; color: #ffffff; font-weight: 800; font-size: 0.75rem; padding: 3px 10px; border-radius: 12px; text-transform: uppercase;">Talent &amp; Crew Operations</span>
-                            <h1 class="section-header-title">Vendors &amp; Contractor Onboarding</h1>
+                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+                            <span style="background: #e11d48; color: #ffffff; font-weight: 800; font-size: 0.72rem; padding: 4px 10px; border-radius: 12px; text-transform: uppercase; letter-spacing: 0.5px;">Talent &amp; Crew Operations</span>
+                            <h1 class="section-header-title" style="margin: 0; font-size: 1.6rem; font-weight: 800; color: #0f172a;">Vendors &amp; Contractor Management</h1>
                         </div>
-                        <p class="section-header-desc">Manage all formal onboarding submissions, signed Master Services Agreements (MSA), NDAs, tax records, and payout accounts for photographers, videographers, interns, and volunteers.</p>
+                        <p class="section-header-desc" style="margin: 0; color: #64748b; font-size: 0.88rem;">Coordinate talent onboarding, Master Services Agreements (MSA), NDAs, shoot assignments, call sheets, and payouts.</p>
                     </div>
-                    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-                        <a href="/vendor-onboarding.php" target="_blank" class="btn-save-primary" style="background: #e11d48; border-color: #e11d48; text-decoration: none; display: inline-flex; align-items: center; gap: 8px;">
-                            <i class="fa-solid fa-arrow-up-right-from-square"></i> Open Public Onboarding Portal
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
+                        <button type="button" onclick="openNewVendorModal()" class="btn-save-primary" style="background: #0f172a; border-color: #0f172a; display: inline-flex; align-items: center; gap: 8px; padding: 9px 16px; border-radius: 8px; font-weight: 700; font-size: 0.86rem; color: #ffffff; cursor: pointer;">
+                            <i class="fa-solid fa-user-plus"></i> Add Talent
+                        </button>
+                        <button type="button" onclick="openNewGigModal()" class="btn-save-primary" style="background: #dc2626; border-color: #dc2626; display: inline-flex; align-items: center; gap: 8px; padding: 9px 16px; border-radius: 8px; font-weight: 700; font-size: 0.86rem; color: #ffffff; cursor: pointer; box-shadow: 0 4px 12px rgba(220,38,38,0.25);">
+                            <i class="fa-solid fa-clapperboard"></i> Create Production Gig
+                        </button>
+                        <a href="/vendor-onboarding.php" target="_blank" style="padding: 9px 14px; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.86rem; font-weight: 700; color: #334155; text-decoration: none; display: inline-flex; align-items: center; gap: 6px;" title="Open Public Contractor Onboarding Page">
+                            <i class="fa-solid fa-arrow-up-right-from-square"></i> Public Portal
+                        </a>
+                        <a href="/vendor/index.php" target="_blank" style="padding: 9px 14px; background: #fff1f2; border: 1px solid #fecdd3; border-radius: 8px; font-size: 0.86rem; font-weight: 700; color: #e11d48; text-decoration: none; display: inline-flex; align-items: center; gap: 6px;" title="Preview Vendor Dashboard Portal">
+                            <i class="fa-solid fa-id-badge"></i> Vendor Portal
                         </a>
                     </div>
                 </div>
 
-                <!-- METRICS ROW -->
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px;">
-                    <div class="dashboard-card" style="padding: 20px; display: flex; align-items: center; gap: 16px;">
+                <!-- METRICS OVERVIEW CARDS -->
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 16px; margin-bottom: 24px;">
+                    <div class="dashboard-card" style="padding: 20px; display: flex; align-items: center; gap: 16px; border: 1px solid #e2e8f0; border-radius: 16px; background: #ffffff; box-shadow: 0 2px 6px rgba(0,0,0,0.03);">
                         <div style="width: 48px; height: 48px; border-radius: 12px; background: #fff1f2; color: #e11d48; display: flex; align-items: center; justify-content: center; font-size: 1.3rem;">
                             <i class="fa-solid fa-users"></i>
                         </div>
                         <div>
-                            <div style="font-size: 0.8rem; color: #64748b; font-weight: 700; text-transform: uppercase;">Total Onboarded</div>
+                            <div style="font-size: 0.76rem; color: #64748b; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Total Onboarded</div>
                             <div style="font-size: 1.6rem; font-weight: 800; color: #0f172a;"><?php echo $totalVendors; ?></div>
                         </div>
                     </div>
 
-                    <div class="dashboard-card" style="padding: 20px; display: flex; align-items: center; gap: 16px;">
+                    <div class="dashboard-card" style="padding: 20px; display: flex; align-items: center; gap: 16px; border: 1px solid #e2e8f0; border-radius: 16px; background: #ffffff; box-shadow: 0 2px 6px rgba(0,0,0,0.03);">
                         <div style="width: 48px; height: 48px; border-radius: 12px; background: #fef2f2; color: #dc2626; display: flex; align-items: center; justify-content: center; font-size: 1.3rem;">
                             <i class="fa-solid fa-camera"></i>
                         </div>
                         <div>
-                            <div style="font-size: 0.8rem; color: #64748b; font-weight: 700; text-transform: uppercase;">Photo / Video Crew</div>
+                            <div style="font-size: 0.76rem; color: #64748b; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Photo / Video Crew</div>
                             <div style="font-size: 1.6rem; font-weight: 800; color: #0f172a;"><?php echo $photographersCount; ?></div>
                         </div>
                     </div>
 
-                    <div class="dashboard-card" style="padding: 20px; display: flex; align-items: center; gap: 16px;">
+                    <div class="dashboard-card" style="padding: 20px; display: flex; align-items: center; gap: 16px; border: 1px solid #e2e8f0; border-radius: 16px; background: #ffffff; box-shadow: 0 2px 6px rgba(0,0,0,0.03);">
+                        <div style="width: 48px; height: 48px; border-radius: 12px; background: #f0fdf4; color: #16a34a; display: flex; align-items: center; justify-content: center; font-size: 1.3rem;">
+                            <i class="fa-solid fa-film"></i>
+                        </div>
+                        <div>
+                            <div style="font-size: 0.76rem; color: #64748b; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Active Shoots</div>
+                            <div style="font-size: 1.6rem; font-weight: 800; color: #0f172a;"><?php echo $activeGigsCount; ?></div>
+                        </div>
+                    </div>
+
+                    <div class="dashboard-card" style="padding: 20px; display: flex; align-items: center; gap: 16px; border: 1px solid #e2e8f0; border-radius: 16px; background: #ffffff; box-shadow: 0 2px 6px rgba(0,0,0,0.03);">
                         <div style="width: 48px; height: 48px; border-radius: 12px; background: #eff6ff; color: #2563eb; display: flex; align-items: center; justify-content: center; font-size: 1.3rem;">
-                            <i class="fa-solid fa-graduation-cap"></i>
+                            <i class="fa-solid fa-circle-check"></i>
                         </div>
                         <div>
-                            <div style="font-size: 0.8rem; color: #64748b; font-weight: 700; text-transform: uppercase;">Interns</div>
-                            <div style="font-size: 1.6rem; font-weight: 800; color: #0f172a;"><?php echo $internsCount; ?></div>
-                        </div>
-                    </div>
-
-                    <div class="dashboard-card" style="padding: 20px; display: flex; align-items: center; gap: 16px;">
-                        <div style="width: 48px; height: 48px; border-radius: 12px; background: #faf5ff; color: #9333ea; display: flex; align-items: center; justify-content: center; font-size: 1.3rem;">
-                            <i class="fa-solid fa-heart"></i>
-                        </div>
-                        <div>
-                            <div style="font-size: 0.8rem; color: #64748b; font-weight: 700; text-transform: uppercase;">Volunteers</div>
-                            <div style="font-size: 1.6rem; font-weight: 800; color: #0f172a;"><?php echo $volunteersCount; ?></div>
+                            <div style="font-size: 0.76rem; color: #64748b; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Completed Shoots</div>
+                            <div style="font-size: 1.6rem; font-weight: 800; color: #0f172a;"><?php echo $doneGigsCount; ?></div>
                         </div>
                     </div>
                 </div>
 
-                <!-- FILTER & SEARCH BAR -->
-                <div class="dashboard-card" style="padding: 16px 20px; margin-bottom: 20px;">
-                    <form method="GET" action="/admin/index.php" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;">
-                        <input type="hidden" name="section" value="vendors">
-                        
-                        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                            <a href="/admin/index.php?section=vendors&role=all" style="padding: 8px 16px; border-radius: 8px; font-size: 0.84rem; font-weight: 700; text-decoration: none; <?php echo ($filterRole === 'all') ? 'background: #e11d48; color: #ffffff;' : 'background: #f1f5f9; color: #475569;'; ?>">
-                                All Roles (<?php echo $totalVendors; ?>)
-                            </a>
-                            <a href="/admin/index.php?section=vendors&role=photographer_videographer" style="padding: 8px 16px; border-radius: 8px; font-size: 0.84rem; font-weight: 700; text-decoration: none; <?php echo ($filterRole === 'photographer_videographer') ? 'background: #e11d48; color: #ffffff;' : 'background: #f1f5f9; color: #475569;'; ?>">
-                                Photographers / Videographers
-                            </a>
-                            <a href="/admin/index.php?section=vendors&role=intern" style="padding: 8px 16px; border-radius: 8px; font-size: 0.84rem; font-weight: 700; text-decoration: none; <?php echo ($filterRole === 'intern') ? 'background: #e11d48; color: #ffffff;' : 'background: #f1f5f9; color: #475569;'; ?>">
-                                Interns
-                            </a>
-                            <a href="/admin/index.php?section=vendors&role=volunteer" style="padding: 8px 16px; border-radius: 8px; font-size: 0.84rem; font-weight: 700; text-decoration: none; <?php echo ($filterRole === 'volunteer') ? 'background: #e11d48; color: #ffffff;' : 'background: #f1f5f9; color: #475569;'; ?>">
-                                Volunteers
-                            </a>
-                        </div>
+                <!-- SUB-NAVIGATION TABS -->
+                <div style="display: flex; gap: 10px; border-bottom: 2px solid #e2e8f0; margin-bottom: 20px; padding-bottom: 2px;">
+                    <a href="/admin/index.php?section=vendors&tab=directory" style="padding: 10px 20px; border-radius: 8px 8px 0 0; font-weight: 800; font-size: 0.9rem; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; <?php echo ($activeTab === 'directory') ? 'background: #ffffff; color: #dc2626; border-bottom: 3px solid #dc2626; margin-bottom: -4px;' : 'color: #64748b; background: transparent;'; ?>">
+                        <i class="fa-solid fa-id-card"></i> Talent Directory <span style="background: <?php echo ($activeTab === 'directory') ? '#fee2e2' : '#f1f5f9'; ?>; color: <?php echo ($activeTab === 'directory') ? '#b91c1c' : '#64748b'; ?>; font-size: 0.75rem; padding: 2px 8px; border-radius: 10px;"><?php echo $totalVendors; ?></span>
+                    </a>
+                    <a href="/admin/index.php?section=vendors&tab=gigs" style="padding: 10px 20px; border-radius: 8px 8px 0 0; font-weight: 800; font-size: 0.9rem; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; <?php echo ($activeTab === 'gigs') ? 'background: #ffffff; color: #dc2626; border-bottom: 3px solid #dc2626; margin-bottom: -4px;' : 'color: #64748b; background: transparent;'; ?>">
+                        <i class="fa-solid fa-clapperboard"></i> Production Gigs &amp; Call Sheets <span style="background: <?php echo ($activeTab === 'gigs') ? '#fee2e2' : '#f1f5f9'; ?>; color: <?php echo ($activeTab === 'gigs') ? '#b91c1c' : '#64748b'; ?>; font-size: 0.75rem; padding: 2px 8px; border-radius: 10px;"><?php echo $totalGigs; ?></span>
+                    </a>
+                    <a href="/admin/index.php?section=vendors&tab=availability" style="padding: 10px 20px; border-radius: 8px 8px 0 0; font-weight: 800; font-size: 0.9rem; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; <?php echo ($activeTab === 'availability') ? 'background: #ffffff; color: #dc2626; border-bottom: 3px solid #dc2626; margin-bottom: -4px;' : 'color: #64748b; background: transparent;'; ?>">
+                        <i class="fa-solid fa-calendar-days"></i> Booking &amp; Availability
+                    </a>
+                </div>
 
-                        <div style="display: flex; gap: 8px;">
-                            <input type="text" name="q" value="<?php echo htmlspecialchars($_GET['q'] ?? ''); ?>" placeholder="Search name, email, ref..." style="padding: 8px 14px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.85rem; width: 220px;">
-                            <button type="submit" style="padding: 8px 14px; background: #0f172a; color: #ffffff; border: none; border-radius: 8px; font-weight: 700; cursor: pointer;">
-                                <i class="fa-solid fa-magnifying-glass"></i>
+                <?php if ($activeTab === 'directory'): ?>
+                    <!-- TAB 1: TALENT DIRECTORY -->
+                    <div class="dashboard-card" style="padding: 16px 20px; margin-bottom: 20px; border: 1px solid #e2e8f0; border-radius: 14px; background: #ffffff;">
+                        <form method="GET" action="/admin/index.php" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;">
+                            <input type="hidden" name="section" value="vendors">
+                            <input type="hidden" name="tab" value="directory">
+
+                            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                                <a href="/admin/index.php?section=vendors&tab=directory&role=all" style="padding: 7px 14px; border-radius: 8px; font-size: 0.82rem; font-weight: 700; text-decoration: none; <?php echo ($filterRole === 'all') ? 'background: #e11d48; color: #ffffff;' : 'background: #f1f5f9; color: #475569;'; ?>">
+                                    All Roles (<?php echo $totalVendors; ?>)
+                                </a>
+                                <a href="/admin/index.php?section=vendors&tab=directory&role=photographer_videographer" style="padding: 7px 14px; border-radius: 8px; font-size: 0.82rem; font-weight: 700; text-decoration: none; <?php echo ($filterRole === 'photographer_videographer') ? 'background: #e11d48; color: #ffffff;' : 'background: #f1f5f9; color: #475569;'; ?>">
+                                    Photographers &amp; Video (<?php echo $photographersCount; ?>)
+                                </a>
+                                <a href="/admin/index.php?section=vendors&tab=directory&role=intern" style="padding: 7px 14px; border-radius: 8px; font-size: 0.82rem; font-weight: 700; text-decoration: none; <?php echo ($filterRole === 'intern') ? 'background: #e11d48; color: #ffffff;' : 'background: #f1f5f9; color: #475569;'; ?>">
+                                    Interns (<?php echo $internsCount; ?>)
+                                </a>
+                                <a href="/admin/index.php?section=vendors&tab=directory&role=volunteer" style="padding: 7px 14px; border-radius: 8px; font-size: 0.82rem; font-weight: 700; text-decoration: none; <?php echo ($filterRole === 'volunteer') ? 'background: #e11d48; color: #ffffff;' : 'background: #f1f5f9; color: #475569;'; ?>">
+                                    Volunteers (<?php echo $volunteersCount; ?>)
+                                </a>
+                            </div>
+
+                            <div style="display: flex; gap: 8px;">
+                                <input type="text" name="q" value="<?php echo htmlspecialchars($_GET['q'] ?? ''); ?>" placeholder="Search talent, email, ref..." style="padding: 8px 14px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.85rem; width: 230px;">
+                                <button type="submit" style="padding: 8px 14px; background: #0f172a; color: #ffffff; border: none; border-radius: 8px; font-weight: 700; cursor: pointer;">
+                                    <i class="fa-solid fa-magnifying-glass"></i>
+                                </button>
+                                <?php if (!empty($searchQuery)): ?>
+                                    <a href="/admin/index.php?section=vendors&tab=directory" style="padding: 8px 12px; background: #f1f5f9; color: #64748b; border-radius: 8px; text-decoration: none; font-size: 0.85rem; font-weight: 700;" title="Clear Search">
+                                        <i class="fa-solid fa-xmark"></i>
+                                    </a>
+                                <?php endif; ?>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- ROSTER TABLE -->
+                    <div class="dashboard-card" style="padding: 0; overflow: hidden; border: 1px solid #e2e8f0; border-radius: 16px; background: #ffffff;">
+                        <div style="padding: 18px 24px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; background: #ffffff;">
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <h2 style="font-size: 1.05rem; font-weight: 800; color: #0f172a; margin: 0;">Talent &amp; Contractor Directory</h2>
+                                <span style="background: #f1f5f9; color: #475569; font-size: 0.78rem; font-weight: 800; padding: 2px 8px; border-radius: 6px;"><?php echo count($filteredVendors); ?> Records</span>
+                            </div>
+                            <button type="button" onclick="openNewVendorModal()" style="font-size: 0.82rem; font-weight: 700; background: #fff1f2; color: #e11d48; border: 1px solid #fecdd3; padding: 6px 12px; border-radius: 6px; cursor: pointer;">
+                                <i class="fa-solid fa-plus"></i> Onboard New Talent
                             </button>
                         </div>
-                    </form>
-                </div>
 
-                <!-- ROSTER TABLE -->
-                <div class="dashboard-card" style="padding: 0; overflow: hidden;">
-                    <div style="padding: 18px 24px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center;">
-                        <h2 style="font-size: 1.1rem; font-weight: 800; color: #0f172a; margin: 0;">Onboarded Vendor Records</h2>
-                        <span style="font-size: 0.85rem; color: #64748b; font-weight: 600;">Showing <?php echo count($filteredVendors); ?> entries</span>
+                        <?php if (empty($filteredVendors)): ?>
+                            <div style="padding: 60px 20px; text-align: center;">
+                                <div style="width: 56px; height: 56px; border-radius: 50%; background: #f1f5f9; color: #94a3b8; display: inline-flex; align-items: center; justify-content: center; font-size: 1.5rem; margin-bottom: 14px;">
+                                    <i class="fa-solid fa-id-card"></i>
+                                </div>
+                                <h3 style="font-size: 1.1rem; font-weight: 800; color: #0f172a; margin-bottom: 6px;">No Talent Records Found</h3>
+                                <p style="font-size: 0.88rem; color: #64748b; max-width: 420px; margin: 0 auto 16px auto;">New contractors, interns, and volunteers will appear here once onboarded, or you can add them manually.</p>
+                                <button type="button" onclick="openNewVendorModal()" style="display: inline-flex; align-items: center; gap: 8px; background: #e11d48; color: #ffffff; padding: 9px 18px; border-radius: 8px; font-weight: 700; font-size: 0.88rem; border: none; cursor: pointer;">
+                                    <i class="fa-solid fa-plus"></i> Add Vendor Record
+                                </button>
+                            </div>
+                        <?php else: ?>
+                            <div style="overflow-x: auto;">
+                                <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.88rem;">
+                                    <thead>
+                                        <tr style="background: #f8fafc; border-bottom: 1px solid #e2e8f0; color: #64748b; font-weight: 700; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.5px;">
+                                            <th style="padding: 14px 20px;">Ref Code</th>
+                                            <th style="padding: 14px 20px;">Vendor / Talent</th>
+                                            <th style="padding: 14px 20px;">Role</th>
+                                            <th style="padding: 14px 20px;">Payout &amp; Bank</th>
+                                            <th style="padding: 14px 20px;">Gigs Assigned</th>
+                                            <th style="padding: 14px 20px;">Status</th>
+                                            <th style="padding: 14px 20px; text-align: right;">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <?php foreach ($filteredVendors as $vnd): 
+                                            $vId = $vnd['id'] ?? '';
+                                            $vRef = $vnd['reference_code'] ?? 'FAL-VND';
+                                            $vName = $vnd['full_name'] ?? 'Vendor';
+                                            $vEmail = $vnd['email'] ?? '';
+                                            $vPhone = $vnd['phone'] ?? '';
+                                            $vRole = $vnd['role'] ?? 'photographer_videographer';
+                                            $vRoleLabel = $vnd['role_label'] ?? ucwords(str_replace('_', ' ', $vRole));
+                                            $vStatus = $vnd['status'] ?? 'active';
+                                            $vDate = !empty($vnd['signature_date']) ? date('M j, Y', strtotime($vnd['signature_date'])) : date('M j, Y');
+                                            $vBank = $vnd['bank_name'] ?? '';
+                                            $vAcc = $vnd['account_number'] ?? '';
+                                            $vCurr = $vnd['currency'] ?? 'NGN';
+                                            $roleBadgeColor = ($vRole === 'intern') ? '#2563eb' : (($vRole === 'volunteer') ? '#9333ea' : '#e11d48');
+                                            $roleBadgeBg = ($vRole === 'intern') ? '#eff6ff' : (($vRole === 'volunteer') ? '#faf5ff' : '#fff1f2');
+
+                                            // Count assigned gigs for this vendor
+                                            $vendorGigs = array_filter($allGigs, function($g) use ($vRef, $vEmail) {
+                                                $gRef = strtolower(trim($g['assigned_to_ref'] ?? ''));
+                                                $gEmail = strtolower(trim($g['assigned_to_email'] ?? ''));
+                                                return (!empty($gRef) && $gRef === strtolower($vRef)) || (!empty($gEmail) && $gEmail === strtolower($vEmail));
+                                            });
+                                            $assignedGigsCount = count($vendorGigs);
+                                            $vndJson = htmlspecialchars(json_encode($vnd), ENT_QUOTES, 'UTF-8');
+                                        ?>
+                                        <tr style="border-bottom: 1px solid #f1f5f9; transition: background 0.15s ease;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
+                                            <td style="padding: 14px 20px;">
+                                                <span style="font-family: monospace; font-size: 0.82rem; font-weight: 800; color: #0f172a; background: #f1f5f9; padding: 4px 8px; border-radius: 6px; border: 1px solid #e2e8f0; display: inline-block;">
+                                                    <?php echo htmlspecialchars($vRef); ?>
+                                                </span>
+                                            </td>
+                                            <td style="padding: 14px 20px;">
+                                                <div style="font-weight: 700; color: #0f172a; font-size: 0.92rem; display: flex; align-items: center; gap: 6px;">
+                                                    <?php echo htmlspecialchars($vName); ?>
+                                                    <?php if (!empty($vnd['id_document_url'])): ?>
+                                                        <i class="fa-solid fa-file-circle-check" style="color: #10b981; font-size: 0.8rem;" title="ID Document Verified"></i>
+                                                    <?php endif; ?>
+                                                </div>
+                                                <div style="font-size: 0.78rem; color: #64748b;">
+                                                    <?php echo htmlspecialchars($vEmail); ?> &bull; <?php echo htmlspecialchars($vPhone); ?>
+                                                </div>
+                                            </td>
+                                            <td style="padding: 14px 20px;">
+                                                <span style="display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 0.74rem; font-weight: 800; background: <?php echo $roleBadgeBg; ?>; color: <?php echo $roleBadgeColor; ?>;">
+                                                    <?php echo htmlspecialchars($vRoleLabel); ?>
+                                                </span>
+                                            </td>
+                                            <td style="padding: 14px 20px;">
+                                                <?php if (!empty($vBank) || !empty($vAcc)): ?>
+                                                    <div style="font-weight: 700; color: #0f172a; font-size: 0.85rem;"><?php echo htmlspecialchars($vBank); ?></div>
+                                                    <div style="font-size: 0.76rem; color: #64748b; font-family: monospace;"><?php echo htmlspecialchars($vCurr . ' ' . $vAcc); ?></div>
+                                                <?php else: ?>
+                                                    <span style="color: #94a3b8; font-size: 0.8rem; font-style: italic;">Non-payroll / Volunteer</span>
+                                                <?php endif; ?>
+                                            </td>
+                                            <td style="padding: 14px 20px;">
+                                                <?php if ($assignedGigsCount > 0): ?>
+                                                    <a href="/admin/index.php?section=vendors&tab=gigs&q=<?php echo urlencode($vRef); ?>" style="display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 12px; background: #f0fdf4; color: #15803d; font-weight: 800; font-size: 0.78rem; text-decoration: none;">
+                                                        <i class="fa-solid fa-clapperboard"></i> <?php echo $assignedGigsCount; ?> Shoots
+                                                    </a>
+                                                <?php else: ?>
+                                                    <button type="button" onclick="openQuickAssignModal('<?php echo htmlspecialchars($vRef); ?>', '<?php echo htmlspecialchars(addslashes($vName)); ?>')" style="padding: 3px 8px; border-radius: 6px; background: #f8fafc; border: 1px dashed #cbd5e1; color: #64748b; font-size: 0.75rem; font-weight: 700; cursor: pointer;">
+                                                        + Assign Shoot
+                                                    </button>
+                                                <?php endif; ?>
+                                            </td>
+                                            <td style="padding: 14px 20px;">
+                                                <form method="POST" action="/admin/index.php?section=vendors" style="display: inline-block;">
+                                                    <input type="hidden" name="action" value="update_vendor_status">
+                                                    <input type="hidden" name="vendor_id" value="<?php echo htmlspecialchars($vId); ?>">
+                                                    <input type="hidden" name="redirect_tab" value="directory">
+                                                    <select name="status" onchange="this.form.submit()" style="padding: 4px 8px; border-radius: 6px; font-size: 0.78rem; font-weight: 700; border: 1px solid #cbd5e1; background: #ffffff; cursor: pointer; color: <?php echo ($vStatus === 'active') ? '#15803d' : (($vStatus === 'suspended') ? '#b91c1c' : '#b45309'); ?>;">
+                                                        <option value="active" <?php echo ($vStatus === 'active') ? 'selected' : ''; ?>>🟢 Active</option>
+                                                        <option value="under_review" <?php echo ($vStatus === 'under_review') ? 'selected' : ''; ?>>🟡 Under Review</option>
+                                                        <option value="completed" <?php echo ($vStatus === 'completed') ? 'selected' : ''; ?>>🔵 Completed</option>
+                                                        <option value="suspended" <?php echo ($vStatus === 'suspended') ? 'selected' : ''; ?>>🔴 Suspended</option>
+                                                    </select>
+                                                </form>
+                                            </td>
+                                            <td style="padding: 14px 20px; text-align: right;">
+                                                <div style="display: inline-flex; gap: 6px; align-items: center;">
+                                                    <!-- View Profile / Dossier -->
+                                                    <button type="button" onclick="viewVendorDossier(<?php echo $vndJson; ?>)" title="View Full Talent Dossier &amp; Legal Records" style="padding: 6px 10px; background: #f1f5f9; color: #334155; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.8rem; font-weight: 700; cursor: pointer;">
+                                                        <i class="fa-solid fa-eye"></i> View
+                                                    </button>
+                                                    <!-- Edit Details -->
+                                                    <button type="button" onclick="editVendorDetails(<?php echo $vndJson; ?>)" title="Edit Talent Details" style="padding: 6px 10px; background: #f8fafc; color: #0f172a; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.8rem; font-weight: 700; cursor: pointer;">
+                                                        <i class="fa-solid fa-pen-to-square"></i>
+                                                    </button>
+                                                    <!-- Assign Gig -->
+                                                    <button type="button" onclick="openQuickAssignModal('<?php echo htmlspecialchars($vRef); ?>', '<?php echo htmlspecialchars(addslashes($vName)); ?>')" title="Assign Production Gig" style="padding: 6px 10px; background: #fff1f2; color: #dc2626; border: 1px solid #fecdd3; border-radius: 6px; font-size: 0.8rem; font-weight: 700; cursor: pointer;">
+                                                        <i class="fa-solid fa-clapperboard"></i>
+                                                    </button>
+                                                    <!-- Agreement PDF Link -->
+                                                    <a href="/download_vendor_agreement.php?ref=<?php echo urlencode($vRef); ?>" target="_blank" title="Download Signed Agreement PDF" style="padding: 6px 10px; background: #0f172a; color: #ffffff; border-radius: 6px; text-decoration: none; font-size: 0.8rem; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;">
+                                                        <i class="fa-solid fa-file-pdf"></i>
+                                                    </a>
+                                                    <!-- Delete -->
+                                                    <button type="button" onclick="openDeleteVendorModal('<?php echo htmlspecialchars($vId, ENT_QUOTES); ?>', '<?php echo htmlspecialchars(addslashes($vName), ENT_QUOTES); ?>')" title="Delete Record" style="padding: 6px 10px; background: #fff1f2; color: #e11d48; border: 1px solid #fecdd3; border-radius: 6px; font-size: 0.8rem; font-weight: 700; cursor: pointer;">
+                                                        <i class="fa-solid fa-trash"></i>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        <?php endforeach; ?>
+                                    </tbody>
+                                </table>
+                            </div>
+                        <?php endif; ?>
                     </div>
 
-                    <?php if (empty($filteredVendors)): ?>
-                        <div style="padding: 60px 20px; text-align: center;">
-                            <div style="width: 56px; height: 56px; border-radius: 50%; background: #f1f5f9; color: #94a3b8; display: inline-flex; align-items: center; justify-content: center; font-size: 1.5rem; margin-bottom: 14px;">
-                                <i class="fa-solid fa-id-card"></i>
+                <?php elseif ($activeTab === 'gigs'): ?>
+                    <!-- TAB 2: PRODUCTION GIGS & CALL SHEETS -->
+                    <div class="dashboard-card" style="padding: 16px 20px; margin-bottom: 20px; border: 1px solid #e2e8f0; border-radius: 14px; background: #ffffff;">
+                        <form method="GET" action="/admin/index.php" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;">
+                            <input type="hidden" name="section" value="vendors">
+                            <input type="hidden" name="tab" value="gigs">
+
+                            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                                <a href="/admin/index.php?section=vendors&tab=gigs&gig_status=all" style="padding: 7px 14px; border-radius: 8px; font-size: 0.82rem; font-weight: 700; text-decoration: none; <?php echo ($filterGigStatus === 'all') ? 'background: #dc2626; color: #ffffff;' : 'background: #f1f5f9; color: #475569;'; ?>">
+                                    All Productions (<?php echo $totalGigs; ?>)
+                                </a>
+                                <a href="/admin/index.php?section=vendors&tab=gigs&gig_status=assigned" style="padding: 7px 14px; border-radius: 8px; font-size: 0.82rem; font-weight: 700; text-decoration: none; <?php echo ($filterGigStatus === 'assigned') ? 'background: #dc2626; color: #ffffff;' : 'background: #f1f5f9; color: #475569;'; ?>">
+                                    Assigned / Upcoming
+                                </a>
+                                <a href="/admin/index.php?section=vendors&tab=gigs&gig_status=confirmed" style="padding: 7px 14px; border-radius: 8px; font-size: 0.82rem; font-weight: 700; text-decoration: none; <?php echo ($filterGigStatus === 'confirmed') ? 'background: #dc2626; color: #ffffff;' : 'background: #f1f5f9; color: #475569;'; ?>">
+                                    Confirmed by Talent
+                                </a>
+                                <a href="/admin/index.php?section=vendors&tab=gigs&gig_status=done" style="padding: 7px 14px; border-radius: 8px; font-size: 0.82rem; font-weight: 700; text-decoration: none; <?php echo ($filterGigStatus === 'done') ? 'background: #dc2626; color: #ffffff;' : 'background: #f1f5f9; color: #475569;'; ?>">
+                                    Done / Wrapped (<?php echo $doneGigsCount; ?>)
+                                </a>
                             </div>
-                            <h3 style="font-size: 1.1rem; font-weight: 800; color: #0f172a; margin-bottom: 6px;">No Vendor Records Found</h3>
-                            <p style="font-size: 0.88rem; color: #64748b; max-width: 420px; margin: 0 auto 16px auto;">New contractors, interns, and volunteers will appear here as soon as they complete the 5-minute onboarding flow.</p>
-                            <a href="/vendor-onboarding.php" target="_blank" style="display: inline-flex; align-items: center; gap: 8px; background: #e11d48; color: #ffffff; padding: 9px 18px; border-radius: 8px; font-weight: 700; font-size: 0.88rem; text-decoration: none;">
-                                <i class="fa-solid fa-plus"></i> Launch Vendor Onboarding Form
-                            </a>
+
+                            <div style="display: flex; gap: 8px;">
+                                <input type="text" name="q" value="<?php echo htmlspecialchars($_GET['q'] ?? ''); ?>" placeholder="Search gig, client, talent, location..." style="padding: 8px 14px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.85rem; width: 240px;">
+                                <button type="submit" style="padding: 8px 14px; background: #0f172a; color: #ffffff; border: none; border-radius: 8px; font-weight: 700; cursor: pointer;">
+                                    <i class="fa-solid fa-magnifying-glass"></i>
+                                </button>
+                                <?php if (!empty($searchQuery)): ?>
+                                    <a href="/admin/index.php?section=vendors&tab=gigs" style="padding: 8px 12px; background: #f1f5f9; color: #64748b; border-radius: 8px; text-decoration: none; font-size: 0.85rem; font-weight: 700;" title="Clear Search">
+                                        <i class="fa-solid fa-xmark"></i>
+                                    </a>
+                                <?php endif; ?>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- GIGS TABLE -->
+                    <div class="dashboard-card" style="padding: 0; overflow: hidden; border: 1px solid #e2e8f0; border-radius: 16px; background: #ffffff;">
+                        <div style="padding: 18px 24px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center;">
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <h2 style="font-size: 1.05rem; font-weight: 800; color: #0f172a; margin: 0;">Production Shoots &amp; Studio Call Sheets</h2>
+                                <span style="background: #f1f5f9; color: #475569; font-size: 0.78rem; font-weight: 800; padding: 2px 8px; border-radius: 6px;"><?php echo count($filteredGigs); ?> Shoots</span>
+                            </div>
+                            <button type="button" onclick="openNewGigModal()" style="font-size: 0.82rem; font-weight: 700; background: #dc2626; color: #ffffff; border: none; padding: 6px 14px; border-radius: 6px; cursor: pointer;">
+                                <i class="fa-solid fa-plus"></i> New Production Gig
+                            </button>
                         </div>
-                    <?php else: ?>
-                        <div style="overflow-x: auto;">
-                            <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.88rem;">
-                                <thead>
-                                    <tr style="background: #f8fafc; border-bottom: 1px solid #e2e8f0; color: #64748b; font-weight: 700; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.5px;">
-                                        <th style="padding: 14px 20px;">Ref Code</th>
-                                        <th style="padding: 14px 20px;">Vendor / Talent</th>
-                                        <th style="padding: 14px 20px;">Role</th>
-                                        <th style="padding: 14px 20px;">Payout &amp; Bank</th>
-                                        <th style="padding: 14px 20px;">Execution Date</th>
-                                        <th style="padding: 14px 20px;">Status</th>
-                                        <th style="padding: 14px 20px; text-align: right;">Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <?php foreach ($filteredVendors as $vnd): 
-                                        $vId = $vnd['id'] ?? '';
-                                        $vRef = $vnd['reference_code'] ?? 'FAL-VND';
-                                        $vName = $vnd['full_name'] ?? 'Vendor';
-                                        $vEmail = $vnd['email'] ?? '';
-                                        $vPhone = $vnd['phone'] ?? '';
-                                        $vRole = $vnd['role'] ?? '';
-                                        $vRoleLabel = $vnd['role_label'] ?? ucwords(str_replace('_', ' ', $vRole));
-                                        $vStatus = $vnd['status'] ?? 'active';
-                                        $vDate = !empty($vnd['signature_date']) ? date('M j, Y', strtotime($vnd['signature_date'])) : date('M j, Y');
-                                        $vBank = $vnd['bank_name'] ?? '';
-                                        $vAcc = $vnd['account_number'] ?? '';
-                                        $vCurr = $vnd['currency'] ?? 'NGN';
-                                        $roleBadgeColor = ($vRole === 'intern') ? '#2563eb' : (($vRole === 'volunteer') ? '#9333ea' : '#e11d48');
-                                        $roleBadgeBg = ($vRole === 'intern') ? '#eff6ff' : (($vRole === 'volunteer') ? '#faf5ff' : '#fff1f2');
-                                    ?>
-                                    <tr style="border-bottom: 1px solid #f1f5f9; transition: background 0.15s ease;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
-                                        <td style="padding: 14px 20px;">
-                                            <span style="font-family: monospace; font-size: 0.84rem; font-weight: 800; color: #0f172a; background: #f1f5f9; padding: 4px 8px; border-radius: 6px; border: 1px solid #e2e8f0;">
-                                                <?php echo htmlspecialchars($vRef); ?>
-                                            </span>
-                                        </td>
-                                        <td style="padding: 14px 20px;">
-                                            <div style="font-weight: 700; color: #0f172a;"><?php echo htmlspecialchars($vName); ?></div>
-                                            <div style="font-size: 0.78rem; color: #64748b;"><?php echo htmlspecialchars($vEmail); ?> &bull; <?php echo htmlspecialchars($vPhone); ?></div>
-                                        </td>
-                                        <td style="padding: 14px 20px;">
-                                            <span style="display: inline-block; padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 800; background: <?php echo $roleBadgeBg; ?>; color: <?php echo $roleBadgeColor; ?>;">
-                                                <?php echo htmlspecialchars($vRoleLabel); ?>
-                                            </span>
-                                        </td>
-                                        <td style="padding: 14px 20px;">
-                                            <?php if (!empty($vBank) || !empty($vAcc)): ?>
-                                                <div style="font-weight: 700; color: #0f172a;"><?php echo htmlspecialchars($vBank); ?></div>
-                                                <div style="font-size: 0.78rem; color: #64748b; font-family: monospace;"><?php echo htmlspecialchars($vCurr . ' ' . $vAcc); ?></div>
-                                            <?php else: ?>
-                                                <span style="color: #94a3b8; font-size: 0.8rem; font-style: italic;">Non-payroll / Volunteer</span>
-                                            <?php endif; ?>
-                                        </td>
-                                        <td style="padding: 14px 20px; color: #475569; font-weight: 600;">
-                                            <?php echo htmlspecialchars($vDate); ?>
-                                        </td>
-                                        <td style="padding: 14px 20px;">
-                                            <form method="POST" action="/admin/index.php?section=vendors" style="display: inline-block;">
-                                                <input type="hidden" name="action" value="update_vendor_status">
-                                                <input type="hidden" name="vendor_id" value="<?php echo htmlspecialchars($vId); ?>">
-                                                <select name="status" onchange="this.form.submit()" style="padding: 4px 8px; border-radius: 6px; font-size: 0.78rem; font-weight: 700; border: 1px solid #cbd5e1; background: #ffffff; cursor: pointer; color: <?php echo ($vStatus === 'active') ? '#15803d' : '#b45309'; ?>;">
-                                                    <option value="active" <?php echo ($vStatus === 'active') ? 'selected' : ''; ?>>🟢 Active</option>
-                                                    <option value="under_review" <?php echo ($vStatus === 'under_review') ? 'selected' : ''; ?>>🟡 Under Review</option>
-                                                    <option value="completed" <?php echo ($vStatus === 'completed') ? 'selected' : ''; ?>>🔵 Completed</option>
-                                                    <option value="suspended" <?php echo ($vStatus === 'suspended') ? 'selected' : ''; ?>>🔴 Suspended</option>
-                                                </select>
-                                            </form>
-                                        </td>
-                                        <td style="padding: 14px 20px; text-align: right;">
-                                            <div style="display: inline-flex; gap: 8px;">
-                                                <a href="/download_vendor_agreement.php?ref=<?php echo urlencode($vRef); ?>" target="_blank" title="View &amp; Print Agreement" style="padding: 6px 12px; background: #0f172a; color: #ffffff; border-radius: 6px; text-decoration: none; font-size: 0.8rem; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;">
-                                                    <i class="fa-solid fa-file-pdf"></i> Agreement
-                                                </a>
-                                                <button type="button" onclick="openDeleteVendorModal('<?php echo htmlspecialchars($vId, ENT_QUOTES); ?>', '<?php echo htmlspecialchars(addslashes($vName), ENT_QUOTES); ?>')" title="Delete Vendor Record" style="padding: 6px 10px; background: #fff1f2; color: #e11d48; border: 1px solid #fecdd3; border-radius: 6px; font-size: 0.8rem; font-weight: 700; cursor: pointer;">
-                                                    <i class="fa-solid fa-trash"></i>
-                                                </button>
+
+                        <?php if (empty($filteredGigs)): ?>
+                            <div style="padding: 60px 20px; text-align: center;">
+                                <div style="width: 56px; height: 56px; border-radius: 50%; background: #f1f5f9; color: #94a3b8; display: inline-flex; align-items: center; justify-content: center; font-size: 1.5rem; margin-bottom: 14px;">
+                                    <i class="fa-solid fa-clapperboard"></i>
+                                </div>
+                                <h3 style="font-size: 1.1rem; font-weight: 800; color: #0f172a; margin-bottom: 6px;">No Production Shoots Found</h3>
+                                <p style="font-size: 0.88rem; color: #64748b; max-width: 420px; margin: 0 auto 16px auto;">Schedule production shoots, attach call sheets, assign contractors, and manage wrap reports.</p>
+                                <button type="button" onclick="openNewGigModal()" style="display: inline-flex; align-items: center; gap: 8px; background: #dc2626; color: #ffffff; padding: 9px 18px; border-radius: 8px; font-weight: 700; font-size: 0.88rem; border: none; cursor: pointer;">
+                                    <i class="fa-solid fa-plus"></i> Create Production Gig
+                                </button>
+                            </div>
+                        <?php else: ?>
+                            <div style="overflow-x: auto;">
+                                <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.88rem;">
+                                    <thead>
+                                        <tr style="background: #f8fafc; border-bottom: 1px solid #e2e8f0; color: #64748b; font-weight: 700; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.5px;">
+                                            <th style="padding: 14px 20px;">Shoot / Gig</th>
+                                            <th style="padding: 14px 20px;">Date &amp; Call Time</th>
+                                            <th style="padding: 14px 20px;">Assigned Talent</th>
+                                            <th style="padding: 14px 20px;">Day Rate</th>
+                                            <th style="padding: 14px 20px;">Status</th>
+                                            <th style="padding: 14px 20px;">Call Sheet &amp; Deliverables</th>
+                                            <th style="padding: 14px 20px; text-align: right;">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <?php foreach ($filteredGigs as $gig): 
+                                            $gId = $gig['id'] ?? '';
+                                            $gTitle = $gig['title'] ?? 'Production Shoot';
+                                            $gClient = $gig['client'] ?? 'Falhen Media Production';
+                                            $gDate = !empty($gig['shoot_date']) ? date('M j, Y', strtotime($gig['shoot_date'])) : 'TBD';
+                                            $gCallTime = $gig['call_time'] ?? '08:00 AM';
+                                            $gWrapTime = $gig['wrap_time'] ?? '06:00 PM';
+                                            $gLoc = $gig['location'] ?? 'Falhen Soundstage, Lagos';
+                                            $gRole = $gig['role'] ?? 'Lead Videographer';
+                                            $gRate = $gig['day_rate'] ?? '₦150,000 / day';
+                                            $gStatus = $gig['status'] ?? 'assigned';
+                                            $gAssignedRef = $gig['assigned_to_ref'] ?? '';
+                                            $gAssignedName = $gig['assigned_to_name'] ?? '';
+                                            $gDeliverables = $gig['deliverables_status'] ?? 'Pending Shoot Execution';
+                                            $gCallSheetUrl = $gig['call_sheet_url'] ?? ('/download_call_sheet.php?gig_id=' . urlencode($gId));
+                                            $gUploadedSheet = $gig['uploaded_call_sheet'] ?? '';
+                                            $gUploadedName = $gig['uploaded_call_sheet_name'] ?? 'SignedCallSheet.pdf';
+
+                                            // If assigned to ref, look up full talent record
+                                            $assignedVendor = !empty($gAssignedRef) ? getVendorById($gAssignedRef) : null;
+                                            if ($assignedVendor && empty($gAssignedName)) {
+                                                $gAssignedName = $assignedVendor['full_name'];
+                                            }
+
+                                            $gigJson = htmlspecialchars(json_encode($gig), ENT_QUOTES, 'UTF-8');
+                                        ?>
+                                        <tr style="border-bottom: 1px solid #f1f5f9; transition: background 0.15s ease;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
+                                            <td style="padding: 14px 20px; max-width: 250px;">
+                                                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+                                                    <span style="font-family: monospace; font-size: 0.78rem; font-weight: 800; color: #0f172a; background: #f1f5f9; padding: 2px 6px; border-radius: 4px; border: 1px solid #e2e8f0;">
+                                                        <?php echo htmlspecialchars($gId); ?>
+                                                    </span>
+                                                </div>
+                                                <div style="font-weight: 800; color: #0f172a; font-size: 0.92rem; line-height: 1.3;">
+                                                    <?php echo htmlspecialchars($gTitle); ?>
+                                                </div>
+                                                <div style="font-size: 0.78rem; color: #64748b; margin-top: 2px;">
+                                                    <i class="fa-solid fa-briefcase" style="font-size: 0.7rem;"></i> <?php echo htmlspecialchars($gClient); ?>
+                                                </div>
+                                            </td>
+                                            <td style="padding: 14px 20px; white-space: nowrap;">
+                                                <div style="font-weight: 700; color: #0f172a;"><?php echo htmlspecialchars($gDate); ?></div>
+                                                <div style="font-size: 0.78rem; color: #64748b;">
+                                                    <i class="fa-regular fa-clock" style="font-size: 0.72rem;"></i> <?php echo htmlspecialchars($gCallTime); ?> &ndash; <?php echo htmlspecialchars($gWrapTime); ?>
+                                                </div>
+                                                <div style="font-size: 0.74rem; color: #94a3b8; max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="<?php echo htmlspecialchars($gLoc); ?>">
+                                                    <i class="fa-solid fa-location-dot" style="font-size: 0.7rem;"></i> <?php echo htmlspecialchars($gLoc); ?>
+                                                </div>
+                                            </td>
+                                            <td style="padding: 14px 20px;">
+                                                <?php if (!empty($gAssignedName)): ?>
+                                                    <div style="font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 6px;">
+                                                        <?php echo htmlspecialchars($gAssignedName); ?>
+                                                    </div>
+                                                    <div style="font-size: 0.76rem; color: #64748b;">
+                                                        <span style="font-family: monospace;"><?php echo htmlspecialchars($gAssignedRef); ?></span>
+                                                    </div>
+                                                    <div style="font-size: 0.72rem; color: #e11d48; font-weight: 700;">
+                                                        <?php echo htmlspecialchars($gRole); ?>
+                                                    </div>
+                                                <?php else: ?>
+                                                    <span style="display: inline-block; padding: 4px 8px; border-radius: 6px; background: #fff7ed; color: #c2410c; font-size: 0.75rem; font-weight: 700; border: 1px dashed #fdba74;">
+                                                        Unassigned
+                                                    </span>
+                                                    <button type="button" onclick="openAssignTalentToGig('<?php echo htmlspecialchars($gId); ?>', '<?php echo htmlspecialchars(addslashes($gTitle)); ?>')" style="display: block; margin-top: 4px; background: none; border: none; color: #2563eb; font-size: 0.75rem; font-weight: 700; cursor: pointer; padding: 0;">
+                                                        + Assign Talent
+                                                    </button>
+                                                <?php endif; ?>
+                                            </td>
+                                            <td style="padding: 14px 20px; font-weight: 700; color: #0f172a; white-space: nowrap;">
+                                                <?php echo htmlspecialchars($gRate); ?>
+                                            </td>
+                                            <td style="padding: 14px 20px;">
+                                                <form method="POST" action="/admin/index.php?section=vendors" style="display: inline-block;">
+                                                    <input type="hidden" name="action" value="update_gig_status">
+                                                    <input type="hidden" name="gig_id" value="<?php echo htmlspecialchars($gId); ?>">
+                                                    <input type="hidden" name="redirect_tab" value="gigs">
+                                                    <select name="status" onchange="this.form.submit()" style="padding: 4px 8px; border-radius: 6px; font-size: 0.78rem; font-weight: 700; border: 1px solid #cbd5e1; background: #ffffff; cursor: pointer; color: <?php echo ($gStatus === 'done') ? '#15803d' : (($gStatus === 'confirmed') ? '#0284c7' : '#b45309'); ?>;">
+                                                        <option value="assigned" <?php echo ($gStatus === 'assigned') ? 'selected' : ''; ?>>🟡 Assigned</option>
+                                                        <option value="confirmed" <?php echo ($gStatus === 'confirmed') ? 'selected' : ''; ?>>🔵 Confirmed</option>
+                                                        <option value="done" <?php echo ($gStatus === 'done') ? 'selected' : ''; ?>>🟢 Done</option>
+                                                    </select>
+                                                </form>
+                                            </td>
+                                            <td style="padding: 14px 20px; font-size: 0.8rem;">
+                                                <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 4px;">
+                                                    <a href="<?php echo htmlspecialchars($gCallSheetUrl); ?>" target="_blank" style="display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; border-radius: 6px; background: #0f172a; color: #ffffff; font-size: 0.74rem; font-weight: 700; text-decoration: none;">
+                                                        <i class="fa-solid fa-file-pdf"></i> Call Sheet
+                                                    </a>
+                                                    <?php if (!empty($gUploadedSheet)): ?>
+                                                        <a href="<?php echo htmlspecialchars($gUploadedSheet); ?>" target="_blank" style="display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; border-radius: 6px; background: #dcfce7; color: #15803d; border: 1px solid #bbf7d0; font-size: 0.74rem; font-weight: 700; text-decoration: none;" title="Talent Signed Call Sheet / Wrap Report">
+                                                            <i class="fa-solid fa-circle-check"></i> Signed Sheet
+                                                        </a>
+                                                    <?php else: ?>
+                                                        <span style="font-size: 0.72rem; color: #94a3b8; font-style: italic;">Awaiting talent upload</span>
+                                                    <?php endif; ?>
+                                                </div>
+                                                <div style="font-size: 0.74rem; color: #64748b;">
+                                                    <?php echo htmlspecialchars($gDeliverables); ?>
+                                                </div>
+                                            </td>
+                                            <td style="padding: 14px 20px; text-align: right;">
+                                                <div style="display: inline-flex; gap: 6px; align-items: center;">
+                                                    <button type="button" onclick="editGigDetails(<?php echo $gigJson; ?>)" title="Edit Production Gig" style="padding: 6px 10px; background: #f8fafc; color: #0f172a; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.8rem; font-weight: 700; cursor: pointer;">
+                                                        <i class="fa-solid fa-pen-to-square"></i>
+                                                    </button>
+                                                    <button type="button" onclick="openAssignTalentToGig('<?php echo htmlspecialchars($gId); ?>', '<?php echo htmlspecialchars(addslashes($gTitle)); ?>')" title="Assign / Reassign Talent" style="padding: 6px 10px; background: #fff1f2; color: #dc2626; border: 1px solid #fecdd3; border-radius: 6px; font-size: 0.8rem; font-weight: 700; cursor: pointer;">
+                                                        <i class="fa-solid fa-user-tag"></i>
+                                                    </button>
+                                                    <button type="button" onclick="openDeleteGigModal('<?php echo htmlspecialchars($gId, ENT_QUOTES); ?>', '<?php echo htmlspecialchars(addslashes($gTitle), ENT_QUOTES); ?>')" title="Delete Gig" style="padding: 6px 10px; background: #fff1f2; color: #e11d48; border: 1px solid #fecdd3; border-radius: 6px; font-size: 0.8rem; font-weight: 700; cursor: pointer;">
+                                                        <i class="fa-solid fa-trash"></i>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        <?php endforeach; ?>
+                                    </tbody>
+                                </table>
+                            </div>
+                        <?php endif; ?>
+                    </div>
+
+                <?php elseif ($activeTab === 'availability'): ?>
+                    <!-- TAB 3: AVAILABILITY & CALENDAR -->
+                    <div class="dashboard-card" style="padding: 24px; margin-bottom: 24px; border: 1px solid #e2e8f0; border-radius: 16px; background: #ffffff;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
+                            <div>
+                                <h2 style="font-size: 1.15rem; font-weight: 800; color: #0f172a; margin: 0 0 4px 0;">Talent Availability Schedule</h2>
+                                <p style="font-size: 0.86rem; color: #64748b; margin: 0;">Contractor dates submitted through their individual Vendor Portal calendar bookings.</p>
+                            </div>
+                            <button type="button" onclick="openNewGigModal()" style="font-size: 0.84rem; font-weight: 700; background: #dc2626; color: #ffffff; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer;">
+                                <i class="fa-solid fa-plus"></i> Book Shoot on Available Date
+                            </button>
+                        </div>
+
+                        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 18px;">
+                            <?php foreach ($allVendors as $vnd): 
+                                $vRef = $vnd['reference_code'] ?? '';
+                                $vName = $vnd['full_name'] ?? 'Talent';
+                                $vRole = $vnd['role_label'] ?? 'Talent';
+                                $vPhone = $vnd['phone'] ?? '';
+                                $vEmail = $vnd['email'] ?? '';
+                                $availData = getVendorAvailability($vRef);
+                                $availDates = $availData['available_dates'] ?? [];
+                                $availNotes = $availData['notes'] ?? '';
+
+                                // Gigs assigned to this vendor
+                                $vndGigs = array_filter($allGigs, fn($g) => ($g['assigned_to_ref'] ?? '') === $vRef);
+                            ?>
+                            <div style="border: 1px solid #e2e8f0; border-radius: 14px; padding: 18px; background: #f8fafc; display: flex; flex-direction: column; justify-content: space-between;">
+                                <div>
+                                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
+                                        <div>
+                                            <div style="font-weight: 800; color: #0f172a; font-size: 0.98rem;"><?php echo htmlspecialchars($vName); ?></div>
+                                            <div style="font-size: 0.76rem; color: #e11d48; font-weight: 700;"><?php echo htmlspecialchars($vRole); ?></div>
+                                        </div>
+                                        <span style="font-family: monospace; font-size: 0.74rem; font-weight: 800; color: #0f172a; background: #ffffff; padding: 2px 6px; border-radius: 4px; border: 1px solid #e2e8f0;">
+                                            <?php echo htmlspecialchars($vRef); ?>
+                                        </span>
+                                    </div>
+
+                                    <div style="font-size: 0.78rem; color: #64748b; margin-bottom: 14px;">
+                                        <i class="fa-solid fa-phone" style="font-size: 0.7rem;"></i> <?php echo htmlspecialchars($vPhone); ?> &bull; <?php echo htmlspecialchars($vEmail); ?>
+                                    </div>
+
+                                    <div style="margin-bottom: 14px;">
+                                        <div style="font-size: 0.72rem; font-weight: 800; color: #475569; text-transform: uppercase; margin-bottom: 6px; letter-spacing: 0.5px;">
+                                            Marked Available Dates (<?php echo count($availDates); ?>)
+                                        </div>
+                                        <?php if (!empty($availDates)): ?>
+                                            <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                                                <?php foreach (array_slice($availDates, 0, 8) as $ad): ?>
+                                                    <span style="background: #dcfce7; color: #166534; font-size: 0.74rem; font-weight: 800; padding: 3px 8px; border-radius: 6px; border: 1px solid #bbf7d0;">
+                                                        <?php echo htmlspecialchars(date('M j', strtotime($ad))); ?>
+                                                    </span>
+                                                <?php endforeach; ?>
+                                                <?php if (count($availDates) > 8): ?>
+                                                    <span style="background: #f1f5f9; color: #475569; font-size: 0.72rem; font-weight: 700; padding: 3px 6px; border-radius: 6px;">
+                                                        +<?php echo count($availDates) - 8; ?> more
+                                                    </span>
+                                                <?php endif; ?>
                                             </div>
-                                        </td>
-                                    </tr>
-                                    <?php endforeach; ?>
-                                </tbody>
-                            </table>
-                        </div>
-                    <?php endif; ?>
+                                        <?php else: ?>
+                                            <span style="font-size: 0.78rem; color: #94a3b8; font-style: italic;">No specific dates marked. Talent maintains standard availability.</span>
+                                        <?php endif; ?>
+                                    </div>
 
-                    <!-- DELETE VENDOR CONFIRMATION MODAL OVERLAY -->
-                    <div id="deleteVendorModal" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.75); backdrop-filter: blur(6px); z-index: 100000; align-items: center; justify-content: center; padding: 20px; animation: fadeInModal 0.2s ease;">
-                        <div style="background: #ffffff; border-radius: 20px; max-width: 440px; width: 100%; padding: 32px 28px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.3); border: 1px solid #e2e8f0; position: relative; text-align: center;">
-                            
-                            <button type="button" onclick="closeDeleteVendorModal()" style="position: absolute; top: 16px; right: 16px; background: #f1f5f9; border: none; width: 32px; height: 32px; border-radius: 50%; color: #64748b; font-size: 1rem; cursor: pointer; display: flex; align-items: center; justify-content: center;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='#f1f5f9'">
-                                <i class="fa-solid fa-xmark"></i>
-                            </button>
+                                    <?php if (!empty($availNotes)): ?>
+                                        <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px 10px; font-size: 0.76rem; color: #475569; margin-bottom: 14px;">
+                                            <strong style="color: #0f172a;">Notes:</strong> <?php echo htmlspecialchars($availNotes); ?>
+                                        </div>
+                                    <?php endif; ?>
+                                </div>
 
-                            <div style="width: 56px; height: 56px; border-radius: 50%; background: #fff1f2; border: 1px solid #fecdd3; color: #e11d48; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px auto; font-size: 1.5rem;">
-                                <i class="fa-solid fa-trash-can"></i>
-                            </div>
-                            
-                            <h3 style="font-size: 1.25rem; font-weight: 800; color: #0f172a; margin: 0 0 8px 0;">Delete Vendor Record?</h3>
-                            <p style="font-size: 0.88rem; color: #64748b; margin: 0 0 24px 0; line-height: 1.5;">
-                                Are you sure you want to delete vendor record for <strong id="deleteVendorTargetName" style="color: #0f172a;"></strong>? This action cannot be undone.
-                            </p>
-
-                            <form id="deleteVendorForm" method="POST" action="/admin/index.php?section=vendors">
-                                <input type="hidden" name="action" value="delete_vendor">
-                                <input type="hidden" name="vendor_id" id="deleteVendorTargetId" value="">
-                                
-                                <div style="display: flex; gap: 12px;">
-                                    <button type="button" onclick="closeDeleteVendorModal()" style="flex: 1; padding: 12px; background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 10px; font-weight: 700; color: #475569; cursor: pointer; transition: all 0.15s ease;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='#f1f5f9'">
-                                        Cancel
-                                    </button>
-                                    <button type="submit" style="flex: 1; padding: 12px; background: #dc2626; border: 1px solid #dc2626; border-radius: 10px; font-weight: 800; color: #ffffff; cursor: pointer; box-shadow: 0 4px 12px rgba(220,38,38,0.3); transition: all 0.15s ease;" onmouseover="this.style.background='#b91c1c'" onmouseout="this.style.background='#dc2626'">
-                                        Yes, Delete Vendor
+                                <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #e2e8f0; padding-top: 12px; margin-top: 8px;">
+                                    <span style="font-size: 0.78rem; color: #64748b; font-weight: 600;">
+                                        <i class="fa-solid fa-clapperboard"></i> <?php echo count($vndGigs); ?> Shoots Assigned
+                                    </span>
+                                    <button type="button" onclick="openNewGigModalForVendor('<?php echo htmlspecialchars($vRef); ?>', '<?php echo htmlspecialchars(addslashes($vName)); ?>')" style="padding: 5px 12px; background: #dc2626; color: #ffffff; border: none; border-radius: 6px; font-size: 0.78rem; font-weight: 800; cursor: pointer;">
+                                        + Book Shoot
                                     </button>
                                 </div>
-                            </form>
+                            </div>
+                            <?php endforeach; ?>
                         </div>
                     </div>
+                <?php endif; ?>
 
-                    <script>
-                    function openDeleteVendorModal(vendorId, vendorName) {
-                        var modal = document.getElementById('deleteVendorModal');
-                        var idInput = document.getElementById('deleteVendorTargetId');
-                        var nameEl = document.getElementById('deleteVendorTargetName');
-                        if (idInput) idInput.value = vendorId;
-                        if (nameEl) nameEl.textContent = vendorName;
-                        if (modal) modal.style.display = 'flex';
+                <!-- ======================================================== -->
+                <!-- MODAL 1: VIEW TALENT DOSSIER & LEGAL RECORDS             -->
+                <!-- ======================================================== -->
+                <div id="vendorDossierModal" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.75); backdrop-filter: blur(6px); z-index: 100000; align-items: center; justify-content: center; padding: 20px; animation: fadeInModal 0.2s ease;">
+                    <div style="background: #ffffff; border-radius: 20px; max-width: 680px; width: 100%; max-height: 90vh; overflow-y: auto; padding: 32px 30px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.3); border: 1px solid #e2e8f0; position: relative;">
+                        
+                        <button type="button" onclick="closeVendorDossierModal()" style="position: absolute; top: 18px; right: 18px; background: #f1f5f9; border: none; width: 32px; height: 32px; border-radius: 50%; color: #64748b; font-size: 1rem; cursor: pointer; display: flex; align-items: center; justify-content: center;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='#f1f5f9'">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+
+                        <div style="display: flex; align-items: center; gap: 14px; margin-bottom: 20px;">
+                            <div style="width: 54px; height: 54px; border-radius: 14px; background: #fff1f2; color: #e11d48; display: flex; align-items: center; justify-content: center; font-size: 1.4rem;">
+                                <i class="fa-solid fa-id-badge"></i>
+                            </div>
+                            <div>
+                                <h3 id="dossierName" style="font-size: 1.3rem; font-weight: 800; color: #0f172a; margin: 0 0 4px 0;">Vendor Full Name</h3>
+                                <div style="display: flex; gap: 8px; align-items: center;">
+                                    <span id="dossierRef" style="font-family: monospace; font-size: 0.8rem; font-weight: 800; background: #f1f5f9; padding: 2px 8px; border-radius: 6px; color: #0f172a;">REF-CODE</span>
+                                    <span id="dossierRole" style="font-size: 0.75rem; font-weight: 800; padding: 2px 10px; border-radius: 12px; background: #eff6ff; color: #2563eb;">Role</span>
+                                    <span id="dossierStatus" style="font-size: 0.75rem; font-weight: 800; padding: 2px 10px; border-radius: 12px; background: #dcfce7; color: #15803d;">Active</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- TABBED CONTENT / SECTIONS -->
+                        <div style="display: flex; flex-direction: column; gap: 16px;">
+                            <!-- 1. Contact & Residence -->
+                            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px;">
+                                <div style="font-size: 0.74rem; font-weight: 800; color: #64748b; text-transform: uppercase; margin-bottom: 10px; letter-spacing: 0.5px;">
+                                    <i class="fa-solid fa-address-book"></i> Contact &amp; Residential Info
+                                </div>
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 0.86rem;">
+                                    <div><strong style="color: #475569;">Email:</strong> <span id="dossierEmail" style="color: #0f172a;"></span></div>
+                                    <div><strong style="color: #475569;">Phone:</strong> <span id="dossierPhone" style="color: #0f172a;"></span></div>
+                                    <div style="grid-column: span 2;"><strong style="color: #475569;">Address:</strong> <span id="dossierAddress" style="color: #0f172a;"></span></div>
+                                </div>
+                            </div>
+
+                            <!-- 2. Identification & Tax -->
+                            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px;">
+                                <div style="font-size: 0.74rem; font-weight: 800; color: #64748b; text-transform: uppercase; margin-bottom: 10px; letter-spacing: 0.5px;">
+                                    <i class="fa-solid fa-passport"></i> Identity &amp; Tax Verification
+                                </div>
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 0.86rem;">
+                                    <div><strong style="color: #475569;">ID / Tax Type:</strong> <span id="dossierIdType" style="color: #0f172a;"></span></div>
+                                    <div><strong style="color: #475569;">Tax ID / SSN / NIN:</strong> <span id="dossierTaxId" style="color: #0f172a; font-family: monospace;"></span></div>
+                                    <div style="grid-column: span 2;" id="dossierDocRow">
+                                        <strong style="color: #475569;">Uploaded Document:</strong> <span id="dossierDocLink" style="color: #0f172a;"></span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 3. Banking & Direct Deposit -->
+                            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px;">
+                                <div style="font-size: 0.74rem; font-weight: 800; color: #64748b; text-transform: uppercase; margin-bottom: 10px; letter-spacing: 0.5px;">
+                                    <i class="fa-solid fa-building-columns"></i> Payout &amp; Direct Deposit Account
+                                </div>
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 0.86rem;">
+                                    <div><strong style="color: #475569;">Bank Name:</strong> <span id="dossierBank" style="color: #0f172a;"></span></div>
+                                    <div><strong style="color: #475569;">Account Number:</strong> <span id="dossierAccountNum" style="color: #0f172a; font-family: monospace;"></span></div>
+                                    <div><strong style="color: #475569;">Account Name:</strong> <span id="dossierAccountName" style="color: #0f172a;"></span></div>
+                                    <div><strong style="color: #475569;">Currency:</strong> <span id="dossierCurrency" style="color: #0f172a;"></span></div>
+                                </div>
+                            </div>
+
+                            <!-- 4. Emergency Contact -->
+                            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px;">
+                                <div style="font-size: 0.74rem; font-weight: 800; color: #64748b; text-transform: uppercase; margin-bottom: 10px; letter-spacing: 0.5px;">
+                                    <i class="fa-solid fa-heart-pulse"></i> Emergency Contact
+                                </div>
+                                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; font-size: 0.86rem;">
+                                    <div><strong style="color: #475569;">Name:</strong> <span id="dossierEmergName" style="color: #0f172a;"></span></div>
+                                    <div><strong style="color: #475569;">Relationship:</strong> <span id="dossierEmergRel" style="color: #0f172a;"></span></div>
+                                    <div><strong style="color: #475569;">Phone:</strong> <span id="dossierEmergPhone" style="color: #0f172a;"></span></div>
+                                </div>
+                            </div>
+
+                            <!-- 5. Legal Agreements Execution -->
+                            <div style="background: #fff1f2; border: 1px solid #fecdd3; border-radius: 12px; padding: 16px;">
+                                <div style="font-size: 0.74rem; font-weight: 800; color: #e11d48; text-transform: uppercase; margin-bottom: 10px; letter-spacing: 0.5px;">
+                                    <i class="fa-solid fa-file-contract"></i> Legal Agreements &amp; Electronic Signature
+                                </div>
+                                <div style="font-size: 0.86rem; color: #475569; line-height: 1.5;">
+                                    <div><i class="fa-solid fa-circle-check" style="color: #10b981;"></i> Master Services Agreement (MSA) &bull; <strong>Agreed &amp; Signed</strong></div>
+                                    <div><i class="fa-solid fa-circle-check" style="color: #10b981;"></i> Non-Disclosure Agreement (NDA) &bull; <strong>Agreed &amp; Signed</strong></div>
+                                    <div><i class="fa-solid fa-circle-check" style="color: #10b981;"></i> Workplace Conduct &amp; Safety Policy &bull; <strong>Agreed</strong></div>
+                                    <div style="margin-top: 8px; padding-top: 8px; border-top: 1px dashed #fecdd3; display: flex; justify-content: space-between;">
+                                        <span>Signature: <strong id="dossierSignature" style="font-family: serif; font-size: 1.1rem; color: #0f172a;"></strong></span>
+                                        <span>Date: <strong id="dossierSigDate" style="color: #0f172a;"></strong></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- BOTTOM ACTION BAR -->
+                        <div style="display: flex; gap: 12px; margin-top: 24px; justify-content: flex-end;">
+                            <a id="dossierAgreementLink" href="#" target="_blank" style="padding: 11px 18px; background: #0f172a; color: #ffffff; border-radius: 8px; font-weight: 700; font-size: 0.88rem; text-decoration: none; display: inline-flex; align-items: center; gap: 8px;">
+                                <i class="fa-solid fa-file-pdf"></i> Download Official Agreement PDF
+                            </a>
+                            <button type="button" onclick="closeVendorDossierModal()" style="padding: 11px 18px; background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; border-radius: 8px; font-weight: 700; font-size: 0.88rem; cursor: pointer;">
+                                Close
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ======================================================== -->
+                <!-- MODAL 2: ADD / EDIT TALENT RECORD                        -->
+                <!-- ======================================================== -->
+                <div id="vendorEditModal" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.75); backdrop-filter: blur(6px); z-index: 100000; align-items: center; justify-content: center; padding: 20px; animation: fadeInModal 0.2s ease;">
+                    <div style="background: #ffffff; border-radius: 20px; max-width: 640px; width: 100%; max-height: 90vh; overflow-y: auto; padding: 32px 30px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.3); border: 1px solid #e2e8f0; position: relative;">
+                        
+                        <button type="button" onclick="closeVendorEditModal()" style="position: absolute; top: 18px; right: 18px; background: #f1f5f9; border: none; width: 32px; height: 32px; border-radius: 50%; color: #64748b; font-size: 1rem; cursor: pointer; display: flex; align-items: center; justify-content: center;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='#f1f5f9'">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+
+                        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px;">
+                            <div style="width: 46px; height: 46px; border-radius: 12px; background: #fff1f2; color: #e11d48; display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">
+                                <i class="fa-solid fa-user-pen"></i>
+                            </div>
+                            <div>
+                                <h3 id="vendorEditModalTitle" style="font-size: 1.25rem; font-weight: 800; color: #0f172a; margin: 0 0 2px 0;">Add Vendor / Contractor</h3>
+                                <p style="font-size: 0.82rem; color: #64748b; margin: 0;">Configure talent contact, role, and direct payout credentials.</p>
+                            </div>
+                        </div>
+
+                        <form method="POST" action="/admin/index.php?section=vendors">
+                            <input type="hidden" name="action" value="save_vendor">
+                            <input type="hidden" name="id" id="editVendorId" value="">
+                            <input type="hidden" name="reference_code" id="editVendorRef" value="">
+                            <input type="hidden" name="redirect_tab" value="<?php echo htmlspecialchars($activeTab); ?>">
+
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 16px;">
+                                <div>
+                                    <label style="display: block; font-size: 0.8rem; font-weight: 700; color: #334155; margin-bottom: 5px;">Full Name *</label>
+                                    <input type="text" name="full_name" id="editVendorName" required style="width: 100%; padding: 9px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.88rem;">
+                                </div>
+                                <div>
+                                    <label style="display: block; font-size: 0.8rem; font-weight: 700; color: #334155; margin-bottom: 5px;">Email Address *</label>
+                                    <input type="email" name="email" id="editVendorEmail" required style="width: 100%; padding: 9px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.88rem;">
+                                </div>
+                            </div>
+
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 16px;">
+                                <div>
+                                    <label style="display: block; font-size: 0.8rem; font-weight: 700; color: #334155; margin-bottom: 5px;">Phone Number *</label>
+                                    <input type="text" name="phone" id="editVendorPhone" required style="width: 100%; padding: 9px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.88rem;">
+                                </div>
+                                <div>
+                                    <label style="display: block; font-size: 0.8rem; font-weight: 700; color: #334155; margin-bottom: 5px;">Operational Role *</label>
+                                    <select name="role" id="editVendorRole" style="width: 100%; padding: 9px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.88rem; background: #ffffff;">
+                                        <option value="photographer_videographer">Photographer / Videographer</option>
+                                        <option value="intern">Intern</option>
+                                        <option value="volunteer">Volunteer</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 16px;">
+                                <div>
+                                    <label style="display: block; font-size: 0.8rem; font-weight: 700; color: #334155; margin-bottom: 5px;">Status</label>
+                                    <select name="status" id="editVendorStatus" style="width: 100%; padding: 9px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.88rem; background: #ffffff;">
+                                        <option value="active">Active</option>
+                                        <option value="under_review">Under Review</option>
+                                        <option value="completed">Completed</option>
+                                        <option value="suspended">Suspended</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label style="display: block; font-size: 0.8rem; font-weight: 700; color: #334155; margin-bottom: 5px;">Tax / ID Type</label>
+                                    <select name="id_type" id="editVendorIdType" style="width: 100%; padding: 9px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.88rem; background: #ffffff;">
+                                        <option value="W-9">W-9 (US Contractor)</option>
+                                        <option value="Driver License">Driver's License</option>
+                                        <option value="International Passport">International Passport</option>
+                                        <option value="National ID (NIN)">National ID (NIN)</option>
+                                        <option value="Voter Card">Voter Card</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div style="margin-bottom: 16px;">
+                                <label style="display: block; font-size: 0.8rem; font-weight: 700; color: #334155; margin-bottom: 5px;">Tax ID / SSN / NIN</label>
+                                <input type="text" name="tax_id" id="editVendorTaxId" placeholder="e.g. 123-45-6789 or NIN" style="width: 100%; padding: 9px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.88rem;">
+                            </div>
+
+                            <div style="margin-bottom: 16px;">
+                                <label style="display: block; font-size: 0.8rem; font-weight: 700; color: #334155; margin-bottom: 5px;">Street Address</label>
+                                <input type="text" name="street_address" id="editVendorStreet" placeholder="Street Address" style="width: 100%; padding: 9px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.88rem; margin-bottom: 8px;">
+                                <div style="display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 8px;">
+                                    <input type="text" name="city" id="editVendorCity" placeholder="City" style="padding: 9px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.88rem;">
+                                    <input type="text" name="state" id="editVendorState" placeholder="State" style="padding: 9px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.88rem;">
+                                    <input type="text" name="zip" id="editVendorZip" placeholder="Zip" style="padding: 9px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.88rem;">
+                                </div>
+                            </div>
+
+                            <!-- Payout Details -->
+                            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px; margin-bottom: 16px;">
+                                <div style="font-size: 0.78rem; font-weight: 800; color: #0f172a; margin-bottom: 10px;">Bank / Payout Information</div>
+                                <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 10px; margin-bottom: 10px;">
+                                    <div>
+                                        <label style="display: block; font-size: 0.74rem; font-weight: 700; color: #64748b; margin-bottom: 4px;">Bank Name</label>
+                                        <input type="text" name="bank_name" id="editVendorBank" placeholder="e.g. Zenith Bank / Chase" style="width: 100%; padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.84rem;">
+                                    </div>
+                                    <div>
+                                        <label style="display: block; font-size: 0.74rem; font-weight: 700; color: #64748b; margin-bottom: 4px;">Currency</label>
+                                        <select name="currency" id="editVendorCurr" style="width: 100%; padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.84rem; background: #ffffff;">
+                                            <option value="NGN">NGN (₦)</option>
+                                            <option value="USD">USD ($)</option>
+                                            <option value="GBP">GBP (£)</option>
+                                            <option value="EUR">EUR (€)</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                                    <div>
+                                        <label style="display: block; font-size: 0.74rem; font-weight: 700; color: #64748b; margin-bottom: 4px;">Account Number</label>
+                                        <input type="text" name="account_number" id="editVendorAccNum" placeholder="Account Number" style="width: 100%; padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.84rem;">
+                                    </div>
+                                    <div>
+                                        <label style="display: block; font-size: 0.74rem; font-weight: 700; color: #64748b; margin-bottom: 4px;">Account Name</label>
+                                        <input type="text" name="account_name" id="editVendorAccName" placeholder="Account Name" style="width: 100%; padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.84rem;">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Emergency Contact -->
+                            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px; margin-bottom: 20px;">
+                                <div style="font-size: 0.78rem; font-weight: 800; color: #0f172a; margin-bottom: 10px;">Emergency Contact</div>
+                                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px;">
+                                    <div>
+                                        <label style="display: block; font-size: 0.74rem; font-weight: 700; color: #64748b; margin-bottom: 4px;">Name</label>
+                                        <input type="text" name="emergency_name" id="editVendorEmergName" placeholder="Contact Name" style="width: 100%; padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.84rem;">
+                                    </div>
+                                    <div>
+                                        <label style="display: block; font-size: 0.74rem; font-weight: 700; color: #64748b; margin-bottom: 4px;">Relationship</label>
+                                        <input type="text" name="emergency_relationship" id="editVendorEmergRel" placeholder="e.g. Spouse / Sibling" style="width: 100%; padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.84rem;">
+                                    </div>
+                                    <div>
+                                        <label style="display: block; font-size: 0.74rem; font-weight: 700; color: #64748b; margin-bottom: 4px;">Phone</label>
+                                        <input type="text" name="emergency_phone" id="editVendorEmergPhone" placeholder="Phone" style="width: 100%; padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.84rem;">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div style="display: flex; gap: 12px; justify-content: flex-end;">
+                                <button type="button" onclick="closeVendorEditModal()" style="padding: 11px 20px; background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; border-radius: 8px; font-weight: 700; font-size: 0.88rem; cursor: pointer;">
+                                    Cancel
+                                </button>
+                                <button type="submit" style="padding: 11px 24px; background: #dc2626; color: #ffffff; border: none; border-radius: 8px; font-weight: 800; font-size: 0.88rem; cursor: pointer; box-shadow: 0 4px 12px rgba(220,38,38,0.25);">
+                                    Save Talent Record
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- ======================================================== -->
+                <!-- MODAL 3: CREATE / EDIT PRODUCTION GIG & CALL SHEET       -->
+                <!-- ======================================================== -->
+                <div id="gigEditModal" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.75); backdrop-filter: blur(6px); z-index: 100000; align-items: center; justify-content: center; padding: 20px; animation: fadeInModal 0.2s ease;">
+                    <div style="background: #ffffff; border-radius: 20px; max-width: 660px; width: 100%; max-height: 90vh; overflow-y: auto; padding: 32px 30px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.3); border: 1px solid #e2e8f0; position: relative;">
+                        
+                        <button type="button" onclick="closeGigEditModal()" style="position: absolute; top: 18px; right: 18px; background: #f1f5f9; border: none; width: 32px; height: 32px; border-radius: 50%; color: #64748b; font-size: 1rem; cursor: pointer; display: flex; align-items: center; justify-content: center;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='#f1f5f9'">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+
+                        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px;">
+                            <div style="width: 46px; height: 46px; border-radius: 12px; background: #fff1f2; color: #dc2626; display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">
+                                <i class="fa-solid fa-clapperboard"></i>
+                            </div>
+                            <div>
+                                <h3 id="gigEditModalTitle" style="font-size: 1.25rem; font-weight: 800; color: #0f172a; margin: 0 0 2px 0;">Create Production Shoot</h3>
+                                <p style="font-size: 0.82rem; color: #64748b; margin: 0;">Set shoot date, call time, location, assigned contractor, and call sheet.</p>
+                            </div>
+                        </div>
+
+                        <form method="POST" action="/admin/index.php?section=vendors" enctype="multipart/form-data">
+                            <input type="hidden" name="action" value="save_vendor_gig">
+                            <input type="hidden" name="id" id="editGigId" value="">
+                            <input type="hidden" name="redirect_tab" value="gigs">
+
+                            <div style="margin-bottom: 14px;">
+                                <label style="display: block; font-size: 0.8rem; font-weight: 700; color: #334155; margin-bottom: 5px;">Shoot / Production Title *</label>
+                                <input type="text" name="title" id="editGigTitle" required placeholder="e.g. Lagos Fashion Showcase - Runway & Editorial Shoot" style="width: 100%; padding: 9px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.88rem;">
+                            </div>
+
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px;">
+                                <div>
+                                    <label style="display: block; font-size: 0.8rem; font-weight: 700; color: #334155; margin-bottom: 5px;">Client / Project Series *</label>
+                                    <input type="text" name="client" id="editGigClient" required placeholder="e.g. Vogue West Africa / Falhen Media" style="width: 100%; padding: 9px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.88rem;">
+                                </div>
+                                <div>
+                                    <label style="display: block; font-size: 0.8rem; font-weight: 700; color: #334155; margin-bottom: 5px;">Assign To Talent / Contractor</label>
+                                    <select name="assigned_to_ref" id="editGigAssignedRef" style="width: 100%; padding: 9px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.88rem; background: #ffffff;">
+                                        <option value="">-- Unassigned (TBD) --</option>
+                                        <?php foreach ($allVendors as $vOption): ?>
+                                            <option value="<?php echo htmlspecialchars($vOption['reference_code'] ?? ''); ?>">
+                                                <?php echo htmlspecialchars($vOption['full_name'] ?? ''); ?> (<?php echo htmlspecialchars($vOption['role_label'] ?? 'Talent'); ?> &bull; <?php echo htmlspecialchars($vOption['reference_code'] ?? ''); ?>)
+                                            </option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 14px;">
+                                <div>
+                                    <label style="display: block; font-size: 0.8rem; font-weight: 700; color: #334155; margin-bottom: 5px;">Shoot Date *</label>
+                                    <input type="date" name="shoot_date" id="editGigDate" required value="<?php echo date('Y-m-d'); ?>" style="width: 100%; padding: 9px 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.88rem;">
+                                </div>
+                                <div>
+                                    <label style="display: block; font-size: 0.8rem; font-weight: 700; color: #334155; margin-bottom: 5px;">Call Time *</label>
+                                    <input type="text" name="call_time" id="editGigCallTime" value="08:00 AM" placeholder="08:00 AM" style="width: 100%; padding: 9px 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.88rem;">
+                                </div>
+                                <div>
+                                    <label style="display: block; font-size: 0.8rem; font-weight: 700; color: #334155; margin-bottom: 5px;">Wrap Time</label>
+                                    <input type="text" name="wrap_time" id="editGigWrapTime" value="06:00 PM" placeholder="06:00 PM" style="width: 100%; padding: 9px 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.88rem;">
+                                </div>
+                            </div>
+
+                            <div style="margin-bottom: 14px;">
+                                <label style="display: block; font-size: 0.8rem; font-weight: 700; color: #334155; margin-bottom: 5px;">Production Location *</label>
+                                <input type="text" name="location" id="editGigLocation" required placeholder="e.g. Studio A - 6 Olorunfunmi Street, Pedro, Gbagada, Lagos" style="width: 100%; padding: 9px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.88rem;">
+                            </div>
+
+                            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 14px;">
+                                <div>
+                                    <label style="display: block; font-size: 0.8rem; font-weight: 700; color: #334155; margin-bottom: 5px;">Required Role *</label>
+                                    <input type="text" name="role" id="editGigRole" required value="Lead Videographer & Director of Photography" placeholder="e.g. Lead Videographer" style="width: 100%; padding: 9px 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.88rem;">
+                                </div>
+                                <div>
+                                    <label style="display: block; font-size: 0.8rem; font-weight: 700; color: #334155; margin-bottom: 5px;">Day Rate / Fee *</label>
+                                    <input type="text" name="day_rate" id="editGigRate" value="₦180,000 / day" placeholder="e.g. ₦180,000 / day" style="width: 100%; padding: 9px 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.88rem;">
+                                </div>
+                                <div>
+                                    <label style="display: block; font-size: 0.8rem; font-weight: 700; color: #334155; margin-bottom: 5px;">Status *</label>
+                                    <select name="status" id="editGigStatus" style="width: 100%; padding: 9px 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.88rem; background: #ffffff;">
+                                        <option value="assigned">Assigned</option>
+                                        <option value="confirmed">Confirmed by Talent</option>
+                                        <option value="done">Done / Wrapped</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px;">
+                                <div>
+                                    <label style="display: block; font-size: 0.8rem; font-weight: 700; color: #334155; margin-bottom: 5px;">Production Director / Lead</label>
+                                    <input type="text" name="director" id="editGigDirector" value="Oluwatosin Ligali (Executive Producer)" style="width: 100%; padding: 9px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.88rem;">
+                                </div>
+                                <div>
+                                    <label style="display: block; font-size: 0.8rem; font-weight: 700; color: #334155; margin-bottom: 5px;">Director Contact Phone</label>
+                                    <input type="text" name="director_phone" id="editGigDirectorPhone" value="08027487449" style="width: 100%; padding: 9px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.88rem;">
+                                </div>
+                            </div>
+
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px;">
+                                <div>
+                                    <label style="display: block; font-size: 0.8rem; font-weight: 700; color: #334155; margin-bottom: 5px;">Deliverables Status</label>
+                                    <input type="text" name="deliverables_status" id="editGigDeliverables" value="Pending Shoot Execution" placeholder="e.g. Footage Transferred &amp; Verified" style="width: 100%; padding: 9px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.88rem;">
+                                </div>
+                                <div>
+                                    <label style="display: block; font-size: 0.8rem; font-weight: 700; color: #334155; margin-bottom: 5px;">Payment / Payout Status</label>
+                                    <input type="text" name="payment_status" id="editGigPayment" value="Pending" placeholder="e.g. Disbursed via Stripe / Bank" style="width: 100%; padding: 9px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.88rem;">
+                                </div>
+                            </div>
+
+                            <div style="margin-bottom: 14px;">
+                                <label style="display: block; font-size: 0.8rem; font-weight: 700; color: #334155; margin-bottom: 5px;">Call Sheet Document (.pdf / .docx) <span style="font-weight: 400; color: #64748b;">(Optional &mdash; auto-generated if blank)</span></label>
+                                <input type="file" name="call_sheet_file" accept=".pdf,.doc,.docx,.jpg,.png" style="width: 100%; padding: 8px; border: 1px dashed #cbd5e1; border-radius: 8px; font-size: 0.84rem; background: #f8fafc;">
+                            </div>
+
+                            <div style="margin-bottom: 20px;">
+                                <label style="display: block; font-size: 0.8rem; font-weight: 700; color: #334155; margin-bottom: 5px;">Production Brief / Gear &amp; Camera Notes</label>
+                                <textarea name="notes" id="editGigNotes" rows="3" placeholder="e.g. Arrive 30 mins early for gimbal calibration. 4K 60fps 10-bit color profile." style="width: 100%; padding: 9px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.88rem;"></textarea>
+                            </div>
+
+                            <div style="display: flex; gap: 12px; justify-content: flex-end;">
+                                <button type="button" onclick="closeGigEditModal()" style="padding: 11px 20px; background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; border-radius: 8px; font-weight: 700; font-size: 0.88rem; cursor: pointer;">
+                                    Cancel
+                                </button>
+                                <button type="submit" style="padding: 11px 24px; background: #dc2626; color: #ffffff; border: none; border-radius: 8px; font-weight: 800; font-size: 0.88rem; cursor: pointer; box-shadow: 0 4px 12px rgba(220,38,38,0.25);">
+                                    Save Production Shoot
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- ======================================================== -->
+                <!-- MODAL 4: QUICK ASSIGN GIG TO TALENT                      -->
+                <!-- ======================================================== -->
+                <div id="quickAssignModal" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.75); backdrop-filter: blur(6px); z-index: 100000; align-items: center; justify-content: center; padding: 20px; animation: fadeInModal 0.2s ease;">
+                    <div style="background: #ffffff; border-radius: 20px; max-width: 480px; width: 100%; padding: 30px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.3); border: 1px solid #e2e8f0; position: relative;">
+                        
+                        <button type="button" onclick="closeQuickAssignModal()" style="position: absolute; top: 16px; right: 16px; background: #f1f5f9; border: none; width: 32px; height: 32px; border-radius: 50%; color: #64748b; font-size: 1rem; cursor: pointer; display: flex; align-items: center; justify-content: center;">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+
+                        <div style="width: 48px; height: 48px; border-radius: 12px; background: #fff1f2; color: #dc2626; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; margin-bottom: 14px;">
+                            <i class="fa-solid fa-clapperboard"></i>
+                        </div>
+
+                        <h3 style="font-size: 1.2rem; font-weight: 800; color: #0f172a; margin: 0 0 6px 0;">Assign Talent to Shoot</h3>
+                        <p id="quickAssignSubtitle" style="font-size: 0.85rem; color: #64748b; margin: 0 0 20px 0; line-height: 1.4;">Select the production gig and talent to link together.</p>
+
+                        <form method="POST" action="/admin/index.php?section=vendors">
+                            <input type="hidden" name="action" value="assign_gig_to_vendor">
+                            <input type="hidden" name="redirect_tab" value="<?php echo htmlspecialchars($activeTab); ?>">
+
+                            <div style="margin-bottom: 16px;">
+                                <label style="display: block; font-size: 0.8rem; font-weight: 700; color: #334155; margin-bottom: 6px;">Production Gig *</label>
+                                <select name="gig_id" id="quickAssignGigId" required style="width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.88rem; background: #ffffff;">
+                                    <option value="">-- Choose Gig --</option>
+                                    <?php foreach ($allGigs as $gOpt): ?>
+                                        <option value="<?php echo htmlspecialchars($gOpt['id'] ?? ''); ?>">
+                                            <?php echo htmlspecialchars($gOpt['id'] ?? ''); ?> &bull; <?php echo htmlspecialchars($gOpt['title'] ?? ''); ?> (<?php echo htmlspecialchars(!empty($gOpt['shoot_date']) ? date('M j', strtotime($gOpt['shoot_date'])) : 'Date TBD'); ?>)
+                                        </option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
+
+                            <div style="margin-bottom: 22px;">
+                                <label style="display: block; font-size: 0.8rem; font-weight: 700; color: #334155; margin-bottom: 6px;">Contractor / Talent *</label>
+                                <select name="vendor_ref" id="quickAssignVendorRef" required style="width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.88rem; background: #ffffff;">
+                                    <option value="">-- Choose Contractor --</option>
+                                    <?php foreach ($allVendors as $vOpt): ?>
+                                        <option value="<?php echo htmlspecialchars($vOpt['reference_code'] ?? ''); ?>">
+                                            <?php echo htmlspecialchars($vOpt['full_name'] ?? ''); ?> (<?php echo htmlspecialchars($vOpt['role_label'] ?? 'Talent'); ?> &bull; <?php echo htmlspecialchars($vOpt['reference_code'] ?? ''); ?>)
+                                        </option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
+
+                            <div style="display: flex; gap: 12px;">
+                                <button type="button" onclick="closeQuickAssignModal()" style="flex: 1; padding: 11px; background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 8px; font-weight: 700; color: #475569; cursor: pointer;">
+                                    Cancel
+                                </button>
+                                <button type="submit" style="flex: 1; padding: 11px; background: #dc2626; border: none; border-radius: 8px; font-weight: 800; color: #ffffff; cursor: pointer; box-shadow: 0 4px 12px rgba(220,38,38,0.25);">
+                                    Confirm Assignment
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- ======================================================== -->
+                <!-- MODAL 5: DELETE PRODUCTION GIG CONFIRMATION              -->
+                <!-- ======================================================== -->
+                <div id="deleteGigModal" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.75); backdrop-filter: blur(6px); z-index: 100000; align-items: center; justify-content: center; padding: 20px; animation: fadeInModal 0.2s ease;">
+                    <div style="background: #ffffff; border-radius: 20px; max-width: 440px; width: 100%; padding: 32px 28px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.3); border: 1px solid #e2e8f0; position: relative; text-align: center;">
+                        <button type="button" onclick="closeDeleteGigModal()" style="position: absolute; top: 16px; right: 16px; background: #f1f5f9; border: none; width: 32px; height: 32px; border-radius: 50%; color: #64748b; font-size: 1rem; cursor: pointer; display: flex; align-items: center; justify-content: center;">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+                        <div style="width: 56px; height: 56px; border-radius: 50%; background: #fff1f2; border: 1px solid #fecdd3; color: #e11d48; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px auto; font-size: 1.5rem;">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </div>
+                        <h3 style="font-size: 1.25rem; font-weight: 800; color: #0f172a; margin: 0 0 8px 0;">Delete Production Shoot?</h3>
+                        <p style="font-size: 0.88rem; color: #64748b; margin: 0 0 24px 0; line-height: 1.5;">
+                            Are you sure you want to remove gig <strong id="deleteGigTargetTitle" style="color: #0f172a;"></strong>? This will detach assigned call sheets and records.
+                        </p>
+                        <form method="POST" action="/admin/index.php?section=vendors">
+                            <input type="hidden" name="action" value="delete_vendor_gig">
+                            <input type="hidden" name="gig_id" id="deleteGigTargetId" value="">
+                            <div style="display: flex; gap: 12px;">
+                                <button type="button" onclick="closeDeleteGigModal()" style="flex: 1; padding: 12px; background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 10px; font-weight: 700; color: #475569; cursor: pointer;">
+                                    Cancel
+                                </button>
+                                <button type="submit" style="flex: 1; padding: 12px; background: #dc2626; border: none; border-radius: 10px; font-weight: 800; color: #ffffff; cursor: pointer; box-shadow: 0 4px 12px rgba(220,38,38,0.3);">
+                                    Yes, Delete Gig
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- ======================================================== -->
+                <!-- MODAL 6: DELETE VENDOR RECORD CONFIRMATION               -->
+                <!-- ======================================================== -->
+                <div id="deleteVendorModal" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.75); backdrop-filter: blur(6px); z-index: 100000; align-items: center; justify-content: center; padding: 20px; animation: fadeInModal 0.2s ease;">
+                    <div style="background: #ffffff; border-radius: 20px; max-width: 440px; width: 100%; padding: 32px 28px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.3); border: 1px solid #e2e8f0; position: relative; text-align: center;">
+                        <button type="button" onclick="closeDeleteVendorModal()" style="position: absolute; top: 16px; right: 16px; background: #f1f5f9; border: none; width: 32px; height: 32px; border-radius: 50%; color: #64748b; font-size: 1rem; cursor: pointer; display: flex; align-items: center; justify-content: center;">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+                        <div style="width: 56px; height: 56px; border-radius: 50%; background: #fff1f2; border: 1px solid #fecdd3; color: #e11d48; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px auto; font-size: 1.5rem;">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </div>
+                        <h3 style="font-size: 1.25rem; font-weight: 800; color: #0f172a; margin: 0 0 8px 0;">Delete Vendor Record?</h3>
+                        <p style="font-size: 0.88rem; color: #64748b; margin: 0 0 24px 0; line-height: 1.5;">
+                            Are you sure you want to delete vendor record for <strong id="deleteVendorTargetName" style="color: #0f172a;"></strong>? This action cannot be undone.
+                        </p>
+                        <form id="deleteVendorForm" method="POST" action="/admin/index.php?section=vendors">
+                            <input type="hidden" name="action" value="delete_vendor">
+                            <input type="hidden" name="vendor_id" id="deleteVendorTargetId" value="">
+                            <input type="hidden" name="redirect_tab" value="<?php echo htmlspecialchars($activeTab); ?>">
+                            <div style="display: flex; gap: 12px;">
+                                <button type="button" onclick="closeDeleteVendorModal()" style="flex: 1; padding: 12px; background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 10px; font-weight: 700; color: #475569; cursor: pointer;">
+                                    Cancel
+                                </button>
+                                <button type="submit" style="flex: 1; padding: 12px; background: #dc2626; border: 1px solid #dc2626; border-radius: 10px; font-weight: 800; color: #ffffff; cursor: pointer; box-shadow: 0 4px 12px rgba(220,38,38,0.3);">
+                                    Yes, Delete Vendor
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- VENDOR MANAGEMENT JAVASCRIPT LOGIC -->
+                <script>
+                // 1. Vendor Dossier Modal View
+                function viewVendorDossier(v) {
+                    if (!v) return;
+                    document.getElementById('dossierName').textContent = v.full_name || 'Vendor';
+                    document.getElementById('dossierRef').textContent = v.reference_code || 'FAL-VND';
+                    document.getElementById('dossierRole').textContent = v.role_label || v.role || 'Talent';
+                    document.getElementById('dossierStatus').textContent = (v.status || 'active').toUpperCase();
+                    
+                    document.getElementById('dossierEmail').textContent = v.email || 'N/A';
+                    document.getElementById('dossierPhone').textContent = v.phone || 'N/A';
+                    document.getElementById('dossierAddress').textContent = v.address || 'Address on file';
+                    
+                    document.getElementById('dossierIdType').textContent = v.id_type || 'W-9';
+                    document.getElementById('dossierTaxId').textContent = v.tax_id || 'Not Provided';
+                    
+                    var docLinkEl = document.getElementById('dossierDocLink');
+                    if (v.id_document_url) {
+                        docLinkEl.innerHTML = '<a href="' + v.id_document_url + '" target="_blank" style="color: #2563eb; font-weight: 700; text-decoration: underline;"><i class="fa-solid fa-file-arrow-down"></i> View ID Attachment</a>';
+                    } else {
+                        docLinkEl.textContent = 'None attached';
                     }
 
-                    function closeDeleteVendorModal() {
-                        var modal = document.getElementById('deleteVendorModal');
-                        if (modal) modal.style.display = 'none';
+                    document.getElementById('dossierBank').textContent = v.bank_name || 'Not Provided';
+                    document.getElementById('dossierAccountNum').textContent = v.account_number || 'N/A';
+                    document.getElementById('dossierAccountName').textContent = v.account_name || v.full_name || 'N/A';
+                    document.getElementById('dossierCurrency').textContent = v.currency || 'NGN';
+
+                    document.getElementById('dossierEmergName').textContent = v.emergency_name || 'N/A';
+                    document.getElementById('dossierEmergRel').textContent = v.emergency_relationship || 'N/A';
+                    document.getElementById('dossierEmergPhone').textContent = v.emergency_phone || 'N/A';
+
+                    document.getElementById('dossierSignature').textContent = v.signature_name || v.full_name || 'Electronically Signed';
+                    document.getElementById('dossierSigDate').textContent = v.signature_date || 'Executed';
+
+                    var agreeLink = document.getElementById('dossierAgreementLink');
+                    if (agreeLink) {
+                        agreeLink.href = '/download_vendor_agreement.php?ref=' + encodeURIComponent(v.reference_code || '');
                     }
 
-                    document.addEventListener('DOMContentLoaded', function() {
-                        var modal = document.getElementById('deleteVendorModal');
-                        if (modal) {
-                            modal.addEventListener('click', function(e) {
-                                if (e.target === modal) {
-                                    closeDeleteVendorModal();
+                    var modal = document.getElementById('vendorDossierModal');
+                    if (modal) modal.style.display = 'flex';
+                }
+
+                function closeVendorDossierModal() {
+                    var modal = document.getElementById('vendorDossierModal');
+                    if (modal) modal.style.display = 'none';
+                }
+
+                // 2. Add / Edit Vendor Modal
+                function openNewVendorModal() {
+                    document.getElementById('vendorEditModalTitle').textContent = 'Add Talent / Contractor';
+                    document.getElementById('editVendorId').value = '';
+                    document.getElementById('editVendorRef').value = '';
+                    document.getElementById('editVendorName').value = '';
+                    document.getElementById('editVendorEmail').value = '';
+                    document.getElementById('editVendorPhone').value = '';
+                    document.getElementById('editVendorRole').value = 'photographer_videographer';
+                    document.getElementById('editVendorStatus').value = 'active';
+                    document.getElementById('editVendorIdType').value = 'W-9';
+                    document.getElementById('editVendorTaxId').value = '';
+                    document.getElementById('editVendorStreet').value = '';
+                    document.getElementById('editVendorCity').value = '';
+                    document.getElementById('editVendorState').value = '';
+                    document.getElementById('editVendorZip').value = '';
+                    document.getElementById('editVendorBank').value = '';
+                    document.getElementById('editVendorCurr').value = 'NGN';
+                    document.getElementById('editVendorAccNum').value = '';
+                    document.getElementById('editVendorAccName').value = '';
+                    document.getElementById('editVendorEmergName').value = '';
+                    document.getElementById('editVendorEmergRel').value = '';
+                    document.getElementById('editVendorEmergPhone').value = '';
+
+                    var modal = document.getElementById('vendorEditModal');
+                    if (modal) modal.style.display = 'flex';
+                }
+
+                function editVendorDetails(v) {
+                    if (!v) return;
+                    document.getElementById('vendorEditModalTitle').textContent = 'Edit Talent: ' + (v.full_name || 'Vendor');
+                    document.getElementById('editVendorId').value = v.id || '';
+                    document.getElementById('editVendorRef').value = v.reference_code || '';
+                    document.getElementById('editVendorName').value = v.full_name || '';
+                    document.getElementById('editVendorEmail').value = v.email || '';
+                    document.getElementById('editVendorPhone').value = v.phone || '';
+                    document.getElementById('editVendorRole').value = v.role || 'photographer_videographer';
+                    document.getElementById('editVendorStatus').value = v.status || 'active';
+                    document.getElementById('editVendorIdType').value = v.id_type || 'W-9';
+                    document.getElementById('editVendorTaxId').value = v.tax_id || '';
+                    document.getElementById('editVendorStreet').value = v.street_address || v.address || '';
+                    document.getElementById('editVendorCity').value = v.city || '';
+                    document.getElementById('editVendorState').value = v.state || '';
+                    document.getElementById('editVendorZip').value = v.zip || '';
+                    document.getElementById('editVendorBank').value = v.bank_name || '';
+                    document.getElementById('editVendorCurr').value = v.currency || 'NGN';
+                    document.getElementById('editVendorAccNum').value = v.account_number || '';
+                    document.getElementById('editVendorAccName').value = v.account_name || v.full_name || '';
+                    document.getElementById('editVendorEmergName').value = v.emergency_name || '';
+                    document.getElementById('editVendorEmergRel').value = v.emergency_relationship || '';
+                    document.getElementById('editVendorEmergPhone').value = v.emergency_phone || '';
+
+                    var modal = document.getElementById('vendorEditModal');
+                    if (modal) modal.style.display = 'flex';
+                }
+
+                function closeVendorEditModal() {
+                    var modal = document.getElementById('vendorEditModal');
+                    if (modal) modal.style.display = 'none';
+                }
+
+                // 3. Create / Edit Gig Modal
+                function openNewGigModal() {
+                    document.getElementById('gigEditModalTitle').textContent = 'Create Production Shoot';
+                    document.getElementById('editGigId').value = '';
+                    document.getElementById('editGigTitle').value = '';
+                    document.getElementById('editGigClient').value = 'Falhen Media Production';
+                    document.getElementById('editGigAssignedRef').value = '';
+                    document.getElementById('editGigDate').value = new Date().toISOString().split('T')[0];
+                    document.getElementById('editGigCallTime').value = '08:00 AM';
+                    document.getElementById('editGigWrapTime').value = '06:00 PM';
+                    document.getElementById('editGigLocation').value = 'Studio A - 6 Olorunfunmi Street, Pedro, Gbagada, Lagos';
+                    document.getElementById('editGigRole').value = 'Lead Videographer & Director of Photography';
+                    document.getElementById('editGigRate').value = '₦180,000 / day';
+                    document.getElementById('editGigStatus').value = 'assigned';
+                    document.getElementById('editGigDirector').value = 'Oluwatosin Ligali (Executive Producer)';
+                    document.getElementById('editGigDirectorPhone').value = '08027487449';
+                    document.getElementById('editGigDeliverables').value = 'Pending Shoot Execution';
+                    document.getElementById('editGigPayment').value = 'Pending';
+                    document.getElementById('editGigNotes').value = '';
+
+                    var modal = document.getElementById('gigEditModal');
+                    if (modal) modal.style.display = 'flex';
+                }
+
+                function openNewGigModalForVendor(vendorRef, vendorName) {
+                    openNewGigModal();
+                    var selectEl = document.getElementById('editGigAssignedRef');
+                    if (selectEl) selectEl.value = vendorRef;
+                    document.getElementById('gigEditModalTitle').textContent = 'Book Shoot with ' + vendorName;
+                }
+
+                function editGigDetails(g) {
+                    if (!g) return;
+                    document.getElementById('gigEditModalTitle').textContent = 'Edit Shoot: ' + (g.title || g.id);
+                    document.getElementById('editGigId').value = g.id || '';
+                    document.getElementById('editGigTitle').value = g.title || '';
+                    document.getElementById('editGigClient').value = g.client || '';
+                    document.getElementById('editGigAssignedRef').value = g.assigned_to_ref || '';
+                    document.getElementById('editGigDate').value = g.shoot_date || '';
+                    document.getElementById('editGigCallTime').value = g.call_time || '08:00 AM';
+                    document.getElementById('editGigWrapTime').value = g.wrap_time || '06:00 PM';
+                    document.getElementById('editGigLocation').value = g.location || '';
+                    document.getElementById('editGigRole').value = g.role || '';
+                    document.getElementById('editGigRate').value = g.day_rate || '';
+                    document.getElementById('editGigStatus').value = g.status || 'assigned';
+                    document.getElementById('editGigDirector').value = g.director || '';
+                    document.getElementById('editGigDirectorPhone').value = g.director_phone || '';
+                    document.getElementById('editGigDeliverables').value = g.deliverables_status || 'Pending Shoot Execution';
+                    document.getElementById('editGigPayment').value = g.payment_status || 'Pending';
+                    document.getElementById('editGigNotes').value = g.notes || '';
+
+                    var modal = document.getElementById('gigEditModal');
+                    if (modal) modal.style.display = 'flex';
+                }
+
+                function closeGigEditModal() {
+                    var modal = document.getElementById('gigEditModal');
+                    if (modal) modal.style.display = 'none';
+                }
+
+                // 4. Quick Assign Modal
+                function openQuickAssignModal(vendorRef, vendorName) {
+                    var modal = document.getElementById('quickAssignModal');
+                    var refSelect = document.getElementById('quickAssignVendorRef');
+                    var subTitle = document.getElementById('quickAssignSubtitle');
+                    if (refSelect && vendorRef) refSelect.value = vendorRef;
+                    if (subTitle && vendorName) {
+                        subTitle.textContent = 'Assign an upcoming production shoot to ' + vendorName + ' (' + vendorRef + ').';
+                    }
+                    if (modal) modal.style.display = 'flex';
+                }
+
+                function openAssignTalentToGig(gigId, gigTitle) {
+                    var modal = document.getElementById('quickAssignModal');
+                    var gigSelect = document.getElementById('quickAssignGigId');
+                    var subTitle = document.getElementById('quickAssignSubtitle');
+                    if (gigSelect && gigId) gigSelect.value = gigId;
+                    if (subTitle && gigTitle) {
+                        subTitle.textContent = 'Select contractor talent to assign to "' + gigTitle + '" (' + gigId + ').';
+                    }
+                    if (modal) modal.style.display = 'flex';
+                }
+
+                function closeQuickAssignModal() {
+                    var modal = document.getElementById('quickAssignModal');
+                    if (modal) modal.style.display = 'none';
+                }
+
+                // 5. Delete Gig Modal
+                function openDeleteGigModal(gigId, gigTitle) {
+                    var modal = document.getElementById('deleteGigModal');
+                    var idInput = document.getElementById('deleteGigTargetId');
+                    var titleEl = document.getElementById('deleteGigTargetTitle');
+                    if (idInput) idInput.value = gigId;
+                    if (titleEl) titleEl.textContent = gigTitle + ' (' + gigId + ')';
+                    if (modal) modal.style.display = 'flex';
+                }
+
+                function closeDeleteGigModal() {
+                    var modal = document.getElementById('deleteGigModal');
+                    if (modal) modal.style.display = 'none';
+                }
+
+                // 6. Delete Vendor Modal
+                function openDeleteVendorModal(vendorId, vendorName) {
+                    var modal = document.getElementById('deleteVendorModal');
+                    var idInput = document.getElementById('deleteVendorTargetId');
+                    var nameEl = document.getElementById('deleteVendorTargetName');
+                    if (idInput) idInput.value = vendorId;
+                    if (nameEl) nameEl.textContent = vendorName;
+                    if (modal) modal.style.display = 'flex';
+                }
+
+                function closeDeleteVendorModal() {
+                    var modal = document.getElementById('deleteVendorModal');
+                    if (modal) modal.style.display = 'none';
+                }
+
+                // Backdrop click listener to close modals
+                document.addEventListener('DOMContentLoaded', function() {
+                    var modals = ['vendorDossierModal', 'vendorEditModal', 'gigEditModal', 'quickAssignModal', 'deleteGigModal', 'deleteVendorModal'];
+                    modals.forEach(function(mId) {
+                        var m = document.getElementById(mId);
+                        if (m) {
+                            m.addEventListener('click', function(e) {
+                                if (e.target === m) {
+                                    m.style.display = 'none';
                                 }
                             });
                         }
                     });
-                    </script>
-                </div>
+                });
+                </script>
+
 
             <!-- OTHER SECTIONS FALLBACK MANAGER -->
             <?php else: ?>
