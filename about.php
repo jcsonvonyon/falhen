@@ -8,6 +8,8 @@ $pageTitle = "About Us — Falhen Media";
 $rawMembers = getTeamMembers();
 $teamMembers = [];
 foreach ($rawMembers as $m) {
+    $bioWords = preg_split('/\s+/', trim($m['bio'] ?? ''));
+    $shortBio = (count($bioWords) > 15) ? implode(' ', array_slice($bioWords, 0, 15)) . '...' : ($m['bio'] ?? '');
     $teamMembers[] = [
         'id' => $m['id'],
         'name' => $m['name'],
@@ -15,7 +17,7 @@ foreach ($rawMembers as $m) {
         'dept' => $m['department'],
         'location' => $m['location'],
         'exp' => $m['experience'],
-        'bio' => $m['bio'],
+        'bio' => $shortBio,
         'img' => $m['image'],
         'skills' => $m['skills'] ?? []
     ];
@@ -131,7 +133,7 @@ foreach ($rawMembers as $m) {
 
         .about-hero-title {
             font-size: 4.2rem;
-            font-weight: 800;
+            font-weight: 700;
             color: #ffffff;
             letter-spacing: -1.5px;
             margin: 4px 0 14px 0;
@@ -160,11 +162,11 @@ foreach ($rawMembers as $m) {
         }
 
         .who-we-are-title {
-            font-size: 2.8rem;
-            font-weight: 800;
+            font-size: 2.24rem;
+            font-weight: 700;
             color: #ffffff;
             margin: 4px 0 16px 0;
-            line-height: 1.1;
+            line-height: 1.15;
             letter-spacing: -0.5px;
         }
 
@@ -234,8 +236,8 @@ foreach ($rawMembers as $m) {
         }
 
         .section-header-title {
-            font-size: 2.8rem;
-            font-weight: 800;
+            font-size: 2.2rem;
+            font-weight: 700;
             color: #ffffff;
             margin: 4px 0 10px 0;
             line-height: 1.1;
@@ -294,14 +296,14 @@ foreach ($rawMembers as $m) {
         }
 
         .value-card-title {
-            font-size: 1.3rem;
-            font-weight: 800;
+            font-size: 1.1rem;
+            font-weight: 700;
             color: #ffffff;
             margin-bottom: 12px;
         }
 
         .value-card-desc {
-            font-size: 0.92rem;
+            font-size: 0.8rem;
             color: #a1a1aa;
             line-height: 1.6;
             margin: 0;
@@ -405,7 +407,7 @@ foreach ($rawMembers as $m) {
 
         .about-card-name {
             font-size: 1.15rem;
-            font-weight: 800;
+            font-weight: 700;
             color: #ffffff;
             margin: 0;
         }
@@ -463,7 +465,7 @@ foreach ($rawMembers as $m) {
 
         .about-contact-title {
             font-size: 2.6rem;
-            font-weight: 800;
+            font-weight: 700;
             color: #ffffff;
             margin: 4px 0 10px 0;
             line-height: 1.1;
@@ -580,7 +582,7 @@ foreach ($rawMembers as $m) {
             background: #dc2626;
             color: #ffffff;
             font-size: 1rem;
-            font-weight: 800;
+            font-weight: 700;
             padding: 16px;
             border-radius: 12px;
             border: none;
