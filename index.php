@@ -254,8 +254,8 @@ $heroVideoUrl = 'https://www.youtube.com/embed/' . $heroYtId;
 <section class="section" id="portfolio" style="background: #000000; border-top: 1px solid rgba(255, 255, 255, 0.08);">
     <div class="container">
         <!-- Section Header -->
-        <div class="section-title-wrapper" style="margin-bottom: 30px;">
-            <h2 class="section-title" style="font-size: 2.75rem; font-weight: 800;">Stories We've <span style="color: #dc2626;">Told.</span></h2>
+        <div class="section-title-wrapper" style="margin-bottom: 30px; text-align: left;">
+            <h2 class="section-title" style="font-size: 2.75rem; font-weight: 800; text-align: left;">Stories We've <span style="color: #dc2626;">Told.</span></h2>
         </div>
 
         <!-- Dynamic Filter Pill Tabs -->
