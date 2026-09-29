@@ -488,98 +488,235 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Testimonials Carousel Handler
+  // Testimonials Infinite Center-Active Carousel with Auto-Play
   const testiWrapper = document.querySelector('.testimonials-wrapper');
   const testiGrid = document.getElementById('testimonials-grid');
   const testiPrevBtn = document.getElementById('testi-prev-btn');
   const testiNextBtn = document.getElementById('testi-next-btn');
-  const testiDots = document.querySelectorAll('.testimonial-dots .dot');
-  const testiCards = document.querySelectorAll('.testimonial-card');
+  const testiDotsContainer = document.getElementById('testimonial-dots') || document.querySelector('.testimonial-dots');
 
-  if (testiWrapper && testiCards.length > 0) {
-    let currentTestiIndex = 0; // Default to first testimonial card
+  if (testiWrapper && testiGrid) {
+    const rawCards = Array.from(testiGrid.querySelectorAll('.testimonial-card'));
+    const totalOriginals = rawCards.length;
 
-    const activateTestimonial = (index) => {
-      if (index < 0) index = testiCards.length - 1;
-      if (index >= testiCards.length) index = 0;
-      currentTestiIndex = index;
+    if (totalOriginals > 0) {
+      // 1. Tag raw original cards with their real indices (0..N-1)
+      rawCards.forEach((c, idx) => {
+        c.setAttribute('data-real-index', idx);
+      });
 
-      testiCards.forEach((card, idx) => {
-        if (idx === currentTestiIndex) {
-          card.classList.add('featured-card', 'active');
+      // 2. Clone sets: 1 set before, 1 set after for seamless infinite scrolling
+      const beforeClones = rawCards.map(c => {
+        const clone = c.cloneNode(true);
+        clone.classList.remove('active', 'featured-card');
+        clone.setAttribute('data-is-clone', 'true');
+        return clone;
+      });
+      const afterClones = rawCards.map(c => {
+        const clone = c.cloneNode(true);
+        clone.classList.remove('active', 'featured-card');
+        clone.setAttribute('data-is-clone', 'true');
+        return clone;
+      });
+
+      beforeClones.forEach(c => testiGrid.insertBefore(c, testiGrid.firstChild));
+      afterClones.forEach(c => testiGrid.appendChild(c));
+
+      // Query all cards including clones (Total = 3 * totalOriginals)
+      let allCards = Array.from(testiGrid.querySelectorAll('.testimonial-card'));
+
+      // Start with item index 1 active in middle set (matching reference screenshot)
+      let currentRealIndex = 1;
+      let currentDomIndex = totalOriginals + currentRealIndex;
+      let isAnimating = false;
+      let autoplayTimer = null;
+
+      // Update active classes and navigation dots
+      const updateVisualState = (domIdx, realIdx) => {
+        allCards.forEach((card, i) => {
+          if (i === domIdx) {
+            card.classList.add('active', 'featured-card');
+          } else {
+            card.classList.remove('active', 'featured-card');
+          }
+        });
+
+        const dots = testiDotsContainer ? testiDotsContainer.querySelectorAll('.dot') : [];
+        dots.forEach((dot) => {
+          const dotIdx = parseInt(dot.getAttribute('data-index'), 10);
+          dot.classList.toggle('active', dotIdx === realIdx);
+        });
+      };
+
+      // Center card precisely within testiWrapper
+      const centerCardAt = (domIdx, animate = true) => {
+        const targetCard = allCards[domIdx];
+        if (!targetCard) return;
+
+        const wrapperWidth = testiWrapper.clientWidth;
+        const cardWidth = targetCard.offsetWidth;
+        const cardLeft = targetCard.offsetLeft;
+        const targetX = (wrapperWidth / 2) - (cardLeft + cardWidth / 2);
+
+        if (animate) {
+          testiGrid.style.transition = 'transform 0.55s cubic-bezier(0.25, 1, 0.5, 1)';
         } else {
-          card.classList.remove('featured-card', 'active');
+          testiGrid.style.transition = 'none';
+        }
+        testiGrid.style.transform = `translateX(${targetX}px)`;
+      };
+
+      // Navigate to a specific DOM card
+      const goToDomIndex = (targetDomIdx, animate = true) => {
+        if (targetDomIdx < 0 || targetDomIdx >= allCards.length) return;
+        isAnimating = animate;
+        currentDomIndex = targetDomIdx;
+        const realIdxAttr = allCards[currentDomIndex].getAttribute('data-real-index');
+        currentRealIndex = parseInt(realIdxAttr, 10);
+        if (isNaN(currentRealIndex)) {
+          currentRealIndex = ((currentDomIndex % totalOriginals) + totalOriginals) % totalOriginals;
+        }
+
+        updateVisualState(currentDomIndex, currentRealIndex);
+        centerCardAt(currentDomIndex, animate);
+      };
+
+      // Seamless infinite jump when transition completes
+      testiGrid.addEventListener('transitionend', (e) => {
+        if (e.target !== testiGrid) return;
+        isAnimating = false;
+
+        // If inside prepended clones (< totalOriginals), jump forward to middle set
+        if (currentDomIndex < totalOriginals) {
+          currentDomIndex += totalOriginals;
+          centerCardAt(currentDomIndex, false);
+          updateVisualState(currentDomIndex, currentRealIndex);
+        }
+        // If inside appended clones (>= 2 * totalOriginals), jump backward to middle set
+        else if (currentDomIndex >= 2 * totalOriginals) {
+          currentDomIndex -= totalOriginals;
+          centerCardAt(currentDomIndex, false);
+          updateVisualState(currentDomIndex, currentRealIndex);
         }
       });
 
-      testiDots.forEach((dot, idx) => {
-        if (idx === currentTestiIndex) {
-          dot.classList.add('active');
-        } else {
-          dot.classList.remove('active');
-        }
-      });
+      const nextTestimonial = () => {
+        if (isAnimating) return;
+        goToDomIndex(currentDomIndex + 1, true);
+      };
 
-      const activeCard = testiCards[currentTestiIndex];
-      if (activeCard) {
-        let targetLeft = 0;
-        if (currentTestiIndex === 0) {
-          targetLeft = 0;
-        } else if (currentTestiIndex >= testiCards.length - 1) {
-          targetLeft = testiWrapper.scrollWidth - testiWrapper.clientWidth;
-        } else {
-          targetLeft = activeCard.offsetLeft;
-        }
+      const prevTestimonial = () => {
+        if (isAnimating) return;
+        goToDomIndex(currentDomIndex - 1, true);
+      };
 
-        testiWrapper.scrollTo({
-          left: targetLeft,
-          behavior: 'smooth'
+      // Auto-play setup (every 4.5 seconds)
+      const startAutoplay = () => {
+        stopAutoplay();
+        autoplayTimer = setInterval(() => {
+          nextTestimonial();
+        }, 4500);
+      };
+
+      const stopAutoplay = () => {
+        if (autoplayTimer) {
+          clearInterval(autoplayTimer);
+          autoplayTimer = null;
+        }
+      };
+
+      // Next / Prev button events
+      if (testiNextBtn) {
+        testiNextBtn.addEventListener('click', (e) => {
+          e.preventDefault();
+          nextTestimonial();
+          startAutoplay();
         });
       }
-    };
 
-    if (testiPrevBtn) {
-      testiPrevBtn.addEventListener('click', () => {
-        activateTestimonial(currentTestiIndex - 1);
+      if (testiPrevBtn) {
+        testiPrevBtn.addEventListener('click', (e) => {
+          e.preventDefault();
+          prevTestimonial();
+          startAutoplay();
+        });
+      }
+
+      // Dot click events
+      if (testiDotsContainer) {
+        testiDotsContainer.addEventListener('click', (e) => {
+          const dot = e.target.closest('.dot');
+          if (!dot) return;
+          const targetRealIdx = parseInt(dot.getAttribute('data-index'), 10);
+          if (!isNaN(targetRealIdx)) {
+            goToDomIndex(totalOriginals + targetRealIdx, true);
+            startAutoplay();
+          }
+        });
+      }
+
+      // Card click event delegation (clicking any card centers and activates it)
+      testiGrid.addEventListener('click', (e) => {
+        const card = e.target.closest('.testimonial-card');
+        if (!card) return;
+        const targetIdx = allCards.indexOf(card);
+        if (targetIdx !== -1 && targetIdx !== currentDomIndex) {
+          goToDomIndex(targetIdx, true);
+          startAutoplay();
+        }
       });
-    }
 
-    if (testiNextBtn) {
-      testiNextBtn.addEventListener('click', () => {
-        activateTestimonial(currentTestiIndex + 1);
-      });
-    }
+      // Pause on hover
+      testiWrapper.addEventListener('mouseenter', stopAutoplay);
+      testiWrapper.addEventListener('mouseleave', startAutoplay);
 
-    testiDots.forEach((dot, idx) => {
-      dot.addEventListener('click', () => {
-        activateTestimonial(idx);
-      });
-    });
+      // Touch / Swipe handling for mobile & tablets
+      let touchStartX = 0;
+      let touchEndX = 0;
 
-    testiCards.forEach((card, idx) => {
-      card.addEventListener('click', () => {
-        activateTestimonial(idx);
-      });
-    });
+      testiWrapper.addEventListener('touchstart', (e) => {
+        if (e.touches && e.touches.length > 0) {
+          touchStartX = e.touches[0].clientX;
+          touchEndX = touchStartX;
+          stopAutoplay();
+        }
+      }, { passive: true });
 
-    testiWrapper.addEventListener('scroll', () => {
-      if (window.innerWidth <= 768) {
-        const scrollPos = testiWrapper.scrollLeft;
-        const cardWidth = testiWrapper.clientWidth;
-        if (cardWidth > 0) {
-          const newIndex = Math.round(scrollPos / cardWidth);
-          if (newIndex !== currentTestiIndex && newIndex >= 0 && newIndex < testiCards.length) {
-            currentTestiIndex = newIndex;
-            testiCards.forEach((card, idx) => {
-              card.classList.toggle('active', idx === currentTestiIndex);
-            });
-            testiDots.forEach((dot, idx) => {
-              dot.classList.toggle('active', idx === currentTestiIndex);
-            });
+      testiWrapper.addEventListener('touchmove', (e) => {
+        if (e.touches && e.touches.length > 0) {
+          touchEndX = e.touches[0].clientX;
+        }
+      }, { passive: true });
+
+      testiWrapper.addEventListener('touchend', () => {
+        const deltaX = touchStartX - touchEndX;
+        if (Math.abs(deltaX) > 40) {
+          if (deltaX > 0) {
+            nextTestimonial();
+          } else {
+            prevTestimonial();
           }
         }
-      }
-    });
+        startAutoplay();
+      }, { passive: true });
+
+      // Handle window resize
+      let resizeTimer = null;
+      window.addEventListener('resize', () => {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(() => {
+          centerCardAt(currentDomIndex, false);
+        }, 80);
+      });
+
+      // Initial position on load
+      goToDomIndex(totalOriginals + 1, false);
+      startAutoplay();
+
+      window.addEventListener('load', () => {
+        centerCardAt(currentDomIndex, false);
+      });
+    }
   }
 
   // 12. Mobile Services Swiping Carousel Handler

@@ -6093,17 +6093,96 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                     <i class="fa-solid fa-pencil" style="font-size: 0.75rem;"></i> Edit
                                 </a>
 
-                                <form action="index.php?section=testimonials" method="POST" onsubmit="return confirm('Are you sure you want to delete this testimonial?');" style="margin: 0;">
-                                    <input type="hidden" name="action" value="delete_testimonial_item">
-                                    <input type="hidden" name="id" value="<?php echo $tItem['id']; ?>">
-                                    <button type="submit" style="background: none; border: none; color: #94a3b8; font-size: 0.82rem; font-weight: 500; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; padding: 0;" onmouseover="this.style.color='#dc2626'" onmouseout="this.style.color='#94a3b8'">
-                                        <i class="fa-solid fa-trash-can" style="font-size: 0.75rem;"></i> Delete
-                                    </button>
-                                </form>
+                                <button type="button" onclick="openDeleteTestimonialModal(<?php echo (int)$tItem['id']; ?>, '<?php echo htmlspecialchars(addslashes($tItem['name']), ENT_QUOTES); ?>')" style="background: none; border: none; color: #94a3b8; font-size: 0.82rem; font-weight: 500; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; padding: 0;" onmouseover="this.style.color='#dc2626'" onmouseout="this.style.color='#94a3b8'">
+                                    <i class="fa-solid fa-trash-can" style="font-size: 0.75rem;"></i> Delete
+                                </button>
                             </div>
                         </div>
                     <?php endforeach; ?>
                 </div>
+
+                <!-- Custom Delete Testimonial Modal Popup -->
+                <div id="deleteTestimonialModal" style="display: none; position: fixed; inset: 0; z-index: 999999; background: rgba(15, 23, 42, 0.65); backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px); align-items: center; justify-content: center; padding: 20px;">
+                    <div style="background: #ffffff; border-radius: 20px; width: 100%; max-width: 440px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35); overflow: hidden; border: 1px solid #e2e8f0; position: relative;">
+                        <!-- Close X button -->
+                        <button type="button" onclick="closeDeleteTestimonialModal()" style="position: absolute; top: 16px; right: 16px; background: none; border: none; color: #94a3b8; font-size: 1.1rem; cursor: pointer; padding: 4px; display: flex; align-items: center; justify-content: center; border-radius: 6px;" onmouseover="this.style.color='#0f172a'" onmouseout="this.style.color='#94a3b8'">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+
+                        <!-- Modal Body -->
+                        <div style="padding: 32px 28px 24px 28px; text-align: center;">
+                            <div style="width: 56px; height: 56px; border-radius: 50%; background: #fee2e2; color: #dc2626; display: flex; align-items: center; justify-content: center; font-size: 1.35rem; margin: 0 auto 18px auto; box-shadow: 0 0 0 8px #fef2f2;">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </div>
+                            <h3 style="font-size: 1.25rem; font-weight: 800; color: #0f172a; margin: 0 0 8px 0; line-height: 1.3;">
+                                Delete Testimonial?
+                            </h3>
+                            <p style="font-size: 0.92rem; color: #64748b; margin: 0 0 12px 0; line-height: 1.5;">
+                                Are you sure you want to delete this testimonial?
+                            </p>
+                            <div id="deleteModalClientName" style="font-size: 0.92rem; font-weight: 700; color: #0f172a; margin: 0 auto 16px auto; background: #f8fafc; padding: 10px 14px; border-radius: 10px; border: 1px dashed #cbd5e1; word-break: break-word; max-width: 90%;">
+                            </div>
+                            <p style="font-size: 0.8rem; color: #94a3b8; margin: 0; line-height: 1.4;">
+                                This action cannot be undone and will immediately remove this testimonial from your live website.
+                            </p>
+                        </div>
+
+                        <!-- Modal Footer Action Buttons -->
+                        <div style="background: #f8fafc; padding: 16px 24px; border-top: 1px solid #f1f5f9; display: flex; gap: 12px; justify-content: flex-end;">
+                            <button type="button" onclick="closeDeleteTestimonialModal()" style="flex: 1; padding: 11px 18px; border-radius: 10px; border: 1px solid #cbd5e1; background: #ffffff; color: #475569; font-weight: 600; font-size: 0.88rem; cursor: pointer; transition: all 0.15s ease;" onmouseover="this.style.background='#f1f5f9'; this.style.color='#0f172a';" onmouseout="this.style.background='#ffffff'; this.style.color='#475569';">
+                                Cancel
+                            </button>
+                            <form action="index.php?section=testimonials" method="POST" style="margin: 0; flex: 1;">
+                                <input type="hidden" name="action" value="delete_testimonial_item">
+                                <input type="hidden" name="id" id="deleteModalTestimonialId" value="">
+                                <button type="submit" style="width: 100%; padding: 11px 18px; border-radius: 10px; border: none; background: #dc2626; color: #ffffff; font-weight: 700; font-size: 0.88rem; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 7px; box-shadow: 0 4px 12px rgba(220, 38, 38, 0.25); transition: all 0.15s ease;" onmouseover="this.style.background='#b91c1c';" onmouseout="this.style.background='#dc2626';">
+                                    <i class="fa-solid fa-trash-can" style="font-size: 0.8rem;"></i> Yes, Delete
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <script>
+                function openDeleteTestimonialModal(id, clientName) {
+                    var modal = document.getElementById('deleteTestimonialModal');
+                    var inputId = document.getElementById('deleteModalTestimonialId');
+                    var nameEl = document.getElementById('deleteModalClientName');
+                    if (modal && inputId) {
+                        inputId.value = id;
+                        if (nameEl) {
+                            nameEl.textContent = clientName ? clientName : 'Selected Testimonial';
+                        }
+                        modal.style.display = 'flex';
+                    }
+                }
+
+                function closeDeleteTestimonialModal() {
+                    var modal = document.getElementById('deleteTestimonialModal');
+                    if (modal) {
+                        modal.style.display = 'none';
+                    }
+                }
+
+                // Close when clicking overlay backdrop
+                document.addEventListener('DOMContentLoaded', function() {
+                    var modal = document.getElementById('deleteTestimonialModal');
+                    if (modal) {
+                        modal.addEventListener('click', function(e) {
+                            if (e.target === modal) {
+                                closeDeleteTestimonialModal();
+                            }
+                        });
+                    }
+                });
+
+                // Close on Escape key
+                document.addEventListener('keydown', function(e) {
+                    if (e.key === 'Escape') {
+                        closeDeleteTestimonialModal();
+                    }
+                });
+                </script>
 
             <!-- SECTION: TEAM MANAGEMENT -->
             <?php elseif ($activeSection === 'team'): 

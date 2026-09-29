@@ -113,7 +113,7 @@ $heroDirectVideo = $settings['hero_direct_video_url'] ?? '';
 <section class="section" id="services">
     <div class="container">
         <div class="section-title-wrapper" style="text-align: center;">
-            <h2 class="section-title" style="font-size: 2.75rem; font-weight: 800;">Our Services</h2>
+            <h2 class="section-title" style="font-size: 2.75rem; font-weight: 700;">Our Services</h2>
             <p class="section-subtitle" style="max-width: 620px; margin: 0 auto; color: var(--text-muted); font-size: 1.05rem;">From concept to completion, we bring your vision to life with creativity and precision.</p>
         </div>
         
@@ -354,10 +354,10 @@ $heroVideoUrl = 'https://www.youtube.com/embed/' . $heroYtId;
             <div class="testimonials-grid" id="testimonials-grid">
                 <?php 
                 $dynamicTestimonials = getTestimonialsRepo();
+                $initActive = 1; // Center card (Sprint Series Brand Film) active by default as shown in reference
                 foreach ($dynamicTestimonials as $idx => $tCard):
                 ?>
-                    <div class="testimonial-card <?php echo ($idx === 0) ? 'active' : ''; ?>">
-                        <div class="testimonial-quote-icon">“</div>
+                    <div class="testimonial-card <?php echo ($idx === $initActive) ? 'active featured-card' : ''; ?>" data-real-index="<?php echo $idx; ?>">
                         <p class="testimonial-quote">"<?php echo htmlspecialchars($tCard['quote']); ?>"</p>
                         <?php if (!empty($tCard['project'])): ?>
                             <div class="testimonial-tag-pill"><?php echo htmlspecialchars($tCard['project']); ?></div>
@@ -380,15 +380,15 @@ $heroVideoUrl = 'https://www.youtube.com/embed/' . $heroYtId;
         <div class="testimonial-controls-bar">
             <div class="testimonial-nav-btns">
                 <button class="nav-arrow-btn" id="testi-prev-btn" aria-label="Previous Testimonial"><i class="fa-solid fa-chevron-left"></i></button>
-                <div class="testimonial-dots">
-                    <span class="dot active"></span>
-                    <span class="dot"></span>
-                    <span class="dot"></span>
-                    <span class="dot"></span>
+                <div class="testimonial-dots" id="testimonial-dots">
+                    <?php foreach ($dynamicTestimonials as $idx => $tCard): ?>
+                        <span class="dot <?php echo ($idx === $initActive) ? 'active' : ''; ?>" data-index="<?php echo $idx; ?>"></span>
+                    <?php endforeach; ?>
                 </div>
                 <button class="nav-arrow-btn" id="testi-next-btn" aria-label="Next Testimonial"><i class="fa-solid fa-chevron-right"></i></button>
             </div>
         </div>
+    </div>
 </section>
 
 

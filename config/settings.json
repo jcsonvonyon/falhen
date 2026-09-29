@@ -384,33 +384,33 @@
     "testimonials_items": [
         {
             "id": 1,
-            "name": "Marcus Webbs",
-            "role": "Head of Marketing",
-            "company": "RedBull EMEA",
-            "project": "Energy Unleashed Campaign",
-            "avatar": "https://res.cloudinary.com/pnabfi91/image/upload/v1786723593/falhen/testimonials/u9k6yagz29txawt5o00l.jpg",
+            "name": "Dr. Modupe Shokunbi",
+            "role": "President",
+            "company": "Ibadan College of Medicine- North America",
+            "project": "ICOMA-NA 25th Anniversary",
+            "avatar": "https://res.cloudinary.com/pnabfi91/image/upload/v1790708476/falhen/testimonials/etstfejqtmyhviuwpi07.jpg",
             "rating": 5,
-            "quote": "Falhen Media delivered a campaign that exceeded every benchmark we set. The team understood our brand DNA from day one and translated it into visuals that literally stopped people mid-scroll. Our engagement numbers tripled."
+            "quote": "\u201cOn behalf of the Executive Committee and members of ICOMAA North America, I sincerely appreciate the outstanding work you did covering our 25th Anniversary Gala. Your professionalism, creativity, and attention to detail were evident throughout the event. From capturing the excitement of our guests\u2019 arrival to preserving the memorable moments during the scientific sessions, awards presentations, speeches, and Gala celebrations, you helped tell the story truly"
         },
         {
             "id": 2,
-            "name": "Serena Okafor",
-            "role": "Creative Director",
-            "company": "Nike Africa",
-            "project": "Sprint Series Brand Film",
-            "avatar": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=150&q=80",
+            "name": "Dr. Glenn Miller",
+            "role": "Business Adivsory Service Manager",
+            "company": "Sunshi",
+            "project": "",
+            "avatar": "https://res.cloudinary.com/pnabfi91/image/upload/v1790708385/falhen/testimonials/vphzmxsztpw4gwuis9oo.jpg",
             "rating": 5,
-            "quote": "Working with Falhen was genuinely one of the best creative decisions we made this year. They don't just shoot video \u2014 they engineer emotion. The final film had our entire team in tears. In the best way."
+            "quote": "Falhen Production is a trusted partner within our network that supports entrepreneurs with marketing strategy, content development, and production. The team is truly passionate about the services they provide, ensuring all strategic objectives are seamlessly achieved"
         },
         {
             "id": 3,
-            "name": "James Thornton",
-            "role": "VP of Content",
-            "company": "HBO Original",
-            "project": "Dark Horizons Series Teaser",
-            "avatar": "https://res.cloudinary.com/pnabfi91/image/upload/v1786723628/falhen/testimonials/icgorikgwft3quxrt0lk.jpg",
+            "name": "Dexter Dale",
+            "role": "Creative Service",
+            "company": "Starlink Entertainment",
+            "project": "Sprint Series Brand Film",
+            "avatar": "https://res.cloudinary.com/pnabfi91/image/upload/v1790708435/falhen/testimonials/bbakk49sjp8konziea52.jpg",
             "rating": 5,
-            "quote": "The teaser Falhen produced for Dark Horizons generated more pre-release buzz than anything we'd done in five years. Cinematic, punchy, and perfectly on brief. They are our go-to production partner now."
+            "quote": "Working with Falhen was genuinely one of the best creative decisions we made this year. They don't just shoot video \u2014 they engineer emotion. The final film had our entire team in tears. In the best way."
         },
         {
             "id": 4,
@@ -421,26 +421,6 @@
             "avatar": "https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&w=150&q=80",
             "rating": 5,
             "quote": "From briefing to final delivery, the Falhen team was exceptional. They pushed back on ideas that weren't strong enough and brought solutions we hadn't imagined. The launch film is still being shared organically two months later."
-        },
-        {
-            "id": 5,
-            "name": "Luca Ferrari",
-            "role": "Event Director",
-            "company": "Ferrari Private Events",
-            "project": "Annual Gala Highlight Reel",
-            "avatar": "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=150&q=80",
-            "rating": 5,
-            "quote": "The same-day highlight reel they produced for our annual gala was breathtaking. Guests were watching it at the closing dinner. I have never seen a production team move that fast without sacrificing a single frame of quality."
-        },
-        {
-            "id": 6,
-            "name": "Aisha Diallo",
-            "role": "Founder",
-            "company": "Diallo Cosmetics",
-            "project": "Brand Identity Video Series",
-            "avatar": "https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?auto=format&fit=crop&w=150&q=80",
-            "rating": 5,
-            "quote": "As a growing brand, we needed content that could compete with the big players. Falhen made us look like a global company on a startup budget. Our Instagram reels from that shoot still perform better than anything we've posted since."
         }
     ],
     "portfolio_items": [
@@ -1215,12 +1195,13 @@
             "full_name": "Oluwatosin Ligali",
             "date": "2026-09-27",
             "clock_in": "12:02 AM",
-            "clock_out": null,
+            "clock_out": "11:59 PM",
             "break_start": null,
             "break_end": null,
-            "duration": "In Progress",
-            "status": "Clocked In",
-            "work_state": "working"
+            "duration": "23 hrs 57 mins",
+            "status": "Present",
+            "work_state": "completed",
+            "auto_clocked_out": true
         },
         {
             "id": 13,
