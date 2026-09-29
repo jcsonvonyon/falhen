@@ -342,54 +342,7 @@ $heroVideoUrl = 'https://www.youtube.com/embed/' . $heroYtId;
     </div>
 </section>
 
-<!-- Testimonials Section -->
-<section class="section" id="testimonials" style="background: #09090b; border-top: 1px solid rgba(255, 255, 255, 0.08);">
-    <div class="container">
-        <div class="section-title-wrapper" style="text-align: center; margin-bottom: 50px;">
-            <h2 class="section-title" style="font-size: 2.75rem; font-weight: 800;">What Our Clients <span style="color: #dc2626;">Say</span></h2>
-            <p class="section-subtitle" style="max-width: 620px; margin: 0 auto; color: var(--text-muted); font-size: 1.05rem;">Don't take our word for it — here's what the brands we've worked with have to say.</p>
-        </div>
 
-        <div class="testimonials-wrapper">
-            <div class="testimonials-grid" id="testimonials-grid">
-                <?php 
-                $dynamicTestimonials = getTestimonialsRepo();
-                $initActive = 1; // Center card (Sprint Series Brand Film) active by default as shown in reference
-                foreach ($dynamicTestimonials as $idx => $tCard):
-                ?>
-                    <div class="testimonial-card <?php echo ($idx === $initActive) ? 'active featured-card' : ''; ?>" data-real-index="<?php echo $idx; ?>">
-                        <p class="testimonial-quote">"<?php echo htmlspecialchars($tCard['quote']); ?>"</p>
-                        <?php if (!empty($tCard['project'])): ?>
-                            <div class="testimonial-tag-pill"><?php echo htmlspecialchars($tCard['project']); ?></div>
-                        <?php endif; ?>
-                        <div class="testimonial-footer">
-                            <div class="testimonial-author">
-                                <img src="<?php echo htmlspecialchars(getCloudinaryUrl($tCard['avatar'] ?? 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80')); ?>" alt="<?php echo htmlspecialchars($tCard['name']); ?>" class="author-img" onerror="this.src='https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80';">
-                                <div>
-                                    <div class="author-name"><?php echo htmlspecialchars($tCard['name']); ?></div>
-                                    <div class="author-role"><?php echo htmlspecialchars(($tCard['role'] ?? '') . (!empty($tCard['company']) ? ', ' . $tCard['company'] : '')); ?></div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                <?php endforeach; ?>
-            </div>
-        </div>
-
-        <!-- Carousel Navigation Bar -->
-        <div class="testimonial-controls-bar">
-            <div class="testimonial-nav-btns">
-                <button class="nav-arrow-btn" id="testi-prev-btn" aria-label="Previous Testimonial"><i class="fa-solid fa-chevron-left"></i></button>
-                <div class="testimonial-dots" id="testimonial-dots">
-                    <?php foreach ($dynamicTestimonials as $idx => $tCard): ?>
-                        <span class="dot <?php echo ($idx === $initActive) ? 'active' : ''; ?>" data-index="<?php echo $idx; ?>"></span>
-                    <?php endforeach; ?>
-                </div>
-                <button class="nav-arrow-btn" id="testi-next-btn" aria-label="Next Testimonial"><i class="fa-solid fa-chevron-right"></i></button>
-            </div>
-        </div>
-    </div>
-</section>
 
 
 <!-- BTS Section (Dynamic Admin Settings Integration) -->
