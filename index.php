@@ -160,55 +160,7 @@ $heroDirectVideo = $settings['hero_direct_video_url'] ?? '';
     </div>
 </section>
 
-<!-- Impact Section (Dynamic Admin Settings Integration) -->
-<?php 
-$statsWhite = !empty($settings['stats_headline_white']) ? $settings['stats_headline_white'] : 'A Decade of';
-$statsRed = !empty($settings['stats_headline_red']) ? $settings['stats_headline_red'] : 'Impact';
-$statsDesc = !empty($settings['stats_description']) ? $settings['stats_description'] : "The numbers behind Falhen's reputation as one of Africa's most awarded and globally recognised production houses.";
-$statsItems = $settings['stats_items'] ?? [
-    ['number' => '250', 'suffix' => '+', 'prefix' => '', 'label' => 'Projects Delivered', 'sublabel' => 'Across commercial, film & events', 'icon' => 'ri-film-line'],
-    ['number' => '12', 'suffix' => '+', 'prefix' => '', 'label' => 'Years Experience', 'sublabel' => 'Delivering world-class productions', 'icon' => 'ri-history-line'],
-    ['number' => '7', 'suffix' => '+', 'prefix' => '', 'label' => 'Industries Served', 'sublabel' => 'From tech to luxury to social', 'icon' => 'ri-earth-line']
-];
-$statsItems = array_values(array_filter($statsItems, function($item) {
-    return stripos($item['label'] ?? '', 'Awards') === false;
-}));
-?>
-<section class="section" id="impact" style="background: #09090b; border-top: 1px solid rgba(255, 255, 255, 0.08);">
-    <div class="container">
-        <div class="section-title-wrapper" style="text-align: center; margin-bottom: 50px;">
-            <h2 class="section-title" style="font-size: 2.75rem; font-weight: 700;">
-                <?php echo htmlspecialchars($statsWhite); ?> <span style="color: #dc2626;"><?php echo htmlspecialchars($statsRed); ?></span>
-            </h2>
-            <p class="section-subtitle" style="max-width: 650px; margin: 0 auto; color: var(--text-muted); font-size: 1.05rem;">
-                <?php echo htmlspecialchars($statsDesc); ?>
-            </p>
-        </div>
 
-        <div class="impact-grid">
-            <?php foreach ($statsItems as $item): ?>
-                <?php 
-                $iconClass = 'fa-solid fa-film';
-                $ic = $item['icon'] ?? '';
-                if (strpos($ic, 'history') !== false) $iconClass = 'fa-solid fa-clock-rotate-left';
-                if (strpos($ic, 'earth') !== false) $iconClass = 'fa-solid fa-globe';
-                if (strpos($ic, 'trophy') !== false) $iconClass = 'fa-solid fa-trophy';
-                if (strpos($ic, 'star') !== false) $iconClass = 'fa-solid fa-star';
-                
-                $numVal = preg_replace('/[^0-9]/', '', $item['number'] ?? '0');
-                ?>
-                <div class="impact-card">
-                    <div class="impact-icon-box"><i class="<?php echo $iconClass; ?>"></i></div>
-                    <div class="impact-number" data-count="<?php echo htmlspecialchars($numVal ?: '0'); ?>">
-                        <?php echo htmlspecialchars($item['prefix'] ?? ''); ?>0<span class="impact-plus"><?php echo htmlspecialchars($item['suffix'] ?? '+'); ?></span>
-                    </div>
-                    <h3 class="impact-label"><?php echo htmlspecialchars($item['label'] ?? ''); ?></h3>
-                    <p class="impact-sublabel"><?php echo htmlspecialchars($item['sublabel'] ?? ''); ?></p>
-                </div>
-            <?php endforeach; ?>
-        </div>
-    </div>
-</section>
 
 <!-- Featured Work Section (Dynamically powered by Portfolio Showcase Video Reels) -->
 <?php 
