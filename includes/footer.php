@@ -9,68 +9,41 @@
 <!-- Red Top Accent Line -->
 <div class="footer-top-accent-line"></div>
 
-<!-- Footer (Exact Replica of falhen.com screenshots) -->
+<!-- Sleek Modern Horizontal Footer Bar (Matched to Reference Design) -->
 <footer class="footer">
-    <div class="container">
-        <div class="footer-grid">
-            <!-- Brand Column -->
-            <div class="footer-brand">
-                <a href="/" class="logo-mark">
-                    <img src="/assets/img/icons/logo.png" alt="Falhen Logo" class="logo-img" style="height: 54px; width: auto; object-fit: contain;">
-                </a>
-                <p class="footer-tagline">Creating what the world watches</p>
-                <div class="footer-socials">
-                    <a href="#" aria-label="Facebook"><i class="fa-brands fa-facebook-f"></i></a>
-                    <a href="#" aria-label="Instagram"><i class="fa-brands fa-instagram"></i></a>
-                    <a href="#" aria-label="LinkedIn"><i class="fa-brands fa-linkedin-in"></i></a>
-                    <a href="#" aria-label="YouTube"><i class="fa-brands fa-youtube"></i></a>
-                </div>
-            </div>
-            
-            <!-- Company Links -->
-            <div class="footer-col">
-                <h4 class="footer-title">Company</h4>
-                <ul class="footer-links">
-                    <li><a href="/about.php">About Us</a></li>
-                    <li><a href="/team.php">Our Team</a></li>
-                    <li><a href="/contact.php">Contact</a></li>
-                    <li><a href="/careers.php">Careers</a></li>
-                </ul>
-            </div>
-
-            <!-- Services Links -->
-            <div class="footer-col">
-                <h4 class="footer-title">Services</h4>
-                <ul class="footer-links">
-                    <li><a href="/service-single.php?slug=video-production">Video Production</a></li>
-                    <li><a href="/service-single.php?slug=creative-services">Content Strategy</a></li>
-                    <li><a href="/service-single.php?slug=live-streaming">Live Streaming</a></li>
-                    <li><a href="/service-single.php?slug=post-production">Post Production</a></li>
-                </ul>
-            </div>
-            
-            <!-- Resources Links -->
-            <div class="footer-col">
-                <h4 class="footer-title">Resources</h4>
-                <ul class="footer-links">
-                    <li><a href="/blog.php">Blog</a></li>
-                    <li><a href="/portfolio.php">Portfolio</a></li>
-                    <li><a href="/blog.php">Case Studies</a></li>
-                    <li><a href="/faq.php">FAQs</a></li>
-                </ul>
+    <div class="container footer-container">
+        <!-- Left: Logo & Social Buttons Group -->
+        <div class="footer-left-group">
+            <a href="/" class="footer-logo" aria-label="Falhen Home">
+                <img src="/assets/img/icons/logo.png" alt="Falhen Logo" class="footer-logo-img">
+            </a>
+            <div class="footer-social-boxes">
+                <a href="#" aria-label="Facebook"><i class="fa-brands fa-facebook-f"></i></a>
+                <a href="#" aria-label="Instagram"><i class="fa-brands fa-instagram"></i></a>
+                <a href="#" aria-label="LinkedIn"><i class="fa-brands fa-linkedin-in"></i></a>
+                <a href="#" aria-label="YouTube"><i class="fa-brands fa-youtube"></i></a>
             </div>
         </div>
-        
-        <!-- Footer Bottom Bar -->
-        <div class="footer-bottom">
-            <div class="footer-copy">&copy; <?php echo date('Y'); ?> Falhen Media. All rights reserved.</div>
-            <div class="footer-legal">
+
+        <!-- Center: Horizontal Main Nav -->
+        <nav class="footer-center-nav" aria-label="Footer Navigation">
+            <a href="/about.php">About</a>
+            <a href="/services.php">Services</a>
+            <a href="/portfolio.php">Portfolio</a>
+            <a href="/blog.php">Blog</a>
+            <a href="/contact.php">Contact</a>
+        </nav>
+
+        <!-- Right: Copyright & Legal / Admin Links -->
+        <div class="footer-right-block">
+            <div class="footer-copy-text">&copy; <?php echo date('Y'); ?> Falhen Media. All rights reserved.</div>
+            <div class="footer-legal-links">
                 <a href="/privacy.php">Privacy</a>
                 <a href="/terms.php">Terms</a>
                 <a href="/cookies.php" data-open-cookies="true" class="cookie-settings-link">Cookies</a>
                 <a href="/dpa.php">DPA</a>
                 <a href="/contact.php">Unsubscribe</a>
-                <a href="/admin/login.php" class="dashboard-link"><i class="fa-solid fa-gauge"></i> Dashboard</a>
+                <a href="/admin/login.php" class="dashboard-link">Dashboard</a>
             </div>
         </div>
     </div>
