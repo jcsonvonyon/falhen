@@ -340,7 +340,7 @@ foreach ($rawMembers as $m) {
 
         .about-card-thumb {
             position: relative;
-            height: 280px;
+            height: 336px;
             overflow: hidden;
         }
 

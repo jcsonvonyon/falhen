@@ -49,7 +49,7 @@ $pageTitle = $member['name'] . " — " . $member['role'] . " | Falhen Media";
         }
 
         .member-nav-container {
-            max-width: 1100px;
+            max-width: 1240px;
             margin: 0 auto;
             padding: 0 24px;
             display: flex;
@@ -88,11 +88,11 @@ $pageTitle = $member['name'] . " — " . $member['role'] . " | Falhen Media";
         }
 
         .member-main-section {
-            padding: 60px 0 80px 0;
+            padding: 60px 0 10px 0;
         }
 
         .member-container {
-            max-width: 1100px;
+            max-width: 1240px;
             margin: 0 auto;
             padding: 0 24px;
         }
@@ -152,7 +152,7 @@ $pageTitle = $member['name'] . " — " . $member['role'] . " | Falhen Media";
 
         .member-name {
             font-size: 3.5rem;
-            font-weight: 800;
+            font-weight: 700;
             color: #ffffff;
             margin: 0 0 4px 0;
             letter-spacing: -1px;
@@ -176,7 +176,7 @@ $pageTitle = $member['name'] . " — " . $member['role'] . " | Falhen Media";
         }
 
         .member-bio-text {
-            font-size: 1.05rem;
+            font-size: 0.945rem;
             color: #d4d4d8;
             line-height: 1.7;
             margin-bottom: 22px;
@@ -184,7 +184,7 @@ $pageTitle = $member['name'] . " — " . $member['role'] . " | Falhen Media";
 
         .skills-heading {
             font-size: 0.78rem;
-            font-weight: 800;
+            font-weight: 700;
             color: #71717a;
             letter-spacing: 1px;
             text-transform: uppercase;
@@ -268,7 +268,7 @@ $pageTitle = $member['name'] . " — " . $member['role'] . " | Falhen Media";
             border: 1px solid rgba(220, 38, 38, 0.25);
             border-radius: 20px;
             padding: 48px;
-            margin-top: 80px;
+            margin-top: 48px;
             display: flex;
             align-items: center;
             justify-content: space-between;
@@ -276,7 +276,7 @@ $pageTitle = $member['name'] . " — " . $member['role'] . " | Falhen Media";
 
         .rest-team-left h3 {
             font-size: 2.2rem;
-            font-weight: 800;
+            font-weight: 700;
             color: #ffffff;
             margin: 0 0 10px 0;
             letter-spacing: -0.5px;
@@ -310,9 +310,9 @@ $pageTitle = $member['name'] . " — " . $member['role'] . " | Falhen Media";
 
         /* Footer */
         .member-footer-bar {
-            padding: 40px 0;
+            padding: 18px 0;
             border-top: 1px solid rgba(255, 255, 255, 0.08);
-            margin-top: 80px;
+            margin-top: 32px;
             display: flex;
             align-items: center;
             justify-content: space-between;

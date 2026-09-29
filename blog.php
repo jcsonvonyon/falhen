@@ -150,8 +150,8 @@ $gridPosts = array_filter($blogPosts, fn($p) => $featuredPost && $p['id'] !== $f
         }
 
         .blog-hero-title {
-            font-size: 3.5rem;
-            font-weight: 800;
+            font-size: 2.5rem;
+            font-weight: 700;
             color: #ffffff;
             margin: 0 0 12px 0;
             line-height: 1.1;
@@ -311,7 +311,7 @@ $gridPosts = array_filter($blogPosts, fn($p) => $featuredPost && $p['id'] !== $f
 
         .featured-post-title {
             font-size: 1.95rem;
-            font-weight: 800;
+            font-weight: 700;
             color: #ffffff;
             margin: 16px 0 12px 0;
             line-height: 1.25;
@@ -437,7 +437,7 @@ $gridPosts = array_filter($blogPosts, fn($p) => $featuredPost && $p['id'] !== $f
 
         .blog-card-title {
             font-size: 1.15rem;
-            font-weight: 800;
+            font-weight: 700;
             color: #ffffff;
             margin: 14px 0 10px 0;
             line-height: 1.35;
