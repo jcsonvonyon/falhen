@@ -159,7 +159,7 @@ $avgYears = ($totalMembersCount > 0 && $totalYears > 0) ? round($totalYears / $t
 
         .team-hero-title {
             font-size: 3.8rem;
-            font-weight: 800;
+            font-weight: 700;
             color: #ffffff;
             line-height: 1.1;
             letter-spacing: -1.5px;
@@ -197,7 +197,7 @@ $avgYears = ($totalMembersCount > 0 && $totalYears > 0) ? round($totalYears / $t
 
         .stat-num-val {
             font-size: 2.5rem;
-            font-weight: 800;
+            font-weight: 700;
             color: #ff4d4d;
             line-height: 1;
             margin-bottom: 8px;
@@ -380,7 +380,7 @@ $avgYears = ($totalMembersCount > 0 && $totalYears > 0) ? round($totalYears / $t
 
         .page-card-name {
             font-size: 1.15rem;
-            font-weight: 800;
+            font-weight: 700;
             color: #ffffff;
             margin: 0;
         }
@@ -415,6 +415,9 @@ $avgYears = ($totalMembersCount > 0 && $totalYears > 0) ? round($totalYears / $t
             font-weight: 700;
             color: #ff4d4d;
             margin-bottom: 12px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         .page-card-bio {
@@ -424,8 +427,10 @@ $avgYears = ($totalMembersCount > 0 && $totalYears > 0) ? round($totalYears / $t
             margin-bottom: 16px;
             display: -webkit-box;
             -webkit-line-clamp: 3;
+            line-clamp: 3;
             -webkit-box-orient: vertical;
             overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         .page-card-footer {
@@ -460,7 +465,7 @@ $avgYears = ($totalMembersCount > 0 && $totalYears > 0) ? round($totalYears / $t
 
         .think-fit-left h3 {
             font-size: 2.2rem;
-            font-weight: 800;
+            font-weight: 700;
             color: #ffffff;
             margin: 0 0 10px 0;
             letter-spacing: -0.5px;

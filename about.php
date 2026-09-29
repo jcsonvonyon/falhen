@@ -8,8 +8,6 @@ $pageTitle = "About Us — Falhen Media";
 $rawMembers = getTeamMembers();
 $teamMembers = [];
 foreach ($rawMembers as $m) {
-    $bioWords = preg_split('/\s+/', trim($m['bio'] ?? ''));
-    $shortBio = (count($bioWords) > 15) ? implode(' ', array_slice($bioWords, 0, 15)) . '...' : ($m['bio'] ?? '');
     $teamMembers[] = [
         'id' => $m['id'],
         'name' => $m['name'],
@@ -17,7 +15,7 @@ foreach ($rawMembers as $m) {
         'dept' => $m['department'],
         'location' => $m['location'],
         'exp' => $m['experience'],
-        'bio' => $shortBio,
+        'bio' => $m['bio'],
         'img' => $m['image'],
         'skills' => $m['skills'] ?? []
     ];
@@ -436,6 +434,9 @@ foreach ($rawMembers as $m) {
             font-size: 0.85rem;
             font-weight: 700;
             margin-bottom: 12px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         .about-card-bio {
@@ -443,6 +444,12 @@ foreach ($rawMembers as $m) {
             font-size: 0.86rem;
             line-height: 1.5;
             margin-bottom: 16px;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         .about-card-exp {
@@ -458,13 +465,13 @@ foreach ($rawMembers as $m) {
 
         .about-contact-grid {
             display: grid;
-            grid-template-columns: 1fr 1.25fr;
+            grid-template-columns: 1.15fr 1.1fr;
             gap: 60px;
             align-items: start;
         }
 
         .about-contact-title {
-            font-size: 2.6rem;
+            font-size: 2.1rem;
             font-weight: 700;
             color: #ffffff;
             margin: 4px 0 10px 0;
