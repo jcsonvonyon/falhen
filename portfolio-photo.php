@@ -951,11 +951,6 @@ $totalPhotoCount = count($clientPhotos);
                             <i class="fa-solid fa-location-dot"></i> <?php echo htmlspecialchars($currentAlbum['location']); ?>
                         </div>
                     <?php endif; ?>
-                    <?php if (!empty($currentAlbum['gdrive_url'])): ?>
-                        <a href="<?php echo htmlspecialchars($currentAlbum['gdrive_url']); ?>" target="_blank" rel="noopener noreferrer" class="meta-pill-chip" style="background: rgba(66, 133, 244, 0.15); border-color: rgba(66, 133, 244, 0.3); color: #93c5fd; text-decoration: none;">
-                            <i class="fa-brands fa-google-drive" style="color: #60a5fa;"></i> Google Drive Folder
-                        </a>
-                    <?php endif; ?>
                 </div>
 
                 <!-- Green Download All Action Button -->
