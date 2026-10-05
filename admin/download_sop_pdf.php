@@ -84,7 +84,7 @@ $sopAckAt = $sopData['acknowledged_at'] ?? date('Y-m-d H:i:s');
         }
         h3 {
             font-size: 0.98rem;
-            font-weight: 800;
+            font-weight: 700;
             color: #0f172a;
             margin-top: 22px;
             margin-bottom: 8px;
@@ -217,7 +217,7 @@ $sopAckAt = $sopData['acknowledged_at'] ?? date('Y-m-d H:i:s');
         <p>This document serves as a binding operational guide. Compliance is mandatory for all Falhen team members.</p>
 
         <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 12px; padding: 18px; margin-top: 24px;">
-            <h4 style="font-size: 0.95rem; font-weight: 800; color: #166534; margin: 0 0 6px 0;">Acknowledgment & Confirmation</h4>
+            <h4 style="font-size: 0.95rem; font-weight: 700; color: #166534; margin: 0 0 6px 0;">Acknowledgment & Confirmation</h4>
             <p style="margin: 0 0 8px 0;">I, <strong><?php echo htmlspecialchars($userFullName); ?></strong>, confirm that I have read, understood, and agree to comply with the Falhen Standard Operating Procedures (SOP).</p>
             <?php if ($sopAcknowledged): ?>
                 <?php if (!empty($sopData['signature_data'])): ?>
@@ -226,7 +226,7 @@ $sopAckAt = $sopData['acknowledged_at'] ?? date('Y-m-d H:i:s');
                         <img src="<?php echo htmlspecialchars($sopData['signature_data']); ?>" alt="Digital Signature" style="max-height: 50px; display: block;">
                     </div>
                 <?php endif; ?>
-                <div style="font-size: 0.82rem; color: #166534; font-weight: 800; margin-top: 4px;">
+                <div style="font-size: 0.82rem; color: #166534; font-weight: 700; margin-top: 4px;">
                     <i class="fa-solid fa-file-signature"></i> Digitally Acknowledged & Verified by <?php echo htmlspecialchars($userFullName); ?> on <?php echo date('M d, Y H:i', strtotime($sopAckAt)); ?>
                 </div>
             <?php endif; ?>

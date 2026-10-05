@@ -130,7 +130,7 @@ $csrfToken = generateCSRFToken();
         .onboarding-title {
             font-family: 'Outfit', sans-serif;
             font-size: 2.2rem;
-            font-weight: 800;
+            font-weight: 700;
             color: var(--dark);
             margin-bottom: 8px;
             letter-spacing: -0.5px;
@@ -668,7 +668,7 @@ $csrfToken = generateCSRFToken();
             color: #059669;
             font-family: monospace;
             font-size: 0.92rem;
-            font-weight: 800;
+            font-weight: 700;
             padding: 4px 10px;
             border-radius: 6px;
             border: 1px solid #a7f3d0;
@@ -1212,7 +1212,7 @@ $csrfToken = generateCSRFToken();
                         </div>
                         <div class="done-ref-row">
                             <span class="done-ref-label">Status</span>
-                            <span style="color: var(--success); font-weight: 800;"><i class="fa-solid fa-circle-check"></i> Verified &amp; Active</span>
+                            <span style="color: var(--success); font-weight: 700;"><i class="fa-solid fa-circle-check"></i> Verified &amp; Active</span>
                         </div>
                     </div>
 

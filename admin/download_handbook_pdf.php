@@ -84,7 +84,7 @@ $handbookAckAt = $handbookData['acknowledged_at'] ?? date('Y-m-d H:i:s');
         }
         h3 {
             font-size: 0.98rem;
-            font-weight: 800;
+            font-weight: 700;
             color: #0f172a;
             margin-top: 22px;
             margin-bottom: 8px;
@@ -486,7 +486,7 @@ $handbookAckAt = $handbookData['acknowledged_at'] ?? date('Y-m-d H:i:s');
         <p>This handbook may be reviewed or updated from time to time. Employees shall be notified of major changes where necessary.</p>
 
         <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 12px; padding: 18px; margin-top: 24px;">
-            <h4 style="font-size: 0.95rem; font-weight: 800; color: #166534; margin: 0 0 6px 0;">Acknowledgement & Digital Signature</h4>
+            <h4 style="font-size: 0.95rem; font-weight: 700; color: #166534; margin: 0 0 6px 0;">Acknowledgement & Digital Signature</h4>
             <p style="margin: 0 0 8px 0;">I, <strong><?php echo htmlspecialchars($userFullName); ?></strong>, acknowledge that I have received, read, understood, and agreed to comply with the Falhen Staff Handbook & Policies.</p>
             <?php if ($handbookAcknowledged): ?>
                 <?php if (!empty($handbookData['signature_data'])): ?>
@@ -495,7 +495,7 @@ $handbookAckAt = $handbookData['acknowledged_at'] ?? date('Y-m-d H:i:s');
                         <img src="<?php echo htmlspecialchars($handbookData['signature_data']); ?>" alt="Digital Signature" style="max-height: 50px; display: block;">
                     </div>
                 <?php endif; ?>
-                <div style="font-size: 0.82rem; color: #166534; font-weight: 800; margin-top: 4px;">
+                <div style="font-size: 0.82rem; color: #166534; font-weight: 700; margin-top: 4px;">
                     <i class="fa-solid fa-file-signature"></i> Digitally Acknowledged & Verified by <?php echo htmlspecialchars($userFullName); ?> on <?php echo date('M d, Y H:i', strtotime($handbookAckAt)); ?>
                 </div>
             <?php endif; ?>

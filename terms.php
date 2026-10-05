@@ -118,7 +118,7 @@ $pageTitle = "Terms of Service — Falhen Media";
             border: 1px solid rgba(220, 38, 38, 0.4);
             color: #ef4444;
             font-size: 0.78rem;
-            font-weight: 800;
+            font-weight: 700;
             padding: 4px 12px;
             border-radius: 6px;
         }
@@ -135,7 +135,7 @@ $pageTitle = "Terms of Service — Falhen Media";
 
         .terms-hero-title {
             font-size: 3.5rem;
-            font-weight: 800;
+            font-weight: 700;
             color: #ffffff;
             letter-spacing: -1.5px;
             margin: 0 0 16px 0;
@@ -181,7 +181,7 @@ $pageTitle = "Terms of Service — Falhen Media";
 
         .contents-title {
             font-size: 0.82rem;
-            font-weight: 800;
+            font-weight: 700;
             color: #71717a;
             letter-spacing: 1.2px;
             text-transform: uppercase;
@@ -222,7 +222,7 @@ $pageTitle = "Terms of Service — Falhen Media";
 
         .legal-section-heading {
             font-size: 1.8rem;
-            font-weight: 800;
+            font-weight: 700;
             color: #ffffff;
             margin: 0 0 20px 0;
             letter-spacing: -0.5px;
@@ -232,7 +232,7 @@ $pageTitle = "Terms of Service — Falhen Media";
 
         .legal-sub-heading {
             font-size: 1.05rem;
-            font-weight: 800;
+            font-weight: 700;
             color: #ef4444;
             margin: 20px 0 10px 0;
         }

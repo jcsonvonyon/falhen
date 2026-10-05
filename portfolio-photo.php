@@ -205,7 +205,7 @@ $galleryPhotos = [
             background: #dc2626;
             color: #ffffff;
             font-size: 0.76rem;
-            font-weight: 800;
+            font-weight: 700;
             padding: 5px 14px;
             border-radius: 20px;
             text-transform: uppercase;
@@ -226,7 +226,7 @@ $galleryPhotos = [
 
         .modal-item-title {
             font-size: 2.2rem;
-            font-weight: 800;
+            font-weight: 700;
             color: #ffffff;
             margin: 0 0 16px 0;
             line-height: 1.2;
@@ -290,7 +290,7 @@ $galleryPhotos = [
         }
         .modal-gallery-heading {
             font-size: 1.1rem;
-            font-weight: 800;
+            font-weight: 700;
             color: #ffffff;
             margin-bottom: 16px;
             display: flex;

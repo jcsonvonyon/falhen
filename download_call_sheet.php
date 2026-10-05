@@ -209,7 +209,7 @@ $refCode = $vendor['reference_code'] ?? ($gig['assigned_to_ref'] ?? 'FAL-VND-CRE
         .cs-hero-item label {
             display: block;
             font-size: 0.72rem;
-            font-weight: 800;
+            font-weight: 700;
             color: #991b1b;
             text-transform: uppercase;
             letter-spacing: 0.6px;
@@ -218,7 +218,7 @@ $refCode = $vendor['reference_code'] ?? ($gig['assigned_to_ref'] ?? 'FAL-VND-CRE
 
         .cs-hero-item .val {
             font-size: 1.15rem;
-            font-weight: 800;
+            font-weight: 700;
             color: #0f172a;
         }
 
@@ -240,7 +240,7 @@ $refCode = $vendor['reference_code'] ?? ($gig['assigned_to_ref'] ?? 'FAL-VND-CRE
 
         .cs-section-title {
             font-size: 0.84rem;
-            font-weight: 800;
+            font-weight: 700;
             color: #0f172a;
             text-transform: uppercase;
             letter-spacing: 0.8px;
@@ -304,7 +304,7 @@ $refCode = $vendor['reference_code'] ?? ($gig['assigned_to_ref'] ?? 'FAL-VND-CRE
         .cs-table th {
             background: #f1f5f9;
             color: #334155;
-            font-weight: 800;
+            font-weight: 700;
             text-transform: uppercase;
             font-size: 0.74rem;
             letter-spacing: 0.5px;
@@ -443,7 +443,7 @@ $refCode = $vendor['reference_code'] ?? ($gig['assigned_to_ref'] ?? 'FAL-VND-CRE
                 </div>
                 <div class="cs-grid-two">
                     <div class="cs-detail-box">
-                        <div style="font-weight: 800; font-size: 0.95rem; color: #0f172a; margin-bottom: 4px;">
+                        <div style="font-weight: 700; font-size: 0.95rem; color: #0f172a; margin-bottom: 4px;">
                             <i class="fa-solid fa-clapperboard" style="color: var(--primary);"></i> On-Set Location
                         </div>
                         <div style="font-size: 0.88rem; color: #334155; line-height: 1.5;">
@@ -455,7 +455,7 @@ $refCode = $vendor['reference_code'] ?? ($gig['assigned_to_ref'] ?? 'FAL-VND-CRE
                     </div>
 
                     <div class="cs-detail-box">
-                        <div style="font-weight: 800; font-size: 0.95rem; color: #0f172a; margin-bottom: 4px;">
+                        <div style="font-weight: 700; font-size: 0.95rem; color: #0f172a; margin-bottom: 4px;">
                             <i class="fa-solid fa-truck-medical" style="color: #16a34a;"></i> Nearest Emergency Hospital
                         </div>
                         <div style="font-size: 0.88rem; color: #334155; line-height: 1.5;">
@@ -480,7 +480,7 @@ $refCode = $vendor['reference_code'] ?? ($gig['assigned_to_ref'] ?? 'FAL-VND-CRE
                     </div>
                     <div class="cs-row">
                         <span class="lbl">Assigned Role</span>
-                        <span class="val" style="color: var(--primary); font-weight: 800;"><?php echo htmlspecialchars($role); ?></span>
+                        <span class="val" style="color: var(--primary); font-weight: 700;"><?php echo htmlspecialchars($role); ?></span>
                     </div>
                     <div class="cs-row">
                         <span class="lbl">Individual Call Time</span>

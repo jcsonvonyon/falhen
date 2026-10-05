@@ -161,7 +161,7 @@ $relatedArticles = array_filter($blogRepo, function($a) use ($article) {
 
         .article-title-main {
             font-size: 3rem;
-            font-weight: 800;
+            font-weight: 700;
             color: #ffffff;
             margin: 0 0 24px 0;
             line-height: 1.15;
@@ -248,7 +248,7 @@ $relatedArticles = array_filter($blogRepo, function($a) use ($article) {
 
         .article-body-content h1 {
             font-size: 2.2rem;
-            font-weight: 800;
+            font-weight: 700;
             color: #ffffff;
             margin: 42px 0 18px 0;
             letter-spacing: -0.5px;
@@ -258,7 +258,7 @@ $relatedArticles = array_filter($blogRepo, function($a) use ($article) {
         .article-body-content h2,
         .article-body-content h3 {
             font-size: 1.75rem;
-            font-weight: 800;
+            font-weight: 700;
             color: #ffffff;
             margin: 36px 0 14px 0;
             letter-spacing: -0.4px;
@@ -320,7 +320,7 @@ $relatedArticles = array_filter($blogRepo, function($a) use ($article) {
         }
 
         .article-body-content ol li::marker {
-            font-weight: 800;
+            font-weight: 700;
             color: #ef4444;
         }
 
@@ -400,7 +400,7 @@ $relatedArticles = array_filter($blogRepo, function($a) use ($article) {
 
         .discovery-cta-card h3 {
             font-size: 1.5rem;
-            font-weight: 800;
+            font-weight: 700;
             color: #ffffff;
             margin: 0 0 8px 0;
         }
@@ -415,7 +415,7 @@ $relatedArticles = array_filter($blogRepo, function($a) use ($article) {
             background: #dc2626;
             color: #ffffff;
             font-size: 0.95rem;
-            font-weight: 800;
+            font-weight: 700;
             padding: 12px 28px;
             border-radius: 10px;
             text-decoration: none;
@@ -445,7 +445,7 @@ $relatedArticles = array_filter($blogRepo, function($a) use ($article) {
 
         .related-header-row h3 {
             font-size: 1.5rem;
-            font-weight: 800;
+            font-weight: 700;
             color: #ffffff;
             margin: 0;
         }

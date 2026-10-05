@@ -34,7 +34,8 @@ require_once __DIR__ . '/includes/header.php';
     }
 
     .contact-hero-title {
-        font-size: 4.2rem;
+        font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+        font-size: 60px;
         font-weight: 800;
         color: #ffffff;
         letter-spacing: -1.5px;
@@ -93,80 +94,83 @@ require_once __DIR__ . '/includes/header.php';
     /* Main 2-Column Section */
     .contact-main-grid {
         display: grid;
-        grid-template-columns: 1fr 1.25fr;
-        gap: 48px;
+        grid-template-columns: 1fr 1.22fr;
+        gap: 40px;
         margin-bottom: 90px;
+        align-items: start;
     }
 
     .contact-left-col {
         display: flex;
         flex-direction: column;
-        justify-content: space-between;
+        gap: 20px;
+        text-align: left;
     }
 
     .conversation-heading {
-        font-size: 2.4rem;
-        font-weight: 800;
+        font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+        font-size: 2.3rem;
+        font-weight: 700;
         color: #ffffff;
-        margin: 4px 0 12px 0;
-        line-height: 1.1;
+        margin: 0 0 14px 0;
+        line-height: 1.15;
         letter-spacing: -0.5px;
     }
 
     .conversation-desc {
         color: #a1a1aa;
-        font-size: 0.98rem;
-        line-height: 1.65;
-        margin-bottom: 36px;
+        font-size: 0.95rem;
+        line-height: 1.6;
+        margin-bottom: 24px;
     }
 
     /* Info Cards */
     .contact-info-list {
         display: flex;
         flex-direction: column;
-        gap: 20px;
-        margin-bottom: 40px;
+        gap: 16px;
+        margin-bottom: 0;
     }
 
     .contact-info-card {
         display: flex;
         align-items: center;
-        gap: 18px;
-        background: rgba(255, 255, 255, 0.02);
-        border: 1px solid rgba(255, 255, 255, 0.06);
+        gap: 16px;
+        background: #0e0e12;
+        border: 1px solid rgba(255, 255, 255, 0.08);
         border-radius: 14px;
-        padding: 18px 22px;
+        padding: 16px 20px;
         transition: all 0.25s ease;
     }
 
     .contact-info-card:hover {
-        border-color: rgba(220, 38, 38, 0.3);
-        background: rgba(220, 38, 38, 0.03);
+        border-color: rgba(220, 38, 38, 0.35);
+        background: rgba(220, 38, 38, 0.04);
     }
 
     .contact-info-icon-box {
-        width: 46px;
-        height: 46px;
+        width: 44px;
+        height: 44px;
         border-radius: 12px;
-        background: rgba(220, 38, 38, 0.15);
-        border: 1px solid rgba(220, 38, 38, 0.3);
+        background: rgba(220, 38, 38, 0.12);
+        border: 1px solid rgba(220, 38, 38, 0.25);
         color: #ef4444;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 1.15rem;
+        font-size: 1.05rem;
         flex-shrink: 0;
     }
 
     .contact-info-label {
-        font-size: 1rem;
-        font-weight: 800;
+        font-size: 0.95rem;
+        font-weight: 700;
         color: #ffffff;
-        margin-bottom: 4px;
+        margin-bottom: 2px;
     }
 
     .contact-info-val {
-        font-size: 0.92rem;
+        font-size: 0.9rem;
         color: #a1a1aa;
         text-decoration: none;
         word-break: break-word;
@@ -182,14 +186,15 @@ require_once __DIR__ . '/includes/header.php';
         background: #0e0e12;
         border: 1px solid rgba(255, 255, 255, 0.08);
         border-radius: 16px;
-        padding: 24px;
+        padding: 22px 24px;
+        text-align: left;
     }
 
     .services-tag-title {
         font-size: 0.95rem;
-        font-weight: 800;
+        font-weight: 700;
         color: #ffffff;
-        margin-bottom: 16px;
+        margin-bottom: 14px;
     }
 
     .services-tag-cloud {
@@ -199,15 +204,16 @@ require_once __DIR__ . '/includes/header.php';
     }
 
     .service-tag-pill {
-        background: rgba(255, 255, 255, 0.04);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        color: #a1a1aa;
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        color: #94a3b8;
         font-size: 0.82rem;
-        font-weight: 600;
-        padding: 6px 16px;
-        border-radius: 50px;
+        font-weight: 500;
+        padding: 6px 14px;
+        border-radius: 8px;
         text-decoration: none;
         transition: all 0.25s ease;
+        display: inline-block;
     }
 
     .service-tag-pill:hover {
@@ -219,14 +225,26 @@ require_once __DIR__ . '/includes/header.php';
     /* Contact Form Card */
     .contact-form-card {
         background: #0e0e12;
-        border: 1px solid rgba(255, 255, 255, 0.12);
+        border: 1px solid rgba(255, 255, 255, 0.08);
         border-radius: 20px;
-        padding: 44px;
+        padding: 38px 40px;
         box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
     }
 
+    .contact-form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 18px;
+        margin-bottom: 20px;
+    }
+
     .contact-field-group {
-        margin-bottom: 22px;
+        margin-bottom: 20px;
+        text-align: left;
+    }
+
+    .contact-form-row .contact-field-group {
+        margin-bottom: 0;
     }
 
     .contact-field-label {
@@ -240,15 +258,19 @@ require_once __DIR__ . '/includes/header.php';
     .contact-field-control {
         width: 100%;
         background: #030305;
-        border: 1px solid rgba(255, 255, 255, 0.12);
-        border-radius: 12px;
-        padding: 14px 18px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 10px;
+        padding: 13px 16px;
         color: #ffffff;
-        font-size: 0.95rem;
+        font-size: 0.92rem;
         font-family: inherit;
         outline: none;
-        transition: border-color 0.25s ease;
+        transition: border-color 0.25s ease, box-shadow 0.25s ease;
         box-sizing: border-box;
+    }
+
+    .contact-field-control::placeholder {
+        color: #52525b;
     }
 
     .contact-field-control:focus {
@@ -256,48 +278,77 @@ require_once __DIR__ . '/includes/header.php';
         box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.15);
     }
 
+    select.contact-field-control {
+        appearance: none;
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23a1a1aa'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 16px center;
+        background-size: 16px;
+        padding-right: 42px;
+        cursor: pointer;
+    }
+
     .contact-field-control option {
         background: #0e0e12;
         color: #ffffff;
+    }
+
+    textarea.contact-field-control {
+        resize: vertical;
+        min-height: 110px;
     }
 
     .char-counter-text {
         font-size: 0.8rem;
         color: #71717a;
         margin-top: 8px;
+        text-align: right;
     }
 
     .btn-send-message {
         width: 100%;
         background: #dc2626;
         color: #ffffff;
-        font-size: 1.05rem;
-        font-weight: 800;
-        padding: 16px 28px;
+        font-size: 1rem;
+        font-weight: 700;
+        padding: 15px 24px;
         border-radius: 12px;
         border: none;
         cursor: pointer;
         display: flex;
         align-items: center;
         justify-content: center;
-        gap: 12px;
+        gap: 10px;
         transition: all 0.3s ease;
-        box-shadow: 0 6px 25px rgba(220, 38, 38, 0.4);
+        box-shadow: 0 6px 25px rgba(220, 38, 38, 0.35);
         margin-top: 10px;
     }
 
     .btn-send-message:hover {
         background: #ef4444;
         transform: translateY(-2px);
-        box-shadow: 0 10px 30px rgba(220, 38, 38, 0.6);
+        box-shadow: 0 10px 30px rgba(220, 38, 38, 0.55);
     }
 
     @media (max-width: 992px) {
         .contact-main-grid {
             grid-template-columns: 1fr;
+            gap: 40px;
         }
         .contact-hero-title {
             font-size: 3rem;
+        }
+    }
+
+    @media (max-width: 640px) {
+        .contact-form-row {
+            grid-template-columns: 1fr;
+            gap: 16px;
+        }
+        .contact-form-card {
+            padding: 24px 20px;
         }
     }
 </style>
@@ -378,24 +429,28 @@ require_once __DIR__ . '/includes/header.php';
                 <form id="contactPageForm" action="/api/contact_submit.php" method="POST">
                     <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
 
-                    <div class="contact-field-group" style="text-align: left;">
-                        <label class="contact-field-label">Full Name *</label>
-                        <input type="text" name="full_name" class="contact-field-control" required placeholder="John Doe">
+                    <div class="contact-form-row">
+                        <div class="contact-field-group">
+                            <label class="contact-field-label">Full Name *</label>
+                            <input type="text" name="full_name" class="contact-field-control" required placeholder="John Doe">
+                        </div>
+
+                        <div class="contact-field-group">
+                            <label class="contact-field-label">Email Address *</label>
+                            <input type="email" name="email" class="contact-field-control" required placeholder="john@example.com">
+                        </div>
                     </div>
 
-                    <div class="contact-field-group" style="text-align: left;">
-                        <label class="contact-field-label">Email Address *</label>
-                        <input type="email" name="email" class="contact-field-control" required placeholder="john@example.com">
-                    </div>
+                    <div class="contact-form-row">
+                        <div class="contact-field-group">
+                            <label class="contact-field-label">Phone Number</label>
+                            <input type="tel" name="phone" class="contact-field-control" placeholder="+1 (331) 465-1119">
+                        </div>
 
-                    <div class="contact-field-group" style="text-align: left;">
-                        <label class="contact-field-label">Phone Number</label>
-                        <input type="tel" name="phone" class="contact-field-control" placeholder="+1 (331) 465-1119">
-                    </div>
-
-                    <div class="contact-field-group" style="text-align: left;">
-                        <label class="contact-field-label">Company Name</label>
-                        <input type="text" name="company" class="contact-field-control" placeholder="Your Company">
+                        <div class="contact-field-group">
+                            <label class="contact-field-label">Company Name</label>
+                            <input type="text" name="company" class="contact-field-control" placeholder="Your Company">
+                        </div>
                     </div>
 
                     <div class="contact-field-group" style="text-align: left;">

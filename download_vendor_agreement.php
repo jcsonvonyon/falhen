@@ -118,7 +118,7 @@ $status = ucfirst($vendor['status'] ?? 'Active');
             display: inline-block;
             background: #fff1f2;
             color: #e11d48;
-            font-weight: 800;
+            font-weight: 700;
             font-size: 0.75rem;
             padding: 4px 10px;
             border-radius: 20px;
@@ -128,7 +128,7 @@ $status = ucfirst($vendor['status'] ?? 'Active');
         }
         .doc-title {
             font-size: 1.6rem;
-            font-weight: 800;
+            font-weight: 700;
             color: #0f172a;
             margin: 10px 0 4px 0;
         }
@@ -165,7 +165,7 @@ $status = ucfirst($vendor['status'] ?? 'Active');
         }
         .legal-section-title {
             font-size: 1.05rem;
-            font-weight: 800;
+            font-weight: 700;
             color: #0f172a;
             border-left: 4px solid #dc2626;
             padding-left: 10px;
@@ -194,7 +194,7 @@ $status = ucfirst($vendor['status'] ?? 'Active');
         }
         .sig-title {
             font-size: 0.82rem;
-            font-weight: 800;
+            font-weight: 700;
             color: #64748b;
             text-transform: uppercase;
             letter-spacing: 0.5px;

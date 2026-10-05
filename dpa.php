@@ -118,7 +118,7 @@ $pageTitle = "Data Processing Agreement (DPA) — Falhen Media";
             border: 1px solid rgba(220, 38, 38, 0.4);
             color: #ef4444;
             font-size: 0.78rem;
-            font-weight: 800;
+            font-weight: 700;
             padding: 4px 12px;
             border-radius: 6px;
         }
@@ -128,7 +128,7 @@ $pageTitle = "Data Processing Agreement (DPA) — Falhen Media";
             border: 1px solid rgba(16, 185, 129, 0.3);
             color: #10b981;
             font-size: 0.78rem;
-            font-weight: 800;
+            font-weight: 700;
             padding: 4px 12px;
             border-radius: 6px;
         }
@@ -145,7 +145,7 @@ $pageTitle = "Data Processing Agreement (DPA) — Falhen Media";
 
         .dpa-hero-title {
             font-size: 3.5rem;
-            font-weight: 800;
+            font-weight: 700;
             color: #ffffff;
             letter-spacing: -1.5px;
             margin: 0 0 16px 0;
@@ -216,7 +216,7 @@ $pageTitle = "Data Processing Agreement (DPA) — Falhen Media";
 
         .dpa-cta-title {
             font-size: 1.1rem;
-            font-weight: 800;
+            font-weight: 700;
             color: #ffffff;
             margin: 0 0 4px 0;
         }
@@ -280,7 +280,7 @@ $pageTitle = "Data Processing Agreement (DPA) — Falhen Media";
 
         .compliance-title {
             font-size: 0.95rem;
-            font-weight: 800;
+            font-weight: 700;
             color: #ffffff;
             margin: 0 0 4px 0;
         }
@@ -303,7 +303,7 @@ $pageTitle = "Data Processing Agreement (DPA) — Falhen Media";
 
         .contents-title {
             font-size: 0.82rem;
-            font-weight: 800;
+            font-weight: 700;
             color: #71717a;
             letter-spacing: 1.2px;
             text-transform: uppercase;
@@ -344,7 +344,7 @@ $pageTitle = "Data Processing Agreement (DPA) — Falhen Media";
 
         .legal-section-heading {
             font-size: 1.8rem;
-            font-weight: 800;
+            font-weight: 700;
             color: #ffffff;
             margin: 0 0 20px 0;
             letter-spacing: -0.5px;
@@ -354,7 +354,7 @@ $pageTitle = "Data Processing Agreement (DPA) — Falhen Media";
 
         .legal-sub-heading {
             font-size: 1.1rem;
-            font-weight: 800;
+            font-weight: 700;
             color: #ef4444;
             margin: 20px 0 10px 0;
         }
@@ -377,7 +377,7 @@ $pageTitle = "Data Processing Agreement (DPA) — Falhen Media";
 
         .execution-title {
             font-size: 0.82rem;
-            font-weight: 800;
+            font-weight: 700;
             color: #71717a;
             letter-spacing: 1.2px;
             text-transform: uppercase;
@@ -406,7 +406,7 @@ $pageTitle = "Data Processing Agreement (DPA) — Falhen Media";
 
         .sig-role-badge {
             font-size: 0.75rem;
-            font-weight: 800;
+            font-weight: 700;
             letter-spacing: 1px;
             color: #71717a;
             text-transform: uppercase;
@@ -415,7 +415,7 @@ $pageTitle = "Data Processing Agreement (DPA) — Falhen Media";
 
         .sig-party-name {
             font-size: 1.2rem;
-            font-weight: 800;
+            font-weight: 700;
             color: #ffffff;
             margin: 0 0 4px 0;
         }

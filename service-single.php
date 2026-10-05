@@ -179,7 +179,7 @@ $otherServices = array_filter($servicesRepo, function($item) use ($service) {
             background: #dc2626;
             color: #ffffff;
             font-size: 0.78rem;
-            font-weight: 800;
+            font-weight: 700;
             padding: 6px 14px;
             border-radius: 50px;
             width: fit-content;
@@ -189,7 +189,7 @@ $otherServices = array_filter($servicesRepo, function($item) use ($service) {
 
         .service-hero-title {
             font-size: 3.2rem;
-            font-weight: 800;
+            font-weight: 700;
             color: #ffffff;
             margin: 0 0 16px 0;
             line-height: 1.1;
@@ -236,7 +236,7 @@ $otherServices = array_filter($servicesRepo, function($item) use ($service) {
 
         .service-section-title {
             font-size: 1.6rem;
-            font-weight: 800;
+            font-weight: 700;
             color: #ffffff;
             margin: 0 0 20px 0;
             letter-spacing: -0.5px;
@@ -352,7 +352,7 @@ $otherServices = array_filter($servicesRepo, function($item) use ($service) {
 
         .ready-card-title {
             font-size: 1.25rem;
-            font-weight: 800;
+            font-weight: 700;
             color: #ffffff;
             margin: 0 0 10px 0;
             line-height: 1.2;
@@ -422,7 +422,7 @@ $otherServices = array_filter($servicesRepo, function($item) use ($service) {
 
         .stats-header-label {
             font-size: 0.75rem;
-            font-weight: 800;
+            font-weight: 700;
             letter-spacing: 1px;
             color: #71717a;
             margin-bottom: 20px;
@@ -456,7 +456,7 @@ $otherServices = array_filter($servicesRepo, function($item) use ($service) {
 
         .stats-item-value {
             color: #ffffff;
-            font-weight: 800;
+            font-weight: 700;
             font-size: 1.05rem;
         }
 
@@ -476,7 +476,7 @@ $otherServices = array_filter($servicesRepo, function($item) use ($service) {
 
         .section-header-title {
             font-size: 1.6rem;
-            font-weight: 800;
+            font-weight: 700;
             color: #ffffff;
             margin: 0;
             letter-spacing: -0.5px;
@@ -556,7 +556,7 @@ $otherServices = array_filter($servicesRepo, function($item) use ($service) {
             background: #dc2626;
             color: #ffffff;
             font-size: 0.72rem;
-            font-weight: 800;
+            font-weight: 700;
             padding: 4px 12px;
             border-radius: 50px;
             display: inline-block;
@@ -573,7 +573,7 @@ $otherServices = array_filter($servicesRepo, function($item) use ($service) {
 
         .related-project-title {
             font-size: 1.25rem;
-            font-weight: 800;
+            font-weight: 700;
             color: #ffffff;
             margin: 0;
             line-height: 1.25;
@@ -636,7 +636,7 @@ $otherServices = array_filter($servicesRepo, function($item) use ($service) {
 
         .cta-banner-title {
             font-size: 1.8rem;
-            font-weight: 800;
+            font-weight: 700;
             color: #ffffff;
             margin: 0 0 6px 0;
             letter-spacing: -0.5px;

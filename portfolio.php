@@ -146,7 +146,7 @@ $featuredAllProjects = array_filter($allProjects, function($item) {
 
         .port-hero-title {
             font-size: 4rem;
-            font-weight: 800;
+            font-weight: 700;
             color: #ffffff;
             letter-spacing: -1.5px;
             margin: 0 0 12px 0;
@@ -259,7 +259,7 @@ $featuredAllProjects = array_filter($allProjects, function($item) {
 
         .book-shoot-title {
             font-size: 1.15rem;
-            font-weight: 800;
+            font-weight: 700;
             color: #ffffff;
             margin: 0 0 4px 0;
         }
@@ -303,7 +303,7 @@ $featuredAllProjects = array_filter($allProjects, function($item) {
 
         .port-section-title {
             font-size: 1.4rem;
-            font-weight: 800;
+            font-weight: 700;
             color: #ffffff;
             margin: 0;
             display: flex;
@@ -470,7 +470,7 @@ $featuredAllProjects = array_filter($allProjects, function($item) {
 
         .album-title-text {
             font-size: 1.1rem;
-            font-weight: 800;
+            font-weight: 700;
             color: #ffffff;
             margin: 0 0 8px 0;
             line-height: 1.3;
@@ -701,7 +701,7 @@ $featuredAllProjects = array_filter($allProjects, function($item) {
 
         .project-card-title {
             font-size: 1.05rem;
-            font-weight: 800;
+            font-weight: 700;
             color: #ffffff;
             margin: 0;
             line-height: 1.25;
@@ -755,7 +755,7 @@ $featuredAllProjects = array_filter($allProjects, function($item) {
 
         .grid-card-title {
             font-size: 0.95rem;
-            font-weight: 800;
+            font-weight: 700;
             color: #ffffff;
             margin: 0 0 2px 0;
         }
@@ -858,7 +858,7 @@ $featuredAllProjects = array_filter($allProjects, function($item) {
 
         .lightbox-title-wrap h3 {
             font-size: 1.3rem;
-            font-weight: 800;
+            font-weight: 700;
             color: #ffffff;
             margin: 0 0 4px 0;
         }

@@ -192,7 +192,7 @@ $pageTitle = htmlspecialchars($currentProject['title']) . " — Case Study | Fal
             background: #dc2626;
             color: #ffffff;
             font-size: 0.76rem;
-            font-weight: 800;
+            font-weight: 700;
             padding: 5px 14px;
             border-radius: 20px;
             text-transform: uppercase;
@@ -213,7 +213,7 @@ $pageTitle = htmlspecialchars($currentProject['title']) . " — Case Study | Fal
 
         .modal-item-title {
             font-size: 2.2rem;
-            font-weight: 800;
+            font-weight: 700;
             color: #ffffff;
             margin: 0 0 16px 0;
             line-height: 1.2;

@@ -3210,7 +3210,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
         }
         #nativeBlogEditor h1 {
             font-size: 2.1rem;
-            font-weight: 800;
+            font-weight: 700;
             color: #0f172a;
             margin-top: 1.2em;
             margin-bottom: 0.4em;
@@ -3219,7 +3219,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
         #nativeBlogEditor h2,
         #nativeBlogEditor h3 {
             font-size: 1.7rem;
-            font-weight: 800;
+            font-weight: 700;
             color: #0f172a;
             margin-top: 1.2em;
             margin-bottom: 0.4em;
@@ -3347,7 +3347,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
 
         .sidebar-brand-name {
             font-size: 1.05rem;
-            font-weight: 800;
+            font-weight: 700;
             color: var(--text-primary);
             line-height: 1.2;
         }
@@ -3409,7 +3409,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
         .nav-category {
             padding: 14px 20px 6px 20px;
             font-size: 0.72rem;
-            font-weight: 800;
+            font-weight: 700;
             color: var(--text-muted);
             letter-spacing: 0.8px;
             text-transform: uppercase;
@@ -3587,7 +3587,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
             border-radius: 50%;
             background-color: var(--accent-red);
             color: #ffffff;
-            font-weight: 800;
+            font-weight: 700;
             font-size: 0.9rem;
             display: flex;
             align-items: center;
@@ -3635,7 +3635,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
 
         .section-header-title {
             font-size: 1.85rem;
-            font-weight: 800;
+            font-weight: 700;
             color: var(--text-primary);
             letter-spacing: -0.5px;
             margin-bottom: 6px;
@@ -4466,10 +4466,10 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                     <a href="/admin/index.php?section=onboarding" style="display: flex; align-items: center; justify-content: space-between;">
                         <span style="display: flex; align-items: center; gap: 10px;">
                             <i class="fa-solid fa-clipboard-check nav-icon" style="color: #dc2626;"></i>
-                            <span style="font-weight: 800;">Onboarding</span>
+                            <span style="font-weight: 700;">Onboarding</span>
                         </span>
                         <?php if ($isOnboardingIncomplete): ?>
-                            <span style="background: #ef4444; color: #ffffff; font-size: 0.65rem; font-weight: 800; padding: 2px 6px; border-radius: 8px;">Action Required</span>
+                            <span style="background: #ef4444; color: #ffffff; font-size: 0.65rem; font-weight: 700; padding: 2px 6px; border-radius: 8px;">Action Required</span>
                         <?php endif; ?>
                     </a>
                 </li>
@@ -4552,7 +4552,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                 <?php if ($workState === 'not_clocked_in'): ?>
                     <form method="POST" action="/admin/index.php?section=<?php echo htmlspecialchars($activeSection); ?>" style="margin: 0;">
                         <input type="hidden" name="action" value="clock_in">
-                        <button type="submit" style="background: #16a34a; color: #ffffff; border: none; padding: 5px 14px; border-radius: 20px; font-size: 0.78rem; font-weight: 800; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 1px 3px rgba(22, 163, 74, 0.25);" title="Clock In for Today">
+                        <button type="submit" style="background: #16a34a; color: #ffffff; border: none; padding: 5px 14px; border-radius: 20px; font-size: 0.78rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 1px 3px rgba(22, 163, 74, 0.25);" title="Clock In for Today">
                             <i class="fa-solid fa-play" style="font-size: 0.72rem;"></i> Clock In
                         </button>
                     </form>
@@ -4561,14 +4561,14 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                     <div style="display: flex; align-items: center; gap: 6px; background: rgba(22, 163, 74, 0.08); padding: 3px 4px; border-radius: 20px; border: 1px solid rgba(22, 163, 74, 0.2);">
                         <form method="POST" action="/admin/index.php?section=<?php echo htmlspecialchars($activeSection); ?>" style="margin: 0;">
                             <input type="hidden" name="action" value="start_break">
-                            <button type="submit" style="background: #d97706; color: #ffffff; border: none; padding: 4px 11px; border-radius: 16px; font-size: 0.75rem; font-weight: 800; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; box-shadow: 0 1px 2px rgba(217, 119, 6, 0.2);" title="Take a break">
+                            <button type="submit" style="background: #d97706; color: #ffffff; border: none; padding: 4px 11px; border-radius: 16px; font-size: 0.75rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; box-shadow: 0 1px 2px rgba(217, 119, 6, 0.2);" title="Take a break">
                                 <i class="fa-solid fa-mug-hot" style="font-size: 0.7rem;"></i> Break
                             </button>
                         </form>
 
                         <form method="POST" action="/admin/index.php?section=<?php echo htmlspecialchars($activeSection); ?>" style="margin: 0;">
                             <input type="hidden" name="action" value="clock_out">
-                            <button type="submit" style="background: #dc2626; color: #ffffff; border: none; padding: 4px 11px; border-radius: 16px; font-size: 0.75rem; font-weight: 800; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; box-shadow: 0 1px 2px rgba(220, 38, 38, 0.2);" title="Clock Out & End Shift (In at <?php echo htmlspecialchars($topbarAttendance['clock_in']); ?>)">
+                            <button type="submit" style="background: #dc2626; color: #ffffff; border: none; padding: 4px 11px; border-radius: 16px; font-size: 0.75rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; box-shadow: 0 1px 2px rgba(220, 38, 38, 0.2);" title="Clock Out & End Shift (In at <?php echo htmlspecialchars($topbarAttendance['clock_in']); ?>)">
                                 <i class="fa-solid fa-stop" style="font-size: 0.7rem;"></i> Clock Out
                             </button>
                         </form>
@@ -4576,12 +4576,12 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
 
                 <?php elseif ($workState === 'on_break'): ?>
                     <div style="display: flex; align-items: center; gap: 6px; background: rgba(217, 119, 6, 0.08); padding: 3px 4px; border-radius: 20px; border: 1px solid rgba(217, 119, 6, 0.25);">
-                        <span style="font-size: 0.75rem; font-weight: 800; color: #b45309; padding: 0 8px; display: inline-flex; align-items: center; gap: 4px;">
+                        <span style="font-size: 0.75rem; font-weight: 700; color: #b45309; padding: 0 8px; display: inline-flex; align-items: center; gap: 4px;">
                             <i class="fa-solid fa-mug-hot" style="font-size: 0.7rem;"></i> On Break
                         </span>
                         <form method="POST" action="/admin/index.php?section=<?php echo htmlspecialchars($activeSection); ?>" style="margin: 0;">
                             <input type="hidden" name="action" value="end_break">
-                            <button type="submit" style="background: #2563eb; color: #ffffff; border: none; padding: 4px 12px; border-radius: 16px; font-size: 0.75rem; font-weight: 800; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; box-shadow: 0 1px 3px rgba(37, 99, 235, 0.25);" title="End break & resume work session">
+                            <button type="submit" style="background: #2563eb; color: #ffffff; border: none; padding: 4px 12px; border-radius: 16px; font-size: 0.75rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; box-shadow: 0 1px 3px rgba(37, 99, 235, 0.25);" title="End break & resume work session">
                                 <i class="fa-solid fa-circle-play" style="font-size: 0.7rem;"></i> Resume
                             </button>
                         </form>
@@ -4589,12 +4589,12 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
 
                 <?php else: ?>
                     <div style="display: flex; align-items: center; gap: 6px; background: rgba(22, 163, 74, 0.08); padding: 3px 6px; border-radius: 20px; border: 1px solid rgba(22, 163, 74, 0.2);">
-                        <span style="font-size: 0.74rem; font-weight: 800; color: #15803d; padding: 0 4px; display: inline-flex; align-items: center; gap: 4px;" title="Shift Completed (<?php echo htmlspecialchars($topbarAttendance['duration']); ?>)">
+                        <span style="font-size: 0.74rem; font-weight: 700; color: #15803d; padding: 0 4px; display: inline-flex; align-items: center; gap: 4px;" title="Shift Completed (<?php echo htmlspecialchars($topbarAttendance['duration']); ?>)">
                             <i class="fa-solid fa-circle-check" style="font-size: 0.7rem;"></i> Shift Done
                         </span>
                         <form method="POST" action="/admin/index.php?section=<?php echo htmlspecialchars($activeSection); ?>" style="margin: 0;">
                             <input type="hidden" name="action" value="clock_in">
-                            <button type="submit" style="background: #16a34a; color: #ffffff; border: none; padding: 4px 11px; border-radius: 16px; font-size: 0.74rem; font-weight: 800; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; box-shadow: 0 1px 2px rgba(22, 163, 74, 0.25);" title="Clock In for new session">
+                            <button type="submit" style="background: #16a34a; color: #ffffff; border: none; padding: 4px 11px; border-radius: 16px; font-size: 0.74rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; box-shadow: 0 1px 2px rgba(22, 163, 74, 0.25);" title="Clock In for new session">
                                 <i class="fa-solid fa-play" style="font-size: 0.68rem;"></i> Clock In
                             </button>
                         </form>
@@ -4617,7 +4617,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                     <div class="avatar-dropdown-menu" id="topbarAvatarDropdown" style="display: none; position: absolute; right: 0; top: calc(100% + 10px); width: 260px; background: #ffffff; border-radius: 14px; box-shadow: 0 14px 35px -5px rgba(0, 0, 0, 0.18), 0 0 1px 1px rgba(0,0,0,0.06); border: 1px solid #e2e8f0; z-index: 10000; overflow: hidden; animation: avatarDropdownFade 0.18s ease;">
                         <!-- User Card Header -->
                         <div style="padding: 16px 18px; background: #f8fafc; border-bottom: 1px solid #f1f5f9; display: flex; align-items: center; gap: 12px;">
-                            <div style="width: 42px; height: 42px; border-radius: 50%; overflow: hidden; border: 2px solid #dc2626; flex-shrink: 0; display: flex; align-items: center; justify-content: center; background: #dc2626; color: #ffffff; font-weight: 800;">
+                            <div style="width: 42px; height: 42px; border-radius: 50%; overflow: hidden; border: 2px solid #dc2626; flex-shrink: 0; display: flex; align-items: center; justify-content: center; background: #dc2626; color: #ffffff; font-weight: 700;">
                                 <?php if (!empty($userAvatar)): ?>
                                     <img src="<?php echo htmlspecialchars(getCloudinaryUrl($userAvatar)); ?>" alt="User Avatar" style="width: 100%; height: 100%; object-fit: cover;">
                                 <?php else: ?>
@@ -4625,10 +4625,10 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                 <?php endif; ?>
                             </div>
                             <div style="overflow: hidden; flex-grow: 1; text-align: left;">
-                                <div style="font-weight: 800; font-size: 0.9rem; color: #0f172a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"><?php echo htmlspecialchars($userFullName); ?></div>
+                                <div style="font-weight: 700; font-size: 0.9rem; color: #0f172a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"><?php echo htmlspecialchars($userFullName); ?></div>
                                 <div style="font-size: 0.74rem; font-weight: 700; color: #0284c7; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 1px;"><i class="fa-solid fa-briefcase" style="font-size: 0.68rem;"></i> <?php echo htmlspecialchars($userDesignation); ?></div>
                                 <div style="font-size: 0.74rem; color: #64748b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 1px;"><?php echo htmlspecialchars($userEmail); ?></div>
-                                <span style="display: inline-block; margin-top: 4px; font-size: 0.66rem; font-weight: 800; background: #fee2e2; color: #dc2626; padding: 1px 7px; border-radius: 6px; text-transform: uppercase; letter-spacing: 0.5px;"><?php echo htmlspecialchars($userRole); ?></span>
+                                <span style="display: inline-block; margin-top: 4px; font-size: 0.66rem; font-weight: 700; background: #fee2e2; color: #dc2626; padding: 1px 7px; border-radius: 6px; text-transform: uppercase; letter-spacing: 0.5px;"><?php echo htmlspecialchars($userRole); ?></span>
                             </div>
                         </div>
 
@@ -4677,7 +4677,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                     <div style="width: 72px; height: 72px; background: rgba(220, 38, 38, 0.08); color: #dc2626; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 2.2rem; margin-bottom: 20px;">
                         <i class="fa-solid fa-shield-halved"></i>
                     </div>
-                    <h2 style="font-size: 1.75rem; font-weight: 800; color: #0f172a; margin-bottom: 12px; letter-spacing: -0.02em;">Access Restricted</h2>
+                    <h2 style="font-size: 1.75rem; font-weight: 700; color: #0f172a; margin-bottom: 12px; letter-spacing: -0.02em;">Access Restricted</h2>
                     <p style="font-size: 0.98rem; color: #64748b; max-width: 580px; margin: 0 auto 28px auto; line-height: 1.65;">
                         Your account role (<span style="color: #dc2626; font-weight: 700; background: #fef2f2; padding: 2px 8px; border-radius: 4px; border: 1px solid #fecaca;"><?php echo htmlspecialchars($userRole); ?></span>) does not have authorization to access or manage the <strong><?php echo htmlspecialchars(ucwords(str_replace('_', ' ', $activeSection))); ?></strong> section.
                     </p>
@@ -4898,7 +4898,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                             <div class="dashboard-card">
                                 <div class="card-header-row">
                                     <div class="card-icon-badge">
-                                        <span style="font-weight: 800; font-size: 0.95rem;">T</span>
+                                        <span style="font-weight: 700; font-size: 0.95rem;">T</span>
                                     </div>
                                     <div class="card-title-text">Text &amp; Copy</div>
                                 </div>
@@ -4994,7 +4994,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                         <?php echo htmlspecialchars($settings['hero_badge_label'] ?? ''); ?>
                                     </div>
                                     
-                                    <div style="font-size: 1.45rem; font-weight: 800; line-height: 1.2; margin-bottom: 12px;">
+                                    <div style="font-size: 1.45rem; font-weight: 700; line-height: 1.2; margin-bottom: 12px;">
                                         <div id="previewLine1"><?php echo htmlspecialchars($settings['hero_headline_line1'] ?? 'Creating what the'); ?></div>
                                         <div id="previewLine2" style="color: #ef4444;"><?php echo htmlspecialchars($settings['hero_headline_line2'] ?? 'World Watches'); ?></div>
                                     </div>
@@ -5051,7 +5051,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                             <div class="dashboard-card">
                                 <div class="card-header-row">
                                     <div class="card-icon-badge">
-                                        <span style="font-weight: 800; font-size: 0.95rem;">T</span>
+                                        <span style="font-weight: 700; font-size: 0.95rem;">T</span>
                                     </div>
                                     <div class="card-title-text">Section Header</div>
                                 </div>
@@ -5119,7 +5119,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                         <?php echo htmlspecialchars($statsBadge); ?>
                                     </div>
                                     
-                                    <div style="font-size: 1.45rem; font-weight: 800; line-height: 1.2; margin-bottom: 10px;">
+                                    <div style="font-size: 1.45rem; font-weight: 700; line-height: 1.2; margin-bottom: 10px;">
                                         <span id="statsPreviewWhite"><?php echo htmlspecialchars($statsWhite); ?></span>
                                         <span id="statsPreviewRed" style="color: #ef4444;"><?php echo htmlspecialchars($statsRed); ?></span>
                                     </div>
@@ -5280,7 +5280,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                         <div style="width: 48px; height: 48px; border-radius: 50%; background: #f8fafc; color: #dc2626; display: inline-flex; align-items: center; justify-content: center; font-size: 1.3rem; margin-bottom: 10px; border: 1px solid #e2e8f0;">
                             <i class="fa-solid fa-cloud-arrow-up"></i>
                         </div>
-                        <h4 style="font-size: 0.98rem; font-weight: 800; color: var(--text-primary); margin-bottom: 4px;">Drag &amp; drop photos here</h4>
+                        <h4 style="font-size: 0.98rem; font-weight: 700; color: var(--text-primary); margin-bottom: 4px;">Drag &amp; drop photos here</h4>
                         <p style="font-size: 0.82rem; color: var(--text-muted); margin: 0;">or click to browse &middot; JPG, PNG, WebP, GIF &middot; max 10 MB per file &middot; auto uploads to Cloudinary</p>
                         <input type="file" id="btsDropInput" name="bts_files[]" accept="image/*" multiple style="display: none;" onchange="handleBtsFileInput(this)">
                     </div>
@@ -5524,7 +5524,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                     <!-- VIEW A: FEATURED WORK LIST VIEW (Matching Screenshot 1) -->
                     <div class="section-header-bar" style="align-items: center; margin-bottom: 24px;">
                         <div>
-                            <h1 class="section-header-title" style="font-size: 1.75rem; font-weight: 800; color: #0f172a; margin-bottom: 4px;">Featured Work</h1>
+                            <h1 class="section-header-title" style="font-size: 1.75rem; font-weight: 700; color: #0f172a; margin-bottom: 4px;">Featured Work</h1>
                             <p class="section-header-desc" style="font-size: 0.88rem; color: #64748b; margin: 0;">
                                 <strong style="color: #0f172a;"><?php echo count($featuredItems); ?> videos</strong> &middot; <span style="color: #16a34a; font-weight: 600;"><i class="fa-solid fa-circle" style="font-size: 0.45rem; color: #22c55e;"></i> live on site</span>
                             </p>
@@ -5645,7 +5645,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
 
                         <div class="section-header-bar" style="margin-bottom: 24px;">
                             <div>
-                                <h1 class="section-header-title" style="font-size: 1.75rem; font-weight: 800; color: #0f172a; margin-bottom: 4px;">Services</h1>
+                                <h1 class="section-header-title" style="font-size: 1.75rem; font-weight: 700; color: #0f172a; margin-bottom: 4px;">Services</h1>
                                 <p class="section-header-desc" style="font-size: 0.88rem; color: #64748b; margin: 0;">
                                     <strong style="color: #0f172a;"><?php echo count($servicesItems); ?> services</strong>
                                 </p>
@@ -5757,7 +5757,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                     <!-- VIEW A: SERVICES LIST VIEW -->
                     <div class="section-header-bar" style="align-items: center; margin-bottom: 24px;">
                         <div>
-                            <h1 class="section-header-title" style="font-size: 1.75rem; font-weight: 800; color: #0f172a; margin-bottom: 4px;">Services</h1>
+                            <h1 class="section-header-title" style="font-size: 1.75rem; font-weight: 700; color: #0f172a; margin-bottom: 4px;">Services</h1>
                             <p class="section-header-desc" style="font-size: 0.88rem; color: #64748b; margin: 0; display: flex; align-items: center; gap: 8px;">
                                 <strong style="color: #0f172a;"><?php echo count($servicesItems); ?> services</strong>
                             </p>
@@ -5898,7 +5898,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                 <!-- Header Bar -->
                 <div class="section-header-bar" style="align-items: center; margin-bottom: 24px;">
                     <div>
-                        <h1 class="section-header-title" style="font-size: 1.75rem; font-weight: 800; color: #0f172a; margin-bottom: 4px;">Testimonials</h1>
+                        <h1 class="section-header-title" style="font-size: 1.75rem; font-weight: 700; color: #0f172a; margin-bottom: 4px;">Testimonials</h1>
                         <p class="section-header-desc" style="font-size: 0.88rem; color: #64748b; margin: 0; display: flex; align-items: center; gap: 8px;">
                             <strong style="color: #0f172a;"><?php echo count($testimonialsItems); ?> client testimonials</strong>
                         </p>
@@ -5913,7 +5913,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                 <?php if ($subAction === 'add' || $editingTestimonialId !== null): ?>
                     <!-- EDIT / ADD FORM VIEW (Matching Screenshot 2) -->
                     <div class="dashboard-card" style="margin-bottom: 28px; background: #ffffff; border-radius: 16px; border: 1px solid #e2e8f0; padding: 28px;">
-                        <h3 style="font-size: 1.15rem; font-weight: 800; color: #0f172a; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
+                        <h3 style="font-size: 1.15rem; font-weight: 700; color: #0f172a; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
                             <i class="fa-solid fa-quote-left" style="color: #dc2626;"></i>
                             <?php echo ($editingTestimonialId !== null) ? 'Edit Testimonial' : 'Add New Testimonial'; ?>
                         </h3>
@@ -6114,7 +6114,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                             <div style="width: 56px; height: 56px; border-radius: 50%; background: #fee2e2; color: #dc2626; display: flex; align-items: center; justify-content: center; font-size: 1.35rem; margin: 0 auto 18px auto; box-shadow: 0 0 0 8px #fef2f2;">
                                 <i class="fa-solid fa-trash-can"></i>
                             </div>
-                            <h3 style="font-size: 1.25rem; font-weight: 800; color: #0f172a; margin: 0 0 8px 0; line-height: 1.3;">
+                            <h3 style="font-size: 1.25rem; font-weight: 700; color: #0f172a; margin: 0 0 8px 0; line-height: 1.3;">
                                 Delete Testimonial?
                             </h3>
                             <p style="font-size: 0.92rem; color: #64748b; margin: 0 0 12px 0; line-height: 1.5;">
@@ -6242,7 +6242,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                 <?php if ($subAction === 'add' || $editingTeamId !== null): ?>
                     <!-- EDIT / ADD TEAM MEMBER FORM -->
                     <div class="dashboard-card" style="margin-bottom: 28px; background: #ffffff; border-radius: 16px; border: 1px solid #e2e8f0; padding: 28px;">
-                        <h3 style="font-size: 1.15rem; font-weight: 800; color: #0f172a; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
+                        <h3 style="font-size: 1.15rem; font-weight: 700; color: #0f172a; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
                             <i class="fa-solid fa-user-pen" style="color: #dc2626;"></i>
                             <?php echo ($editingTeamId !== null) ? 'Edit Team Member: ' . htmlspecialchars($editingMember['name'] ?? '') : 'Add New Team Member'; ?>
                         </h3>
@@ -6414,7 +6414,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                 <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; background: #f8fafc; padding: 6px 12px; border-radius: 8px; border: 1px solid #f1f5f9;">
                                     <div style="display: flex; align-items: center; gap: 8px;">
                                         <i class="fa-solid fa-grip-vertical team-drag-handle" style="cursor: grab; color: #94a3b8; font-size: 1.1rem;" title="Drag card to reorder position"></i>
-                                        <span class="team-card-index-num" style="background: #e2e8f0; color: #334155; font-size: 0.72rem; font-weight: 800; padding: 2px 8px; border-radius: 6px; font-family: monospace;">
+                                        <span class="team-card-index-num" style="background: #e2e8f0; color: #334155; font-size: 0.72rem; font-weight: 700; padding: 2px 8px; border-radius: 6px; font-family: monospace;">
                                             <?php echo sprintf("%02d", $tmIndex + 1); ?>
                                         </span>
                                     </div>
@@ -6438,7 +6438,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                             onerror="this.src='/assets/img/team/team_henry.png';"
                                         >
                                         <div>
-                                            <div style="font-size: 1.05rem; font-weight: 800; color: #0f172a; line-height: 1.2;">
+                                            <div style="font-size: 1.05rem; font-weight: 700; color: #0f172a; line-height: 1.2;">
                                                 <?php echo htmlspecialchars($tmItem['name']); ?>
                                             </div>
                                             <div style="font-size: 0.82rem; font-weight: 600; color: #dc2626; margin-top: 2px;">
@@ -6514,7 +6514,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                 <!-- Header Bar -->
                 <div class="section-header-bar" style="align-items: center; margin-bottom: 24px;">
                     <div>
-                        <h1 class="section-header-title" style="font-size: 1.75rem; font-weight: 800; color: #0f172a; margin-bottom: 4px;">Blog & Insights</h1>
+                        <h1 class="section-header-title" style="font-size: 1.75rem; font-weight: 700; color: #0f172a; margin-bottom: 4px;">Blog & Insights</h1>
                         <p class="section-header-desc" style="font-size: 0.88rem; color: #64748b; margin: 0; display: flex; align-items: center; gap: 8px;">
                             <strong style="color: #0f172a;"><?php echo count($blogPostsList); ?> published articles</strong>
                             <span>•</span>
@@ -6532,7 +6532,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                     <!-- FORM VIEW: EDIT OR ADD BLOG POST -->
                     <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 28px; margin-bottom: 32px; box-shadow: 0 4px 12px rgba(0,0,0,0.03);">
                         <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; padding-bottom: 14px; border-bottom: 1px solid #f1f5f9;">
-                            <h2 style="font-size: 1.2rem; font-weight: 800; color: #0f172a; margin: 0; display: flex; align-items: center; gap: 8px;">
+                            <h2 style="font-size: 1.2rem; font-weight: 700; color: #0f172a; margin: 0; display: flex; align-items: center; gap: 8px;">
                                 <i class="fa-solid fa-pen-to-square" style="color: #dc2626;"></i>
                                 <?php echo ($editingBlog !== null) ? 'Editing Article: ' . htmlspecialchars($editingBlog['title']) : 'Create New Article'; ?>
                             </h2>
@@ -6771,11 +6771,11 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                 <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; background: #f8fafc; padding: 6px 12px; border-radius: 8px; border: 1px solid #f1f5f9;">
                                     <div style="display: flex; align-items: center; gap: 8px;">
                                         <i class="fa-solid fa-grip-vertical blog-drag-handle" style="cursor: grab; color: #94a3b8; font-size: 1.1rem;" title="Drag to reorder position"></i>
-                                        <span class="blog-card-index-num" style="background: #e2e8f0; color: #334155; font-size: 0.72rem; font-weight: 800; padding: 2px 8px; border-radius: 6px; font-family: monospace;">
+                                        <span class="blog-card-index-num" style="background: #e2e8f0; color: #334155; font-size: 0.72rem; font-weight: 700; padding: 2px 8px; border-radius: 6px; font-family: monospace;">
                                             <?php echo sprintf("%02d", $bIndex + 1); ?>
                                         </span>
                                         <?php if (!empty($bItem['featured'])): ?>
-                                            <span style="background: #fef3c7; color: #d97706; font-size: 0.7rem; font-weight: 800; padding: 2px 8px; border-radius: 6px; display: inline-flex; align-items: center; gap: 3px;">
+                                            <span style="background: #fef3c7; color: #d97706; font-size: 0.7rem; font-weight: 700; padding: 2px 8px; border-radius: 6px; display: inline-flex; align-items: center; gap: 3px;">
                                                 <i class="fa-solid fa-star"></i> Featured Spotlight
                                             </span>
                                         <?php endif; ?>
@@ -6804,7 +6804,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                 </div>
 
                                 <!-- Article Title -->
-                                <h3 style="font-size: 1.05rem; font-weight: 800; color: #0f172a; margin-bottom: 8px; line-height: 1.35;">
+                                <h3 style="font-size: 1.05rem; font-weight: 700; color: #0f172a; margin-bottom: 8px; line-height: 1.35;">
                                     <?php echo htmlspecialchars($bItem['title']); ?>
                                 </h3>
 
@@ -6898,7 +6898,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                 <!-- Header Bar -->
                 <div class="section-header-bar" style="align-items: center; margin-bottom: 24px;">
                     <div>
-                        <h1 class="section-header-title" style="font-size: 1.75rem; font-weight: 800; color: #0f172a; margin-bottom: 4px; display: flex; align-items: center; gap: 10px;">
+                        <h1 class="section-header-title" style="font-size: 1.75rem; font-weight: 700; color: #0f172a; margin-bottom: 4px; display: flex; align-items: center; gap: 10px;">
                             <i class="fa-solid fa-layer-group" style="color: #dc2626;"></i> Portfolio Showcase
                         </h1>
                         <p class="section-header-desc" style="font-size: 0.88rem; color: #64748b; margin: 0; display: flex; align-items: center; gap: 12px;">
@@ -6921,7 +6921,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                 <?php if ($subAction === 'add' || $editingPortfolioId !== null): ?>
                     <!-- EDIT / ADD FORM VIEW -->
                     <div class="dashboard-card" style="margin-bottom: 28px; background: #ffffff; border-radius: 16px; border: 1px solid #e2e8f0; padding: 28px;">
-                        <h3 style="font-size: 1.15rem; font-weight: 800; color: #0f172a; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
+                        <h3 style="font-size: 1.15rem; font-weight: 700; color: #0f172a; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
                             <i class="fa-solid fa-pen-to-square" style="color: #dc2626;"></i>
                             <?php echo ($editingPortfolioId !== null) ? 'Edit Portfolio Item: ' . htmlspecialchars($editingPortfolio['title'] ?? '') : 'Add New Portfolio Showcase Item'; ?>
                         </h3>
@@ -7238,7 +7238,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
 
                                     <!-- Top Right Featured Pill -->
                                     <?php if (!empty($pItem['featured'])): ?>
-                                        <div style="position: absolute; top: 10px; right: 10px; background: #dc2626; color: #ffffff; font-size: 0.7rem; font-weight: 800; padding: 3px 8px; border-radius: 6px; box-shadow: 0 2px 6px rgba(220,38,38,0.4); display: flex; align-items: center; gap: 4px;">
+                                        <div style="position: absolute; top: 10px; right: 10px; background: #dc2626; color: #ffffff; font-size: 0.7rem; font-weight: 700; padding: 3px 8px; border-radius: 6px; box-shadow: 0 2px 6px rgba(220,38,38,0.4); display: flex; align-items: center; gap: 4px;">
                                             <i class="fa-solid fa-star" style="color: #facc15;"></i> FEATURED
                                         </div>
                                     <?php endif; ?>
@@ -7258,7 +7258,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                             <?php endif; ?>
                                         </div>
 
-                                        <h4 style="font-size: 1rem; font-weight: 800; color: #0f172a; margin: 0 0 6px 0; line-height: 1.3;">
+                                        <h4 style="font-size: 1rem; font-weight: 700; color: #0f172a; margin: 0 0 6px 0; line-height: 1.3;">
                                             <?php echo htmlspecialchars($pItem['title']); ?>
                                         </h4>
 
@@ -7317,7 +7317,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                 <!-- Header Bar -->
                 <div class="section-header-bar" style="align-items: center; margin-bottom: 24px;">
                     <div>
-                        <h1 class="section-header-title" style="font-size: 1.75rem; font-weight: 800; color: #0f172a; margin-bottom: 4px;">Careers &amp; Hiring</h1>
+                        <h1 class="section-header-title" style="font-size: 1.75rem; font-weight: 700; color: #0f172a; margin-bottom: 4px;">Careers &amp; Hiring</h1>
                         <p class="section-header-desc" style="font-size: 0.88rem; color: #64748b; margin: 0; display: flex; align-items: center; gap: 8px;">
                             <strong style="color: #0f172a;"><?php echo count($jobListings); ?> Job Positions</strong>
                             <span>•</span>
@@ -7347,7 +7347,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                     <!-- FORM VIEW: EDIT OR ADD JOB POSITION -->
                     <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 28px; margin-bottom: 32px; box-shadow: 0 4px 12px rgba(0,0,0,0.03);">
                         <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; padding-bottom: 14px; border-bottom: 1px solid #f1f5f9;">
-                            <h2 style="font-size: 1.2rem; font-weight: 800; color: #0f172a; margin: 0; display: flex; align-items: center; gap: 8px;">
+                            <h2 style="font-size: 1.2rem; font-weight: 700; color: #0f172a; margin: 0; display: flex; align-items: center; gap: 8px;">
                                 <i class="fa-solid fa-pen-to-square" style="color: #dc2626;"></i>
                                 <?php echo ($editingJob !== null) ? 'Editing Position: ' . htmlspecialchars($editingJob['title']) : 'Post New Job Position'; ?>
                             </h2>
@@ -7488,7 +7488,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                 <?php elseif ($activeTab === 'applications'): ?>
                     <!-- VIEW 2: APPLICANT INBOX TABLE -->
                     <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
-                        <h2 style="font-size: 1.1rem; font-weight: 800; color: #0f172a; margin-bottom: 16px;">Candidate Applications Received</h2>
+                        <h2 style="font-size: 1.1rem; font-weight: 700; color: #0f172a; margin-bottom: 16px;">Candidate Applications Received</h2>
                         <?php if (empty($jobApplications)): ?>
                             <p style="color: #64748b; font-size: 0.9rem; text-align: center; padding: 40px 0;">No job applications submitted yet.</p>
                         <?php else: ?>
@@ -7561,7 +7561,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                             <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 22px; display: flex; flex-direction: column; justify-content: space-between; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
                                 <div>
                                     <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
-                                        <span style="background: #f1f5f9; color: #0f172a; font-size: 0.72rem; font-weight: 800; padding: 4px 10px; border-radius: 20px;">
+                                        <span style="background: #f1f5f9; color: #0f172a; font-size: 0.72rem; font-weight: 700; padding: 4px 10px; border-radius: 20px;">
                                             <?php echo htmlspecialchars($jItem['dept'] ?? 'Production'); ?>
                                         </span>
                                         <form action="index.php?section=careers" method="POST" style="margin: 0;">
@@ -7569,15 +7569,15 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                             <input type="hidden" name="id" value="<?php echo $jItem['id']; ?>">
                                             <button type="submit" style="border: none; background: none; cursor: pointer; padding: 0;">
                                                 <?php if (($jItem['status'] ?? 'open') === 'open'): ?>
-                                                    <span style="background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; font-size: 0.7rem; font-weight: 800; padding: 2px 8px; border-radius: 12px;">● Open</span>
+                                                    <span style="background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; font-size: 0.7rem; font-weight: 700; padding: 2px 8px; border-radius: 12px;">● Open</span>
                                                 <?php else: ?>
-                                                    <span style="background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; font-size: 0.7rem; font-weight: 800; padding: 2px 8px; border-radius: 12px;">● Closed</span>
+                                                    <span style="background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; font-size: 0.7rem; font-weight: 700; padding: 2px 8px; border-radius: 12px;">● Closed</span>
                                                 <?php endif; ?>
                                             </button>
                                         </form>
                                     </div>
 
-                                    <h3 style="font-size: 1.1rem; font-weight: 800; color: #0f172a; margin-bottom: 8px; line-height: 1.35;">
+                                    <h3 style="font-size: 1.1rem; font-weight: 700; color: #0f172a; margin-bottom: 8px; line-height: 1.35;">
                                         <?php echo htmlspecialchars($jItem['title']); ?>
                                     </h3>
 
@@ -7628,7 +7628,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                 <!-- Header Bar -->
                 <div class="section-header-bar" style="align-items: center; margin-bottom: 24px;">
                     <div>
-                        <h1 class="section-header-title" style="font-size: 1.75rem; font-weight: 800; color: #0f172a; margin-bottom: 4px;">Client Brands &amp; Partners</h1>
+                        <h1 class="section-header-title" style="font-size: 1.75rem; font-weight: 700; color: #0f172a; margin-bottom: 4px;">Client Brands &amp; Partners</h1>
                         <p class="section-header-desc" style="font-size: 0.88rem; color: #64748b; margin: 0; display: flex; align-items: center; gap: 8px;">
                             <strong style="color: #0f172a;"><?php echo count($brandLogosList); ?> Client Brands</strong>
                             <span>•</span>
@@ -7646,7 +7646,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                     <!-- FORM VIEW: EDIT OR ADD BRAND LOGO -->
                     <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 28px; margin-bottom: 32px; box-shadow: 0 4px 12px rgba(0,0,0,0.03);">
                         <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; padding-bottom: 14px; border-bottom: 1px solid #f1f5f9;">
-                            <h2 style="font-size: 1.2rem; font-weight: 800; color: #0f172a; margin: 0; display: flex; align-items: center; gap: 8px;">
+                            <h2 style="font-size: 1.2rem; font-weight: 700; color: #0f172a; margin: 0; display: flex; align-items: center; gap: 8px;">
                                 <i class="fa-solid fa-pen-to-square" style="color: #dc2626;"></i>
                                 <?php echo ($editingBrand !== null) ? 'Editing Brand: ' . htmlspecialchars($editingBrand['name']) : 'Add New Client Brand'; ?>
                             </h2>
@@ -7790,9 +7790,9 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                             <input type="hidden" name="id" value="<?php echo $bItem['id']; ?>">
                                             <button type="submit" style="border: none; background: none; cursor: pointer; padding: 0;">
                                                 <?php if (!empty($bItem['visible'])): ?>
-                                                    <span style="background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; font-size: 0.7rem; font-weight: 800; padding: 2px 8px; border-radius: 12px;">● Visible</span>
+                                                    <span style="background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; font-size: 0.7rem; font-weight: 700; padding: 2px 8px; border-radius: 12px;">● Visible</span>
                                                 <?php else: ?>
-                                                    <span style="background: #f8fafc; color: #64748b; border: 1px solid #cbd5e1; font-size: 0.7rem; font-weight: 800; padding: 2px 8px; border-radius: 12px;">● Hidden</span>
+                                                    <span style="background: #f8fafc; color: #64748b; border: 1px solid #cbd5e1; font-size: 0.7rem; font-weight: 700; padding: 2px 8px; border-radius: 12px;">● Hidden</span>
                                                 <?php endif; ?>
                                             </button>
                                         </form>
@@ -7802,14 +7802,14 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                         <?php if (!empty($bItem['image'])): ?>
                                             <img src="<?php echo htmlspecialchars(getCloudinaryUrl($bItem['image'])); ?>" alt="<?php echo htmlspecialchars($bItem['name']); ?>" style="max-height: 36px; max-width: 120px; object-fit: contain;">
                                         <?php else: ?>
-                                            <div style="display: flex; align-items: center; gap: 8px; font-weight: 800; font-size: 1rem;">
+                                            <div style="display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 1rem;">
                                                 <i class="<?php echo htmlspecialchars(!empty($bItem['icon']) ? $bItem['icon'] : 'fa-solid fa-star'); ?>" style="color: #ef4444;"></i>
                                                 <?php echo htmlspecialchars($bItem['name']); ?>
                                             </div>
                                         <?php endif; ?>
                                     </div>
 
-                                    <h3 style="font-size: 1.05rem; font-weight: 800; color: #0f172a; margin-bottom: 4px; text-align: center;">
+                                    <h3 style="font-size: 1.05rem; font-weight: 700; color: #0f172a; margin-bottom: 4px; text-align: center;">
                                         <?php echo htmlspecialchars($bItem['name']); ?>
                                     </h3>
                                 </div>
@@ -7881,7 +7881,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                 <!-- Header Bar -->
                 <div class="section-header-bar" style="align-items: center; margin-bottom: 24px;">
                     <div>
-                        <h1 class="section-header-title" style="font-size: 1.75rem; font-weight: 800; color: #0f172a; margin-bottom: 4px;">My Profile &amp; Account Settings</h1>
+                        <h1 class="section-header-title" style="font-size: 1.75rem; font-weight: 700; color: #0f172a; margin-bottom: 4px;">My Profile &amp; Account Settings</h1>
                         <p class="section-header-desc" style="font-size: 0.88rem; color: #64748b; margin: 0;">
                             Manage your staff profile credentials, Cloudinary avatar, and account security preferences.
                         </p>
@@ -7944,7 +7944,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                 <i class="fa-solid fa-user-gear"></i>
                             </div>
                             <div>
-                                <h2 style="font-size: 1.25rem; font-weight: 800; color: #0f172a; margin: 0;">Account Profile Information</h2>
+                                <h2 style="font-size: 1.25rem; font-weight: 700; color: #0f172a; margin: 0;">Account Profile Information</h2>
                                 <p style="font-size: 0.84rem; color: #64748b; margin: 2px 0 0 0;">Update your name, email, role title, and avatar photo</p>
                             </div>
                         </div>
@@ -7960,14 +7960,14 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                     <?php if (!empty($profileData['avatar'])): ?>
                                         <img id="profile_avatar_img" src="<?php echo htmlspecialchars(getCloudinaryUrl($profileData['avatar'])); ?>" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 3px solid #dc2626; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
                                     <?php else: ?>
-                                        <div id="profile_avatar_initial" style="width: 80px; height: 80px; border-radius: 50%; background: #dc2626; color: #ffffff; display: flex; align-items: center; justify-content: center; font-size: 2rem; font-weight: 800; border: 3px solid #ffffff; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
+                                        <div id="profile_avatar_initial" style="width: 80px; height: 80px; border-radius: 50%; background: #dc2626; color: #ffffff; display: flex; align-items: center; justify-content: center; font-size: 2rem; font-weight: 700; border: 3px solid #ffffff; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
                                             <?php echo strtoupper(substr($profileData['full_name'] ?? 'A', 0, 1)); ?>
                                         </div>
                                     <?php endif; ?>
                                 </div>
 
                                 <div style="flex: 1;">
-                                    <h4 style="margin: 0 0 6px 0; font-size: 1rem; font-weight: 800; color: #0f172a;">Profile Photo Avatar</h4>
+                                    <h4 style="margin: 0 0 6px 0; font-size: 1rem; font-weight: 700; color: #0f172a;">Profile Photo Avatar</h4>
                                     <p style="margin: 0 0 12px 0; font-size: 0.82rem; color: #64748b;">Upload a high-resolution PNG or JPG photo. Will be uploaded directly to Cloudinary.</p>
 
                                     <div id="avatar_upload_status" style="display: none; margin-bottom: 10px; font-weight: 700; font-size: 0.84rem; color: #2563eb;">
@@ -8074,7 +8074,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                 <i class="fa-solid fa-lock"></i>
                             </div>
                             <div>
-                                <h2 style="font-size: 1.25rem; font-weight: 800; color: #0f172a; margin: 0;">Security &amp; Password Update</h2>
+                                <h2 style="font-size: 1.25rem; font-weight: 700; color: #0f172a; margin: 0;">Security &amp; Password Update</h2>
                                 <p style="font-size: 0.84rem; color: #64748b; margin: 2px 0 0 0;">Update your account password to maintain security</p>
                             </div>
                         </div>
@@ -8135,7 +8135,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                 </div>
 
                                 <div style="margin-top: 24px; padding-top: 20px; border-top: 1px solid #f1f5f9;">
-                                    <button type="submit" class="btn-save-primary" style="background-color: #dc2626; padding: 12px 28px; font-weight: 800;">
+                                    <button type="submit" class="btn-save-primary" style="background-color: #dc2626; padding: 12px 28px; font-weight: 700;">
                                         <i class="fa-solid fa-key"></i> <?php echo (isset($_GET['force_password_change']) || !empty($_SESSION['must_change_password'])) ? 'Save & Set Password' : 'Update Account Password'; ?>
                                     </button>
                                 </div>
@@ -8240,7 +8240,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                 <!-- Header Bar -->
                 <div class="section-header-bar" style="align-items: center; margin-bottom: 24px;">
                     <div>
-                        <h1 class="section-header-title" style="font-size: 1.75rem; font-weight: 800; color: #0f172a; margin: 0;">Staff &amp; Admin Accounts</h1>
+                        <h1 class="section-header-title" style="font-size: 1.75rem; font-weight: 700; color: #0f172a; margin: 0;">Staff &amp; Admin Accounts</h1>
                     </div>
                     <?php if ($subAction !== 'add' && $editingStaffId === null): ?>
                         <div style="display: flex; gap: 10px;">
@@ -8286,7 +8286,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                     <!-- FORM VIEW: EDIT OR ADD STAFF MEMBER -->
                     <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 28px; margin-bottom: 32px; box-shadow: 0 4px 12px rgba(0,0,0,0.03);">
                         <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; padding-bottom: 14px; border-bottom: 1px solid #f1f5f9;">
-                            <h2 style="font-size: 1.2rem; font-weight: 800; color: #0f172a; margin: 0; display: flex; align-items: center; gap: 8px;">
+                            <h2 style="font-size: 1.2rem; font-weight: 700; color: #0f172a; margin: 0; display: flex; align-items: center; gap: 8px;">
                                 <i class="fa-solid fa-user-pen" style="color: #dc2626;"></i>
                                 <?php echo ($editingStaff !== null) ? 'Editing Staff: ' . htmlspecialchars($editingStaff['full_name']) : 'Add New Staff Member'; ?>
                             </h2>
@@ -8313,14 +8313,14 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                     <?php if (!empty($editingStaff['avatar'])): ?>
                                         <img id="staff_avatar_img" src="<?php echo htmlspecialchars(getCloudinaryUrl($editingStaff['avatar'])); ?>" style="width: 64px; height: 64px; border-radius: 50%; object-fit: cover; border: 2px solid #dc2626;">
                                     <?php else: ?>
-                                        <div id="staff_avatar_no_img" style="width: 64px; height: 64px; border-radius: 50%; background: #dc2626; color: #ffffff; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: 800;">
+                                        <div id="staff_avatar_no_img" style="width: 64px; height: 64px; border-radius: 50%; background: #dc2626; color: #ffffff; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: 700;">
                                             <?php echo strtoupper(substr($editingStaff['full_name'] ?? 'S', 0, 1)); ?>
                                         </div>
                                     <?php endif; ?>
                                 </div>
 
                                 <div>
-                                    <h4 style="margin: 0 0 4px 0; font-size: 0.95rem; font-weight: 800; color: #0f172a;">Staff Avatar Photo (Synced from Team Menu)</h4>
+                                    <h4 style="margin: 0 0 4px 0; font-size: 0.95rem; font-weight: 700; color: #0f172a;">Staff Avatar Photo (Synced from Team Menu)</h4>
                                     <p style="margin: 0; font-size: 0.8rem; color: #64748b;">Avatar photos are automatically synchronized directly from the <strong>Team (Content)</strong> roster. Updating photos in the Team section instantly updates profile avatars across all staff accounts.</p>
                                 </div>
                             </div>
@@ -8479,16 +8479,16 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                                 $stStatus = $stItem['status'] ?? 'active';
                                                 if ($stStatus === 'pending_activation'): 
                                                 ?>
-                                                    <span style="background: #fffbeb; color: #b45309; border: 1px solid #fde68a; font-size: 0.72rem; font-weight: 800; padding: 3px 10px; border-radius: 12px;" title="Account requires 6-digit code activation">● Pending Activation</span>
+                                                    <span style="background: #fffbeb; color: #b45309; border: 1px solid #fde68a; font-size: 0.72rem; font-weight: 700; padding: 3px 10px; border-radius: 12px;" title="Account requires 6-digit code activation">● Pending Activation</span>
                                                 <?php elseif ($stStatus === 'active'): ?>
-                                                    <span style="background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; font-size: 0.72rem; font-weight: 800; padding: 3px 10px; border-radius: 12px;">● Active</span>
+                                                    <span style="background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; font-size: 0.72rem; font-weight: 700; padding: 3px 10px; border-radius: 12px;">● Active</span>
                                                 <?php else: ?>
-                                                    <span style="background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; font-size: 0.72rem; font-weight: 800; padding: 3px 10px; border-radius: 12px;">● Suspended</span>
+                                                    <span style="background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; font-size: 0.72rem; font-weight: 700; padding: 3px 10px; border-radius: 12px;">● Suspended</span>
                                                 <?php endif; ?>
                                             </button>
                                         </form>
 
-                                        <span style="font-size: 0.72rem; font-weight: 800; color: <?php echo $roleColor; ?>; background: <?php echo $roleBg; ?>; padding: 3px 10px; border-radius: 8px; border: 1px solid rgba(0,0,0,0.06); text-transform: uppercase; letter-spacing: 0.4px;">
+                                        <span style="font-size: 0.72rem; font-weight: 700; color: <?php echo $roleColor; ?>; background: <?php echo $roleBg; ?>; padding: 3px 10px; border-radius: 8px; border: 1px solid rgba(0,0,0,0.06); text-transform: uppercase; letter-spacing: 0.4px;">
                                             <?php echo htmlspecialchars($accRole); ?>
                                         </span>
                                     </div>
@@ -8497,13 +8497,13 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                         <?php if (!empty($stItem['avatar'])): ?>
                                             <img src="<?php echo htmlspecialchars(getCloudinaryUrl($stItem['avatar'])); ?>" alt="<?php echo htmlspecialchars($stItem['full_name']); ?>" style="width: 54px; height: 54px; border-radius: 50%; object-fit: cover; border: 2px solid #dc2626; flex-shrink: 0;">
                                         <?php else: ?>
-                                            <div style="width: 54px; height: 54px; border-radius: 50%; background: #dc2626; color: #ffffff; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1.3rem; flex-shrink: 0;">
+                                            <div style="width: 54px; height: 54px; border-radius: 50%; background: #dc2626; color: #ffffff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 1.3rem; flex-shrink: 0;">
                                                 <?php echo strtoupper(substr($stItem['full_name'] ?? 'S', 0, 1)); ?>
                                             </div>
                                         <?php endif; ?>
 
                                         <div>
-                                            <h3 style="font-size: 1.05rem; font-weight: 800; color: #0f172a; margin: 0 0 2px 0;">
+                                            <h3 style="font-size: 1.05rem; font-weight: 700; color: #0f172a; margin: 0 0 2px 0;">
                                                 <?php echo htmlspecialchars($stItem['full_name']); ?>
                                             </h3>
                                             <div style="font-size: 0.82rem; font-weight: 700; color: #0284c7; display: flex; align-items: center; gap: 5px;">
@@ -8714,7 +8714,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                             <i class="fa-solid fa-calendar-check"></i>
                         </div>
                         <div>
-                            <div style="font-size: 0.95rem; font-weight: 800; color: #0f172a;">My Attendance</div>
+                            <div style="font-size: 0.95rem; font-weight: 700; color: #0f172a;">My Attendance</div>
                             <div style="font-size: 0.76rem; color: <?php echo !empty($todayAttendance['clock_in']) ? '#15803d' : '#64748b'; ?>; font-weight: 700; margin-top: 2px;">
                                 <?php echo !empty($todayAttendance['clock_in']) ? '● Clocked In: ' . date('h:i A', strtotime($todayAttendance['clock_in'])) : 'Log shift & view history'; ?>
                             </div>
@@ -8726,7 +8726,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                             <i class="fa-solid fa-calendar-plus"></i>
                         </div>
                         <div>
-                            <div style="font-size: 0.95rem; font-weight: 800; color: #0f172a;">Request Time Off</div>
+                            <div style="font-size: 0.95rem; font-weight: 700; color: #0f172a;">Request Time Off</div>
                             <div style="font-size: 0.76rem; color: #64748b; margin-top: 2px; font-weight: 600;"><?php echo count($userLeaves); ?> Time Off Applications</div>
                         </div>
                     </a>
@@ -8736,7 +8736,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                             <i class="fa-solid fa-users"></i>
                         </div>
                         <div>
-                            <div style="font-size: 0.95rem; font-weight: 800; color: #0f172a;">Team Directory</div>
+                            <div style="font-size: 0.95rem; font-weight: 700; color: #0f172a;">Team Directory</div>
                             <div style="font-size: 0.76rem; color: #64748b; margin-top: 2px; font-weight: 600;"><?php echo $totalStaffCount; ?> Active Staff Roster</div>
                         </div>
                     </a>
@@ -8746,7 +8746,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                             <i class="fa-solid fa-comments"></i>
                         </div>
                         <div>
-                            <div style="font-size: 0.95rem; font-weight: 800; color: #0f172a;">The Nest (Chat)</div>
+                            <div style="font-size: 0.95rem; font-weight: 700; color: #0f172a;">The Nest (Chat)</div>
                             <div style="font-size: 0.76rem; color: #64748b; margin-top: 2px; font-weight: 600;">Team comms & channels</div>
                         </div>
                     </a>
@@ -8761,7 +8761,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                         <!-- CARD 1: TODAY'S SCHEDULE & OPERATIONAL AGENDA -->
                         <div class="dashboard-card" style="margin-bottom: 0; padding: 24px;">
                             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-                                <h3 style="margin: 0; font-size: 1.1rem; font-weight: 800; color: #0f172a; display: flex; align-items: center; gap: 8px;">
+                                <h3 style="margin: 0; font-size: 1.1rem; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 8px;">
                                     <i class="fa-solid fa-calendar-day" style="color: #2563eb;"></i> Today's Schedule &amp; Agenda
                                 </h3>
                                 <a href="/admin/index.php?section=attendance" style="font-size: 0.82rem; font-weight: 700; color: #dc2626; text-decoration: none;">
@@ -8785,23 +8785,23 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                     <?php foreach (array_slice($userMeetings, 0, 3) as $mIdx => $mItem): ?>
                                         <div style="padding: 14px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; border-left: 4px solid <?php echo ($mIdx === 0) ? '#2563eb' : (($mIdx === 1) ? '#dc2626' : '#16a34a'); ?>; display: flex; align-items: center; justify-content: space-between;">
                                             <div>
-                                                <div style="font-size: 0.76rem; font-weight: 800; color: <?php echo ($mIdx === 0) ? '#2563eb' : (($mIdx === 1) ? '#dc2626' : '#16a34a'); ?>; text-transform: uppercase;">
+                                                <div style="font-size: 0.76rem; font-weight: 700; color: <?php echo ($mIdx === 0) ? '#2563eb' : (($mIdx === 1) ? '#dc2626' : '#16a34a'); ?>; text-transform: uppercase;">
                                                     <?php echo htmlspecialchars($mItem['meeting_date'] ?? date('Y-m-d')); ?> &bull; <?php echo htmlspecialchars($mItem['meeting_time'] ?? '10:00 AM'); ?>
                                                 </div>
-                                                <div style="font-size: 0.92rem; font-weight: 800; color: #0f172a; margin-top: 2px;">
+                                                <div style="font-size: 0.92rem; font-weight: 700; color: #0f172a; margin-top: 2px;">
                                                     <?php echo htmlspecialchars($mItem['subject'] ?? 'Scheduled Team Meeting'); ?>
                                                 </div>
                                                 <div style="font-size: 0.78rem; color: #64748b; margin-top: 2px;">
                                                     <i class="fa-solid fa-user"></i> With @<?php echo htmlspecialchars($mItem['target_user'] ?? 'Team'); ?>
                                                 </div>
                                             </div>
-                                            <span style="background: #eff6ff; color: #1d4ed8; font-size: 0.72rem; font-weight: 800; padding: 3px 10px; border-radius: 12px; border: 1px solid #bfdbfe;">Scheduled</span>
+                                            <span style="background: #eff6ff; color: #1d4ed8; font-size: 0.72rem; font-weight: 700; padding: 3px 10px; border-radius: 12px; border: 1px solid #bfdbfe;">Scheduled</span>
                                         </div>
                                     <?php endforeach; ?>
                                 <?php else: ?>
                                     <div style="padding: 20px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; text-align: center;">
                                         <i class="fa-solid fa-calendar-day" style="font-size: 1.6rem; color: #2563eb; margin-bottom: 8px; display: block;"></i>
-                                        <div style="font-size: 0.9rem; font-weight: 800; color: #0f172a;">No Scheduled Meetings for Today</div>
+                                        <div style="font-size: 0.9rem; font-weight: 700; color: #0f172a;">No Scheduled Meetings for Today</div>
                                         <div style="font-size: 0.78rem; color: #64748b; margin-top: 4px; margin-bottom: 12px;">Your operational schedule is clear. Connect with your team or schedule a meeting.</div>
                                         <a href="/admin/index.php?section=directory" class="btn-save-primary" style="text-decoration: none; padding: 6px 16px; font-size: 0.78rem; display: inline-flex;">
                                             <i class="fa-solid fa-calendar-plus"></i> Schedule Meeting
@@ -8814,7 +8814,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                         <!-- CARD 2: COMPANY ANNOUNCEMENTS (REAL ANNOUNCEMENTS) -->
                         <div class="dashboard-card" style="margin-bottom: 0; padding: 24px;">
                             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-                                <h3 style="margin: 0; font-size: 1.1rem; font-weight: 800; color: #0f172a; display: flex; align-items: center; gap: 8px;">
+                                <h3 style="margin: 0; font-size: 1.1rem; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 8px;">
                                     <i class="fa-solid fa-bullhorn" style="color: #d97706;"></i> Company Announcements
                                 </h3>
                                 <a href="/admin/index.php?section=announcements" style="font-size: 0.82rem; font-weight: 700; color: #dc2626; text-decoration: none;">
@@ -8853,11 +8853,11 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                             <!-- FESTIVE CELEBRATION ANNOUNCEMENT CARD WITH EMPLOYEE PICTURE -->
                                             <div style="padding: 16px; background: <?php echo $bgColor; ?>; border: 1px solid #fbcfe8; border-left: 4px solid #ec4899; border-radius: 12px; box-shadow: 0 3px 10px rgba(236, 72, 153, 0.08);">
                                                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                                                    <div style="font-weight: 800; color: #be185d; font-size: 0.95rem; display: flex; align-items: center; gap: 6px;">
+                                                    <div style="font-weight: 700; color: #be185d; font-size: 0.95rem; display: flex; align-items: center; gap: 6px;">
                                                         <i class="<?php echo $badgeIcon; ?>" style="color: #ec4899;"></i>
                                                         <span><?php echo htmlspecialchars($annItem['title'] ?? 'Team Celebration!'); ?></span>
                                                     </div>
-                                                    <span style="font-size: 0.68rem; font-weight: 800; color: #be185d; background: #ffffff; padding: 2px 8px; border-radius: 12px; border: 1px solid #fbcfe8; text-transform: uppercase; letter-spacing: 0.5px;">
+                                                    <span style="font-size: 0.68rem; font-weight: 700; color: #be185d; background: #ffffff; padding: 2px 8px; border-radius: 12px; border: 1px solid #fbcfe8; text-transform: uppercase; letter-spacing: 0.5px;">
                                                         <?php echo $badgeEmoji; ?> CELEBRATION
                                                     </span>
                                                 </div>
@@ -8866,7 +8866,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                                         <?php if (!empty($annItem['avatar'])): ?>
                                                             <img src="<?php echo htmlspecialchars(getCloudinaryUrl($annItem['avatar'])); ?>" alt="<?php echo htmlspecialchars($annItem['employee_name'] ?? 'Celebrant'); ?>" style="width: 50px; height: 50px; border-radius: 50%; object-fit: cover; border: 2.5px solid #ec4899; box-shadow: 0 4px 10px rgba(236,72,153,0.25);">
                                                         <?php else: ?>
-                                                            <div style="width: 50px; height: 50px; border-radius: 50%; background: linear-gradient(135deg, #ec4899, #f43f5e); color: #ffffff; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; font-weight: 800; border: 2.5px solid #ec4899; box-shadow: 0 4px 10px rgba(236,72,153,0.25);">
+                                                            <div style="width: 50px; height: 50px; border-radius: 50%; background: linear-gradient(135deg, #ec4899, #f43f5e); color: #ffffff; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; font-weight: 700; border: 2.5px solid #ec4899; box-shadow: 0 4px 10px rgba(236,72,153,0.25);">
                                                                 <?php echo strtoupper(substr($annItem['employee_name'] ?? 'F', 0, 1)); ?>
                                                             </div>
                                                         <?php endif; ?>
@@ -8886,10 +8886,10 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                             <!-- REGULAR ANNOUNCEMENT CARD -->
                                             <div style="padding: 14px; background: <?php echo $bgColor; ?>; border-left: 4px solid <?php echo $borderColor; ?>; border-radius: 10px;">
                                                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-                                                    <div style="font-weight: 800; color: <?php echo $textColor; ?>; font-size: 0.92rem;">
+                                                    <div style="font-weight: 700; color: <?php echo $textColor; ?>; font-size: 0.92rem;">
                                                         <?php echo htmlspecialchars($annItem['title'] ?? 'Company Update'); ?>
                                                     </div>
-                                                    <span style="font-size: 0.7rem; font-weight: 800; color: #64748b; text-transform: uppercase;">
+                                                    <span style="font-size: 0.7rem; font-weight: 700; color: #64748b; text-transform: uppercase;">
                                                         <?php echo htmlspecialchars($annItem['category'] ?? 'General'); ?>
                                                     </span>
                                                 </div>
@@ -8915,7 +8915,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                         <!-- CARD 3: MY TIME OFF -->
                         <div class="dashboard-card" style="margin-bottom: 0; padding: 24px;">
                             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
-                                <h3 style="margin: 0; font-size: 1rem; font-weight: 800; color: #0f172a; display: flex; align-items: center; gap: 8px;">
+                                <h3 style="margin: 0; font-size: 1rem; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 8px;">
                                     <i class="fa-solid fa-plane-departure" style="color: #0284c7;"></i> My Time Off
                                 </h3>
                                 <a href="/admin/index.php?section=leaves" style="font-size: 0.78rem; font-weight: 700; color: #dc2626; text-decoration: none;">
@@ -8931,7 +8931,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                                 <strong><?php echo htmlspecialchars($lItem['leave_type'] ?? 'Vacation Leave'); ?></strong>
                                                 <div style="color: #64748b; font-size: 0.75rem;"><?php echo htmlspecialchars($lItem['start_date'] ?? ''); ?> to <?php echo htmlspecialchars($lItem['end_date'] ?? ''); ?></div>
                                             </div>
-                                            <span style="font-size: 0.72rem; font-weight: 800; color: #0284c7; background: #f0f9ff; padding: 2px 8px; border-radius: 6px; border: 1px solid #bae6fd;">
+                                            <span style="font-size: 0.72rem; font-weight: 700; color: #0284c7; background: #f0f9ff; padding: 2px 8px; border-radius: 6px; border: 1px solid #bae6fd;">
                                                 <?php echo ucfirst(htmlspecialchars($lItem['status'] ?? 'Pending')); ?>
                                             </span>
                                         </div>
@@ -8947,7 +8947,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                         <!-- CARD 4: WHO'S OFF TODAY? -->
                         <div class="dashboard-card" style="margin-bottom: 0; padding: 24px;">
                             <div style="margin-bottom: 14px;">
-                                <h3 style="margin: 0; font-size: 1rem; font-weight: 800; color: #0f172a; display: flex; align-items: center; gap: 8px;">
+                                <h3 style="margin: 0; font-size: 1rem; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 8px;">
                                     <i class="fa-solid fa-cloud-sun" style="color: #2563eb;"></i> Who's Off Today?
                                 </h3>
                             </div>
@@ -8962,7 +8962,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                             <?php else: ?>
                                 <div style="padding: 20px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; text-align: center;">
                                     <i class="fa-solid fa-users" style="font-size: 1.6rem; color: #22c55e; margin-bottom: 8px; display: block;"></i>
-                                    <div style="font-size: 0.9rem; font-weight: 800; color: #0f172a;">Everyone is in the office today!</div>
+                                    <div style="font-size: 0.9rem; font-weight: 700; color: #0f172a;">Everyone is in the office today!</div>
                                 </div>
                             <?php endif; ?>
                         </div>
@@ -8970,7 +8970,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                         <!-- CARD 5: REAL TEAM CELEBRATIONS & BIRTHDAYS -->
                         <div class="dashboard-card" style="margin-bottom: 0; padding: 24px;">
                             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
-                                <h3 style="margin: 0; font-size: 1rem; font-weight: 800; color: #0f172a; display: flex; align-items: center; gap: 8px;">
+                                <h3 style="margin: 0; font-size: 1rem; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 8px;">
                                     <i class="fa-solid fa-cake-candles" style="color: #ec4899;"></i> Team Celebrations
                                 </h3>
                                 <?php if (isAdminUser($userRole, $userEmail, $username) || strtolower($userRole) === 'hr manager'): ?>
@@ -8986,12 +8986,12 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                             <?php if (!empty($cItem['avatar'])): ?>
                                                 <img src="<?php echo htmlspecialchars(getCloudinaryUrl($cItem['avatar'])); ?>" alt="<?php echo htmlspecialchars($cItem['name']); ?>" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid #ec4899; flex-shrink: 0;">
                                             <?php else: ?>
-                                                <div style="width: 40px; height: 40px; border-radius: 50%; background: #ec4899; color: #ffffff; display: flex; align-items: center; justify-content: center; font-size: 1rem; font-weight: 800; flex-shrink: 0;">
+                                                <div style="width: 40px; height: 40px; border-radius: 50%; background: #ec4899; color: #ffffff; display: flex; align-items: center; justify-content: center; font-size: 1rem; font-weight: 700; flex-shrink: 0;">
                                                     <?php echo strtoupper(substr($cItem['name'], 0, 1)); ?>
                                                 </div>
                                             <?php endif; ?>
                                             <div>
-                                                <div style="font-size: 0.88rem; font-weight: 800; color: #0f172a;"><?php echo htmlspecialchars($cItem['name']); ?></div>
+                                                <div style="font-size: 0.88rem; font-weight: 700; color: #0f172a;"><?php echo htmlspecialchars($cItem['name']); ?></div>
                                                 <div style="font-size: 0.72rem; color: #64748b; font-weight: 600; margin-bottom: 2px;"><i class="fa-solid fa-briefcase" style="font-size: 0.65rem;"></i> <?php echo htmlspecialchars($cItem['designation'] ?? ($cItem['role'] ?? 'Creative Specialist')); ?></div>
                                                 <div style="font-size: 0.76rem; color: <?php echo !empty($cItem['is_today']) ? '#15803d' : '#be185d'; ?>; font-weight: 700;">
                                                     <?php echo !empty($cItem['is_today']) ? '🎂 Birthday Today!' : 'Birthday on ' . $cItem['date_str']; ?>
@@ -9002,7 +9002,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                 <?php else: ?>
                                     <div style="padding: 20px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; text-align: center;">
                                         <i class="fa-solid fa-cake-candles" style="font-size: 1.6rem; color: #ec4899; margin-bottom: 8px; display: block;"></i>
-                                        <div style="font-size: 0.9rem; font-weight: 800; color: #0f172a;">No Upcoming Team Birthdays</div>
+                                        <div style="font-size: 0.9rem; font-weight: 700; color: #0f172a;">No Upcoming Team Birthdays</div>
                                         <div style="font-size: 0.78rem; color: #64748b; margin-top: 4px; margin-bottom: 12px;">Set your Date of Birth in My Profile to display your birthday celebration here!</div>
                                         <a href="/admin/index.php?section=my_profile" class="btn-save-primary" style="text-decoration: none; padding: 6px 14px; font-size: 0.78rem; background: #ec4899; border-color: #ec4899; display: inline-flex;">
                                             <i class="fa-solid fa-user-gear"></i> Set Your Birthday
@@ -9058,8 +9058,8 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                         <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px; margin-bottom: 20px;">
                             <div>
                                 <div style="display: flex; align-items: center; gap: 8px;">
-                                    <span style="background: #dc2626; color: #ffffff; font-weight: 800; font-size: 0.75rem; padding: 3px 10px; border-radius: 12px; text-transform: uppercase;">HR & Admin Console</span>
-                                    <h2 style="font-size: 1.35rem; font-weight: 800; color: #0f172a; margin: 0;">Onboarding Management</h2>
+                                    <span style="background: #dc2626; color: #ffffff; font-weight: 700; font-size: 0.75rem; padding: 3px 10px; border-radius: 12px; text-transform: uppercase;">HR & Admin Console</span>
+                                    <h2 style="font-size: 1.35rem; font-weight: 700; color: #0f172a; margin: 0;">Onboarding Management</h2>
                                 </div>
                                 <p style="font-size: 0.84rem; color: #64748b; margin: 4px 0 0 0;">Administer staff onboarding activities, verify bank details, issue offer letters & employment agreements with dual-control governance.</p>
                             </div>
@@ -9079,7 +9079,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                         </div>
 
                         <!-- ALL STAFF PROGRESS CAROUSEL / GRID -->
-                        <div style="font-size: 0.82rem; font-weight: 800; color: #64748b; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px;">Company-Wide Staff Progress Overview</div>
+                        <div style="font-size: 0.82rem; font-weight: 700; color: #64748b; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px;">Company-Wide Staff Progress Overview</div>
                         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px;">
                             <?php foreach ($allStaffSummary as $stSum): ?>
                                 <?php 
@@ -9108,8 +9108,8 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                 ?>
                                 <a href="/admin/index.php?section=onboarding&target_user=<?php echo urlencode($stSum['username']); ?>" style="display: block; padding: 12px 14px; background: <?php echo $cardBg; ?>; border: 2px solid <?php echo $cardBorder; ?>; border-radius: 10px; text-decoration: none; transition: all 0.2s ease;">
                                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-                                        <div style="font-weight: 800; font-size: 0.86rem; color: #0f172a;"><?php echo htmlspecialchars($stSum['full_name']); ?> <?php echo ($currCanonical === strtolower($stSum['username'])) ? '<span style="font-size: 0.72rem; color: #2563eb;">(You)</span>' : ''; ?></div>
-                                        <span style="font-size: 0.72rem; font-weight: 800; color: <?php echo $badgeColor; ?>; background: <?php echo $badgeBg; ?>; padding: 2px 8px; border-radius: 10px; border: 1px solid <?php echo $badgeBorder; ?>;"><?php echo $stSum['percent']; ?>%</span>
+                                        <div style="font-weight: 700; font-size: 0.86rem; color: #0f172a;"><?php echo htmlspecialchars($stSum['full_name']); ?> <?php echo ($currCanonical === strtolower($stSum['username'])) ? '<span style="font-size: 0.72rem; color: #2563eb;">(You)</span>' : ''; ?></div>
+                                        <span style="font-size: 0.72rem; font-weight: 700; color: <?php echo $badgeColor; ?>; background: <?php echo $badgeBg; ?>; padding: 2px 8px; border-radius: 10px; border: 1px solid <?php echo $badgeBorder; ?>;"><?php echo $stSum['percent']; ?>%</span>
                                     </div>
                                     <div style="font-size: 0.75rem; color: #64748b;"><?php echo htmlspecialchars($stSum['role']); ?> &bull; <?php echo $stSum['completed']; ?>/<?php echo $stSum['total']; ?> Tasks</div>
                                 </a>
@@ -9133,7 +9133,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                         <form method="POST" action="/admin/index.php?section=onboarding" onsubmit="return confirm('Verify and approve all 8 onboarding tasks for <?php echo htmlspecialchars(addslashes($userFullName)); ?>?')" style="margin: 0;">
                             <input type="hidden" name="action" value="admin_approve_all_onboarding_tasks">
                             <input type="hidden" name="target_user" value="<?php echo htmlspecialchars($activeOnboardingUser); ?>">
-                            <button type="submit" class="btn-save-primary" style="background: #16a34a; border-color: #16a34a; padding: 9px 16px; font-size: 0.84rem; font-weight: 800; display: inline-flex; align-items: center; gap: 6px;">
+                            <button type="submit" class="btn-save-primary" style="background: #16a34a; border-color: #16a34a; padding: 9px 16px; font-size: 0.84rem; font-weight: 700; display: inline-flex; align-items: center; gap: 6px;">
                                 <i class="fa-solid fa-check-double"></i> Fast-Approve All 8 Tasks
                             </button>
                         </form>
@@ -9160,10 +9160,10 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                 <div class="dashboard-card" style="margin-bottom: 24px; padding: 24px; background: <?php echo $cardHeaderBg; ?>; <?php echo $cardHeaderBorder; ?>">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 10px;">
                         <div>
-                            <h2 style="font-size: 1.35rem; font-weight: 800; color: #0f172a; margin: 0 0 4px 0;">
+                            <h2 style="font-size: 1.35rem; font-weight: 700; color: #0f172a; margin: 0 0 4px 0;">
                                 <?php echo $isHRorAdmin ? 'Onboarding File: ' . htmlspecialchars($userFullName) : 'Your Progress'; ?>
                                 <?php if ($isProfileComplete): ?>
-                                    <span style="font-size: 0.76rem; font-weight: 800; background: #dcfce7; color: #15803d; padding: 3px 10px; border-radius: 12px; border: 1px solid #86efac; margin-left: 8px; vertical-align: middle;">
+                                    <span style="font-size: 0.76rem; font-weight: 700; background: #dcfce7; color: #15803d; padding: 3px 10px; border-radius: 12px; border: 1px solid #86efac; margin-left: 8px; vertical-align: middle;">
                                         <i class="fa-solid fa-circle-check"></i> 100% Completed & Verified
                                     </span>
                                 <?php endif; ?>
@@ -9172,7 +9172,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                 <?php echo $isHRorAdmin ? 'Administering tasks and documentation for ' . htmlspecialchars($userFullName) : 'Complete your onboarding tasks to get fully setup on the studio portal.'; ?>
                             </p>
                         </div>
-                        <div style="font-size: 0.95rem; font-weight: 800; color: #0f172a; background: #ffffff; padding: 6px 14px; border-radius: 20px; border: 1px solid <?php echo ($isProfileComplete ? '#bbf7d0' : '#cbd5e1'); ?>;">
+                        <div style="font-size: 0.95rem; font-weight: 700; color: #0f172a; background: #ffffff; padding: 6px 14px; border-radius: 20px; border: 1px solid <?php echo ($isProfileComplete ? '#bbf7d0' : '#cbd5e1'); ?>;">
                             Tasks Completed: <span style="color: <?php echo $progressColor; ?>;"><?php echo $onboardingProgress['completed']; ?>/<?php echo $onboardingProgress['total']; ?></span>
                         </div>
                     </div>
@@ -9194,8 +9194,8 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                     <div class="dashboard-card" style="margin-bottom: 0; display: flex; flex-direction: column; justify-content: space-between;">
                         <div>
                             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                                <h3 style="font-size: 0.95rem; font-weight: 800; color: #0f172a; margin: 0; white-space: nowrap;">Bank Details</h3>
-                                <span style="font-size: 0.74rem; font-weight: 800; padding: 3px 10px; border-radius: 12px; <?php echo ($isBankApproved ? 'background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0;' : ($hasBankDetails && !$isEditingBank ? 'background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe;' : 'background: #f1f5f9; color: #64748b; border: 1px solid #cbd5e1;')); ?>">
+                                <h3 style="font-size: 0.95rem; font-weight: 700; color: #0f172a; margin: 0; white-space: nowrap;">Bank Details</h3>
+                                <span style="font-size: 0.74rem; font-weight: 700; padding: 3px 10px; border-radius: 12px; <?php echo ($isBankApproved ? 'background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0;' : ($hasBankDetails && !$isEditingBank ? 'background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe;' : 'background: #f1f5f9; color: #64748b; border: 1px solid #cbd5e1;')); ?>">
                                     <?php echo ($isBankApproved ? 'Approved' : ($hasBankDetails && !$isEditingBank ? 'Submitted' : ($isEditingBank ? 'Editing' : 'Pending'))); ?>
                                 </span>
                             </div>
@@ -9208,7 +9208,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                     <div style="color: #64748b; margin-top: 2px;">Account Name: <?php echo htmlspecialchars($onboardingData['bank_details']['account_name']); ?></div>
                                 </div>
                                 <?php if ($isBankApproved): ?>
-                                    <div style="padding: 12px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px; color: #166534; font-weight: 800; font-size: 0.86rem; text-align: center; margin-bottom: 10px;">
+                                    <div style="padding: 12px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px; color: #166534; font-weight: 700; font-size: 0.86rem; text-align: center; margin-bottom: 10px;">
                                         <i class="fa-solid fa-check-circle" style="color: #16a34a;"></i> Bank Details Verified &amp; Approved by HR &amp; Admin
                                     </div>
                                 <?php elseif ($isOwnProfile): ?>
@@ -9283,23 +9283,23 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                     <div class="dashboard-card" style="margin-bottom: 0; display: flex; flex-direction: column; justify-content: space-between;">
                         <div>
                             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                                <h3 style="font-size: 0.95rem; font-weight: 800; color: #0f172a; margin: 0; white-space: nowrap;">Offer Letter</h3>
-                                <span style="font-size: 0.74rem; font-weight: 800; padding: 3px 10px; border-radius: 12px; <?php echo ($offerIsApproved ? 'background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0;' : ($offerIsAccepted ? 'background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd;' : ($offerIsIssued ? 'background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe;' : 'background: #f1f5f9; color: #64748b; border: 1px solid #cbd5e1;'))); ?>">
+                                <h3 style="font-size: 0.95rem; font-weight: 700; color: #0f172a; margin: 0; white-space: nowrap;">Offer Letter</h3>
+                                <span style="font-size: 0.74rem; font-weight: 700; padding: 3px 10px; border-radius: 12px; <?php echo ($offerIsApproved ? 'background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0;' : ($offerIsAccepted ? 'background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd;' : ($offerIsIssued ? 'background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe;' : 'background: #f1f5f9; color: #64748b; border: 1px solid #cbd5e1;'))); ?>">
                                     <?php echo htmlspecialchars($offerIsApproved ? 'Approved' : ($offerIsAccepted ? 'Accepted' : ($offerIsIssued ? 'Issued' : 'Pending'))); ?>
                                 </span>
                             </div>
                             <p style="font-size: 0.84rem; color: #64748b; margin-bottom: 14px;">Official employment offer letter and terms.</p>
 
                             <?php if ($offerIsApproved): ?>
-                                <div style="padding: 12px 14px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px; text-align: center; color: #166534; font-weight: 800; font-size: 0.88rem; margin-bottom: 12px;">
+                                <div style="padding: 12px 14px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px; text-align: center; color: #166534; font-weight: 700; font-size: 0.88rem; margin-bottom: 12px;">
                                     <i class="fa-solid fa-check-circle" style="color: #16a34a;"></i> Offer Letter Issued &amp; Approved
                                 </div>
                             <?php elseif ($offerIsAccepted): ?>
-                                <div style="padding: 12px 14px; background: #e0f2fe; border: 1px solid #bae6fd; border-radius: 10px; text-align: center; color: #0369a1; font-weight: 800; font-size: 0.88rem; margin-bottom: 12px;">
+                                <div style="padding: 12px 14px; background: #e0f2fe; border: 1px solid #bae6fd; border-radius: 10px; text-align: center; color: #0369a1; font-weight: 700; font-size: 0.88rem; margin-bottom: 12px;">
                                     <i class="fa-solid fa-user-check" style="color: #0284c7;"></i> Offer Letter Accepted &bull; Awaiting Dual Verification
                                 </div>
                             <?php elseif ($offerIsIssued): ?>
-                                <div style="padding: 12px 14px; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 10px; text-align: center; color: #1e40af; font-weight: 800; font-size: 0.88rem; margin-bottom: 12px;">
+                                <div style="padding: 12px 14px; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 10px; text-align: center; color: #1e40af; font-weight: 700; font-size: 0.88rem; margin-bottom: 12px;">
                                     <i class="fa-solid fa-paper-plane" style="color: #2563eb;"></i> Offer Issued - Pending Acceptance
                                 </div>
                             <?php else: ?>
@@ -9310,7 +9310,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
 
                             <?php if (!empty($offerInfo['job_title'])): ?>
                                 <div style="font-size: 0.82rem; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px; margin-bottom: 12px;">
-                                    <div style="font-weight: 800; color: #0f172a;"><?php echo htmlspecialchars($offerInfo['job_title']); ?></div>
+                                    <div style="font-weight: 700; color: #0f172a;"><?php echo htmlspecialchars($offerInfo['job_title']); ?></div>
                                     <div style="color: #64748b; font-size: 0.78rem; margin-top: 2px;">
                                         <?php echo htmlspecialchars($offerInfo['department'] ?? 'Media Production Studio'); ?> • <?php echo htmlspecialchars($offerInfo['employment_type'] ?? 'Full-Time'); ?>
                                     </div>
@@ -9330,7 +9330,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                 <form method="POST" action="/admin/index.php?section=onboarding" style="margin: 0;">
                                     <input type="hidden" name="action" value="accept_offer">
                                     <input type="hidden" name="target_user" value="<?php echo htmlspecialchars($activeOnboardingUser); ?>">
-                                    <button type="submit" class="btn-save-primary" style="width: 100%; justify-content: center; background: #2563eb; border-color: #2563eb; font-weight: 800; font-size: 0.84rem;">
+                                    <button type="submit" class="btn-save-primary" style="width: 100%; justify-content: center; background: #2563eb; border-color: #2563eb; font-weight: 700; font-size: 0.84rem;">
                                         <i class="fa-solid fa-check-circle"></i> Accept Offer Letter & Sign
                                     </button>
                                 </form>
@@ -9342,7 +9342,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                         <input type="hidden" name="target_user" value="<?php echo htmlspecialchars($activeOnboardingUser); ?>">
                                         <input type="hidden" name="task_key" value="offer_letter">
                                         <input type="hidden" name="new_status" value="Approved">
-                                        <button type="submit" class="btn-save-primary" style="width: 100%; justify-content: center; background: #16a34a; border-color: #16a34a; font-weight: 800; font-size: 0.82rem;">
+                                        <button type="submit" class="btn-save-primary" style="width: 100%; justify-content: center; background: #16a34a; border-color: #16a34a; font-weight: 700; font-size: 0.82rem;">
                                             <i class="fa-solid fa-check-double"></i> Verify & Approve Offer
                                         </button>
                                     </form>
@@ -9367,8 +9367,8 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                     <div class="dashboard-card" style="margin-bottom: 0; display: flex; flex-direction: column; justify-content: space-between;">
                         <div>
                             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                                <h3 style="font-size: 0.95rem; font-weight: 800; color: #0f172a; margin: 0; white-space: nowrap;">Employment Agreement</h3>
-                                <span style="font-size: 0.74rem; font-weight: 800; padding: 3px 10px; border-radius: 12px; <?php echo ($isAgrApproved ? 'background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0;' : ($isAgrRejected ? 'background: #fef2f2; color: #991b1b; border: 1px solid #fecaca;' : ($isAgrSubmitted ? 'background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe;' : 'background: #f1f5f9; color: #64748b; border: 1px solid #cbd5e1;'))); ?>">
+                                <h3 style="font-size: 0.95rem; font-weight: 700; color: #0f172a; margin: 0; white-space: nowrap;">Employment Agreement</h3>
+                                <span style="font-size: 0.74rem; font-weight: 700; padding: 3px 10px; border-radius: 12px; <?php echo ($isAgrApproved ? 'background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0;' : ($isAgrRejected ? 'background: #fef2f2; color: #991b1b; border: 1px solid #fecaca;' : ($isAgrSubmitted ? 'background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe;' : 'background: #f1f5f9; color: #64748b; border: 1px solid #cbd5e1;'))); ?>">
                                     <?php echo ($isAgrApproved ? 'Approved' : ($isAgrRejected ? 'Rejected' : ($isAgrSubmitted ? 'Submitted' : 'Pending'))); ?>
                                 </span>
                             </div>
@@ -9376,7 +9376,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
 
                             <?php if ($isAgrRejected): ?>
                                 <div style="padding: 12px; background: #fef2f2; border: 1px solid #fecaca; border-radius: 10px; color: #991b1b; font-size: 0.84rem; margin-bottom: 10px;">
-                                    <div style="font-weight: 800; display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
+                                    <div style="font-weight: 700; display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
                                         <i class="fa-solid fa-circle-xmark" style="color: #ef4444;"></i> Signature Rejected by HR &amp; Admin
                                     </div>
                                     <?php if (!empty($agrRejectionReason)): ?>
@@ -9386,7 +9386,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                     <?php endif; ?>
                                 </div>
                             <?php elseif ($isAgrApproved): ?>
-                                <div style="padding: 12px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px; color: #166534; font-weight: 800; font-size: 0.88rem; margin-bottom: 10px; text-align: center;">
+                                <div style="padding: 12px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px; color: #166534; font-weight: 700; font-size: 0.88rem; margin-bottom: 10px; text-align: center;">
                                     <i class="fa-solid fa-check-circle" style="color: #16a34a;"></i> Signed Agreement Verified &amp; Approved by HR &amp; Admin
                                 </div>
                             <?php elseif ($isAgrSubmitted): ?>
@@ -9405,7 +9405,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                             </button>
 
                             <?php if (!$isAgrApproved && $isOwnProfile): ?>
-                                <button type="button" class="btn-save-primary" style="width: 100%; justify-content: center; background: #16a34a; border-color: #16a34a; font-weight: 800; font-size: 0.84rem;" onclick="openAgreementViewModal(); setTimeout(function(){ var el = document.getElementById('agrSigCanvas'); if(el) el.scrollIntoView({behavior:'smooth', block:'center'}); }, 350);">
+                                <button type="button" class="btn-save-primary" style="width: 100%; justify-content: center; background: #16a34a; border-color: #16a34a; font-weight: 700; font-size: 0.84rem;" onclick="openAgreementViewModal(); setTimeout(function(){ var el = document.getElementById('agrSigCanvas'); if(el) el.scrollIntoView({behavior:'smooth', block:'center'}); }, 350);">
                                     <i class="fa-solid fa-signature"></i> <?php echo ($isAgrSubmitted || $isAgrRejected ? 'Re-Sign & Resubmit Agreement' : 'Sign & Accept Agreement'); ?>
                                 </button>
                             <?php endif; ?>
@@ -9446,8 +9446,8 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                     <div class="dashboard-card" style="margin-bottom: 0; display: flex; flex-direction: column; justify-content: space-between;">
                         <div>
                             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                                <h3 style="font-size: 0.95rem; font-weight: 800; color: #0f172a; margin: 0; white-space: nowrap;">Reference 1</h3>
-                                <span style="font-size: 0.74rem; font-weight: 800; padding: 3px 10px; border-radius: 12px; <?php echo ($isRef1Approved ? 'background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0;' : ($isRef1Rejected ? 'background: #fef2f2; color: #991b1b; border: 1px solid #fecaca;' : ($hasRef1Details && !$isEditingRef1 ? 'background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe;' : 'background: #f1f5f9; color: #64748b; border: 1px solid #cbd5e1;'))); ?>">
+                                <h3 style="font-size: 0.95rem; font-weight: 700; color: #0f172a; margin: 0; white-space: nowrap;">Reference 1</h3>
+                                <span style="font-size: 0.74rem; font-weight: 700; padding: 3px 10px; border-radius: 12px; <?php echo ($isRef1Approved ? 'background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0;' : ($isRef1Rejected ? 'background: #fef2f2; color: #991b1b; border: 1px solid #fecaca;' : ($hasRef1Details && !$isEditingRef1 ? 'background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe;' : 'background: #f1f5f9; color: #64748b; border: 1px solid #cbd5e1;'))); ?>">
                                     <?php echo ($isRef1Approved ? 'Approved' : ($isRef1Rejected ? 'Rejected' : ($hasRef1Details && !$isEditingRef1 ? 'Submitted' : ($isEditingRef1 ? 'Editing' : 'Pending')))); ?>
                                 </span>
                             </div>
@@ -9455,7 +9455,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
 
                             <?php if ($isRef1Rejected): ?>
                                 <div style="padding: 12px; background: #fef2f2; border: 1px solid #fecaca; border-radius: 10px; color: #991b1b; font-size: 0.84rem; margin-bottom: 12px;">
-                                    <div style="font-weight: 800; display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
+                                    <div style="font-weight: 700; display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
                                         <i class="fa-solid fa-circle-xmark" style="color: #ef4444;"></i> Reference 1 Rejected by HR
                                     </div>
                                     <?php if (!empty($ref1RejectionReason)): ?>
@@ -9473,7 +9473,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                     <div style="color: #64748b; margin-top: 2px;"><?php echo htmlspecialchars($onboardingData['reference_1']['ref_contact']); ?></div>
                                 </div>
                                 <?php if ($isRef1Approved): ?>
-                                    <div style="padding: 12px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px; color: #166534; font-weight: 800; font-size: 0.86rem; text-align: center;">
+                                    <div style="padding: 12px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px; color: #166534; font-weight: 700; font-size: 0.86rem; text-align: center;">
                                         <i class="fa-solid fa-check-circle" style="color: #16a34a;"></i> Reference Verified &amp; Approved by HR
                                     </div>
                                 <?php elseif ($isOwnProfile): ?>
@@ -9546,8 +9546,8 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                     <div class="dashboard-card" style="margin-bottom: 0; display: flex; flex-direction: column; justify-content: space-between;">
                         <div>
                             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                                <h3 style="font-size: 0.95rem; font-weight: 800; color: #0f172a; margin: 0; white-space: nowrap;">Reference 2</h3>
-                                <span style="font-size: 0.74rem; font-weight: 800; padding: 3px 10px; border-radius: 12px; <?php echo ($isRef2Approved ? 'background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0;' : ($isRef2Rejected ? 'background: #fef2f2; color: #991b1b; border: 1px solid #fecaca;' : ($hasRef2Details && !$isEditingRef2 ? 'background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe;' : 'background: #f1f5f9; color: #64748b; border: 1px solid #cbd5e1;'))); ?>">
+                                <h3 style="font-size: 0.95rem; font-weight: 700; color: #0f172a; margin: 0; white-space: nowrap;">Reference 2</h3>
+                                <span style="font-size: 0.74rem; font-weight: 700; padding: 3px 10px; border-radius: 12px; <?php echo ($isRef2Approved ? 'background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0;' : ($isRef2Rejected ? 'background: #fef2f2; color: #991b1b; border: 1px solid #fecaca;' : ($hasRef2Details && !$isEditingRef2 ? 'background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe;' : 'background: #f1f5f9; color: #64748b; border: 1px solid #cbd5e1;'))); ?>">
                                     <?php echo ($isRef2Approved ? 'Approved' : ($isRef2Rejected ? 'Rejected' : ($hasRef2Details && !$isEditingRef2 ? 'Submitted' : ($isEditingRef2 ? 'Editing' : 'Pending')))); ?>
                                 </span>
                             </div>
@@ -9555,7 +9555,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
 
                             <?php if ($isRef2Rejected): ?>
                                 <div style="padding: 12px; background: #fef2f2; border: 1px solid #fecaca; border-radius: 10px; color: #991b1b; font-size: 0.84rem; margin-bottom: 12px;">
-                                    <div style="font-weight: 800; display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
+                                    <div style="font-weight: 700; display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
                                         <i class="fa-solid fa-circle-xmark" style="color: #ef4444;"></i> Reference 2 Rejected by HR
                                     </div>
                                     <?php if (!empty($ref2RejectionReason)): ?>
@@ -9573,7 +9573,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                     <div style="color: #64748b; margin-top: 2px;"><?php echo htmlspecialchars($onboardingData['reference_2']['ref_contact']); ?></div>
                                 </div>
                                 <?php if ($isRef2Approved): ?>
-                                    <div style="padding: 12px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px; color: #166534; font-weight: 800; font-size: 0.86rem; text-align: center;">
+                                    <div style="padding: 12px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px; color: #166534; font-weight: 700; font-size: 0.86rem; text-align: center;">
                                         <i class="fa-solid fa-check-circle" style="color: #16a34a;"></i> Reference Verified &amp; Approved by HR
                                     </div>
                                 <?php elseif ($isOwnProfile): ?>
@@ -9648,8 +9648,8 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                     <div class="dashboard-card" style="margin-bottom: 0; display: flex; flex-direction: column; justify-content: space-between;">
                         <div>
                             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                                <h3 style="font-size: 0.95rem; font-weight: 800; color: #0f172a; margin: 0; white-space: nowrap;">SOP</h3>
-                                <span style="font-size: 0.74rem; font-weight: 800; padding: 3px 10px; border-radius: 12px; <?php echo ($isSopApproved ? 'background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0;' : ($isSopRejected ? 'background: #fef2f2; color: #991b1b; border: 1px solid #fecaca;' : ($isSopSubmitted ? 'background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe;' : 'background: #f1f5f9; color: #64748b; border: 1px solid #cbd5e1;'))); ?>">
+                                <h3 style="font-size: 0.95rem; font-weight: 700; color: #0f172a; margin: 0; white-space: nowrap;">SOP</h3>
+                                <span style="font-size: 0.74rem; font-weight: 700; padding: 3px 10px; border-radius: 12px; <?php echo ($isSopApproved ? 'background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0;' : ($isSopRejected ? 'background: #fef2f2; color: #991b1b; border: 1px solid #fecaca;' : ($isSopSubmitted ? 'background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe;' : 'background: #f1f5f9; color: #64748b; border: 1px solid #cbd5e1;'))); ?>">
                                     <?php echo ($isSopApproved ? 'Approved' : ($isSopRejected ? 'Rejected' : ($isSopSubmitted ? 'Submitted' : 'Pending'))); ?>
                                 </span>
                             </div>
@@ -9657,7 +9657,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
 
                             <?php if ($isSopRejected): ?>
                                 <div style="padding: 12px; background: #fef2f2; border: 1px solid #fecaca; border-radius: 10px; color: #991b1b; font-size: 0.84rem; margin-bottom: 10px;">
-                                    <div style="font-weight: 800; display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
+                                    <div style="font-weight: 700; display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
                                         <i class="fa-solid fa-circle-xmark" style="color: #ef4444;"></i> SOP Signature Rejected by HR &amp; Admin
                                     </div>
                                     <?php if (!empty($sopRejectionReason)): ?>
@@ -9667,7 +9667,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                     <?php endif; ?>
                                 </div>
                             <?php elseif ($isSopApproved): ?>
-                                <div style="padding: 12px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px; color: #166534; font-weight: 800; font-size: 0.88rem; margin-bottom: 10px; text-align: center;">
+                                <div style="padding: 12px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px; color: #166534; font-weight: 700; font-size: 0.88rem; margin-bottom: 10px; text-align: center;">
                                     <i class="fa-solid fa-check-circle" style="color: #16a34a;"></i> SOP Verified &amp; Approved by HR &amp; Admin
                                 </div>
                             <?php elseif ($isSopSubmitted): ?>
@@ -9686,7 +9686,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                             </button>
 
                             <?php if (!$isSopApproved && $isOwnProfile): ?>
-                                <button type="button" onclick="openSopViewModal()" class="btn-save-primary" style="width: 100%; justify-content: center; background: #16a34a; border-color: #16a34a; font-weight: 800; font-size: 0.84rem;">
+                                <button type="button" onclick="openSopViewModal()" class="btn-save-primary" style="width: 100%; justify-content: center; background: #16a34a; border-color: #16a34a; font-weight: 700; font-size: 0.84rem;">
                                     <i class="fa-solid fa-signature"></i> <?php echo ($isSopSubmitted || $isSopRejected ? 'Re-Sign & Acknowledge SOP' : 'Read & Acknowledge SOP'); ?>
                                 </button>
                             <?php endif; ?>
@@ -9729,8 +9729,8 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                     <div class="dashboard-card" style="margin-bottom: 0; display: flex; flex-direction: column; justify-content: space-between;">
                         <div>
                             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                                <h3 style="font-size: 0.95rem; font-weight: 800; color: #0f172a; margin: 0; white-space: nowrap;">Staff Handbook</h3>
-                                <span style="font-size: 0.74rem; font-weight: 800; padding: 3px 10px; border-radius: 12px; <?php echo ($isHandbookApproved ? 'background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0;' : ($isHandbookRejected ? 'background: #fef2f2; color: #991b1b; border: 1px solid #fecaca;' : ($isHandbookSubmitted ? 'background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe;' : 'background: #f1f5f9; color: #64748b; border: 1px solid #cbd5e1;'))); ?>">
+                                <h3 style="font-size: 0.95rem; font-weight: 700; color: #0f172a; margin: 0; white-space: nowrap;">Staff Handbook</h3>
+                                <span style="font-size: 0.74rem; font-weight: 700; padding: 3px 10px; border-radius: 12px; <?php echo ($isHandbookApproved ? 'background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0;' : ($isHandbookRejected ? 'background: #fef2f2; color: #991b1b; border: 1px solid #fecaca;' : ($isHandbookSubmitted ? 'background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe;' : 'background: #f1f5f9; color: #64748b; border: 1px solid #cbd5e1;'))); ?>">
                                     <?php echo ($isHandbookApproved ? 'Approved' : ($isHandbookRejected ? 'Rejected' : ($isHandbookSubmitted ? 'Submitted' : 'Pending'))); ?>
                                 </span>
                             </div>
@@ -9738,7 +9738,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
 
                             <?php if ($isHandbookRejected): ?>
                                 <div style="padding: 12px; background: #fef2f2; border: 1px solid #fecaca; border-radius: 10px; color: #991b1b; font-size: 0.84rem; margin-bottom: 10px;">
-                                    <div style="font-weight: 800; display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
+                                    <div style="font-weight: 700; display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
                                         <i class="fa-solid fa-circle-xmark" style="color: #ef4444;"></i> Handbook Signature Rejected by HR &amp; Admin
                                     </div>
                                     <?php if (!empty($handbookRejectionReason)): ?>
@@ -9748,7 +9748,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                     <?php endif; ?>
                                 </div>
                             <?php elseif ($isHandbookApproved): ?>
-                                <div style="padding: 12px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px; color: #166534; font-weight: 800; font-size: 0.88rem; margin-bottom: 10px; text-align: center;">
+                                <div style="padding: 12px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px; color: #166534; font-weight: 700; font-size: 0.88rem; margin-bottom: 10px; text-align: center;">
                                     <i class="fa-solid fa-check-circle" style="color: #16a34a;"></i> Staff Handbook Verified &amp; Approved by HR &amp; Admin
                                 </div>
                             <?php elseif ($isHandbookSubmitted): ?>
@@ -9767,7 +9767,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                             </button>
 
                             <?php if (!$isHandbookApproved && $isOwnProfile): ?>
-                                <button type="button" onclick="openHandbookViewModal()" class="btn-save-primary" style="width: 100%; justify-content: center; background: #16a34a; border-color: #16a34a; font-weight: 800; font-size: 0.84rem;">
+                                <button type="button" onclick="openHandbookViewModal()" class="btn-save-primary" style="width: 100%; justify-content: center; background: #16a34a; border-color: #16a34a; font-weight: 700; font-size: 0.84rem;">
                                     <i class="fa-solid fa-signature"></i> <?php echo ($isHandbookSubmitted || $isHandbookRejected ? 'Re-Sign & Acknowledge Handbook' : 'Read & Acknowledge Handbook'); ?>
                                 </button>
                             <?php endif; ?>
@@ -9809,8 +9809,8 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                     <div class="dashboard-card" style="margin-bottom: 0; display: flex; flex-direction: column; justify-content: space-between;">
                         <div>
                             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                                <h3 style="font-size: 0.95rem; font-weight: 800; color: #0f172a; margin: 0; white-space: nowrap;">ID Verification</h3>
-                                <span style="font-size: 0.74rem; font-weight: 800; padding: 3px 10px; border-radius: 12px; <?php echo ($isIdApproved ? 'background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0;' : ($isIdRejected ? 'background: #fef2f2; color: #991b1b; border: 1px solid #fecaca;' : ($hasIdFile && !$isEditingId ? 'background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe;' : 'background: #f1f5f9; color: #64748b; border: 1px solid #cbd5e1;'))); ?>">
+                                <h3 style="font-size: 0.95rem; font-weight: 700; color: #0f172a; margin: 0; white-space: nowrap;">ID Verification</h3>
+                                <span style="font-size: 0.74rem; font-weight: 700; padding: 3px 10px; border-radius: 12px; <?php echo ($isIdApproved ? 'background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0;' : ($isIdRejected ? 'background: #fef2f2; color: #991b1b; border: 1px solid #fecaca;' : ($hasIdFile && !$isEditingId ? 'background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe;' : 'background: #f1f5f9; color: #64748b; border: 1px solid #cbd5e1;'))); ?>">
                                     <?php echo ($isIdApproved ? 'Approved' : ($isIdRejected ? 'Rejected' : ($hasIdFile && !$isEditingId ? 'Submitted' : ($isEditingId ? 'Re-Uploading' : 'Pending')))); ?>
                                 </span>
                             </div>
@@ -9818,7 +9818,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
 
                             <?php if ($isIdRejected): ?>
                                 <div style="padding: 12px; background: #fef2f2; border: 1px solid #fecaca; border-radius: 10px; color: #991b1b; font-size: 0.84rem; margin-bottom: 12px;">
-                                    <div style="font-weight: 800; display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
+                                    <div style="font-weight: 700; display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
                                         <i class="fa-solid fa-circle-xmark" style="color: #ef4444;"></i> ID Document Rejected by HR &amp; Admin
                                     </div>
                                     <?php if (!empty($idRejectionReason)): ?>
@@ -9839,7 +9839,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                     </a>
                                 </div>
                                 <?php if ($isIdApproved): ?>
-                                    <div style="padding: 12px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px; color: #166534; font-weight: 800; font-size: 0.86rem; text-align: center;">
+                                    <div style="padding: 12px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px; color: #166534; font-weight: 700; font-size: 0.86rem; text-align: center;">
                                         <i class="fa-solid fa-check-circle" style="color: #16a34a;"></i> ID Verified &amp; Approved by HR &amp; Admin
                                     </div>
                                 <?php elseif ($isOwnProfile): ?>
@@ -9923,7 +9923,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                 <i class="fa-solid fa-file-signature"></i>
                             </div>
                             <div>
-                                <h2 style="font-size: 1.3rem; font-weight: 800; color: #0f172a; margin: 0 0 2px 0;">Issue Official Offer Letter</h2>
+                                <h2 style="font-size: 1.3rem; font-weight: 700; color: #0f172a; margin: 0 0 2px 0;">Issue Official Offer Letter</h2>
                                 <p style="font-size: 0.84rem; color: #64748b; margin: 0;">Issuing offer documentation for candidate <strong style="color: #0f172a;">@<?php echo htmlspecialchars($activeOnboardingUser); ?></strong></p>
                             </div>
                         </div>
@@ -10009,7 +10009,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
 
                             <!-- COMPENSATION BREAKDOWN (SET BY HR) -->
                             <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 12px; padding: 14px; margin-top: 4px;">
-                                <div style="font-size: 0.82rem; font-weight: 800; color: #0f172a; margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between;">
+                                <div style="font-size: 0.82rem; font-weight: 700; color: #0f172a; margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between;">
                                     <span><i class="fa-solid fa-calculator" style="color: #2563eb;"></i> Compensation Breakdown Structure</span>
                                     <span style="font-size: 0.72rem; color: #166534; font-weight: 700;"><i class="fa-solid fa-sync"></i> Synced with Monthly Compensation</span>
                                 </div>
@@ -10028,7 +10028,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                     </div>
                                     <div>
                                         <label style="display: block; font-size: 0.76rem; font-weight: 700; color: #475569; margin-bottom: 4px;">Total Earnings / Package</label>
-                                        <input type="text" id="offer_total_earnings" name="total_earnings" value="<?php echo htmlspecialchars(preg_replace('/^[₦$€£\s]+/u', '', $onboardingData['offer_letter']['total_earnings'] ?? '250,000')); ?>" placeholder="e.g. 250,000" oninput="calcOfferTotals('total')" style="width: 100%; padding: 8px 10px; font-size: 0.82rem; border: 1px solid #cbd5e1; border-radius: 8px; box-sizing: border-box; font-weight: 800; color: #166534; background: #f0fdf4;">
+                                        <input type="text" id="offer_total_earnings" name="total_earnings" value="<?php echo htmlspecialchars(preg_replace('/^[₦$€£\s]+/u', '', $onboardingData['offer_letter']['total_earnings'] ?? '250,000')); ?>" placeholder="e.g. 250,000" oninput="calcOfferTotals('total')" style="width: 100%; padding: 8px 10px; font-size: 0.82rem; border: 1px solid #cbd5e1; border-radius: 8px; box-sizing: border-box; font-weight: 700; color: #166534; background: #f0fdf4;">
                                     </div>
                                 </div>
                             </div>
@@ -10091,7 +10091,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                     $modalOfferIsAccepted = ($modalOfferStatus === 'Accepted') || (!empty($onboardingData['offer_letter']['accepted']) && !$modalOfferIsApproved);
                                     $modalOfferIsIssued = ($modalOfferStatus === 'Issued') || !empty($onboardingData['offer_letter']['issued']);
                                 ?>
-                                <span style="font-size: 0.76rem; font-weight: 800; padding: 4px 12px; border-radius: 14px; <?php echo ($modalOfferIsApproved ? 'background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0;' : ($modalOfferIsAccepted ? 'background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd;' : ($modalOfferIsIssued ? 'background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe;' : 'background: #f1f5f9; color: #64748b; border: 1px solid #cbd5e1;'))); ?>">
+                                <span style="font-size: 0.76rem; font-weight: 700; padding: 4px 12px; border-radius: 14px; <?php echo ($modalOfferIsApproved ? 'background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0;' : ($modalOfferIsAccepted ? 'background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd;' : ($modalOfferIsIssued ? 'background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe;' : 'background: #f1f5f9; color: #64748b; border: 1px solid #cbd5e1;'))); ?>">
                                     <i class="fa-solid <?php echo ($modalOfferIsApproved ? 'fa-check-double' : ($modalOfferIsAccepted ? 'fa-user-check' : ($modalOfferIsIssued ? 'fa-paper-plane' : 'fa-clock'))); ?>"></i>
                                     <?php echo htmlspecialchars($modalOfferIsApproved ? 'Issued & Approved' : ($modalOfferIsAccepted ? 'Accepted & Signed' : ($modalOfferIsIssued ? 'Official Offer Issued' : 'Draft / Pending'))); ?>
                                 </span>
@@ -10102,7 +10102,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                         <!-- OFFER CONTENT BODY -->
                         <div style="display: flex; flex-direction: column; gap: 18px;">
                             <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 14px; padding: 18px;">
-                                <h3 style="font-size: 1.15rem; font-weight: 800; color: #0f172a; margin: 0 0 4px 0;">
+                                <h3 style="font-size: 1.15rem; font-weight: 700; color: #0f172a; margin: 0 0 4px 0;">
                                     <?php echo htmlspecialchars($onboardingData['offer_letter']['job_title'] ?? 'Senior Video Editor & Cinematographer'); ?>
                                 </h3>
                                 <div style="font-size: 0.84rem; color: #64748b; display: flex; gap: 14px; flex-wrap: wrap; margin-bottom: 14px;">
@@ -10113,11 +10113,11 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; background: #ffffff; padding: 14px; border-radius: 10px; border: 1px solid #cbd5e1;">
                                     <div>
                                         <span style="display: block; font-size: 0.75rem; color: #64748b; font-weight: 700; text-transform: uppercase;">Monthly Compensation</span>
-                                        <strong style="font-size: 1rem; color: #166534; font-weight: 800;"><?php echo htmlspecialchars(formatMoneyWithCommas($onboardingData['offer_letter']['salary'] ?? '₦450,000 / month')); ?></strong>
+                                        <strong style="font-size: 1rem; color: #166534; font-weight: 700;"><?php echo htmlspecialchars(formatMoneyWithCommas($onboardingData['offer_letter']['salary'] ?? '₦450,000 / month')); ?></strong>
                                     </div>
                                     <div>
                                         <span style="display: block; font-size: 0.75rem; color: #64748b; font-weight: 700; text-transform: uppercase;">Start Date</span>
-                                        <strong style="font-size: 0.95rem; color: #0f172a; font-weight: 800;"><?php echo htmlspecialchars($onboardingData['offer_letter']['start_date'] ?? date('M d, Y', strtotime('+7 days'))); ?></strong>
+                                        <strong style="font-size: 0.95rem; color: #0f172a; font-weight: 700;"><?php echo htmlspecialchars($onboardingData['offer_letter']['start_date'] ?? date('M d, Y', strtotime('+7 days'))); ?></strong>
                                     </div>
                                     <div>
                                         <span style="display: block; font-size: 0.75rem; color: #64748b; font-weight: 700; text-transform: uppercase;">Probation Period</span>
@@ -10132,7 +10132,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
 
                             <!-- COMPENSATION BREAKDOWN BOX -->
                             <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 18px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
-                                <div style="font-size: 0.88rem; font-weight: 800; color: #0f172a; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between;">
+                                <div style="font-size: 0.88rem; font-weight: 700; color: #0f172a; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between;">
                                     <span><i class="fa-solid fa-calculator" style="color: #2563eb; margin-right: 6px;"></i> Compensation Breakdown</span>
                                     <span style="font-size: 0.74rem; color: #166534; background: #f0fdf4; padding: 3px 10px; border-radius: 10px; font-weight: 700; border: 1px solid #bbf7d0;">Verified Structure</span>
                                 </div>
@@ -10140,21 +10140,21 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                 <div style="display: flex; flex-direction: column; gap: 8px;">
                                     <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: #f8fafc; border-radius: 8px; font-size: 0.84rem;">
                                         <span style="color: #475569; font-weight: 600;">Base Salary</span>
-                                        <strong style="color: #0f172a; font-weight: 800;"><?php echo htmlspecialchars(formatMoneyWithCommas($onboardingData['offer_letter']['base_salary'] ?? '₦200,000')); ?></strong>
+                                        <strong style="color: #0f172a; font-weight: 700;"><?php echo htmlspecialchars(formatMoneyWithCommas($onboardingData['offer_letter']['base_salary'] ?? '₦200,000')); ?></strong>
                                     </div>
                                     
                                     <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: #f8fafc; border-radius: 8px; font-size: 0.84rem;">
                                         <span style="color: #475569; font-weight: 600;">Technical / Data Allowance</span>
-                                        <strong style="color: #0f172a; font-weight: 800;"><?php echo htmlspecialchars(formatMoneyWithCommas($onboardingData['offer_letter']['tech_allowance'] ?? '₦80,000')); ?></strong>
+                                        <strong style="color: #0f172a; font-weight: 700;"><?php echo htmlspecialchars(formatMoneyWithCommas($onboardingData['offer_letter']['tech_allowance'] ?? '₦80,000')); ?></strong>
                                     </div>
 
                                     <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: #f8fafc; border-radius: 8px; font-size: 0.84rem;">
                                         <span style="color: #475569; font-weight: 600;">Wellness / Pension Equivalent</span>
-                                        <strong style="color: #0f172a; font-weight: 800;"><?php echo htmlspecialchars(formatMoneyWithCommas($onboardingData['offer_letter']['wellness_allowance'] ?? '₦20,000')); ?></strong>
+                                        <strong style="color: #0f172a; font-weight: 700;"><?php echo htmlspecialchars(formatMoneyWithCommas($onboardingData['offer_letter']['wellness_allowance'] ?? '₦20,000')); ?></strong>
                                     </div>
 
                                     <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; font-size: 0.9rem; margin-top: 4px;">
-                                        <span style="color: #166534; font-weight: 800;">Total Annual / Monthly Earnings</span>
+                                        <span style="color: #166534; font-weight: 700;">Total Annual / Monthly Earnings</span>
                                         <strong style="color: #15803d; font-weight: 900; font-size: 1rem;"><?php echo htmlspecialchars(formatMoneyWithCommas($onboardingData['offer_letter']['total_earnings'] ?? '₦300,000')); ?></strong>
                                     </div>
                                 </div>
@@ -10162,7 +10162,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
 
                             <?php if (!empty($onboardingData['offer_letter']['notes'])): ?>
                                 <div style="background: #fffbe6; border: 1px solid #fef08a; border-radius: 12px; padding: 16px; color: #92400e; font-size: 0.86rem; line-height: 1.5;">
-                                    <div style="font-weight: 800; margin-bottom: 4px; display: flex; align-items: center; gap: 6px;">
+                                    <div style="font-weight: 700; margin-bottom: 4px; display: flex; align-items: center; gap: 6px;">
                                         <i class="fa-solid fa-note-sticky" style="color: #d97706;"></i> HR Manager Message & Terms:
                                     </div>
                                     <?php echo nl2br(htmlspecialchars($onboardingData['offer_letter']['notes'])); ?>
@@ -10175,7 +10175,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                         <i class="fa-solid fa-file-pdf"></i>
                                     </div>
                                     <div>
-                                        <div style="font-size: 0.88rem; font-weight: 800; color: #0f172a;">Official Offer Document</div>
+                                        <div style="font-size: 0.88rem; font-weight: 700; color: #0f172a;">Official Offer Document</div>
                                         <div style="font-size: 0.76rem; color: #64748b; font-weight: 600;">Verified Studio Document • Official Falhen Media Terms</div>
                                     </div>
                                 </div>
@@ -10196,7 +10196,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                 <form method="POST" action="/admin/index.php?section=onboarding" style="margin: 0;">
                                     <input type="hidden" name="action" value="accept_offer">
                                     <input type="hidden" name="target_user" value="<?php echo htmlspecialchars($activeOnboardingUser); ?>">
-                                    <button type="submit" class="btn-save-primary" style="padding: 10px 22px; background: #16a34a; border-color: #16a34a; font-weight: 800; font-size: 0.85rem;">
+                                    <button type="submit" class="btn-save-primary" style="padding: 10px 22px; background: #16a34a; border-color: #16a34a; font-weight: 700; font-size: 0.85rem;">
                                         <i class="fa-solid fa-check-circle"></i> Accept & Sign Offer Letter
                                     </button>
                                 </form>
@@ -10245,7 +10245,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                     <i class="fa-solid fa-file-contract"></i>
                                 </div>
                                 <div>
-                                    <h3 style="margin: 0; font-size: 1.15rem; font-weight: 800; color: #ffffff;">FALHEN EMPLOYMENT AGREEMENT</h3>
+                                    <h3 style="margin: 0; font-size: 1.15rem; font-weight: 700; color: #ffffff;">FALHEN EMPLOYMENT AGREEMENT</h3>
                                     <div style="font-size: 0.78rem; color: #94a3b8; margin-top: 2px;">Official Studio Terms & Code of Conduct (26 Clauses)</div>
                                 </div>
                             </div>
@@ -10261,9 +10261,9 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                             </div>
 
                             <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px; margin-bottom: 24px;">
-                                <div style="font-weight: 800; color: #0f172a; margin-bottom: 6px;">BETWEEN:</div>
+                                <div style="font-weight: 700; color: #0f172a; margin-bottom: 6px;">BETWEEN:</div>
                                 <p style="margin: 0 0 12px 0;"><strong>Falhen</strong>, hereinafter referred to as <em>"the Employer"</em> or <em>"the Company,"</em></p>
-                                <div style="font-weight: 800; color: #0f172a; margin-bottom: 6px;">AND:</div>
+                                <div style="font-weight: 700; color: #0f172a; margin-bottom: 6px;">AND:</div>
                                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 0.84rem;">
                                     <div><strong>Employee Name:</strong> <?php echo htmlspecialchars($userFullName); ?></div>
                                     <div><strong>Address:</strong> <?php echo htmlspecialchars($agrAddress); ?></div>
@@ -10275,7 +10275,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
 
                             <div style="display: flex; flex-direction: column; gap: 20px;">
                                 <div>
-                                    <h4 style="font-size: 0.95rem; font-weight: 800; color: #0f172a; margin: 0 0 6px 0; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">1. Appointment</h4>
+                                    <h4 style="font-size: 0.95rem; font-weight: 700; color: #0f172a; margin: 0 0 6px 0; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">1. Appointment</h4>
                                     <p style="margin: 0 0 8px 0;">The Employer hereby appoints the Employee to the position of:</p>
                                     <div style="background: #f1f5f9; padding: 12px; border-radius: 8px; font-size: 0.84rem; display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
                                         <div><strong>Job Title:</strong> <?php echo htmlspecialchars($offerInfo['job_title'] ?? 'Senior Video Editor & Cinematographer'); ?></div>
@@ -10287,7 +10287,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                 </div>
 
                                 <div>
-                                    <h4 style="font-size: 0.95rem; font-weight: 800; color: #0f172a; margin: 0 0 6px 0; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">2. Job Responsibilities</h4>
+                                    <h4 style="font-size: 0.95rem; font-weight: 700; color: #0f172a; margin: 0 0 6px 0; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">2. Job Responsibilities</h4>
                                     <p style="margin: 0 0 6px 0;">The Employee shall perform duties related to the position and any other reasonable duties assigned by the Employer, supervisor, department head, or management.</p>
                                     <p style="margin: 0 0 4px 0;">The Employee is expected to:</p>
                                     <ul style="margin: 0; padding-left: 20px; line-height: 1.7;">
@@ -10301,7 +10301,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                 </div>
 
                                 <div>
-                                    <h4 style="font-size: 0.95rem; font-weight: 800; color: #0f172a; margin: 0 0 6px 0; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">3. Reporting Line</h4>
+                                    <h4 style="font-size: 0.95rem; font-weight: 700; color: #0f172a; margin: 0 0 6px 0; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">3. Reporting Line</h4>
                                     <p style="margin: 0 0 6px 0;">The Employee shall report directly to:</p>
                                     <div style="background: #f1f5f9; padding: 10px 14px; border-radius: 8px; font-size: 0.84rem;">
                                         <div><strong>Supervisor/Manager Name:</strong> <?php echo htmlspecialchars($agrSupervisorName); ?></div>
@@ -10310,118 +10310,118 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                 </div>
 
                                 <div>
-                                    <h4 style="font-size: 0.95rem; font-weight: 800; color: #0f172a; margin: 0 0 6px 0; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">4. Place of Work</h4>
+                                    <h4 style="font-size: 0.95rem; font-weight: 700; color: #0f172a; margin: 0 0 6px 0; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">4. Place of Work</h4>
                                     <p style="margin: 0;"><strong>Work Location:</strong> <?php echo htmlspecialchars($agrWorkLocation); ?></p>
                                 </div>
 
                                 <div>
-                                    <h4 style="font-size: 0.95rem; font-weight: 800; color: #0f172a; margin: 0 0 6px 0; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">5. Working Hours</h4>
+                                    <h4 style="font-size: 0.95rem; font-weight: 700; color: #0f172a; margin: 0 0 6px 0; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">5. Working Hours</h4>
                                     <p style="margin: 0 0 4px 0;"><strong>Work Days:</strong> <?php echo htmlspecialchars($agrWorkDays); ?></p>
                                     <p style="margin: 0;"><strong>Resumption Time:</strong> <?php echo htmlspecialchars($agrResumptionTime); ?> | <strong>Closing Time:</strong> <?php echo htmlspecialchars($agrClosingTime); ?></p>
                                 </div>
 
                                 <div>
-                                    <h4 style="font-size: 0.95rem; font-weight: 800; color: #0f172a; margin: 0 0 6px 0; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">6. Probation Period</h4>
+                                    <h4 style="font-size: 0.95rem; font-weight: 700; color: #0f172a; margin: 0 0 6px 0; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">6. Probation Period</h4>
                                     <p style="margin: 0;">The Employee shall serve a probation period of <strong><?php echo htmlspecialchars($offerInfo['probation_period'] ?? '3 Months'); ?></strong> from the start date.</p>
                                 </div>
 
                                 <div>
-                                    <h4 style="font-size: 0.95rem; font-weight: 800; color: #0f172a; margin: 0 0 6px 0; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">7. Salary and Compensation</h4>
+                                    <h4 style="font-size: 0.95rem; font-weight: 700; color: #0f172a; margin: 0 0 6px 0; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">7. Salary and Compensation</h4>
                                     <p style="margin: 0;">The Employee shall be paid a gross salary of: <strong><?php echo htmlspecialchars(formatMoneyWithCommas($offerInfo['salary'] ?? '₦300,000 / month')); ?></strong></p>
                                 </div>
 
                                 <div>
-                                    <h4 style="font-size: 0.95rem; font-weight: 800; color: #0f172a; margin: 0 0 6px 0; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">8. Benefits and Allowances</h4>
+                                    <h4 style="font-size: 0.95rem; font-weight: 700; color: #0f172a; margin: 0 0 6px 0; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">8. Benefits and Allowances</h4>
                                     <p style="margin: 0;">The Employee may be entitled to benefits and allowances including Leave entitlement, Health support, Performance bonus, Transport & Communication allowances, and Training opportunities as approved by company policy.</p>
                                 </div>
 
                                 <div>
-                                    <h4 style="font-size: 0.95rem; font-weight: 800; color: #0f172a; margin: 0 0 6px 0; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">9. Leave Entitlement</h4>
+                                    <h4 style="font-size: 0.95rem; font-weight: 700; color: #0f172a; margin: 0 0 6px 0; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">9. Leave Entitlement</h4>
                                     <p style="margin: 0;">The Employee shall be entitled to leave in accordance with the Company’s leave policy. All leave requests must be submitted through the approved HR portal.</p>
                                 </div>
 
                                 <div>
-                                    <h4 style="font-size: 0.95rem; font-weight: 800; color: #0f172a; margin: 0 0 6px 0; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">10. Attendance and Punctuality</h4>
+                                    <h4 style="font-size: 0.95rem; font-weight: 700; color: #0f172a; margin: 0 0 6px 0; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">10. Attendance and Punctuality</h4>
                                     <p style="margin: 0;">The Employee is required to resume work on time and record attendance through the approved studio attendance system.</p>
                                 </div>
 
                                 <div>
-                                    <h4 style="font-size: 0.95rem; font-weight: 800; color: #0f172a; margin: 0 0 6px 0; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">11. Performance Review</h4>
+                                    <h4 style="font-size: 0.95rem; font-weight: 700; color: #0f172a; margin: 0 0 6px 0; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">11. Performance Review</h4>
                                     <p style="margin: 0;">The Employee’s performance shall be reviewed periodically based on quality of work, productivity, communication, teamwork, initiative, and achievement of targets.</p>
                                 </div>
 
                                 <div>
-                                    <h4 style="font-size: 0.95rem; font-weight: 800; color: #0f172a; margin: 0 0 6px 0; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">12. Confidentiality</h4>
+                                    <h4 style="font-size: 0.95rem; font-weight: 700; color: #0f172a; margin: 0 0 6px 0; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">12. Confidentiality</h4>
                                     <p style="margin: 0;">The Employee shall not disclose, share, copy, misuse, or distribute confidential company information, client data, contracts, or trade secrets without authorization.</p>
                                 </div>
 
                                 <div>
-                                    <h4 style="font-size: 0.95rem; font-weight: 800; color: #0f172a; margin: 0 0 6px 0; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">13. Company Property</h4>
+                                    <h4 style="font-size: 0.95rem; font-weight: 700; color: #0f172a; margin: 0 0 6px 0; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">13. Company Property</h4>
                                     <p style="margin: 0;">All laptops, mobile phones, tools, access cards, and credentials issued remain the property of Falhen and must be returned upon request or exit.</p>
                                 </div>
 
                                 <div>
-                                    <h4 style="font-size: 0.95rem; font-weight: 800; color: #0f172a; margin: 0 0 6px 0; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">14. Use of Technology and Systems</h4>
+                                    <h4 style="font-size: 0.95rem; font-weight: 700; color: #0f172a; margin: 0 0 6px 0; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">14. Use of Technology and Systems</h4>
                                     <p style="margin: 0;">The Employee shall use company systems, software, internet, email, and portal tools responsibly and maintain strict password security.</p>
                                 </div>
 
                                 <div>
-                                    <h4 style="font-size: 0.95rem; font-weight: 800; color: #0f172a; margin: 0 0 6px 0; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">15. Intellectual Property</h4>
+                                    <h4 style="font-size: 0.95rem; font-weight: 700; color: #0f172a; margin: 0 0 6px 0; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">15. Intellectual Property</h4>
                                     <p style="margin: 0;">All work, designs, software, media, reports, and materials created during employment belong exclusively to Falhen.</p>
                                 </div>
 
                                 <div>
-                                    <h4 style="font-size: 0.95rem; font-weight: 800; color: #0f172a; margin: 0 0 6px 0; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">16. Conflict of Interest</h4>
+                                    <h4 style="font-size: 0.95rem; font-weight: 700; color: #0f172a; margin: 0 0 6px 0; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">16. Conflict of Interest</h4>
                                     <p style="margin: 0;">The Employee shall avoid activities or outside engagements that conflict with the business interests of Falhen.</p>
                                 </div>
 
                                 <div>
-                                    <h4 style="font-size: 0.95rem; font-weight: 800; color: #0f172a; margin: 0 0 6px 0; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">17. Code of Conduct</h4>
+                                    <h4 style="font-size: 0.95rem; font-weight: 700; color: #0f172a; margin: 0 0 6px 0; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">17. Code of Conduct</h4>
                                     <p style="margin: 0;">The Employee agrees to comply with the Staff Handbook, SOPs, rules, and lawful management instructions at all times.</p>
                                 </div>
 
                                 <div>
-                                    <h4 style="font-size: 0.95rem; font-weight: 800; color: #0f172a; margin: 0 0 6px 0; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">18. Disciplinary Action</h4>
+                                    <h4 style="font-size: 0.95rem; font-weight: 700; color: #0f172a; margin: 0 0 6px 0; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">18. Disciplinary Action</h4>
                                     <p style="margin: 0;">The Company reserves the right to apply disciplinary measures (warnings, PIP, suspension, termination) for misconduct or policy breaches.</p>
                                 </div>
 
                                 <div>
-                                    <h4 style="font-size: 0.95rem; font-weight: 800; color: #0f172a; margin: 0 0 6px 0; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">19. Termination of Employment</h4>
+                                    <h4 style="font-size: 0.95rem; font-weight: 700; color: #0f172a; margin: 0 0 6px 0; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">19. Termination of Employment</h4>
                                     <p style="margin: 0;">Either party may terminate employment by giving <strong>4 weeks notice</strong> or salary in lieu, subject to policy terms.</p>
                                 </div>
 
                                 <div>
-                                    <h4 style="font-size: 0.95rem; font-weight: 800; color: #0f172a; margin: 0 0 6px 0; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">20. Resignation and Exit Procedure</h4>
+                                    <h4 style="font-size: 0.95rem; font-weight: 700; color: #0f172a; margin: 0 0 6px 0; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">20. Resignation and Exit Procedure</h4>
                                     <p style="margin: 0;">Resigning employees must provide formal notice, complete a handover note, return company assets, and complete exit clearance.</p>
                                 </div>
 
                                 <div>
-                                    <h4 style="font-size: 0.95rem; font-weight: 800; color: #0f172a; margin: 0 0 6px 0; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">21. Non-Solicitation</h4>
+                                    <h4 style="font-size: 0.95rem; font-weight: 700; color: #0f172a; margin: 0 0 6px 0; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">21. Non-Solicitation</h4>
                                     <p style="margin: 0;">The Employee shall not unlawfully solicit company clients, staff, or business opportunities for personal or third-party benefit.</p>
                                 </div>
 
                                 <div>
-                                    <h4 style="font-size: 0.95rem; font-weight: 800; color: #0f172a; margin: 0 0 6px 0; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">22. Data Protection</h4>
+                                    <h4 style="font-size: 0.95rem; font-weight: 700; color: #0f172a; margin: 0 0 6px 0; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">22. Data Protection</h4>
                                     <p style="margin: 0;">The Employee shall protect all personal, client, and company data handled during employment and report data breaches immediately.</p>
                                 </div>
 
                                 <div>
-                                    <h4 style="font-size: 0.95rem; font-weight: 800; color: #0f172a; margin: 0 0 6px 0; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">23. Policies and Amendments</h4>
+                                    <h4 style="font-size: 0.95rem; font-weight: 700; color: #0f172a; margin: 0 0 6px 0; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">23. Policies and Amendments</h4>
                                     <p style="margin: 0;">The Employee agrees to comply with Company policies and updates as communicated by management.</p>
                                 </div>
 
                                 <div>
-                                    <h4 style="font-size: 0.95rem; font-weight: 800; color: #0f172a; margin: 0 0 6px 0; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">24. Governing Law</h4>
+                                    <h4 style="font-size: 0.95rem; font-weight: 700; color: #0f172a; margin: 0 0 6px 0; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">24. Governing Law</h4>
                                     <p style="margin: 0;">This Agreement shall be governed by the laws of the Federal Republic of Nigeria.</p>
                                 </div>
 
                                 <div>
-                                    <h4 style="font-size: 0.95rem; font-weight: 800; color: #0f172a; margin: 0 0 6px 0; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">25. Entire Agreement</h4>
+                                    <h4 style="font-size: 0.95rem; font-weight: 700; color: #0f172a; margin: 0 0 6px 0; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">25. Entire Agreement</h4>
                                     <p style="margin: 0;">This Agreement, together with the appointment letter, job description, staff handbook, and SOPs, forms the complete understanding between Employer and Employee.</p>
                                 </div>
 
                                 <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 12px; padding: 18px; margin-top: 10px;">
-                                    <h4 style="font-size: 0.95rem; font-weight: 800; color: #166534; margin: 0 0 8px 0;">26. Acceptance & Digital Signature</h4>
+                                    <h4 style="font-size: 0.95rem; font-weight: 700; color: #166534; margin: 0 0 8px 0;">26. Acceptance & Digital Signature</h4>
                                     <p style="margin: 0 0 10px 0;">I, <strong><?php echo htmlspecialchars($userFullName); ?></strong>, confirm that I have read, understood, and accepted the terms and conditions of this Employment Agreement.</p>
                                     <?php if ($agrSigned): ?>
                                         <?php if (!empty($agrData['signature_data'])): ?>
@@ -10430,7 +10430,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                                 <img src="<?php echo htmlspecialchars($agrData['signature_data']); ?>" alt="Digital Signature" style="max-height: 55px; display: block;">
                                             </div>
                                         <?php endif; ?>
-                                        <div style="font-size: 0.82rem; color: #166534; font-weight: 800; margin-top: 4px;">
+                                        <div style="font-size: 0.82rem; color: #166534; font-weight: 700; margin-top: 4px;">
                                             <i class="fa-solid fa-file-signature"></i> Digitally Signed & Verified by <?php echo htmlspecialchars($userFullName); ?> on <?php echo date('M d, Y H:i', strtotime($agrSignedAt)); ?>
                                         </div>
                                     <?php endif; ?>
@@ -10439,7 +10439,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                 <?php if (!$agrSigned && $isOwnProfile): ?>
                                     <!-- INTERACTIVE DIGITAL SIGNATURE PAD -->
                                     <div style="background: #f8fafc; border: 2px dashed #cbd5e1; border-radius: 14px; padding: 20px; margin-top: 14px;">
-                                        <div style="font-weight: 800; font-size: 0.92rem; color: #0f172a; margin-bottom: 6px; display: flex; align-items: center; justify-content: space-between;">
+                                        <div style="font-weight: 700; font-size: 0.92rem; color: #0f172a; margin-bottom: 6px; display: flex; align-items: center; justify-content: space-between;">
                                             <span><i class="fa-solid fa-pen-nib" style="color: #dc2626;"></i> Draw Your Digital Signature</span>
                                             <button type="button" onclick="clearAgrSigCanvas()" style="background: #ffffff; border: 1px solid #cbd5e1; font-size: 0.76rem; font-weight: 700; padding: 4px 10px; border-radius: 6px; cursor: pointer; color: #475569;">
                                                 <i class="fa-solid fa-eraser"></i> Clear Canvas
@@ -10557,7 +10557,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                         <input type="hidden" name="action" value="sign_employment_agreement">
                                         <input type="hidden" name="target_user" value="<?php echo htmlspecialchars($activeOnboardingUser); ?>">
                                         <input type="hidden" name="signature_data" id="agr_sig_data_input">
-                                        <button type="submit" class="btn-save-primary" style="padding: 10px 22px; background: #16a34a; border-color: #16a34a; font-weight: 800; font-size: 0.85rem;">
+                                        <button type="submit" class="btn-save-primary" style="padding: 10px 22px; background: #16a34a; border-color: #16a34a; font-weight: 700; font-size: 0.85rem;">
                                             <i class="fa-solid fa-signature"></i> Accept & Sign Agreement
                                         </button>
                                     </form>
@@ -10574,7 +10574,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                         <div style="background: #0f172a; padding: 18px 24px; color: #ffffff; display: flex; align-items: center; justify-content: space-between; border-bottom: 3px solid #dc2626;">
                             <div style="display: flex; align-items: center; gap: 10px;">
                                 <i class="fa-solid fa-pen-to-square" style="color: #ef4444; font-size: 1.2rem;"></i>
-                                <h3 style="margin: 0; font-size: 1.1rem; font-weight: 800; color: #ffffff;">HR Edit Employment Agreement Terms</h3>
+                                <h3 style="margin: 0; font-size: 1.1rem; font-weight: 700; color: #ffffff;">HR Edit Employment Agreement Terms</h3>
                             </div>
                             <button type="button" onclick="closeIssueAgreementModal()" style="background: transparent; border: none; color: #94a3b8; font-size: 1.3rem; cursor: pointer;">&times;</button>
                         </div>
@@ -10628,7 +10628,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
 
                             <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 10px; padding-top: 14px; border-top: 1px solid #f1f5f9;">
                                 <button type="button" onclick="closeIssueAgreementModal()" style="padding: 10px 18px; background: #f1f5f9; color: #475569; border: none; border-radius: 8px; font-weight: 700; font-size: 0.85rem; cursor: pointer;">Cancel</button>
-                                <button type="submit" class="btn-save-primary" style="padding: 10px 22px; background: #dc2626; border-color: #dc2626; font-weight: 800; font-size: 0.85rem;">
+                                <button type="submit" class="btn-save-primary" style="padding: 10px 22px; background: #dc2626; border-color: #dc2626; font-weight: 700; font-size: 0.85rem;">
                                     <i class="fa-solid fa-floppy-disk"></i> Save Terms & Issue Contract
                                 </button>
                             </div>
@@ -10642,7 +10642,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                         <div style="background: #0f172a; padding: 18px 24px; color: #ffffff; display: flex; align-items: center; justify-content: space-between; border-bottom: 3px solid #dc2626;">
                             <div style="display: flex; align-items: center; gap: 10px;">
                                 <i class="fa-solid fa-rotate-right" style="color: #ef4444; font-size: 1.2rem;"></i>
-                                <h3 style="margin: 0; font-size: 1.1rem; font-weight: 800; color: #ffffff;">HR Re-Issue SOP &amp; Regulations</h3>
+                                <h3 style="margin: 0; font-size: 1.1rem; font-weight: 700; color: #ffffff;">HR Re-Issue SOP &amp; Regulations</h3>
                             </div>
                             <button type="button" onclick="closeIssueSopModal()" style="background: transparent; border: none; color: #94a3b8; font-size: 1.3rem; cursor: pointer;">&times;</button>
                         </div>
@@ -10679,7 +10679,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
 
                             <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 10px; padding-top: 14px; border-top: 1px solid #f1f5f9;">
                                 <button type="button" onclick="closeIssueSopModal()" style="padding: 10px 18px; background: #f1f5f9; color: #475569; border: none; border-radius: 8px; font-weight: 700; font-size: 0.85rem; cursor: pointer;">Cancel</button>
-                                <button type="submit" class="btn-save-primary" style="padding: 10px 22px; background: #dc2626; border-color: #dc2626; font-weight: 800; font-size: 0.85rem;">
+                                <button type="submit" class="btn-save-primary" style="padding: 10px 22px; background: #dc2626; border-color: #dc2626; font-weight: 700; font-size: 0.85rem;">
                                     <i class="fa-solid fa-rotate-right"></i> Save Terms &amp; Re-Issue SOP
                                 </button>
                             </div>
@@ -10693,7 +10693,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                         <div style="background: #0f172a; padding: 18px 24px; color: #ffffff; display: flex; align-items: center; justify-content: space-between; border-bottom: 3px solid #dc2626;">
                             <div style="display: flex; align-items: center; gap: 10px;">
                                 <i class="fa-solid fa-rotate-right" style="color: #ef4444; font-size: 1.2rem;"></i>
-                                <h3 style="margin: 0; font-size: 1.1rem; font-weight: 800; color: #ffffff;">HR Re-Issue Staff Handbook</h3>
+                                <h3 style="margin: 0; font-size: 1.1rem; font-weight: 700; color: #ffffff;">HR Re-Issue Staff Handbook</h3>
                             </div>
                             <button type="button" onclick="closeIssueHandbookModal()" style="background: transparent; border: none; color: #94a3b8; font-size: 1.3rem; cursor: pointer;">&times;</button>
                         </div>
@@ -10719,7 +10719,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
 
                             <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 10px; padding-top: 14px; border-top: 1px solid #f1f5f9;">
                                 <button type="button" onclick="closeIssueHandbookModal()" style="padding: 10px 18px; background: #f1f5f9; color: #475569; border: none; border-radius: 8px; font-weight: 700; font-size: 0.85rem; cursor: pointer;">Cancel</button>
-                                <button type="submit" class="btn-save-primary" style="padding: 10px 22px; background: #dc2626; border-color: #dc2626; font-weight: 800; font-size: 0.85rem;">
+                                <button type="submit" class="btn-save-primary" style="padding: 10px 22px; background: #dc2626; border-color: #dc2626; font-weight: 700; font-size: 0.85rem;">
                                     <i class="fa-solid fa-floppy-disk"></i> Save Terms &amp; Re-Issue Handbook
                                 </button>
                             </div>
@@ -10740,7 +10740,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                 <i class="fa-solid fa-circle-xmark"></i>
                             </div>
                             <div>
-                                <h2 id="rejectModalTitle" style="font-size: 1.2rem; font-weight: 800; color: #0f172a; margin: 0 0 2px 0;">Reject Task</h2>
+                                <h2 id="rejectModalTitle" style="font-size: 1.2rem; font-weight: 700; color: #0f172a; margin: 0 0 2px 0;">Reject Task</h2>
                                 <p style="font-size: 0.82rem; color: #64748b; margin: 0;">Provide a clear reason so the candidate can edit & resubmit.</p>
                             </div>
                         </div>
@@ -10786,11 +10786,11 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                         <div style="width: 56px; height: 56px; border-radius: 50%; background: #fef2f2; border: 2px solid #fecaca; color: #dc2626; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; margin: 0 auto 16px auto; box-shadow: 0 4px 12px rgba(220, 38, 38, 0.15);">
                             <i class="fa-solid fa-pen-nib"></i>
                         </div>
-                        <h3 id="sigModalTitle" style="font-size: 1.2rem; font-weight: 800; color: #0f172a; margin: 0 0 8px 0;">Digital Signature Required</h3>
+                        <h3 id="sigModalTitle" style="font-size: 1.2rem; font-weight: 700; color: #0f172a; margin: 0 0 8px 0;">Digital Signature Required</h3>
                         <p id="sigModalMessage" style="font-size: 0.86rem; color: #64748b; margin: 0 0 24px 0; line-height: 1.55;">
                             Please draw your signature on the signature pad before submitting this document.
                         </p>
-                        <button type="button" onclick="closeSignatureRequiredModal()" style="width: 100%; padding: 12px 24px; background: #dc2626; color: #ffffff; border: none; border-radius: 12px; font-weight: 800; font-size: 0.9rem; cursor: pointer; transition: all 0.15s ease; box-shadow: 0 4px 14px rgba(220, 38, 38, 0.25);" onmouseover="this.style.background='#b91c1c'" onmouseout="this.style.background='#dc2626'">
+                        <button type="button" onclick="closeSignatureRequiredModal()" style="width: 100%; padding: 12px 24px; background: #dc2626; color: #ffffff; border: none; border-radius: 12px; font-weight: 700; font-size: 0.9rem; cursor: pointer; transition: all 0.15s ease; box-shadow: 0 4px 14px rgba(220, 38, 38, 0.25);" onmouseover="this.style.background='#b91c1c'" onmouseout="this.style.background='#dc2626'">
                             <i class="fa-solid fa-signature"></i> Go to Signature Pad
                         </button>
                     </div>
@@ -10840,11 +10840,11 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
 
                         <!-- SCROLLABLE BODY -->
                         <div style="padding: 24px; overflow-y: auto; flex: 1; font-size: 0.88rem; color: #1e293b; line-height: 1.6;">
-                            <h3 style="font-size: 0.98rem; font-weight: 800; color: #0f172a; margin-top: 0; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">1. Purpose</h3>
+                            <h3 style="font-size: 0.98rem; font-weight: 700; color: #0f172a; margin-top: 0; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">1. Purpose</h3>
                             <p style="margin: 0 0 10px 0;">The purpose of this Standard Operating Procedures document is to provide clear guidelines for the daily operations, internal processes, employee conduct, communication, approvals, documentation, and reporting within Falhen.</p>
                             <p style="margin: 0 0 16px 0;">This SOP is designed to ensure consistency, accountability, efficiency, transparency, and professionalism across all departments and team members.</p>
 
-                            <h3 style="font-size: 0.98rem; font-weight: 800; color: #0f172a; margin-top: 16px; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">2. Scope</h3>
+                            <h3 style="font-size: 0.98rem; font-weight: 700; color: #0f172a; margin-top: 16px; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">2. Scope</h3>
                             <p style="margin: 0 0 8px 0;">This SOP applies to all employees, contract staff, interns, consultants, and authorized representatives of Falhen.</p>
                             <p style="margin: 0 0 8px 0;">It covers the following operational areas:</p>
                             <ul style="margin-top: 4px; margin-bottom: 16px; padding-left: 20px;">
@@ -10860,7 +10860,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                 <li>Escalation and approval processes</li>
                             </ul>
 
-                            <h3 style="font-size: 0.98rem; font-weight: 800; color: #0f172a; margin-top: 16px; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">3. General Work Conduct</h3>
+                            <h3 style="font-size: 0.98rem; font-weight: 700; color: #0f172a; margin-top: 16px; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">3. General Work Conduct</h3>
                             <p style="margin: 0 0 8px 0;">All staff of Falhen are expected to maintain a high level of professionalism, discipline, and accountability in the discharge of their duties.</p>
                             <p style="margin: 0 0 8px 0;">Employees are expected to:</p>
                             <ul style="margin-top: 4px; margin-bottom: 16px; padding-left: 20px;">
@@ -10874,7 +10874,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                 <li>Represent Falhen positively at all times</li>
                             </ul>
 
-                            <h3 style="font-size: 0.98rem; font-weight: 800; color: #0f172a; margin-top: 16px; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">4. Attendance Procedure</h3>
+                            <h3 style="font-size: 0.98rem; font-weight: 700; color: #0f172a; margin-top: 16px; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">4. Attendance Procedure</h3>
                             <p style="margin: 0 0 10px 0;">All employees are required to record their daily attendance through the approved Falhen attendance system or HR portal.</p>
                             <h4 style="font-size: 0.9rem; font-weight: 700; color: #334155; margin: 10px 0 4px 0;">4.1 Check-In</h4>
                             <p style="margin: 0 0 8px 0;">Employees must check in at the official resumption time or immediately upon starting work. The check-in record confirms that the employee has officially resumed work for the day.</p>
@@ -10883,57 +10883,57 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                             <h4 style="font-size: 0.9rem; font-weight: 700; color: #334155; margin: 10px 0 4px 0;">4.3 Check-Out</h4>
                             <p style="margin: 0 0 16px 0;">Employees must check out at the close of work or after completing their approved work schedule. Failure to check in or check out may affect attendance records unless properly reported to HR.</p>
 
-                            <h3 style="font-size: 0.98rem; font-weight: 800; color: #0f172a; margin-top: 16px; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">5. Leave Management Procedure</h3>
+                            <h3 style="font-size: 0.98rem; font-weight: 700; color: #0f172a; margin-top: 16px; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">5. Leave Management Procedure</h3>
                             <p style="margin: 0 0 10px 0;">All leave requests must be submitted through the approved HR portal or official leave request channel.</p>
                             <h4 style="font-size: 0.9rem; font-weight: 700; color: #334155; margin: 10px 0 4px 0;">5.1 Types of Leave</h4>
                             <p style="margin: 0 0 8px 0;">Falhen recognizes Annual Leave, Sick Leave, Emergency Leave, Maternity Leave, Paternity Leave, Compassionate Leave, Study Leave, and Unpaid Leave.</p>
                             <h4 style="font-size: 0.9rem; font-weight: 700; color: #334155; margin: 10px 0 4px 0;">5.2 Leave Application & Approval</h4>
                             <p style="margin: 0 0 16px 0;">Employees must submit leave requests prior to intended dates. Requests are reviewed by supervisors and HR based on leave balance, operational coverage, and policy compliance.</p>
 
-                            <h3 style="font-size: 0.98rem; font-weight: 800; color: #0f172a; margin-top: 16px; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">6. Communication Procedure</h3>
+                            <h3 style="font-size: 0.98rem; font-weight: 700; color: #0f172a; margin-top: 16px; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">6. Communication Procedure</h3>
                             <p style="margin: 0 0 16px 0;">Falhen maintains clear and professional internal communication across company email, HR portal, workstation platforms, and official memos. Sensitive matters must not be discussed on unauthorized platforms.</p>
 
-                            <h3 style="font-size: 0.98rem; font-weight: 800; color: #0f172a; margin-top: 16px; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">7. Task Assignment and Reporting</h3>
+                            <h3 style="font-size: 0.98rem; font-weight: 700; color: #0f172a; margin-top: 16px; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">7. Task Assignment and Reporting</h3>
                             <p style="margin: 0 0 16px 0;">Tasks assigned by supervisors state task description, responsible person, deadline, expected outcome, and priority. Progress and challenges must be communicated promptly.</p>
 
-                            <h3 style="font-size: 0.98rem; font-weight: 800; color: #0f172a; margin-top: 16px; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">8. Approval Procedure</h3>
+                            <h3 style="font-size: 0.98rem; font-weight: 700; color: #0f172a; margin-top: 16px; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">8. Approval Procedure</h3>
                             <p style="margin: 0 0 16px 0;">All requests requiring management or departmental approval (leave, procurement, expenses, travel, project execution, public announcements) must follow the approved chain of command.</p>
 
-                            <h3 style="font-size: 0.98rem; font-weight: 800; color: #0f172a; margin-top: 16px; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">9. Documentation and Record Keeping</h3>
+                            <h3 style="font-size: 0.98rem; font-weight: 700; color: #0f172a; margin-top: 16px; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">9. Documentation and Record Keeping</h3>
                             <p style="margin: 0 0 16px 0;">Falhen maintains accurate, updated, and secure documentation of employee records, attendance, leave, financial records, project reports, and contracts in approved digital/physical locations.</p>
 
-                            <h3 style="font-size: 0.98rem; font-weight: 800; color: #0f172a; margin-top: 16px; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">10. Meeting Procedure</h3>
+                            <h3 style="font-size: 0.98rem; font-weight: 700; color: #0f172a; margin-top: 16px; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">10. Meeting Procedure</h3>
                             <p style="margin: 0 0 16px 0;">Meetings scheduled for planning or decision-making require a clear agenda, lead, minutes, action points, and follow-up timeline.</p>
 
-                            <h3 style="font-size: 0.98rem; font-weight: 800; color: #0f172a; margin-top: 16px; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">11. Use of Company Tools and Systems</h3>
+                            <h3 style="font-size: 0.98rem; font-weight: 700; color: #0f172a; margin-top: 16px; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">11. Use of Company Tools and Systems</h3>
                             <p style="margin: 0 0 16px 0;">Employees must use company portals, emails, workstations, and drives responsibly. Passwords and credentials must never be shared.</p>
 
-                            <h3 style="font-size: 0.98rem; font-weight: 800; color: #0f172a; margin-top: 16px; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">12. Data Protection and Confidentiality</h3>
+                            <h3 style="font-size: 0.98rem; font-weight: 700; color: #0f172a; margin-top: 16px; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">12. Data Protection and Confidentiality</h3>
                             <p style="margin: 0 0 16px 0;">Staff, client, financial, and operational data must be kept strictly confidential. Unauthorized disclosure leads to disciplinary action.</p>
 
-                            <h3 style="font-size: 0.98rem; font-weight: 800; color: #0f172a; margin-top: 16px; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">13. Performance and Reporting</h3>
+                            <h3 style="font-size: 0.98rem; font-weight: 700; color: #0f172a; margin-top: 16px; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">13. Performance and Reporting</h3>
                             <p style="margin: 0 0 16px 0;">Periodic daily, weekly, or monthly reports must be submitted factually and on time to enable performance tracking.</p>
 
-                            <h3 style="font-size: 0.98rem; font-weight: 800; color: #0f172a; margin-top: 16px; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">14. Escalation Procedure</h3>
+                            <h3 style="font-size: 0.98rem; font-weight: 700; color: #0f172a; margin-top: 16px; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">14. Escalation Procedure</h3>
                             <p style="margin: 0 0 16px 0;">Escalation hierarchy: 1. Immediate Supervisor &rarr; 2. Department Head &rarr; 3. HR/Admin &rarr; 4. Management.</p>
 
-                            <h3 style="font-size: 0.98rem; font-weight: 800; color: #0f172a; margin-top: 16px; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">15. Disciplinary Procedure</h3>
+                            <h3 style="font-size: 0.98rem; font-weight: 700; color: #0f172a; margin-top: 16px; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">15. Disciplinary Procedure</h3>
                             <p style="margin: 0 0 16px 0;">Misconduct or policy breaches lead to progressive disciplinary action: Verbal Warning, Written Warning, Suspension, Reassignment, or Termination.</p>
 
-                            <h3 style="font-size: 0.98rem; font-weight: 800; color: #0f172a; margin-top: 16px; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">16. Onboarding Procedure</h3>
+                            <h3 style="font-size: 0.98rem; font-weight: 700; color: #0f172a; margin-top: 16px; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">16. Onboarding Procedure</h3>
                             <p style="margin: 0 0 16px 0;">New employees undergo document submission, policy orientation, tool assignment, system training, and probation expectation reviews.</p>
 
-                            <h3 style="font-size: 0.98rem; font-weight: 800; color: #0f172a; margin-top: 16px; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">17. Exit Procedure</h3>
+                            <h3 style="font-size: 0.98rem; font-weight: 700; color: #0f172a; margin-top: 16px; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">17. Exit Procedure</h3>
                             <p style="margin: 0 0 16px 0;">Departing staff submit formal notice, complete handover notes, return company assets, revoke system access, and complete clearance.</p>
 
-                            <h3 style="font-size: 0.98rem; font-weight: 800; color: #0f172a; margin-top: 16px; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">18. Review of SOP</h3>
+                            <h3 style="font-size: 0.98rem; font-weight: 700; color: #0f172a; margin-top: 16px; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">18. Review of SOP</h3>
                             <p style="margin: 0 0 16px 0;">Reviewed annually or during major operational changes, requiring management approval prior to implementation.</p>
 
-                            <h3 style="font-size: 0.98rem; font-weight: 800; color: #0f172a; margin-top: 16px; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">19. Conclusion & Digital Acknowledgment</h3>
+                            <h3 style="font-size: 0.98rem; font-weight: 700; color: #0f172a; margin-top: 16px; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">19. Conclusion & Digital Acknowledgment</h3>
                             <p style="margin: 0 0 16px 0;">This Standard Operating Procedures document serves as a guide for maintaining order, consistency, accountability, and operational excellence within Falhen.</p>
 
                             <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 12px; padding: 18px; margin-top: 20px;">
-                                <h4 style="font-size: 0.95rem; font-weight: 800; color: #166534; margin: 0 0 8px 0;">Acknowledgment & Digital Signature</h4>
+                                <h4 style="font-size: 0.95rem; font-weight: 700; color: #166534; margin: 0 0 8px 0;">Acknowledgment & Digital Signature</h4>
                                 <p style="margin: 0 0 10px 0;">I, <strong><?php echo htmlspecialchars($userFullName); ?></strong>, confirm that I have read, understood, and agree to comply with the Falhen Standard Operating Procedures (SOP).</p>
                                 <?php if ($sopAck): ?>
                                     <?php if (!empty($sopData['signature_data'])): ?>
@@ -10942,7 +10942,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                             <img src="<?php echo htmlspecialchars($sopData['signature_data']); ?>" alt="Digital Signature" style="max-height: 55px; display: block;">
                                         </div>
                                     <?php endif; ?>
-                                    <div style="font-size: 0.82rem; color: #166534; font-weight: 800; margin-top: 4px;">
+                                    <div style="font-size: 0.82rem; color: #166534; font-weight: 700; margin-top: 4px;">
                                         <i class="fa-solid fa-file-signature"></i> Digitally Acknowledged & Verified by <?php echo htmlspecialchars($userFullName); ?> on <?php echo date('M d, Y H:i', strtotime($sopAckAt)); ?>
                                     </div>
                                 <?php endif; ?>
@@ -10951,7 +10951,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                             <?php if (!$sopAck && $isOwnProfile): ?>
                                 <!-- INTERACTIVE DIGITAL SIGNATURE PAD -->
                                 <div style="background: #f8fafc; border: 2px dashed #cbd5e1; border-radius: 14px; padding: 20px; margin-top: 14px;">
-                                    <div style="font-weight: 800; font-size: 0.92rem; color: #0f172a; margin-bottom: 6px; display: flex; align-items: center; justify-content: space-between;">
+                                    <div style="font-weight: 700; font-size: 0.92rem; color: #0f172a; margin-bottom: 6px; display: flex; align-items: center; justify-content: space-between;">
                                         <span><i class="fa-solid fa-pen-nib" style="color: #dc2626;"></i> Draw Your Digital Signature</span>
                                         <button type="button" onclick="clearSopSigCanvas()" style="background: #ffffff; border: 1px solid #cbd5e1; font-size: 0.76rem; font-weight: 700; padding: 4px 10px; border-radius: 6px; cursor: pointer; color: #475569;">
                                             <i class="fa-solid fa-eraser"></i> Clear Canvas
@@ -11067,7 +11067,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                         <input type="hidden" name="action" value="acknowledge_sop">
                                         <input type="hidden" name="target_user" value="<?php echo htmlspecialchars($activeOnboardingUser); ?>">
                                         <input type="hidden" name="signature_data" id="sop_sig_data_input">
-                                        <button type="submit" class="btn-save-primary" style="padding: 10px 22px; background: #16a34a; border-color: #16a34a; font-weight: 800; font-size: 0.85rem;">
+                                        <button type="submit" class="btn-save-primary" style="padding: 10px 22px; background: #16a34a; border-color: #16a34a; font-weight: 700; font-size: 0.85rem;">
                                             <i class="fa-solid fa-signature"></i> Acknowledge & Sign SOP
                                         </button>
                                     </form>
@@ -11092,23 +11092,23 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
 
                         <!-- SCROLLABLE BODY -->
                         <div style="padding: 24px; overflow-y: auto; flex: 1; font-size: 0.88rem; color: #1e293b; line-height: 1.6;">
-                            <h3 style="font-size: 0.98rem; font-weight: 800; color: #0f172a; margin-top: 0; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">1. Welcome Message</h3>
+                            <h3 style="font-size: 0.98rem; font-weight: 700; color: #0f172a; margin-top: 0; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">1. Welcome Message</h3>
                             <p style="margin: 0 0 10px 0;">Welcome to Falhen.</p>
                             <p style="margin: 0 0 10px 0;">We are pleased to have you as part of our team. At Falhen, we believe that our people are our greatest asset. This Staff Handbook has been created to guide employees on the company’s expectations, policies, procedures, benefits, code of conduct, and workplace culture.</p>
                             <p style="margin: 0 0 10px 0;">This handbook is designed to help every employee understand how we work, what we stand for, and how we can collectively build a productive, respectful, and excellent organization.</p>
                             <p style="margin: 0 0 16px 0;">All employees are expected to read, understand, and comply with the policies contained in this handbook.</p>
 
-                            <h3 style="font-size: 0.98rem; font-weight: 800; color: #0f172a; margin-top: 20px; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">2. About Falhen</h3>
+                            <h3 style="font-size: 0.98rem; font-weight: 700; color: #0f172a; margin-top: 20px; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">2. About Falhen</h3>
                             <p style="margin: 0 0 10px 0;">Falhen is committed to providing excellent services, building strong internal systems, and creating a workplace where employees can contribute meaningfully, grow professionally, and perform at their best.</p>
                             <p style="margin: 0 0 16px 0;">Our operations are guided by professionalism, accountability, innovation, teamwork, integrity, and continuous improvement.</p>
 
-                            <h3 style="font-size: 0.98rem; font-weight: 800; color: #0f172a; margin-top: 20px; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">3. Vision Statement</h3>
+                            <h3 style="font-size: 0.98rem; font-weight: 700; color: #0f172a; margin-top: 20px; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">3. Vision Statement</h3>
                             <p style="margin: 0 0 16px 0;">To build a reputable, efficient, and people-centered organization known for excellence, innovation, and consistent service delivery.</p>
 
-                            <h3 style="font-size: 0.98rem; font-weight: 800; color: #0f172a; margin-top: 20px; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">4. Mission Statement</h3>
+                            <h3 style="font-size: 0.98rem; font-weight: 700; color: #0f172a; margin-top: 20px; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">4. Mission Statement</h3>
                             <p style="margin: 0 0 16px 0;">To deliver quality solutions through a committed workforce, strong operational systems, and a culture of accountability, excellence, and continuous growth.</p>
 
-                            <h3 style="font-size: 0.98rem; font-weight: 800; color: #0f172a; margin-top: 20px; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">5. Core Values</h3>
+                            <h3 style="font-size: 0.98rem; font-weight: 700; color: #0f172a; margin-top: 20px; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">5. Core Values</h3>
                             <p style="margin: 0 0 10px 0;">Falhen is guided by the following values:</p>
                             <h4 style="font-size: 0.9rem; font-weight: 700; color: #334155; margin-top: 10px; margin-bottom: 4px;">Integrity</h4>
                             <p style="margin: 0 0 10px 0;">We act honestly, ethically, and responsibly in all our dealings.</p>
@@ -11123,7 +11123,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                             <h4 style="font-size: 0.9rem; font-weight: 700; color: #334155; margin-top: 10px; margin-bottom: 4px;">Professionalism</h4>
                             <p style="margin: 0 0 16px 0;">We conduct ourselves with respect, discipline, and a strong sense of duty.</p>
 
-                            <h3 style="font-size: 0.98rem; font-weight: 800; color: #0f172a; margin-top: 20px; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">6. Employment Policy</h3>
+                            <h3 style="font-size: 0.98rem; font-weight: 700; color: #0f172a; margin-top: 20px; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">6. Employment Policy</h3>
                             <p style="margin: 0 0 10px 0;">Employment at Falhen is based on merit, competence, character, and the ability to perform assigned responsibilities.</p>
                             <p style="margin: 0 0 10px 0;">All employees are expected to provide accurate information during recruitment and onboarding. Any false information, forged document, or misrepresentation may lead to disciplinary action or termination of employment.</p>
                             <p style="margin: 0 0 6px 0;">Employment categories may include:</p>
@@ -11137,12 +11137,12 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                             </ul>
                             <p style="margin: 0 0 16px 0;">Each employee’s employment status, role, compensation, and benefits shall be stated in their appointment letter or employment contract.</p>
 
-                            <h3 style="font-size: 0.98rem; font-weight: 800; color: #0f172a; margin-top: 20px; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">7. Equal Opportunity Policy</h3>
+                            <h3 style="font-size: 0.98rem; font-weight: 700; color: #0f172a; margin-top: 20px; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">7. Equal Opportunity Policy</h3>
                             <p style="margin: 0 0 10px 0;">Falhen is committed to maintaining a fair and inclusive workplace.</p>
                             <p style="margin: 0 0 10px 0;">Employment decisions shall be made without discrimination based on gender, age, ethnic background, religion, disability, marital status, or any other protected status under applicable law.</p>
                             <p style="margin: 0 0 16px 0;">All employees are expected to treat one another with dignity, fairness, and respect.</p>
 
-                            <h3 style="font-size: 0.98rem; font-weight: 800; color: #0f172a; margin-top: 20px; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">8. Work Hours</h3>
+                            <h3 style="font-size: 0.98rem; font-weight: 700; color: #0f172a; margin-top: 20px; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">8. Work Hours</h3>
                             <p style="margin: 0 0 10px 0;">Official working hours shall be communicated by management and may vary depending on department, role, shift, or operational needs.</p>
                             <p style="margin: 0 0 6px 0;">Employees are expected to:</p>
                             <ul style="margin: 0 0 10px 0; padding-left: 20px;">
@@ -11154,7 +11154,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                             </ul>
                             <p style="margin: 0 0 16px 0;">Any changes to working hours, shifts, or work arrangements must be approved by management.</p>
 
-                            <h3 style="font-size: 0.98rem; font-weight: 800; color: #0f172a; margin-top: 20px; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">9. Attendance and Punctuality</h3>
+                            <h3 style="font-size: 0.98rem; font-weight: 700; color: #0f172a; margin-top: 20px; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">9. Attendance and Punctuality</h3>
                             <p style="margin: 0 0 10px 0;">Regular attendance and punctuality are important to Falhen’s operations.</p>
                             <p style="margin: 0 0 10px 0;">Employees are required to record their attendance through the approved attendance system or HR portal.</p>
                             <h4 style="font-size: 0.9rem; font-weight: 700; color: #334155; margin-top: 10px; margin-bottom: 4px;">Check-In</h4>
@@ -11166,7 +11166,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                             <p style="margin: 0 0 10px 0;">Failure to check in or check out may affect attendance records unless reported and approved by HR or the employee’s supervisor.</p>
                             <p style="margin: 0 0 16px 0;">Repeated lateness, absenteeism, or poor attendance may result in disciplinary action.</p>
 
-                            <h3 style="font-size: 0.98rem; font-weight: 800; color: #0f172a; margin-top: 20px; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">10. Remote Work and Flexible Work</h3>
+                            <h3 style="font-size: 0.98rem; font-weight: 700; color: #0f172a; margin-top: 20px; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">10. Remote Work and Flexible Work</h3>
                             <p style="margin: 0 0 10px 0;">Where applicable, Falhen may allow remote work or flexible work arrangements based on role requirements, company policy, and management approval.</p>
                             <p style="margin: 0 0 6px 0;">Employees working remotely are expected to:</p>
                             <ul style="margin: 0 0 10px 0; padding-left: 20px;">
@@ -11179,7 +11179,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                             </ul>
                             <p style="margin: 0 0 16px 0;">Remote work is a privilege and may be reviewed, modified, or withdrawn by management.</p>
 
-                            <h3 style="font-size: 0.98rem; font-weight: 800; color: #0f172a; margin-top: 20px; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">11. Leave Policy</h3>
+                            <h3 style="font-size: 0.98rem; font-weight: 700; color: #0f172a; margin-top: 20px; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">11. Leave Policy</h3>
                             <p style="margin: 0 0 10px 0;">Falhen recognizes that employees may need time away from work for rest, health, family, emergencies, or other approved reasons.</p>
                             <p style="margin: 0 0 10px 0;">All leave requests must be submitted through the approved HR portal or official channel.</p>
                             <p style="margin: 0 0 6px 0;">Types of leave may include:</p>
@@ -11196,17 +11196,17 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                             <p style="margin: 0 0 10px 0;">Employees must not proceed on leave until approval has been granted, except in genuine emergencies or health-related situations where immediate notice should be given.</p>
                             <p style="margin: 0 0 16px 0;">Leave approval shall depend on leave entitlement, departmental workload, operational needs, and company policy.</p>
 
-                            <h3 style="font-size: 0.98rem; font-weight: 800; color: #0f172a; margin-top: 20px; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">12. Public Holidays</h3>
+                            <h3 style="font-size: 0.98rem; font-weight: 700; color: #0f172a; margin-top: 20px; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">12. Public Holidays</h3>
                             <p style="margin: 0 0 10px 0;">Falhen shall observe approved public holidays as declared by relevant authorities, subject to business operations and management discretion.</p>
                             <p style="margin: 0 0 16px 0;">Employees required to work on public holidays may be compensated or granted time off in accordance with company policy.</p>
 
-                            <h3 style="font-size: 0.98rem; font-weight: 800; color: #0f172a; margin-top: 20px; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">13. Compensation and Salary</h3>
+                            <h3 style="font-size: 0.98rem; font-weight: 700; color: #0f172a; margin-top: 20px; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">13. Compensation and Salary</h3>
                             <p style="margin: 0 0 10px 0;">Employees shall be paid based on the terms stated in their employment letter or contract.</p>
                             <p style="margin: 0 0 10px 0;">Salary payment shall be made through approved payment channels and within the company’s scheduled payroll period.</p>
                             <p style="margin: 0 0 10px 0;">Employees are expected to keep their bank and personal information updated with HR.</p>
                             <p style="margin: 0 0 16px 0;">Salary details are confidential and should not be disclosed or discussed inappropriately within the workplace.</p>
 
-                            <h3 style="font-size: 0.98rem; font-weight: 800; color: #0f172a; margin-top: 20px; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">14. Benefits and Welfare</h3>
+                            <h3 style="font-size: 0.98rem; font-weight: 700; color: #0f172a; margin-top: 20px; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">14. Benefits and Welfare</h3>
                             <p style="margin: 0 0 10px 0;">Falhen may provide employee benefits based on company policy, employment category, role, and availability of resources.</p>
                             <p style="margin: 0 0 6px 0;">Benefits may include:</p>
                             <ul style="margin: 0 0 10px 0; padding-left: 20px;">
@@ -11220,7 +11220,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                             </ul>
                             <p style="margin: 0 0 16px 0;">Benefits may be reviewed periodically by management.</p>
 
-                            <h3 style="font-size: 0.98rem; font-weight: 800; color: #0f172a; margin-top: 20px; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">15. Performance Management</h3>
+                            <h3 style="font-size: 0.98rem; font-weight: 700; color: #0f172a; margin-top: 20px; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">15. Performance Management</h3>
                             <p style="margin: 0 0 10px 0;">Falhen is committed to helping employees perform effectively and grow professionally.</p>
                             <p style="margin: 0 0 6px 0;">Employee performance may be assessed based on:</p>
                             <ul style="margin: 0 0 10px 0; padding-left: 20px;">
@@ -11238,7 +11238,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                             <p style="margin: 0 0 10px 0;">Performance reviews may be conducted monthly, quarterly, annually, or as determined by management.</p>
                             <p style="margin: 0 0 16px 0;">Employees are expected to receive feedback positively and work towards continuous improvement.</p>
 
-                            <h3 style="font-size: 0.98rem; font-weight: 800; color: #0f172a; margin-top: 20px; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">16. Training and Development</h3>
+                            <h3 style="font-size: 0.98rem; font-weight: 700; color: #0f172a; margin-top: 20px; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">16. Training and Development</h3>
                             <p style="margin: 0 0 10px 0;">Falhen encourages continuous learning and professional growth.</p>
                             <p style="margin: 0 0 10px 0;">Employees may be required to attend internal or external training programs to improve their skills and performance.</p>
                             <p style="margin: 0 0 6px 0;">Training opportunities may be based on:</p>
@@ -11251,7 +11251,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                             </ul>
                             <p style="margin: 0 0 16px 0;">Employees who attend company-sponsored training may be required to share knowledge, submit reports, or apply the training to their role.</p>
 
-                            <h3 style="font-size: 0.98rem; font-weight: 800; color: #0f172a; margin-top: 20px; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">17. Code of Conduct</h3>
+                            <h3 style="font-size: 0.98rem; font-weight: 700; color: #0f172a; margin-top: 20px; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">17. Code of Conduct</h3>
                             <p style="margin: 0 0 10px 0;">Employees are expected to conduct themselves professionally at all times.</p>
                             <p style="margin: 0 0 6px 0;">Employees must:</p>
                             <ul style="margin: 0 0 10px 0; padding-left: 20px;">
@@ -11267,12 +11267,12 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                             </ul>
                             <p style="margin: 0 0 16px 0;">Any conduct that damages the company’s reputation, disrupts operations, or affects workplace harmony may result in disciplinary action.</p>
 
-                            <h3 style="font-size: 0.98rem; font-weight: 800; color: #0f172a; margin-top: 20px; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">18. Dress Code and Appearance</h3>
+                            <h3 style="font-size: 0.98rem; font-weight: 700; color: #0f172a; margin-top: 20px; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">18. Dress Code and Appearance</h3>
                             <p style="margin: 0 0 10px 0;">Employees are expected to dress neatly, modestly, and appropriately for their roles and work environment.</p>
                             <p style="margin: 0 0 10px 0;">The acceptable dress code may vary depending on department, client-facing duties, events, field work, or official assignments.</p>
                             <p style="margin: 0 0 16px 0;">Employees representing Falhen at meetings, events, or client engagements must maintain a professional appearance.</p>
 
-                            <h3 style="font-size: 0.98rem; font-weight: 800; color: #0f172a; margin-top: 20px; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">19. Communication Policy</h3>
+                            <h3 style="font-size: 0.98rem; font-weight: 700; color: #0f172a; margin-top: 20px; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">19. Communication Policy</h3>
                             <p style="margin: 0 0 10px 0;">Clear and respectful communication is required across all levels of Falhen.</p>
                             <p style="margin: 0 0 6px 0;">Approved communication channels may include:</p>
                             <ul style="margin: 0 0 10px 0; padding-left: 20px;">
@@ -11287,7 +11287,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                             <p style="margin: 0 0 10px 0;">Employees must avoid using unofficial channels for sensitive, confidential, or management-level communication.</p>
                             <p style="margin: 0 0 16px 0;">All official communication should be professional, clear, respectful, and timely.</p>
 
-                            <h3 style="font-size: 0.98rem; font-weight: 800; color: #0f172a; margin-top: 20px; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">20. Use of Company Property</h3>
+                            <h3 style="font-size: 0.98rem; font-weight: 700; color: #0f172a; margin-top: 20px; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">20. Use of Company Property</h3>
                             <p style="margin: 0 0 10px 0;">Company property must be used responsibly and only for approved business purposes.</p>
                             <p style="margin: 0 0 6px 0;">Company property may include:</p>
                             <ul style="margin: 0 0 10px 0; padding-left: 20px;">
@@ -11304,7 +11304,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                             </ul>
                             <p style="margin: 0 0 16px 0;">Employees are responsible for protecting company property assigned to them. Loss, damage, misuse, or unauthorized use may attract disciplinary or financial consequences.</p>
 
-                            <h3 style="font-size: 0.98rem; font-weight: 800; color: #0f172a; margin-top: 20px; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">21. Information Technology and System Use</h3>
+                            <h3 style="font-size: 0.98rem; font-weight: 700; color: #0f172a; margin-top: 20px; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">21. Information Technology and System Use</h3>
                             <p style="margin: 0 0 10px 0;">Employees must use company systems responsibly and securely.</p>
                             <p style="margin: 0 0 6px 0;">Employees are expected to:</p>
                             <ul style="margin: 0 0 10px 0; padding-left: 20px;">
@@ -11319,7 +11319,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                             </ul>
                             <p style="margin: 0 0 16px 0;">Unauthorized access, data theft, misuse of systems, or cyber negligence may result in disciplinary action.</p>
 
-                            <h3 style="font-size: 0.98rem; font-weight: 800; color: #0f172a; margin-top: 20px; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">22. Confidentiality Policy</h3>
+                            <h3 style="font-size: 0.98rem; font-weight: 700; color: #0f172a; margin-top: 20px; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">22. Confidentiality Policy</h3>
                             <p style="margin: 0 0 10px 0;">Employees may have access to confidential company, client, staff, financial, or operational information.</p>
                             <p style="margin: 0 0 10px 0;">Confidential information must not be disclosed to unauthorized persons during or after employment.</p>
                             <p style="margin: 0 0 6px 0;">Confidential information includes:</p>
@@ -11337,7 +11337,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                             </ul>
                             <p style="margin: 0 0 16px 0;">Breach of confidentiality may lead to disciplinary action, termination, or legal action where necessary.</p>
 
-                            <h3 style="font-size: 0.98rem; font-weight: 800; color: #0f172a; margin-top: 20px; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">23. Conflict of Interest</h3>
+                            <h3 style="font-size: 0.98rem; font-weight: 700; color: #0f172a; margin-top: 20px; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">23. Conflict of Interest</h3>
                             <p style="margin: 0 0 10px 0;">Employees must avoid situations where personal interests conflict with the interests of Falhen.</p>
                             <p style="margin: 0 0 6px 0;">A conflict of interest may occur when an employee:</p>
                             <ul style="margin: 0 0 10px 0; padding-left: 20px;">
@@ -11349,13 +11349,13 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                             </ul>
                             <p style="margin: 0 0 16px 0;">Employees must disclose any actual or potential conflict of interest to management.</p>
 
-                            <h3 style="font-size: 0.98rem; font-weight: 800; color: #0f172a; margin-top: 20px; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">24. Anti-Harassment and Respectful Workplace Policy</h3>
+                            <h3 style="font-size: 0.98rem; font-weight: 700; color: #0f172a; margin-top: 20px; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">24. Anti-Harassment and Respectful Workplace Policy</h3>
                             <p style="margin: 0 0 10px 0;">Falhen is committed to maintaining a safe, respectful, and harassment-free workplace.</p>
                             <p style="margin: 0 0 10px 0;">Harassment, intimidation, bullying, discrimination, victimization, or abusive behavior will not be tolerated.</p>
                             <p style="margin: 0 0 10px 0;">Employees who experience or witness inappropriate conduct should report it to HR, their supervisor, or management.</p>
                             <p style="margin: 0 0 16px 0;">All complaints shall be handled with confidentiality, fairness, and seriousness.</p>
 
-                            <h3 style="font-size: 0.98rem; font-weight: 800; color: #0f172a; margin-top: 20px; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">25. Health, Safety, and Welfare</h3>
+                            <h3 style="font-size: 0.98rem; font-weight: 700; color: #0f172a; margin-top: 20px; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">25. Health, Safety, and Welfare</h3>
                             <p style="margin: 0 0 10px 0;">Falhen is committed to providing a safe and healthy work environment.</p>
                             <p style="margin: 0 0 6px 0;">Employees are expected to:</p>
                             <ul style="margin: 0 0 10px 0; padding-left: 20px;">
@@ -11368,7 +11368,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                             </ul>
                             <p style="margin: 0 0 16px 0;">Employees must not report to work under the influence of alcohol, illegal substances, or anything that may impair their judgment or performance.</p>
 
-                            <h3 style="font-size: 0.98rem; font-weight: 800; color: #0f172a; margin-top: 20px; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">26. Grievance Procedure</h3>
+                            <h3 style="font-size: 0.98rem; font-weight: 700; color: #0f172a; margin-top: 20px; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">26. Grievance Procedure</h3>
                             <p style="margin: 0 0 10px 0;">Employees are encouraged to raise concerns, complaints, or workplace issues through the proper channel.</p>
                             <p style="margin: 0 0 6px 0;">The grievance process should follow this order:</p>
                             <ol style="margin: 0 0 10px 0; padding-left: 20px; line-height: 1.7;">
@@ -11379,7 +11379,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                             </ol>
                             <p style="margin: 0 0 16px 0;">Falhen shall review grievances fairly and take appropriate action where necessary.</p>
 
-                            <h3 style="font-size: 0.98rem; font-weight: 800; color: #0f172a; margin-top: 20px; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">27. Disciplinary Policy</h3>
+                            <h3 style="font-size: 0.98rem; font-weight: 700; color: #0f172a; margin-top: 20px; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">27. Disciplinary Policy</h3>
                             <p style="margin: 0 0 10px 0;">Disciplinary action may be taken when an employee violates company policy, fails to meet expectations, or engages in misconduct.</p>
                             <p style="margin: 0 0 6px 0;">Examples of misconduct include:</p>
                             <ul style="margin: 0 0 10px 0; padding-left: 20px;">
@@ -11407,7 +11407,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                             </ul>
                             <p style="margin: 0 0 16px 0;">Falhen shall aim to apply disciplinary actions fairly and consistently.</p>
 
-                            <h3 style="font-size: 0.98rem; font-weight: 800; color: #0f172a; margin-top: 20px; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">28. Resignation and Exit Procedure</h3>
+                            <h3 style="font-size: 0.98rem; font-weight: 700; color: #0f172a; margin-top: 20px; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">28. Resignation and Exit Procedure</h3>
                             <p style="margin: 0 0 10px 0;">Employees who wish to resign must submit a written resignation letter in accordance with their employment contract or notice period.</p>
                             <p style="margin: 0 0 6px 0;">Before exit, the employee must:</p>
                             <ul style="margin: 0 0 10px 0; padding-left: 20px;">
@@ -11421,7 +11421,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                             </ul>
                             <p style="margin: 0 0 16px 0;">Final clearance must be completed before final payment or release of employment documents, where applicable.</p>
 
-                            <h3 style="font-size: 0.98rem; font-weight: 800; color: #0f172a; margin-top: 20px; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">29. Termination of Employment</h3>
+                            <h3 style="font-size: 0.98rem; font-weight: 700; color: #0f172a; margin-top: 20px; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">29. Termination of Employment</h3>
                             <p style="margin: 0 0 10px 0;">Falhen may terminate employment in accordance with the employee’s contract, company policy, and applicable law.</p>
                             <p style="margin: 0 0 6px 0;">Reasons for termination may include:</p>
                             <ul style="margin: 0 0 10px 0; padding-left: 20px;">
@@ -11435,12 +11435,12 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                             </ul>
                             <p style="margin: 0 0 16px 0;">All terminations shall follow approved internal procedures.</p>
 
-                            <h3 style="font-size: 0.98rem; font-weight: 800; color: #0f172a; margin-top: 20px; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">30. Acknowledgement</h3>
+                            <h3 style="font-size: 0.98rem; font-weight: 700; color: #0f172a; margin-top: 20px; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">30. Acknowledgement</h3>
                             <p style="margin: 0 0 10px 0;">All employees are required to acknowledge that they have received, read, understood, and agreed to comply with the Falhen Staff Handbook.</p>
                             <p style="margin: 0 0 16px 0;">This handbook may be reviewed or updated from time to time. Employees shall be notified of major changes where necessary.</p>
 
                             <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 12px; padding: 18px; margin-top: 20px;">
-                                <h4 style="font-size: 0.95rem; font-weight: 800; color: #166534; margin: 0 0 8px 0;">Acknowledgement & Digital Signature</h4>
+                                <h4 style="font-size: 0.95rem; font-weight: 700; color: #166534; margin: 0 0 8px 0;">Acknowledgement & Digital Signature</h4>
                                 <p style="margin: 0 0 10px 0;">I, <strong><?php echo htmlspecialchars($userFullName); ?></strong>, acknowledge that I have received, read, understood, and agreed to comply with the Falhen Staff Handbook & Policies.</p>
                                 <?php if ($handbookAck): ?>
                                     <?php if (!empty($handbookData['signature_data'])): ?>
@@ -11449,7 +11449,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                             <img src="<?php echo htmlspecialchars($handbookData['signature_data']); ?>" alt="Digital Signature" style="max-height: 55px; display: block;">
                                         </div>
                                     <?php endif; ?>
-                                    <div style="font-size: 0.82rem; color: #166534; font-weight: 800; margin-top: 4px;">
+                                    <div style="font-size: 0.82rem; color: #166534; font-weight: 700; margin-top: 4px;">
                                         <i class="fa-solid fa-file-signature"></i> Digitally Acknowledged & Verified by <?php echo htmlspecialchars($userFullName); ?> on <?php echo date('M d, Y H:i', strtotime($handbookAckAt)); ?>
                                     </div>
                                 <?php endif; ?>
@@ -11458,7 +11458,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                             <?php if (!$handbookAck && $isOwnProfile): ?>
                                 <!-- INTERACTIVE DIGITAL SIGNATURE PAD -->
                                 <div style="background: #f8fafc; border: 2px dashed #cbd5e1; border-radius: 14px; padding: 20px; margin-top: 14px;">
-                                    <div style="font-weight: 800; font-size: 0.92rem; color: #0f172a; margin-bottom: 6px; display: flex; align-items: center; justify-content: space-between;">
+                                    <div style="font-weight: 700; font-size: 0.92rem; color: #0f172a; margin-bottom: 6px; display: flex; align-items: center; justify-content: space-between;">
                                         <span><i class="fa-solid fa-pen-nib" style="color: #dc2626;"></i> Draw Your Digital Signature</span>
                                         <button type="button" onclick="clearHandbookSigCanvas()" style="background: #ffffff; border: 1px solid #cbd5e1; font-size: 0.76rem; font-weight: 700; padding: 4px 10px; border-radius: 6px; cursor: pointer; color: #475569;">
                                             <i class="fa-solid fa-eraser"></i> Clear Canvas
@@ -11574,7 +11574,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                         <input type="hidden" name="action" value="acknowledge_handbook">
                                         <input type="hidden" name="target_user" value="<?php echo htmlspecialchars($activeOnboardingUser); ?>">
                                         <input type="hidden" name="signature_data" id="handbook_sig_data_input">
-                                        <button type="submit" class="btn-save-primary" style="padding: 10px 22px; background: #16a34a; border-color: #16a34a; font-weight: 800; font-size: 0.85rem;">
+                                        <button type="submit" class="btn-save-primary" style="padding: 10px 22px; background: #16a34a; border-color: #16a34a; font-weight: 700; font-size: 0.85rem;">
                                             <i class="fa-solid fa-signature"></i> Acknowledge & Sign Handbook
                                         </button>
                                     </form>
@@ -11699,7 +11699,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                             <!-- ONLINE / OFFLINE STATUS BADGE IN TOP RIGHT -->
                             <div style="position: absolute; top: 14px; right: 14px;">
                                 <?php if ($isOnline): ?>
-                                    <span style="font-size: 0.72rem; font-weight: 800; color: #166534; background: #f0fdf4; border: 1px solid #bbf7d0; padding: 3px 10px; border-radius: 12px; display: inline-flex; align-items: center; gap: 5px;">
+                                    <span style="font-size: 0.72rem; font-weight: 700; color: #166534; background: #f0fdf4; border: 1px solid #bbf7d0; padding: 3px 10px; border-radius: 12px; display: inline-flex; align-items: center; gap: 5px;">
                                         <span style="width: 7px; height: 7px; border-radius: 50%; background: #16a34a; box-shadow: 0 0 6px rgba(22, 163, 74, 0.6); animation: pulseDot 2s infinite;"></span> Online
                                     </span>
                                 <?php else: ?>
@@ -11714,7 +11714,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                 <?php if (!empty($avatarUrl)): ?>
                                     <img src="<?php echo htmlspecialchars($avatarUrl); ?>" alt="<?php echo htmlspecialchars($st['full_name']); ?>" style="width: 68px; height: 68px; border-radius: 50%; object-fit: cover; border: 2px solid #dc2626;">
                                 <?php else: ?>
-                                    <div style="width: 68px; height: 68px; border-radius: 50%; background: #dc2626; color: #ffffff; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1.5rem;">
+                                    <div style="width: 68px; height: 68px; border-radius: 50%; background: #dc2626; color: #ffffff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 1.5rem;">
                                         <?php echo strtoupper(substr($st['full_name'] ?? 'S', 0, 1)); ?>
                                     </div>
                                 <?php endif; ?>
@@ -11723,7 +11723,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                 <div style="position: absolute; bottom: 2px; right: 2px; width: 16px; height: 16px; border-radius: 50%; background: <?php echo $isOnline ? '#16a34a' : '#94a3b8'; ?>; border: 2.5px solid #ffffff; box-shadow: 0 0 8px <?php echo $isOnline ? 'rgba(22, 163, 74, 0.6)' : 'rgba(0,0,0,0.1)'; ?>;"></div>
                             </div>
 
-                            <h3 style="font-size: 1.05rem; font-weight: 800; color: #0f172a; margin: 0 0 4px 0;"><?php echo htmlspecialchars($st['full_name']); ?></h3>
+                            <h3 style="font-size: 1.05rem; font-weight: 700; color: #0f172a; margin: 0 0 4px 0;"><?php echo htmlspecialchars($st['full_name']); ?></h3>
                             <div style="font-size: 0.78rem; font-weight: 700; color: #dc2626; background: #fef2f2; padding: 2px 10px; border-radius: 12px; display: inline-block; margin-bottom: 12px; border: 1px solid #fecaca;">
                                 <?php echo htmlspecialchars($st['role'] ?? 'Staff Member'); ?>
                             </div>
@@ -11746,15 +11746,15 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                         <div style="text-align: center; margin-bottom: 20px;">
                             <div style="position: relative; width: 84px; height: 84px; margin: 0 auto 14px auto;">
                                 <img id="modalStaffAvatarImg" src="" style="width: 84px; height: 84px; border-radius: 50%; object-fit: cover; border: 3px solid #dc2626; display: none;">
-                                <div id="modalStaffAvatarFallback" style="width: 84px; height: 84px; border-radius: 50%; background: #dc2626; color: #ffffff; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 2rem; margin: 0 auto;"></div>
+                                <div id="modalStaffAvatarFallback" style="width: 84px; height: 84px; border-radius: 50%; background: #dc2626; color: #ffffff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 2rem; margin: 0 auto;"></div>
                                 <div id="modalStaffStatusDot" style="position: absolute; bottom: 3px; right: 3px; width: 18px; height: 18px; border-radius: 50%; border: 3px solid #ffffff;"></div>
                             </div>
 
-                            <h2 id="modalStaffName" style="font-size: 1.4rem; font-weight: 800; color: #0f172a; margin: 0 0 4px 0;"></h2>
-                            <div id="modalStaffRole" style="font-size: 0.82rem; font-weight: 800; color: #dc2626; background: #fef2f2; padding: 3px 12px; border-radius: 14px; display: inline-block; margin-bottom: 8px; border: 1px solid #fecaca;"></div>
+                            <h2 id="modalStaffName" style="font-size: 1.4rem; font-weight: 700; color: #0f172a; margin: 0 0 4px 0;"></h2>
+                            <div id="modalStaffRole" style="font-size: 0.82rem; font-weight: 700; color: #dc2626; background: #fef2f2; padding: 3px 12px; border-radius: 14px; display: inline-block; margin-bottom: 8px; border: 1px solid #fecaca;"></div>
                             
                             <div style="display: flex; justify-content: center; margin-top: 4px;">
-                                <span id="modalStaffStatusBadge" style="font-size: 0.78rem; font-weight: 800; padding: 3px 12px; border-radius: 12px;"></span>
+                                <span id="modalStaffStatusBadge" style="font-size: 0.78rem; font-weight: 700; padding: 3px 12px; border-radius: 12px;"></span>
                             </div>
                         </div>
 
@@ -11799,7 +11799,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                             <div style="width: 54px; height: 54px; border-radius: 50%; background: #f0fdf4; border: 1px solid #bbf7d0; color: #16a34a; display: flex; align-items: center; justify-content: center; margin: 0 auto 12px auto; font-size: 1.5rem;">
                                 <i class="fa-solid fa-calendar-check"></i>
                             </div>
-                            <h2 style="font-size: 1.3rem; font-weight: 800; color: #0f172a; margin: 0 0 4px 0;">Schedule a Meeting</h2>
+                            <h2 style="font-size: 1.3rem; font-weight: 700; color: #0f172a; margin: 0 0 4px 0;">Schedule a Meeting</h2>
                             <p style="font-size: 0.84rem; color: #64748b; margin: 0;">Invite <strong id="schedTargetName"></strong> to a studio session.</p>
                         </div>
 
@@ -11848,7 +11848,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                             <div style="width: 56px; height: 56px; border-radius: 50%; background: #f0fdf4; border: 1px solid #bbf7d0; color: #16a34a; display: flex; align-items: center; justify-content: center; margin: 0 auto 12px auto; font-size: 1.6rem;">
                                 <i class="fa-solid fa-money-bill-wave"></i>
                             </div>
-                            <h2 style="font-size: 1.35rem; font-weight: 800; color: #0f172a; margin: 0 0 4px 0;">Process Employee Salary</h2>
+                            <h2 style="font-size: 1.35rem; font-weight: 700; color: #0f172a; margin: 0 0 4px 0;">Process Employee Salary</h2>
                             <p style="font-size: 0.84rem; color: #64748b; margin: 0;">Disburse monthly payment advice for <strong id="payModalStaffName"></strong>.</p>
                         </div>
 
@@ -11865,7 +11865,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                             <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px 16px;">
                                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; font-size: 0.82rem;">
                                     <span style="color: #64748b; font-weight: 600;">Pay Period</span>
-                                    <strong id="payModalPeriodBadge" style="color: #2563eb; font-weight: 800;">August 2026</strong>
+                                    <strong id="payModalPeriodBadge" style="color: #2563eb; font-weight: 700;">August 2026</strong>
                                 </div>
                                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; font-size: 0.82rem;">
                                     <span style="color: #64748b; font-weight: 600;">Staff Email</span>
@@ -11875,7 +11875,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
 
                             <!-- DESTINATION RECEIVING ACCOUNT DETAILS CARD -->
                             <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 12px; padding: 12px 14px; font-size: 0.82rem;">
-                                <div style="font-weight: 800; color: #0f172a; margin-bottom: 6px; display: flex; align-items: center; justify-content: space-between;">
+                                <div style="font-weight: 700; color: #0f172a; margin-bottom: 6px; display: flex; align-items: center; justify-content: space-between;">
                                     <span><i class="fa-solid fa-building-columns" style="color: #2563eb; margin-right: 5px;"></i> Recipient Settlement Details</span>
                                     <span id="payModalDesignationBadge" style="font-size: 0.72rem; font-weight: 700; color: #475569; background: #e2e8f0; padding: 2px 8px; border-radius: 8px;"></span>
                                 </div>
@@ -11888,22 +11888,22 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
 
                             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
                                 <div>
-                                    <label style="font-size: 0.76rem; font-weight: 800; color: #475569; display: block; margin-bottom: 4px;">Base Salary (&#8358;)</label>
-                                    <input type="text" id="payModalBaseSalary" name="base_salary" required oninput="calculateModalNetPay()" style="width: 100%; padding: 10px 12px; font-size: 0.88rem; font-weight: 800; border: 1px solid #cbd5e1; border-radius: 10px;">
+                                    <label style="font-size: 0.76rem; font-weight: 700; color: #475569; display: block; margin-bottom: 4px;">Base Salary (&#8358;)</label>
+                                    <input type="text" id="payModalBaseSalary" name="base_salary" required oninput="calculateModalNetPay()" style="width: 100%; padding: 10px 12px; font-size: 0.88rem; font-weight: 700; border: 1px solid #cbd5e1; border-radius: 10px;">
                                 </div>
                                 <div>
-                                    <label style="font-size: 0.76rem; font-weight: 800; color: #16a34a; display: block; margin-bottom: 4px;">Allowances (&#8358;)</label>
-                                    <input type="text" id="payModalAllowances" name="allowances" value="20,000" oninput="calculateModalNetPay()" style="width: 100%; padding: 10px 12px; font-size: 0.88rem; font-weight: 800; color: #16a34a; border: 1px solid #bbf7d0; background: #f0fdf4; border-radius: 10px;">
+                                    <label style="font-size: 0.76rem; font-weight: 700; color: #16a34a; display: block; margin-bottom: 4px;">Allowances (&#8358;)</label>
+                                    <input type="text" id="payModalAllowances" name="allowances" value="20,000" oninput="calculateModalNetPay()" style="width: 100%; padding: 10px 12px; font-size: 0.88rem; font-weight: 700; color: #16a34a; border: 1px solid #bbf7d0; background: #f0fdf4; border-radius: 10px;">
                                 </div>
                             </div>
 
                             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
                                 <div>
-                                    <label style="font-size: 0.76rem; font-weight: 800; color: #dc2626; display: block; margin-bottom: 4px;">Deductions (Tax/Pension)</label>
-                                    <input type="text" id="payModalDeductions" name="deductions" value="10,000" oninput="calculateModalNetPay()" style="width: 100%; padding: 10px 12px; font-size: 0.88rem; font-weight: 800; color: #dc2626; border: 1px solid #fecaca; background: #fef2f2; border-radius: 10px;">
+                                    <label style="font-size: 0.76rem; font-weight: 700; color: #dc2626; display: block; margin-bottom: 4px;">Deductions (Tax/Pension)</label>
+                                    <input type="text" id="payModalDeductions" name="deductions" value="10,000" oninput="calculateModalNetPay()" style="width: 100%; padding: 10px 12px; font-size: 0.88rem; font-weight: 700; color: #dc2626; border: 1px solid #fecaca; background: #fef2f2; border-radius: 10px;">
                                 </div>
                                 <div>
-                                    <label style="font-size: 0.76rem; font-weight: 800; color: #0f172a; display: block; margin-bottom: 4px;">Payment Method / Gateway</label>
+                                    <label style="font-size: 0.76rem; font-weight: 700; color: #0f172a; display: block; margin-bottom: 4px;">Payment Method / Gateway</label>
                                     <select name="payment_method" id="payModalMethod" onchange="updatePayModalTxRefPrefix(this.value)" style="width: 100%; padding: 10px 12px; font-size: 0.84rem; font-weight: 700; border: 1px solid #cbd5e1; border-radius: 10px; background: #ffffff; cursor: pointer;">
                                         <option value="Raenest Global Payout">Raenest Global Payout (USD/GBP/EUR/NGN)</option>
                                         <option value="LemFi Transfer">LemFi Transfer (Lemonade Finance)</option>
@@ -11917,7 +11917,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
 
                             <div style="background: #0f172a; color: #ffffff; border-radius: 12px; padding: 14px 18px; display: flex; align-items: center; justify-content: space-between; margin-top: 4px;">
                                 <span style="font-size: 0.85rem; font-weight: 700; color: #94a3b8; text-transform: uppercase;">Calculated Net Pay</span>
-                                <strong id="payModalNetPayDisplay" style="font-size: 1.3rem; font-weight: 800; color: #22c55e;">&#8358;0.00</strong>
+                                <strong id="payModalNetPayDisplay" style="font-size: 1.3rem; font-weight: 700; color: #22c55e;">&#8358;0.00</strong>
                             </div>
 
                             <div>
@@ -12127,19 +12127,19 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
 
                 <!-- CATEGORY FILTER TABS (ALL UPDATES, GENERAL, IMPORTANT, EVENTS, CELEBRATION) -->
                 <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 24px; flex-wrap: wrap;">
-                    <a href="/admin/index.php?section=announcements&cat=all" style="padding: 8px 18px; border-radius: 12px; font-size: 0.86rem; font-weight: 800; text-decoration: none; transition: all 0.15s ease; <?php echo ($activeFilter === 'all' || empty($activeFilter)) ? 'background: #dc2626; color: #ffffff; box-shadow: 0 2px 6px rgba(220, 38, 38, 0.25);' : 'background: #ffffff; color: #475569; border: 1px solid #cbd5e1;'; ?>">
+                    <a href="/admin/index.php?section=announcements&cat=all" style="padding: 8px 18px; border-radius: 12px; font-size: 0.86rem; font-weight: 700; text-decoration: none; transition: all 0.15s ease; <?php echo ($activeFilter === 'all' || empty($activeFilter)) ? 'background: #dc2626; color: #ffffff; box-shadow: 0 2px 6px rgba(220, 38, 38, 0.25);' : 'background: #ffffff; color: #475569; border: 1px solid #cbd5e1;'; ?>">
                         All Updates
                     </a>
-                    <a href="/admin/index.php?section=announcements&cat=celebration" style="padding: 8px 18px; border-radius: 12px; font-size: 0.86rem; font-weight: 800; text-decoration: none; transition: all 0.15s ease; <?php echo ($activeFilter === 'celebration') ? 'background: #16a34a; color: #ffffff; box-shadow: 0 2px 6px rgba(22, 163, 74, 0.25);' : 'background: #ffffff; color: #475569; border: 1px solid #cbd5e1;'; ?>">
+                    <a href="/admin/index.php?section=announcements&cat=celebration" style="padding: 8px 18px; border-radius: 12px; font-size: 0.86rem; font-weight: 700; text-decoration: none; transition: all 0.15s ease; <?php echo ($activeFilter === 'celebration') ? 'background: #16a34a; color: #ffffff; box-shadow: 0 2px 6px rgba(22, 163, 74, 0.25);' : 'background: #ffffff; color: #475569; border: 1px solid #cbd5e1;'; ?>">
                         🎂 Birthdays &amp; Celebrations
                     </a>
-                    <a href="/admin/index.php?section=announcements&cat=general" style="padding: 8px 18px; border-radius: 12px; font-size: 0.86rem; font-weight: 800; text-decoration: none; transition: all 0.15s ease; <?php echo ($activeFilter === 'general') ? 'background: #dc2626; color: #ffffff; box-shadow: 0 2px 6px rgba(220, 38, 38, 0.25);' : 'background: #ffffff; color: #475569; border: 1px solid #cbd5e1;'; ?>">
+                    <a href="/admin/index.php?section=announcements&cat=general" style="padding: 8px 18px; border-radius: 12px; font-size: 0.86rem; font-weight: 700; text-decoration: none; transition: all 0.15s ease; <?php echo ($activeFilter === 'general') ? 'background: #dc2626; color: #ffffff; box-shadow: 0 2px 6px rgba(220, 38, 38, 0.25);' : 'background: #ffffff; color: #475569; border: 1px solid #cbd5e1;'; ?>">
                         General
                     </a>
-                    <a href="/admin/index.php?section=announcements&cat=important" style="padding: 8px 18px; border-radius: 12px; font-size: 0.86rem; font-weight: 800; text-decoration: none; transition: all 0.15s ease; <?php echo ($activeFilter === 'important') ? 'background: #dc2626; color: #ffffff; box-shadow: 0 2px 6px rgba(220, 38, 38, 0.25);' : 'background: #ffffff; color: #475569; border: 1px solid #cbd5e1;'; ?>">
+                    <a href="/admin/index.php?section=announcements&cat=important" style="padding: 8px 18px; border-radius: 12px; font-size: 0.86rem; font-weight: 700; text-decoration: none; transition: all 0.15s ease; <?php echo ($activeFilter === 'important') ? 'background: #dc2626; color: #ffffff; box-shadow: 0 2px 6px rgba(220, 38, 38, 0.25);' : 'background: #ffffff; color: #475569; border: 1px solid #cbd5e1;'; ?>">
                         Important
                     </a>
-                    <a href="/admin/index.php?section=announcements&cat=events" style="padding: 8px 18px; border-radius: 12px; font-size: 0.86rem; font-weight: 800; text-decoration: none; transition: all 0.15s ease; <?php echo ($activeFilter === 'events') ? 'background: #dc2626; color: #ffffff; box-shadow: 0 2px 6px rgba(220, 38, 38, 0.25);' : 'background: #ffffff; color: #475569; border: 1px solid #cbd5e1;'; ?>">
+                    <a href="/admin/index.php?section=announcements&cat=events" style="padding: 8px 18px; border-radius: 12px; font-size: 0.86rem; font-weight: 700; text-decoration: none; transition: all 0.15s ease; <?php echo ($activeFilter === 'events') ? 'background: #dc2626; color: #ffffff; box-shadow: 0 2px 6px rgba(220, 38, 38, 0.25);' : 'background: #ffffff; color: #475569; border: 1px solid #cbd5e1;'; ?>">
                         Events
                     </a>
                 </div>
@@ -12151,7 +12151,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                         <div style="width: 64px; height: 64px; border-radius: 50%; background: #f8fafc; border: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px auto; color: #94a3b8; font-size: 1.6rem;">
                             <i class="fa-solid fa-bullhorn"></i>
                         </div>
-                        <h3 style="font-size: 1.1rem; font-weight: 800; color: #64748b; margin: 0;">No announcements found in this category.</h3>
+                        <h3 style="font-size: 1.1rem; font-weight: 700; color: #64748b; margin: 0;">No announcements found in this category.</h3>
                     </div>
                 <?php else: ?>
                     <div style="display: flex; flex-direction: column; gap: 20px;">
@@ -12182,7 +12182,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                             ?>
                             <div class="dashboard-card" style="margin-bottom: 0; background: <?php echo $cardBg; ?>; border-left: 4px solid <?php echo $borderColor; ?>; padding: 24px; <?php echo $isBdayItem ? 'border: 1px solid #fbcfe8; border-left: 5px solid #ec4899; box-shadow: 0 4px 14px rgba(236,72,153,0.08);' : ''; ?>">
                                 <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 14px; flex-wrap: wrap; gap: 10px;">
-                                    <span style="<?php echo $badgeStyle; ?> font-weight: 800; font-size: 0.75rem; padding: 4px 14px; border-radius: 12px; text-transform: uppercase; display: inline-flex; align-items: center; gap: 6px;">
+                                    <span style="<?php echo $badgeStyle; ?> font-weight: 700; font-size: 0.75rem; padding: 4px 14px; border-radius: 12px; text-transform: uppercase; display: inline-flex; align-items: center; gap: 6px;">
                                         <?php if ($isBdayItem): ?>
                                             <i class="<?php echo $badgeIcon; ?>" style="color: #ec4899;"></i>
                                         <?php endif; ?>
@@ -12207,7 +12207,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                             <span style="position: absolute; bottom: -4px; right: -4px; background: #facc15; font-size: 0.9rem; line-height: 1; padding: 3px; border-radius: 50%; border: 2px solid #ffffff; box-shadow: 0 2px 4px rgba(0,0,0,0.1);"><?php echo $badgeEmoji; ?></span>
                                         </div>
                                         <div style="flex: 1;">
-                                            <h2 style="font-size: 1.3rem; font-weight: 800; color: #0f172a; margin: 0 0 6px 0; display: flex; align-items: center; gap: 8px;">
+                                            <h2 style="font-size: 1.3rem; font-weight: 700; color: #0f172a; margin: 0 0 6px 0; display: flex; align-items: center; gap: 8px;">
                                                 <span><?php echo htmlspecialchars($ann['title']); ?></span>
                                             </h2>
                                             <p style="font-size: 0.92rem; color: #334155; line-height: 1.65; margin: 0;">
@@ -12216,7 +12216,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                         </div>
                                     </div>
                                 <?php else: ?>
-                                    <h2 style="font-size: 1.25rem; font-weight: 800; color: #0f172a; margin: 0 0 8px 0;">
+                                    <h2 style="font-size: 1.25rem; font-weight: 700; color: #0f172a; margin: 0 0 8px 0;">
                                         <?php echo htmlspecialchars($ann['title']); ?>
                                     </h2>
                                     <p style="font-size: 0.9rem; color: #475569; line-height: 1.65; margin: 0 0 14px 0;">
@@ -12247,7 +12247,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                             <div style="width: 54px; height: 54px; border-radius: 50%; background: #fef2f2; border: 1px solid #fecaca; color: #dc2626; display: flex; align-items: center; justify-content: center; margin: 0 auto 12px auto; font-size: 1.5rem;">
                                 <i class="fa-solid fa-bullhorn"></i>
                             </div>
-                            <h2 style="font-size: 1.3rem; font-weight: 800; color: #0f172a; margin: 0 0 4px 0;">Post Company Announcement</h2>
+                            <h2 style="font-size: 1.3rem; font-weight: 700; color: #0f172a; margin: 0 0 4px 0;">Post Company Announcement</h2>
                             <p style="font-size: 0.84rem; color: #64748b; margin: 0;">Broadcast news to all studio staff members.</p>
                         </div>
 
@@ -12373,16 +12373,16 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                     <!-- CARD 1: CURRENT STATUS & LIVE TIMER -->
                     <div style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 16px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.02); display: flex; align-items: center; justify-content: space-between; gap: 16px;">
                         <div>
-                            <div style="font-size: 0.75rem; font-weight: 800; color: #64748b; letter-spacing: 0.5px; margin-bottom: 6px; text-transform: uppercase;">CURRENT STATUS</div>
+                            <div style="font-size: 0.75rem; font-weight: 700; color: #64748b; letter-spacing: 0.5px; margin-bottom: 6px; text-transform: uppercase;">CURRENT STATUS</div>
                             <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
                                 <div style="width: 32px; height: 32px; border-radius: 50%; background: <?php echo ($attWorkState === 'working') ? '#f0fdf4' : (($attWorkState === 'on_break') ? '#fffbe6' : '#f1f5f9'); ?>; display: flex; align-items: center; justify-content: center; color: <?php echo ($attWorkState === 'working') ? '#16a34a' : (($attWorkState === 'on_break') ? '#d97706' : '#64748b'); ?>; font-size: 0.95rem;">
                                     <i class="fa-solid fa-user-clock"></i>
                                 </div>
-                                <div style="font-size: 1.15rem; font-weight: 800; color: <?php echo ($attWorkState === 'working') ? '#16a34a' : (($attWorkState === 'on_break') ? '#b45309' : '#0f172a'); ?>;">
+                                <div style="font-size: 1.15rem; font-weight: 700; color: <?php echo ($attWorkState === 'working') ? '#16a34a' : (($attWorkState === 'on_break') ? '#b45309' : '#0f172a'); ?>;">
                                     <?php echo ($attWorkState === 'working') ? 'Clocked In' : (($attWorkState === 'on_break') ? 'On Break' : 'Clocked Out'); ?>
                                 </div>
                             </div>
-                            <div id="attendanceLiveTimer" style="font-family: monospace, 'Courier New', sans-serif; font-size: 1.55rem; font-weight: 800; color: #0f172a; letter-spacing: 1.5px;">
+                            <div id="attendanceLiveTimer" style="font-family: monospace, 'Courier New', sans-serif; font-size: 1.55rem; font-weight: 700; color: #0f172a; letter-spacing: 1.5px;">
                                 <?php 
                                 $h = floor($initialElapsed / 3600);
                                 $m = floor(($initialElapsed % 3600) / 60);
@@ -12396,33 +12396,33 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                             <?php if ($attWorkState === 'working'): ?>
                                 <form method="POST" action="/admin/index.php?section=attendance" style="margin:0;">
                                     <input type="hidden" name="action" value="start_break">
-                                    <button type="submit" style="width: 100%; padding: 8px 12px; background: #d97706; color: #ffffff; border: none; border-radius: 10px; font-weight: 800; font-size: 0.8rem; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; box-shadow: 0 1px 3px rgba(217, 119, 6, 0.25);">
+                                    <button type="submit" style="width: 100%; padding: 8px 12px; background: #d97706; color: #ffffff; border: none; border-radius: 10px; font-weight: 700; font-size: 0.8rem; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; box-shadow: 0 1px 3px rgba(217, 119, 6, 0.25);">
                                         <i class="fa-solid fa-mug-hot"></i> Take Break
                                     </button>
                                 </form>
                                 <form method="POST" action="/admin/index.php?section=attendance" style="margin:0;">
                                     <input type="hidden" name="action" value="clock_out">
-                                    <button type="submit" style="width: 100%; padding: 8px 12px; background: #ffffff; color: #0f172a; border: 1px solid #cbd5e1; border-radius: 10px; font-weight: 800; font-size: 0.8rem; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                                    <button type="submit" style="width: 100%; padding: 8px 12px; background: #ffffff; color: #0f172a; border: 1px solid #cbd5e1; border-radius: 10px; font-weight: 700; font-size: 0.8rem; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
                                         <i class="fa-solid fa-stop-circle" style="color: #dc2626;"></i> Clock Out
                                     </button>
                                 </form>
                             <?php elseif ($attWorkState === 'on_break'): ?>
                                 <form method="POST" action="/admin/index.php?section=attendance" style="margin:0;">
                                     <input type="hidden" name="action" value="end_break">
-                                    <button type="submit" style="width: 100%; padding: 8px 12px; background: #2563eb; color: #ffffff; border: none; border-radius: 10px; font-weight: 800; font-size: 0.8rem; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                                    <button type="submit" style="width: 100%; padding: 8px 12px; background: #2563eb; color: #ffffff; border: none; border-radius: 10px; font-weight: 700; font-size: 0.8rem; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
                                         <i class="fa-solid fa-play-circle"></i> Resume
                                     </button>
                                 </form>
                                 <form method="POST" action="/admin/index.php?section=attendance" style="margin:0;">
                                     <input type="hidden" name="action" value="clock_out">
-                                    <button type="submit" style="width: 100%; padding: 8px 12px; background: #ffffff; color: #0f172a; border: 1px solid #cbd5e1; border-radius: 10px; font-weight: 800; font-size: 0.8rem; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                                    <button type="submit" style="width: 100%; padding: 8px 12px; background: #ffffff; color: #0f172a; border: 1px solid #cbd5e1; border-radius: 10px; font-weight: 700; font-size: 0.8rem; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
                                         <i class="fa-solid fa-stop-circle" style="color: #dc2626;"></i> Clock Out
                                     </button>
                                 </form>
                             <?php else: ?>
                                 <form method="POST" action="/admin/index.php?section=attendance" style="margin:0;">
                                     <input type="hidden" name="action" value="clock_in">
-                                    <button type="submit" style="width: 100%; padding: 10px 14px; background: #16a34a; color: #ffffff; border: none; border-radius: 10px; font-weight: 800; font-size: 0.84rem; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; box-shadow: 0 2px 4px rgba(22, 163, 74, 0.25);">
+                                    <button type="submit" style="width: 100%; padding: 10px 14px; background: #16a34a; color: #ffffff; border: none; border-radius: 10px; font-weight: 700; font-size: 0.84rem; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; box-shadow: 0 2px 4px rgba(22, 163, 74, 0.25);">
                                         <i class="fa-solid fa-play"></i> Clock In
                                     </button>
                                 </form>
@@ -12437,9 +12437,9 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                 <div style="width: 30px; height: 30px; border-radius: 50%; background: #fef2f2; display: flex; align-items: center; justify-content: center; color: #dc2626;">
                                     <i class="fa-solid fa-clock" style="font-size: 0.9rem;"></i>
                                 </div>
-                                <div style="font-size: 0.75rem; font-weight: 800; color: #64748b; letter-spacing: 0.5px; text-transform: uppercase;">HOURS THIS WEEK</div>
+                                <div style="font-size: 0.75rem; font-weight: 700; color: #64748b; letter-spacing: 0.5px; text-transform: uppercase;">HOURS THIS WEEK</div>
                             </div>
-                            <div style="font-size: 1.7rem; font-weight: 800; color: #0f172a; margin-bottom: 12px;">
+                            <div style="font-size: 1.7rem; font-weight: 700; color: #0f172a; margin-bottom: 12px;">
                                 <?php echo htmlspecialchars($weekHrsStr); ?>
                             </div>
                         </div>
@@ -12470,9 +12470,9 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                 <div style="width: 30px; height: 30px; border-radius: 50%; background: #f3e8ff; display: flex; align-items: center; justify-content: center; color: #8b5cf6;">
                                     <i class="fa-solid fa-calendar-check" style="font-size: 0.9rem;"></i>
                                 </div>
-                                <div style="font-size: 0.75rem; font-weight: 800; color: #64748b; letter-spacing: 0.5px; text-transform: uppercase;">HOURS THIS MONTH</div>
+                                <div style="font-size: 0.75rem; font-weight: 700; color: #64748b; letter-spacing: 0.5px; text-transform: uppercase;">HOURS THIS MONTH</div>
                             </div>
-                            <div style="font-size: 1.7rem; font-weight: 800; color: #0f172a; margin-top: 4px;">
+                            <div style="font-size: 1.7rem; font-weight: 700; color: #0f172a; margin-top: 4px;">
                                 <?php echo htmlspecialchars($monthHrsStr); ?>
                             </div>
                         </div>
@@ -12583,9 +12583,9 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                         <td style="padding: 12px 10px; color: #0f172a; font-weight: 700;"><?php echo htmlspecialchars($log['duration'] ?? '--'); ?></td>
                                         <td style="padding: 12px 10px;">
                                             <?php if (($log['status'] ?? '') === 'Clocked In'): ?>
-                                                <span style="background: #eff6ff; color: #1d4ed8; padding: 2px 8px; border-radius: 10px; font-size: 0.75rem; font-weight: 800;">● Clocked In</span>
+                                                <span style="background: #eff6ff; color: #1d4ed8; padding: 2px 8px; border-radius: 10px; font-size: 0.75rem; font-weight: 700;">● Clocked In</span>
                                             <?php else: ?>
-                                                <span style="background: #f0fdf4; color: #166534; padding: 2px 8px; border-radius: 10px; font-size: 0.75rem; font-weight: 800;">● <?php echo htmlspecialchars($log['status'] ?? 'Present'); ?></span>
+                                                <span style="background: #f0fdf4; color: #166534; padding: 2px 8px; border-radius: 10px; font-size: 0.75rem; font-weight: 700;">● <?php echo htmlspecialchars($log['status'] ?? 'Present'); ?></span>
                                             <?php endif; ?>
                                         </td>
                                     </tr>
@@ -12664,19 +12664,19 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 18px; margin-bottom: 24px;">
                     <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px;">
                         <div style="font-size: 0.78rem; font-weight: 700; color: #64748b;">ANNUAL LEAVE</div>
-                        <div style="font-size: 1.5rem; font-weight: 800; color: #0284c7; margin-top: 4px;">
+                        <div style="font-size: 1.5rem; font-weight: 700; color: #0284c7; margin-top: 4px;">
                             <?php echo (int)$userLeaveStats['annual']['remaining']; ?> / <?php echo (int)$userLeaveStats['annual']['total']; ?> Days
                         </div>
                     </div>
                     <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px;">
                         <div style="font-size: 0.78rem; font-weight: 700; color: #64748b;">SICK LEAVE</div>
-                        <div style="font-size: 1.5rem; font-weight: 800; color: #16a34a; margin-top: 4px;">
+                        <div style="font-size: 1.5rem; font-weight: 700; color: #16a34a; margin-top: 4px;">
                             <?php echo (int)$userLeaveStats['sick']['remaining']; ?> / <?php echo (int)$userLeaveStats['sick']['total']; ?> Days
                         </div>
                     </div>
                     <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px;">
                         <div style="font-size: 0.78rem; font-weight: 700; color: #64748b;">CASUAL LEAVE</div>
-                        <div style="font-size: 1.5rem; font-weight: 800; color: #9333ea; margin-top: 4px;">
+                        <div style="font-size: 1.5rem; font-weight: 700; color: #9333ea; margin-top: 4px;">
                             <?php echo (int)$userLeaveStats['casual']['remaining']; ?> / <?php echo (int)$userLeaveStats['casual']['total']; ?> Days
                         </div>
                     </div>
@@ -12804,7 +12804,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                         <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px; flex-wrap: wrap; gap: 8px;">
                                             <div>
                                                 <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-                                                    <span style="font-size: 0.9rem; font-weight: 800; color: #0f172a;"><?php echo htmlspecialchars($req['type']); ?></span>
+                                                    <span style="font-size: 0.9rem; font-weight: 700; color: #0f172a;"><?php echo htmlspecialchars($req['type']); ?></span>
                                                     <?php if (canViewAllAttendanceLogs($userRole, $userEmail, $username) && $activeLeaveTab === 'company'): ?>
                                                         <span style="font-size: 0.74rem; font-weight: 700; background: #ffffff; color: #475569; padding: 2px 8px; border-radius: 6px; border: 1px solid #cbd5e1; display: inline-flex; align-items: center;">
                                                             <i class="fa-solid fa-user-circle" style="font-size: 0.72rem; margin-right: 4px; color: #dc2626;"></i>
@@ -12816,11 +12816,11 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                             </div>
                                             <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
                                                 <?php if ($req['status_type'] === 'pending'): ?>
-                                                    <span style="font-size: 0.72rem; font-weight: 800; background: #fffbe6; color: #b45309; border: 1px solid #fef08a; padding: 3px 10px; border-radius: 12px;">● <?php echo htmlspecialchars($req['status']); ?></span>
+                                                    <span style="font-size: 0.72rem; font-weight: 700; background: #fffbe6; color: #b45309; border: 1px solid #fef08a; padding: 3px 10px; border-radius: 12px;">● <?php echo htmlspecialchars($req['status']); ?></span>
                                                 <?php elseif ($req['status_type'] === 'approved'): ?>
-                                                    <span style="font-size: 0.72rem; font-weight: 800; background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; padding: 3px 10px; border-radius: 12px;">✔ Approved</span>
+                                                    <span style="font-size: 0.72rem; font-weight: 700; background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; padding: 3px 10px; border-radius: 12px;">✔ Approved</span>
                                                 <?php else: ?>
-                                                    <span style="font-size: 0.72rem; font-weight: 800; background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; padding: 3px 10px; border-radius: 12px;">✖ Rejected</span>
+                                                    <span style="font-size: 0.72rem; font-weight: 700; background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; padding: 3px 10px; border-radius: 12px;">✖ Rejected</span>
                                                 <?php endif; ?>
 
                                                 <?php if (canViewAllAttendanceLogs($userRole, $userEmail, $username) && $req['status_type'] === 'pending'): ?>
@@ -12830,7 +12830,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                                             <input type="hidden" name="action" value="update_leave_status">
                                                             <input type="hidden" name="leave_id" value="<?php echo htmlspecialchars($req['id']); ?>">
                                                             <input type="hidden" name="new_status" value="Approved">
-                                                            <button type="submit" style="padding: 4px 10px; background: #16a34a; color: #ffffff; border: none; border-radius: 6px; font-weight: 800; font-size: 0.72rem; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; box-shadow: 0 1px 2px rgba(22,163,74,0.2);" title="Approve Leave Request">
+                                                            <button type="submit" style="padding: 4px 10px; background: #16a34a; color: #ffffff; border: none; border-radius: 6px; font-weight: 700; font-size: 0.72rem; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; box-shadow: 0 1px 2px rgba(22,163,74,0.2);" title="Approve Leave Request">
                                                                 <i class="fa-solid fa-check"></i> Approve
                                                             </button>
                                                         </form>
@@ -12838,7 +12838,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                                             <input type="hidden" name="action" value="update_leave_status">
                                                             <input type="hidden" name="leave_id" value="<?php echo htmlspecialchars($req['id']); ?>">
                                                             <input type="hidden" name="new_status" value="Rejected">
-                                                            <button type="submit" style="padding: 4px 10px; background: #ffffff; color: #dc2626; border: 1px solid #fecaca; border-radius: 6px; font-weight: 800; font-size: 0.72rem; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;" title="Reject Leave Request">
+                                                            <button type="submit" style="padding: 4px 10px; background: #ffffff; color: #dc2626; border: 1px solid #fecaca; border-radius: 6px; font-weight: 700; font-size: 0.72rem; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;" title="Reject Leave Request">
                                                                 <i class="fa-solid fa-xmark"></i> Reject
                                                             </button>
                                                         </form>
@@ -12862,7 +12862,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                 <?php 
                 $canAccessPayroll = isAdminUser($userRole, $userEmail, $username) || strtolower($userRole) === 'hr manager';
                 if (!$canAccessPayroll) {
-                    echo '<div style="padding: 40px 20px; background: #ffffff; border: 1px solid #fecaca; border-radius: 16px; color: #991b1b; font-weight: 800; font-size: 1.1rem; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.03);"><i class="fa-solid fa-lock" style="font-size: 2.2rem; margin-bottom: 14px; display: block; color: #ef4444;"></i> Access Restricted &mdash; Payroll Management is reserved for Super Admin and HR Manager roles.</div>';
+                    echo '<div style="padding: 40px 20px; background: #ffffff; border: 1px solid #fecaca; border-radius: 16px; color: #991b1b; font-weight: 700; font-size: 1.1rem; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.03);"><i class="fa-solid fa-lock" style="font-size: 2.2rem; margin-bottom: 14px; display: block; color: #ef4444;"></i> Access Restricted &mdash; Payroll Management is reserved for Super Admin and HR Manager roles.</div>';
                 } else {
                     $allStaffForPayroll = array_values(getStaffAccountsRepo());
                     $selectedMonth = sprintf('%02d', (int)($_GET['month'] ?? date('m')));
@@ -12908,14 +12908,14 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                 <!-- Header Bar -->
                 <div class="section-header-bar" style="align-items: center; justify-content: space-between; margin-bottom: 24px; flex-wrap: wrap; gap: 16px;">
                     <div>
-                        <h1 class="section-header-title" style="font-size: 1.75rem; font-weight: 800; color: #0f172a; margin: 0;">Payroll &amp; Remuneration Management</h1>
+                        <h1 class="section-header-title" style="font-size: 1.75rem; font-weight: 700; color: #0f172a; margin: 0;">Payroll &amp; Remuneration Management</h1>
                         <p class="section-header-desc" style="font-size: 0.88rem; color: #64748b; margin: 4px 0 0 0;">
                             Process staff monthly salaries in multiple currencies (NGN, USD, GBP, EUR, CAD), manage compensation breakdowns, issue payment advice, and track payroll budget for <strong><?php echo htmlspecialchars($selectedPeriodStr); ?></strong>.
                         </p>
                     </div>
 
                     <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
-                        <button type="button" onclick="openBulkPayrollModal()" style="padding: 10px 18px; font-size: 0.88rem; font-weight: 800; border-radius: 10px; background: #16a34a; border: 1px solid #16a34a; color: #ffffff; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 4px 14px rgba(22, 163, 74, 0.35); transition: all 0.15s ease;" onmouseover="this.style.background='#15803d'" onmouseout="this.style.background='#16a34a'">
+                        <button type="button" onclick="openBulkPayrollModal()" style="padding: 10px 18px; font-size: 0.88rem; font-weight: 700; border-radius: 10px; background: #16a34a; border: 1px solid #16a34a; color: #ffffff; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 4px 14px rgba(22, 163, 74, 0.35); transition: all 0.15s ease;" onmouseover="this.style.background='#15803d'" onmouseout="this.style.background='#16a34a'">
                             <i class="fa-solid fa-money-bill-transfer"></i> Process Monthly Payroll (Bulk Pay)
                         </button>
 
@@ -12939,8 +12939,8 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                 <!-- TOP 4 METRIC CARDS (MULTI-CURRENCY SUPPORT) -->
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 18px; margin-bottom: 28px;">
                     <div style="background: #ffffff; border: 1px solid #cbd5e1; border-left: 4px solid #2563eb; border-radius: 16px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
-                        <div style="font-size: 0.76rem; font-weight: 800; color: #64748b; text-transform: uppercase;">Total Payroll Budget (<?php echo date('M Y', strtotime($selectedYear . '-' . $selectedMonth . '-01')); ?>)</div>
-                        <div style="font-size: 1.35rem; font-weight: 800; color: #0f172a; margin-top: 6px; line-height: 1.3;">
+                        <div style="font-size: 0.76rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Total Payroll Budget (<?php echo date('M Y', strtotime($selectedYear . '-' . $selectedMonth . '-01')); ?>)</div>
+                        <div style="font-size: 1.35rem; font-weight: 700; color: #0f172a; margin-top: 6px; line-height: 1.3;">
                             <?php 
                             if (empty($budgetByCurrency)) {
                                 echo '&#8358;0.00';
@@ -12956,8 +12956,8 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                     </div>
 
                     <div style="background: #ffffff; border: 1px solid #cbd5e1; border-left: 4px solid #16a34a; border-radius: 16px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
-                        <div style="font-size: 0.76rem; font-weight: 800; color: #166534; text-transform: uppercase;">Processed Payments</div>
-                        <div style="font-size: 1.35rem; font-weight: 800; color: #15803d; margin-top: 6px; line-height: 1.3;">
+                        <div style="font-size: 0.76rem; font-weight: 700; color: #166534; text-transform: uppercase;">Processed Payments</div>
+                        <div style="font-size: 1.35rem; font-weight: 700; color: #15803d; margin-top: 6px; line-height: 1.3;">
                             <?php 
                             if (empty($processedByCurrency)) {
                                 echo '&#8358;0.00';
@@ -12973,8 +12973,8 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                     </div>
 
                     <div style="background: #ffffff; border: 1px solid #cbd5e1; border-left: 4px solid #d97706; border-radius: 16px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
-                        <div style="font-size: 0.76rem; font-weight: 800; color: #92400e; text-transform: uppercase;">Pending Disbursements</div>
-                        <div style="font-size: 1.35rem; font-weight: 800; color: #b45309; margin-top: 6px; line-height: 1.3;">
+                        <div style="font-size: 0.76rem; font-weight: 700; color: #92400e; text-transform: uppercase;">Pending Disbursements</div>
+                        <div style="font-size: 1.35rem; font-weight: 700; color: #b45309; margin-top: 6px; line-height: 1.3;">
                             <?php 
                             if (empty($pendingByCurrency)) {
                                 echo '<span style="color:#16a34a; font-size:1.1rem;"><i class="fa-solid fa-circle-check"></i> All Paid</span>';
@@ -12990,8 +12990,8 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                     </div>
 
                     <div style="background: #ffffff; border: 1px solid #cbd5e1; border-left: 4px solid #dc2626; border-radius: 16px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
-                        <div style="font-size: 0.76rem; font-weight: 800; color: #64748b; text-transform: uppercase;">Payroll Roster</div>
-                        <div style="font-size: 1.45rem; font-weight: 800; color: #0f172a; margin-top: 6px;"><?php echo count($allStaffForPayroll); ?> Active Staff</div>
+                        <div style="font-size: 0.76rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Payroll Roster</div>
+                        <div style="font-size: 1.45rem; font-weight: 700; color: #0f172a; margin-top: 6px;"><?php echo count($allStaffForPayroll); ?> Active Staff</div>
                     </div>
                 </div>
 
@@ -12999,7 +12999,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                 <div class="dashboard-card" style="padding: 0; overflow: hidden; margin-bottom: 30px;">
                     <div style="padding: 20px 24px; background: #ffffff; border-bottom: 1px solid #f1f5f9; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
                         <div>
-                            <h3 style="margin: 0; font-size: 1.1rem; font-weight: 800; color: #0f172a;">
+                            <h3 style="margin: 0; font-size: 1.1rem; font-weight: 700; color: #0f172a;">
                                 <i class="fa-solid fa-users-gear" style="color: #dc2626; margin-right: 6px;"></i> Staff Remuneration Roster
                             </h3>
                             <p style="margin: 3px 0 0 0; font-size: 0.8rem; color: #64748b;">
@@ -13010,7 +13010,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                             <span style="font-size: 0.82rem; font-weight: 700; color: #64748b; background: #f8fafc; padding: 6px 14px; border-radius: 20px; border: 1px solid #e2e8f0;">
                                 Period: <strong><?php echo htmlspecialchars($selectedPeriodStr); ?></strong>
                             </span>
-                            <button type="button" onclick="openBulkPayrollModal()" style="padding: 6px 14px; font-size: 0.8rem; font-weight: 800; border-radius: 8px; background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; transition: all 0.15s ease;" onmouseover="this.style.background='#dcfce7'" onmouseout="this.style.background='#f0fdf4'">
+                            <button type="button" onclick="openBulkPayrollModal()" style="padding: 6px 14px; font-size: 0.8rem; font-weight: 700; border-radius: 8px; background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; transition: all 0.15s ease;" onmouseover="this.style.background='#dcfce7'" onmouseout="this.style.background='#f0fdf4'">
                                 <i class="fa-solid fa-bolt"></i> Quick Pay All Active (<?php echo count($allStaffForPayroll); ?>)
                             </button>
                         </div>
@@ -13019,7 +13019,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                     <div style="overflow-x: auto;">
                         <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.86rem; white-space: nowrap;">
                             <thead>
-                                <tr style="border-bottom: 1px solid #e2e8f0; background: #f8fafc; color: #64748b; font-size: 0.75rem; text-transform: uppercase; font-weight: 800; letter-spacing: 0.03em;">
+                                <tr style="border-bottom: 1px solid #e2e8f0; background: #f8fafc; color: #64748b; font-size: 0.75rem; text-transform: uppercase; font-weight: 700; letter-spacing: 0.03em;">
                                     <th style="padding: 14px 18px;">Employee</th>
                                     <th style="padding: 14px 18px;">Role &amp; Title</th>
                                     <th style="padding: 14px 18px;">Base Salary</th>
@@ -13054,24 +13054,24 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                                 <?php if (!empty($st['avatar'])): ?>
                                                     <img src="<?php echo htmlspecialchars(getCloudinaryUrl($st['avatar'])); ?>" alt="<?php echo htmlspecialchars($st['full_name']); ?>" style="width: 38px; height: 38px; border-radius: 50%; object-fit: cover; border: 2px solid #e2e8f0; flex-shrink: 0;">
                                                 <?php else: ?>
-                                                    <div style="width: 38px; height: 38px; border-radius: 50%; background: #dc2626; color: #ffffff; display: flex; align-items: center; justify-content: center; font-size: 0.95rem; font-weight: 800; flex-shrink: 0;">
+                                                    <div style="width: 38px; height: 38px; border-radius: 50%; background: #dc2626; color: #ffffff; display: flex; align-items: center; justify-content: center; font-size: 0.95rem; font-weight: 700; flex-shrink: 0;">
                                                         <?php echo strtoupper(substr($st['full_name'] ?? 'S', 0, 1)); ?>
                                                     </div>
                                                 <?php endif; ?>
                                                 <div>
-                                                    <div style="font-weight: 800; color: #0f172a; font-size: 0.9rem;"><?php echo htmlspecialchars($st['full_name']); ?></div>
+                                                    <div style="font-weight: 700; color: #0f172a; font-size: 0.9rem;"><?php echo htmlspecialchars($st['full_name']); ?></div>
                                                     <div style="font-size: 0.76rem; color: #64748b; margin-top: 1px;"><?php echo htmlspecialchars($st['email']); ?></div>
                                                 </div>
                                             </div>
                                         </td>
                                         <td style="padding: 14px 18px;">
-                                            <div style="font-weight: 800; color: #0f172a; font-size: 0.84rem;"><?php echo htmlspecialchars($st['designation'] ?? ($st['role'] ?? 'Staff')); ?></div>
+                                            <div style="font-weight: 700; color: #0f172a; font-size: 0.84rem;"><?php echo htmlspecialchars($st['designation'] ?? ($st['role'] ?? 'Staff')); ?></div>
                                             <div style="display: flex; align-items: center; gap: 6px; margin-top: 2px;">
                                                 <span style="font-size: 0.7rem; color: #64748b; font-weight: 700; text-transform: uppercase;"><?php echo htmlspecialchars($st['role'] ?? 'Staff'); ?></span>
-                                                <span style="font-size: 0.68rem; font-weight: 800; background: <?php echo ($stCurr === 'USD' ? '#dbeafe; color: #1d4ed8; border: 1px solid #bfdbfe;' : ($stCurr === 'GBP' ? '#ede9fe; color: #6d28d9; border: 1px solid #ddd6fe;' : ($stCurr === 'EUR' ? '#fef3c7; color: #b45309; border: 1px solid #fde68a;' : '#f1f5f9; color: #475569; border: 1px solid #e2e8f0;'))); ?>; padding: 1px 6px; border-radius: 6px;"><?php echo htmlspecialchars($stCurr); ?></span>
+                                                <span style="font-size: 0.68rem; font-weight: 700; background: <?php echo ($stCurr === 'USD' ? '#dbeafe; color: #1d4ed8; border: 1px solid #bfdbfe;' : ($stCurr === 'GBP' ? '#ede9fe; color: #6d28d9; border: 1px solid #ddd6fe;' : ($stCurr === 'EUR' ? '#fef3c7; color: #b45309; border: 1px solid #fde68a;' : '#f1f5f9; color: #475569; border: 1px solid #e2e8f0;'))); ?>; padding: 1px 6px; border-radius: 6px;"><?php echo htmlspecialchars($stCurr); ?></span>
                                             </div>
                                         </td>
-                                        <td style="padding: 14px 18px; font-weight: 800; color: #0f172a;">
+                                        <td style="padding: 14px 18px; font-weight: 700; color: #0f172a;">
                                             <?php echo $currSym . number_format($baseSal, 2); ?>
                                         </td>
                                         <td style="padding: 14px 18px; font-weight: 700; color: #166534;">
@@ -13080,7 +13080,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                         <td style="padding: 14px 18px; font-weight: 700; color: #dc2626;">
                                             -<?php echo $currSym . number_format($deducVal, 2); ?>
                                         </td>
-                                        <td style="padding: 14px 18px; font-weight: 800; color: #0f172a; font-size: 0.92rem;">
+                                        <td style="padding: 14px 18px; font-weight: 700; color: #0f172a; font-size: 0.92rem;">
                                             <?php echo $currSym . number_format($netVal, 2); ?>
                                         </td>
                                         <td style="padding: 14px 18px;">
@@ -13109,7 +13109,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                                     $pmIcon = 'fa-solid fa-paper-plane';
                                                 }
                                                 ?>
-                                                <span style="font-size: 0.72rem; font-weight: 800; color: <?php echo $pmBadgeColor; ?>; background: <?php echo $pmBadgeBg; ?>; border: 1px solid <?php echo $pmBadgeBorder; ?>; padding: 3px 10px; border-radius: 12px; display: inline-flex; align-items: center; gap: 4px;">
+                                                <span style="font-size: 0.72rem; font-weight: 700; color: <?php echo $pmBadgeColor; ?>; background: <?php echo $pmBadgeBg; ?>; border: 1px solid <?php echo $pmBadgeBorder; ?>; padding: 3px 10px; border-radius: 12px; display: inline-flex; align-items: center; gap: 4px;">
                                                     <i class="<?php echo $pmIcon; ?>"></i> Paid
                                                 </span>
                                                 <div style="font-size: 0.7rem; color: #475569; font-weight: 700; margin-top: 3px;"><?php echo htmlspecialchars($pm); ?></div>
@@ -13117,7 +13117,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                                     <div style="font-size: 0.65rem; color: #94a3b8; font-family: monospace;"><?php echo htmlspecialchars($disbData['tx_ref']); ?></div>
                                                 <?php endif; ?>
                                             <?php else: ?>
-                                                <span style="font-size: 0.72rem; font-weight: 800; color: #b45309; background: #fffbeb; border: 1px solid #fde68a; padding: 3px 10px; border-radius: 12px; display: inline-flex; align-items: center; gap: 4px;">
+                                                <span style="font-size: 0.72rem; font-weight: 700; color: #b45309; background: #fffbeb; border: 1px solid #fde68a; padding: 3px 10px; border-radius: 12px; display: inline-flex; align-items: center; gap: 4px;">
                                                     <i class="fa-solid fa-clock"></i> Pending
                                                 </span>
                                             <?php endif; ?>
@@ -13147,7 +13147,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                                     'month'           => $selectedMonth,
                                                     'year'            => $selectedYear,
                                                     'is_paid'         => $hasDisb
-                                                ])); ?>)" style="padding: 8px 16px; font-size: 0.82rem; font-weight: 800; border-radius: 8px; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; transition: all 0.15s ease; <?php echo $hasDisb ? 'background: #ffffff; color: #0f172a; border: 1px solid #cbd5e1;' : 'background: #16a34a; border: 1px solid #16a34a; color: #ffffff; box-shadow: 0 2px 8px rgba(22,163,74,0.3);'; ?>" onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'">
+                                                ])); ?>)" style="padding: 8px 16px; font-size: 0.82rem; font-weight: 700; border-radius: 8px; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; transition: all 0.15s ease; <?php echo $hasDisb ? 'background: #ffffff; color: #0f172a; border: 1px solid #cbd5e1;' : 'background: #16a34a; border: 1px solid #16a34a; color: #ffffff; box-shadow: 0 2px 8px rgba(22,163,74,0.3);'; ?>" onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'">
                                                     <i class="fa-solid <?php echo $hasDisb ? 'fa-rotate-right' : 'fa-money-bill-wave'; ?>"></i>
                                                     <?php echo $hasDisb ? 'Re-Process / Edit' : 'Pay Salary'; ?>
                                                 </button>
@@ -13179,25 +13179,25 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                     <!-- CARD 1: YTD NET EARNINGS -->
                     <div style="background: #ffffff; border: 1px solid #cbd5e1; border-left: 4px solid #dc2626; border-radius: 16px; padding: 22px 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
                         <div style="font-size: 0.78rem; font-weight: 700; color: #64748b; text-transform: uppercase;">YTD Net Earnings (2026)</div>
-                        <div style="font-size: 1.65rem; font-weight: 800; color: #0f172a; margin-top: 8px;">&#8358;<?php echo number_format($myYTD['net_earnings'], 2); ?></div>
+                        <div style="font-size: 1.65rem; font-weight: 700; color: #0f172a; margin-top: 8px;">&#8358;<?php echo number_format($myYTD['net_earnings'], 2); ?></div>
                     </div>
 
                     <!-- CARD 2: YTD TAXES WITHHELD -->
                     <div style="background: #ffffff; border: 1px solid #cbd5e1; border-left: 4px solid #dc2626; border-radius: 16px; padding: 22px 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
                         <div style="font-size: 0.78rem; font-weight: 700; color: #64748b; text-transform: uppercase;">YTD Taxes Withheld</div>
-                        <div style="font-size: 1.65rem; font-weight: 800; color: #0f172a; margin-top: 8px;">&#8358;<?php echo number_format($myYTD['taxes'], 2); ?></div>
+                        <div style="font-size: 1.65rem; font-weight: 700; color: #0f172a; margin-top: 8px;">&#8358;<?php echo number_format($myYTD['taxes'], 2); ?></div>
                     </div>
 
                     <!-- CARD 3: YTD PENSION SAVINGS -->
                     <div style="background: #ffffff; border: 1px solid #cbd5e1; border-left: 4px solid #16a34a; border-radius: 16px; padding: 22px 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
                         <div style="font-size: 0.78rem; font-weight: 700; color: #64748b; text-transform: uppercase;">YTD Pension Savings</div>
-                        <div style="font-size: 1.65rem; font-weight: 800; color: #0f172a; margin-top: 8px;">&#8358;<?php echo number_format($myYTD['pension'], 2); ?></div>
+                        <div style="font-size: 1.65rem; font-weight: 700; color: #0f172a; margin-top: 8px;">&#8358;<?php echo number_format($myYTD['pension'], 2); ?></div>
                     </div>
                 </div>
 
                 <!-- HISTORY SECTION HEADER & FILTER CONTROLS -->
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 12px;">
-                    <h2 style="font-size: 1.3rem; font-weight: 800; color: #0f172a; margin: 0;">History</h2>
+                    <h2 style="font-size: 1.3rem; font-weight: 700; color: #0f172a; margin: 0;">History</h2>
                     
                     <div style="display: flex; align-items: center; gap: 10px;">
                         <select style="padding: 6px 14px; border: 1px solid #cbd5e1; border-radius: 8px; background: #ffffff; font-size: 0.82rem; font-weight: 700; color: #475569; cursor: pointer;">
@@ -13212,7 +13212,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                 <div class="dashboard-card" style="padding: 0; overflow: hidden;">
                     <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.88rem;">
                         <thead>
-                            <tr style="border-bottom: 1px solid #e2e8f0; background: #f8fafc; color: #64748b; font-size: 0.76rem; text-transform: uppercase; font-weight: 800; letter-spacing: 0.03em;">
+                            <tr style="border-bottom: 1px solid #e2e8f0; background: #f8fafc; color: #64748b; font-size: 0.76rem; text-transform: uppercase; font-weight: 700; letter-spacing: 0.03em;">
                                 <th style="padding: 16px 20px;">Pay Period</th>
                                 <th style="padding: 16px 20px;">Status</th>
                                 <th style="padding: 16px 20px;">Net Pay</th>
@@ -13223,15 +13223,15 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                             <?php if (!empty($myDisbursements)): ?>
                                 <?php foreach ($myDisbursements as $mDisb): ?>
                                     <tr style="border-bottom: 1px solid #f1f5f9; transition: background 0.15s ease;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
-                                        <td style="padding: 16px 20px; font-weight: 800; color: #0f172a;">
+                                        <td style="padding: 16px 20px; font-weight: 700; color: #0f172a;">
                                             <?php echo htmlspecialchars($mDisb['pay_period'] ?? 'Monthly Salary'); ?>
                                         </td>
                                         <td style="padding: 16px 20px;">
-                                            <span style="font-size: 0.72rem; font-weight: 800; color: #166534; background: #f0fdf4; border: 1px solid #bbf7d0; padding: 2px 8px; border-radius: 10px; display: inline-flex; align-items: center; gap: 4px;">
+                                            <span style="font-size: 0.72rem; font-weight: 700; color: #166534; background: #f0fdf4; border: 1px solid #bbf7d0; padding: 2px 8px; border-radius: 10px; display: inline-flex; align-items: center; gap: 4px;">
                                                 Paid
                                             </span>
                                         </td>
-                                        <td style="padding: 16px 20px; font-weight: 800; color: #dc2626; font-size: 0.95rem;">
+                                        <td style="padding: 16px 20px; font-weight: 700; color: #dc2626; font-size: 0.95rem;">
                                             &#8358;<?php echo number_format((float)($mDisb['net_pay'] ?? 0), 2); ?>
                                         </td>
                                         <td style="padding: 16px 20px; text-align: right;">
@@ -13272,11 +13272,11 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                     <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 14px;">
                         <div style="padding: 16px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
                             <div style="display: flex; align-items: center; gap: 14px;">
-                                <div style="width: 42px; height: 42px; border-radius: 50%; background: rgba(220, 38, 38, 0.1); color: #dc2626; display: flex; align-items: center; justify-content: center; font-weight: 800;">
+                                <div style="width: 42px; height: 42px; border-radius: 50%; background: rgba(220, 38, 38, 0.1); color: #dc2626; display: flex; align-items: center; justify-content: center; font-weight: 700;">
                                     <i class="fa-solid fa-film"></i>
                                 </div>
                                 <div>
-                                    <div style="font-weight: 800; color: #0f172a; font-size: 0.94rem;">Production Scheduling &bull; Q3 Film Shoot</div>
+                                    <div style="font-weight: 700; color: #0f172a; font-size: 0.94rem;">Production Scheduling &bull; Q3 Film Shoot</div>
                                     <div style="font-size: 0.82rem; color: #64748b;">From: Henry Falonipe &mdash; Call sheet for Lagos commercial shoot confirmed for Monday.</div>
                                 </div>
                             </div>
@@ -13284,11 +13284,11 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                         </div>
                         <div style="padding: 16px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
                             <div style="display: flex; align-items: center; gap: 14px;">
-                                <div style="width: 42px; height: 42px; border-radius: 50%; background: rgba(2, 132, 199, 0.1); color: #0284c7; display: flex; align-items: center; justify-content: center; font-weight: 800;">
+                                <div style="width: 42px; height: 42px; border-radius: 50%; background: rgba(2, 132, 199, 0.1); color: #0284c7; display: flex; align-items: center; justify-content: center; font-weight: 700;">
                                     <i class="fa-solid fa-users-gear"></i>
                                 </div>
                                 <div>
-                                    <div style="font-weight: 800; color: #0f172a; font-size: 0.94rem;">HR Portal &bull; Monthly Benefits & Health Stipend</div>
+                                    <div style="font-weight: 700; color: #0f172a; font-size: 0.94rem;">HR Portal &bull; Monthly Benefits & Health Stipend</div>
                                     <div style="font-size: 0.82rem; color: #64748b;">From: Resource & HR &mdash; August reimbursement claims are now processing.</div>
                                 </div>
                             </div>
@@ -13390,9 +13390,9 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                     
                     <!-- LEFT SIDEBAR: COMMUNICATIONS TABS -->
                     <div class="dashboard-card" style="margin-bottom: 0; padding: 20px; display: flex; flex-direction: column;">
-                        <div style="font-size: 0.76rem; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 14px; display: flex; align-items: center; justify-content: space-between;">
+                        <div style="font-size: 0.76rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 14px; display: flex; align-items: center; justify-content: space-between;">
                             <span>COMMUNICATIONS</span>
-                            <span style="background: #f1f5f9; color: #475569; padding: 2px 8px; border-radius: 10px; font-size: 0.72rem; font-weight: 800;">5</span>
+                            <span style="background: #f1f5f9; color: #475569; padding: 2px 8px; border-radius: 10px; font-size: 0.72rem; font-weight: 700;">5</span>
                         </div>
 
                         <div style="display: flex; flex-direction: column; gap: 6px;">
@@ -13400,7 +13400,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                 <?php $isActive = ($tKey === $activeTab); ?>
                                 <a href="/admin/index.php?section=comms&tab=<?php echo urlencode($tKey); ?><?php echo ($tKey === 'channels') ? '&channel=' . urlencode($activeChannel) : (($tKey === 'nest') ? '&dm=' . urlencode($activeDmUser) : ''); ?>" style="display: flex; flex-direction: column; padding: 12px 14px; border-radius: 12px; text-decoration: none; transition: all 0.15s ease; <?php echo $isActive ? 'background: #fef2f2; border: 1px solid #fecaca; color: #dc2626;' : 'background: #ffffff; border: 1px solid #e2e8f0; color: #334155;'; ?>">
                                     <div style="display: flex; align-items: center; justify-content: space-between;">
-                                        <span style="font-size: 0.88rem; font-weight: 800; display: inline-flex; align-items: center; gap: 8px; <?php echo $isActive ? 'color: #dc2626;' : 'color: #0f172a;'; ?>">
+                                        <span style="font-size: 0.88rem; font-weight: 700; display: inline-flex; align-items: center; gap: 8px; <?php echo $isActive ? 'color: #dc2626;' : 'color: #0f172a;'; ?>">
                                             <i class="<?php echo $tab['icon']; ?>" style="font-size: 0.84rem; <?php echo $isActive ? 'color: #dc2626;' : 'color: #64748b;'; ?>"></i>
                                             <span><?php echo htmlspecialchars($tab['label']); ?></span>
                                         </span>
@@ -13417,7 +13417,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
 
                         <!-- ONLINE TEAM MEMBERS -->
                         <div style="margin-top: 24px; padding-top: 16px; border-top: 1px solid #f1f5f9;">
-                            <div style="font-size: 0.74rem; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 10px;">
+                            <div style="font-size: 0.74rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 10px;">
                                 ACTIVE TEAM
                             </div>
                             <div style="display: flex; flex-direction: column; gap: 8px;">
@@ -13456,7 +13456,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                             $stUser = strtolower($person['username'] ?? '');
                                             $isDmActive = ($uKey === $activeDmUser || $stUser === $activeDmUser || getCanonicalUsername($stUser) === getCanonicalUsername($activeDmUser)); 
                                             ?>
-                                            <a href="/admin/index.php?section=comms&tab=nest&dm=<?php echo urlencode($stUser); ?>" style="padding: 5px 10px; border-radius: 8px; font-size: 0.78rem; font-weight: 800; text-decoration: none; transition: all 0.15s ease; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 105px; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 1; <?php echo $isDmActive ? 'background: #ffffff; color: #dc2626; border: 1px solid #fecaca; box-shadow: 0 1px 3px rgba(0,0,0,0.05);' : 'background: #f1f5f9; color: #64748b; border: 1px solid #e2e8f0;'; ?>" title="<?php echo htmlspecialchars($person['full_name']); ?>">
+                                            <a href="/admin/index.php?section=comms&tab=nest&dm=<?php echo urlencode($stUser); ?>" style="padding: 5px 10px; border-radius: 8px; font-size: 0.78rem; font-weight: 700; text-decoration: none; transition: all 0.15s ease; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 105px; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 1; <?php echo $isDmActive ? 'background: #ffffff; color: #dc2626; border: 1px solid #fecaca; box-shadow: 0 1px 3px rgba(0,0,0,0.05);' : 'background: #f1f5f9; color: #64748b; border: 1px solid #e2e8f0;'; ?>" title="<?php echo htmlspecialchars($person['full_name']); ?>">
                                                 <i class="fa-solid fa-user-circle" style="font-size: 0.74rem; margin-right: 3px; flex-shrink: 0;"></i>
                                                 <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"><?php echo htmlspecialchars($person['first_name']); ?></span>
                                             </a>
@@ -13465,7 +13465,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                         <!-- GROUP CHANNELS SELECTORS FOR CHANNELS TAB -->
                                         <?php foreach ($subChannels as $cKey => $subCh): ?>
                                             <?php $isSubActive = ($cKey === $activeChannel); ?>
-                                            <a href="/admin/index.php?section=comms&tab=channels&channel=<?php echo urlencode($cKey); ?>" style="padding: 5px 12px; border-radius: 8px; font-size: 0.8rem; font-weight: 800; text-decoration: none; transition: all 0.15s ease; <?php echo $isSubActive ? 'background: #ffffff; color: #dc2626; border: 1px solid #fecaca; box-shadow: 0 1px 3px rgba(0,0,0,0.05);' : 'background: #f1f5f9; color: #64748b; border: 1px solid #e2e8f0;'; ?>">
+                                            <a href="/admin/index.php?section=comms&tab=channels&channel=<?php echo urlencode($cKey); ?>" style="padding: 5px 12px; border-radius: 8px; font-size: 0.8rem; font-weight: 700; text-decoration: none; transition: all 0.15s ease; <?php echo $isSubActive ? 'background: #ffffff; color: #dc2626; border: 1px solid #fecaca; box-shadow: 0 1px 3px rgba(0,0,0,0.05);' : 'background: #f1f5f9; color: #64748b; border: 1px solid #e2e8f0;'; ?>">
                                                 <?php echo htmlspecialchars($subCh['name']); ?>
                                             </a>
                                         <?php endforeach; ?>
@@ -13573,18 +13573,18 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                             <div style="width: 36px; height: 36px; border-radius: 50%; overflow: hidden; flex-shrink: 0;">
                                                 <?php if (!empty($msgAvatarUrl)): ?>
                                                     <img src="<?php echo htmlspecialchars(getCloudinaryUrl($msgAvatarUrl)); ?>" alt="<?php echo htmlspecialchars($msg['sender_name']); ?>" style="width: 36px; height: 36px; border-radius: 50%; object-fit: cover; border: 2px solid <?php echo $isMe ? '#dc2626' : '#0284c7'; ?>;" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-                                                    <div style="display: none; width: 36px; height: 36px; border-radius: 50%; background: <?php echo $isMe ? '#dc2626' : '#0284c7'; ?>; color: #ffffff; align-items: center; justify-content: center; font-weight: 800; font-size: 0.85rem;">
+                                                    <div style="display: none; width: 36px; height: 36px; border-radius: 50%; background: <?php echo $isMe ? '#dc2626' : '#0284c7'; ?>; color: #ffffff; align-items: center; justify-content: center; font-weight: 700; font-size: 0.85rem;">
                                                         <?php echo strtoupper(substr($msg['sender_name'] ?? 'U', 0, 1)); ?>
                                                     </div>
                                                 <?php else: ?>
-                                                    <div style="width: 36px; height: 36px; border-radius: 50%; background: <?php echo $isMe ? '#dc2626' : '#0284c7'; ?>; color: #ffffff; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.85rem;">
+                                                    <div style="width: 36px; height: 36px; border-radius: 50%; background: <?php echo $isMe ? '#dc2626' : '#0284c7'; ?>; color: #ffffff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.85rem;">
                                                         <?php echo strtoupper(substr($msg['sender_name'] ?? 'U', 0, 1)); ?>
                                                     </div>
                                                 <?php endif; ?>
                                             </div>
                                             <div style="display: flex; flex-direction: column; <?php echo $isMe ? 'align-items: flex-end;' : 'align-items: flex-start;'; ?>">
                                                 <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px; <?php echo $isMe ? 'flex-direction: row-reverse;' : ''; ?>">
-                                                    <span style="font-size: 0.82rem; font-weight: 800; color: #0f172a;"><?php echo $isMe ? 'You' : htmlspecialchars($msg['sender_name']); ?></span>
+                                                    <span style="font-size: 0.82rem; font-weight: 700; color: #0f172a;"><?php echo $isMe ? 'You' : htmlspecialchars($msg['sender_name']); ?></span>
                                                     <span style="font-size: 0.7rem; color: #94a3b8;"><?php echo htmlspecialchars($msg['time_str']); ?></span>
                                                 </div>
                                                 <div style="padding: 12px 16px; border-radius: 14px; font-size: 0.88rem; line-height: 1.5; text-align: left; <?php echo $isMe ? 'background: #dc2626; color: #ffffff; border-bottom-right-radius: 2px;' : 'background: #f8fafc; color: #1e293b; border: 1px solid #e2e8f0; border-bottom-left-radius: 2px;'; ?>">
@@ -13633,12 +13633,12 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                 <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
                                     <?php foreach ($feedCategories as $fcKey => $fcLabel): ?>
                                         <?php $isFcActive = ($fcKey === $activeFeedCat); ?>
-                                        <a href="/admin/index.php?section=comms&tab=feeds&cat=<?php echo urlencode($fcKey); ?>" style="padding: 5px 14px; border-radius: 8px; font-size: 0.8rem; font-weight: 800; text-decoration: none; transition: all 0.15s ease; <?php echo $isFcActive ? 'background: #ffffff; color: #dc2626; border: 1px solid #fecaca; box-shadow: 0 1px 3px rgba(0,0,0,0.05);' : 'background: #f1f5f9; color: #64748b; border: 1px solid #e2e8f0;'; ?>">
+                                        <a href="/admin/index.php?section=comms&tab=feeds&cat=<?php echo urlencode($fcKey); ?>" style="padding: 5px 14px; border-radius: 8px; font-size: 0.8rem; font-weight: 700; text-decoration: none; transition: all 0.15s ease; <?php echo $isFcActive ? 'background: #ffffff; color: #dc2626; border: 1px solid #fecaca; box-shadow: 0 1px 3px rgba(0,0,0,0.05);' : 'background: #f1f5f9; color: #64748b; border: 1px solid #e2e8f0;'; ?>">
                                             <?php echo htmlspecialchars($fcLabel); ?>
                                         </a>
                                     <?php endforeach; ?>
                                 </div>
-                                <button type="button" onclick="openPostAnnouncementModal()" style="display: inline-flex; align-items: center; gap: 6px; background: #dc2626; color: #ffffff; padding: 6px 14px; border-radius: 8px; border: none; font-size: 0.78rem; font-weight: 800; cursor: pointer; transition: all 0.15s ease; box-shadow: 0 2px 6px rgba(220, 38, 38, 0.25);" onmouseover="this.style.background='#b91c1c'" onmouseout="this.style.background='#dc2626'">
+                                <button type="button" onclick="openPostAnnouncementModal()" style="display: inline-flex; align-items: center; gap: 6px; background: #dc2626; color: #ffffff; padding: 6px 14px; border-radius: 8px; border: none; font-size: 0.78rem; font-weight: 700; cursor: pointer; transition: all 0.15s ease; box-shadow: 0 2px 6px rgba(220, 38, 38, 0.25);" onmouseover="this.style.background='#b91c1c'" onmouseout="this.style.background='#dc2626'">
                                     <i class="fa-solid fa-plus" style="font-size: 0.74rem;"></i>
                                     <span>Post Announcement</span>
                                 </button>
@@ -13662,14 +13662,14 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                         ?>
                                         <div style="padding: 18px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; border-left: 4px solid <?php echo $borderColor; ?>;">
                                             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-                                                <span style="font-size: 0.74rem; font-weight: 800; <?php echo $badgeStyle; ?> padding: 2px 8px; border-radius: 6px; text-transform: uppercase;">
+                                                <span style="font-size: 0.74rem; font-weight: 700; <?php echo $badgeStyle; ?> padding: 2px 8px; border-radius: 6px; text-transform: uppercase;">
                                                     <?php echo htmlspecialchars($ann['category']); ?>
                                                 </span>
                                                 <span style="font-size: 0.76rem; color: #94a3b8; font-weight: 600;">
                                                     <?php echo htmlspecialchars($ann['date_str']); ?>
                                                 </span>
                                             </div>
-                                            <h3 style="font-size: 1.05rem; font-weight: 800; color: #0f172a; margin: 0 0 6px 0;">
+                                            <h3 style="font-size: 1.05rem; font-weight: 700; color: #0f172a; margin: 0 0 6px 0;">
                                                 <?php echo htmlspecialchars($ann['title']); ?>
                                             </h3>
                                             <p style="font-size: 0.86rem; color: #475569; margin: 0 0 10px 0; line-height: 1.6;">
@@ -13758,11 +13758,11 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                 
                                 <!-- LEFT SUB-NAVIGATION TABS (My Tasks vs All Tasks) -->
                                 <div style="display: flex; align-items: center; gap: 18px;">
-                                    <a href="/admin/index.php?section=comms&tab=tasks&view=my" style="font-size: 0.92rem; font-weight: 800; text-decoration: none; padding-bottom: 6px; display: inline-flex; align-items: center; gap: 6px; transition: all 0.15s ease; <?php echo ($taskSubView === 'my') ? 'color: #ef4444; border-bottom: 2px solid #ef4444;' : 'color: #94a3b8; border-bottom: 2px solid transparent;'; ?>">
+                                    <a href="/admin/index.php?section=comms&tab=tasks&view=my" style="font-size: 0.92rem; font-weight: 700; text-decoration: none; padding-bottom: 6px; display: inline-flex; align-items: center; gap: 6px; transition: all 0.15s ease; <?php echo ($taskSubView === 'my') ? 'color: #ef4444; border-bottom: 2px solid #ef4444;' : 'color: #94a3b8; border-bottom: 2px solid transparent;'; ?>">
                                         <i class="fa-solid fa-user-check" style="font-size: 0.85rem;"></i>
                                         <span>My Tasks</span>
                                     </a>
-                                    <a href="/admin/index.php?section=comms&tab=tasks&view=all" style="font-size: 0.92rem; font-weight: 800; text-decoration: none; padding-bottom: 6px; display: inline-flex; align-items: center; gap: 6px; transition: all 0.15s ease; <?php echo ($taskSubView === 'all') ? 'color: #ef4444; border-bottom: 2px solid #ef4444;' : 'color: #94a3b8; border-bottom: 2px solid transparent;'; ?>">
+                                    <a href="/admin/index.php?section=comms&tab=tasks&view=all" style="font-size: 0.92rem; font-weight: 700; text-decoration: none; padding-bottom: 6px; display: inline-flex; align-items: center; gap: 6px; transition: all 0.15s ease; <?php echo ($taskSubView === 'all') ? 'color: #ef4444; border-bottom: 2px solid #ef4444;' : 'color: #94a3b8; border-bottom: 2px solid transparent;'; ?>">
                                         <i class="fa-solid fa-users-gear" style="font-size: 0.85rem;"></i>
                                         <span>All Tasks</span>
                                     </a>
@@ -13775,11 +13775,11 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                         <input type="text" id="taskSearchInput" onkeyup="filterTasksKanban()" placeholder="Search tasks..." style="width: 100%; padding: 8px 12px 8px 34px; font-size: 0.82rem; background: #1e293b; border: 1px solid #334155; border-radius: 8px; color: #ffffff; outline: none;">
                                     </div>
                                     <?php if (isSuperAdminUser($userRole, $userEmail, $username)): ?>
-                                        <button type="button" onclick="openCreateStageModal()" style="background: #16a34a; color: #ffffff; border: none; padding: 8px 14px; border-radius: 8px; font-size: 0.84rem; font-weight: 800; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 4px 12px rgba(22, 163, 74, 0.3); transition: all 0.15s ease;" onmouseover="this.style.background='#15803d'" onmouseout="this.style.background='#16a34a'">
+                                        <button type="button" onclick="openCreateStageModal()" style="background: #16a34a; color: #ffffff; border: none; padding: 8px 14px; border-radius: 8px; font-size: 0.84rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 4px 12px rgba(22, 163, 74, 0.3); transition: all 0.15s ease;" onmouseover="this.style.background='#15803d'" onmouseout="this.style.background='#16a34a'">
                                             <i class="fa-solid fa-tags"></i> Add Section Label
                                         </button>
                                     <?php endif; ?>
-                                    <button type="button" onclick="openCreateTaskModal()" style="background: #dc2626; color: #ffffff; border: none; padding: 8px 16px; border-radius: 8px; font-size: 0.84rem; font-weight: 800; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3); transition: all 0.15s ease;" onmouseover="this.style.background='#b91c1c'" onmouseout="this.style.background='#dc2626'">
+                                    <button type="button" onclick="openCreateTaskModal()" style="background: #dc2626; color: #ffffff; border: none; padding: 8px 16px; border-radius: 8px; font-size: 0.84rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3); transition: all 0.15s ease;" onmouseover="this.style.background='#b91c1c'" onmouseout="this.style.background='#dc2626'">
                                         <i class="fa-solid fa-plus"></i> Create Task
                                     </button>
                                 </div>
@@ -13797,7 +13797,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                         <!-- Column Header -->
                                         <div style="padding: 14px 16px; border-bottom: 1px solid #334155; border-top: 3px solid <?php echo $stgConf['color']; ?>; border-top-left-radius: 14px; border-top-right-radius: 14px; display: flex; align-items: center; justify-content: space-between; background: rgba(15, 23, 42, 0.4);">
                                             <div style="display: flex; align-items: center; gap: 8px; overflow: hidden;">
-                                                <span style="font-size: 0.88rem; font-weight: 800; color: #ffffff; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"><?php echo htmlspecialchars($stgConf['title']); ?></span>
+                                                <span style="font-size: 0.88rem; font-weight: 700; color: #ffffff; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"><?php echo htmlspecialchars($stgConf['title']); ?></span>
                                                 <?php if (isSuperAdminUser($userRole, $userEmail, $username)): ?>
                                                     <button type="button" onclick="openEditStageModal('<?php echo htmlspecialchars($stgKey); ?>', '<?php echo htmlspecialchars(addslashes($stgConf['title'])); ?>', '<?php echo htmlspecialchars($stgConf['color']); ?>')" style="background: none; border: none; color: #64748b; cursor: pointer; padding: 0; font-size: 0.76rem;" onmouseover="this.style.color='#38bdf8'" onmouseout="this.style.color='#64748b'" title="Rename Section Label">
                                                         <i class="fa-solid fa-pen-to-square"></i>
@@ -13813,7 +13813,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                                     <?php endif; ?>
                                                 <?php endif; ?>
                                             </div>
-                                            <span style="font-size: 0.72rem; font-weight: 800; background: rgba(255,255,255,0.1); color: #94a3b8; padding: 2px 8px; border-radius: 12px; min-width: 20px; text-align: center;"><?php echo $colCount; ?></span>
+                                            <span style="font-size: 0.72rem; font-weight: 700; background: rgba(255,255,255,0.1); color: #94a3b8; padding: 2px 8px; border-radius: 12px; min-width: 20px; text-align: center;"><?php echo $colCount; ?></span>
                                         </div>
 
                                         <!-- Column Cards List Container -->
@@ -13828,14 +13828,14 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                                         
                                                         <!-- Client / Organization Badge -->
                                                         <?php if (!empty($tsk['client_org'])): ?>
-                                                            <div style="font-size: 0.70rem; font-weight: 800; color: #38bdf8; margin-bottom: 6px; display: inline-flex; align-items: center; gap: 4px; background: rgba(56, 189, 248, 0.1); padding: 2px 8px; border-radius: 12px; border: 1px solid rgba(56, 189, 248, 0.25);">
+                                                            <div style="font-size: 0.70rem; font-weight: 700; color: #38bdf8; margin-bottom: 6px; display: inline-flex; align-items: center; gap: 4px; background: rgba(56, 189, 248, 0.1); padding: 2px 8px; border-radius: 12px; border: 1px solid rgba(56, 189, 248, 0.25);">
                                                                 <i class="fa-solid fa-building" style="font-size: 0.65rem;"></i>
                                                                 <span><?php echo htmlspecialchars($tsk['client_org']); ?></span>
                                                             </div>
                                                         <?php endif; ?>
 
                                                         <!-- Task Title -->
-                                                        <h4 style="font-size: 0.92rem; font-weight: 800; color: #f8fafc; margin: 0 0 6px 0; line-height: 1.3;">
+                                                        <h4 style="font-size: 0.92rem; font-weight: 700; color: #f8fafc; margin: 0 0 6px 0; line-height: 1.3;">
                                                             <?php echo htmlspecialchars($tsk['title']); ?>
                                                         </h4>
 
@@ -13889,19 +13889,19 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                                                             <?php if (!empty($assg['avatar'])): ?>
                                                                                 <img src="<?php echo htmlspecialchars(getCloudinaryUrl($assg['avatar'])); ?>" alt="<?php echo htmlspecialchars($assg['name']); ?>" style="width: 24px; height: 24px; border-radius: 50%; object-fit: cover; border: 2px solid #0f172a; margin-left: <?php echo ($aIdx > 0) ? '-8px' : '0'; ?>; z-index: <?php echo (10 - $aIdx); ?>;" title="Assigned to <?php echo htmlspecialchars($assg['name']); ?>">
                                                                             <?php else: ?>
-                                                                                <div style="width: 24px; height: 24px; border-radius: 50%; background: #dc2626; color: #ffffff; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.65rem; border: 2px solid #0f172a; margin-left: <?php echo ($aIdx > 0) ? '-8px' : '0'; ?>; z-index: <?php echo (10 - $aIdx); ?>;" title="Assigned to <?php echo htmlspecialchars($assg['name']); ?>">
+                                                                                <div style="width: 24px; height: 24px; border-radius: 50%; background: #dc2626; color: #ffffff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.65rem; border: 2px solid #0f172a; margin-left: <?php echo ($aIdx > 0) ? '-8px' : '0'; ?>; z-index: <?php echo (10 - $aIdx); ?>;" title="Assigned to <?php echo htmlspecialchars($assg['name']); ?>">
                                                                                     <?php echo strtoupper(substr($assg['name'], 0, 2)); ?>
                                                                                 </div>
                                                                             <?php endif; ?>
                                                                         <?php endforeach; ?>
                                                                         <?php if (count($taskAssignees) > 4): ?>
-                                                                            <div style="width: 22px; height: 22px; border-radius: 50%; background: #334155; color: #cbd5e1; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.6rem; border: 2px solid #0f172a; margin-left: -8px; z-index: 5;" title="<?php echo (count($taskAssignees) - 4); ?> more assignees">
+                                                                            <div style="width: 22px; height: 22px; border-radius: 50%; background: #334155; color: #cbd5e1; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.6rem; border: 2px solid #0f172a; margin-left: -8px; z-index: 5;" title="<?php echo (count($taskAssignees) - 4); ?> more assignees">
                                                                                 +<?php echo (count($taskAssignees) - 4); ?>
                                                                             </div>
                                                                         <?php endif; ?>
                                                                     </div>
                                                                 <?php endif; ?>
-                                                                <span style="font-size: 0.72rem; color: #ef4444; font-weight: 800; display: inline-flex; align-items: center; gap: 3px;">
+                                                                <span style="font-size: 0.72rem; color: #ef4444; font-weight: 700; display: inline-flex; align-items: center; gap: 3px;">
                                                                     <i class="fa-regular fa-clock" style="font-size: 0.68rem;"></i>
                                                                     <?php echo htmlspecialchars($tsk['due_date_str']); ?>
                                                                 </span>
@@ -13938,23 +13938,23 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
 
                             <div style="display: flex; flex-direction: column; gap: 14px;">
                                 <div style="padding: 16px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; display: flex; gap: 16px; align-items: center;">
-                                    <div style="padding: 12px 18px; background: #dc2626; color: #ffffff; border-radius: 10px; text-align: center; font-weight: 800;">
+                                    <div style="padding: 12px 18px; background: #dc2626; color: #ffffff; border-radius: 10px; text-align: center; font-weight: 700;">
                                         <div style="font-size: 0.72rem; text-transform: uppercase;">AUG</div>
                                         <div style="font-size: 1.4rem;">28</div>
                                     </div>
                                     <div>
-                                        <h4 style="font-size: 1rem; font-weight: 800; color: #0f172a; margin: 0 0 4px 0;">Lagos Commercial Shoot & Directing Briefing</h4>
+                                        <h4 style="font-size: 1rem; font-weight: 700; color: #0f172a; margin: 0 0 4px 0;">Lagos Commercial Shoot & Directing Briefing</h4>
                                         <div style="font-size: 0.8rem; color: #64748b;">10:00 AM &ndash; 04:00 PM &bull; Main Soundstage</div>
                                     </div>
                                 </div>
 
                                 <div style="padding: 16px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; display: flex; gap: 16px; align-items: center;">
-                                    <div style="padding: 12px 18px; background: #0284c7; color: #ffffff; border-radius: 10px; text-align: center; font-weight: 800;">
+                                    <div style="padding: 12px 18px; background: #0284c7; color: #ffffff; border-radius: 10px; text-align: center; font-weight: 700;">
                                         <div style="font-size: 0.72rem; text-transform: uppercase;">SEP</div>
                                         <div style="font-size: 1.4rem;">02</div>
                                     </div>
                                     <div>
-                                        <h4 style="font-size: 1rem; font-weight: 800; color: #0f172a; margin: 0 0 4px 0;">Monthly Studio All-Hands & Townhall Meeting</h4>
+                                        <h4 style="font-size: 1rem; font-weight: 700; color: #0f172a; margin: 0 0 4px 0;">Monthly Studio All-Hands & Townhall Meeting</h4>
                                         <div style="font-size: 0.8rem; color: #64748b;">02:00 PM &ndash; 03:30 PM &bull; Virtual & Conference Room A</div>
                                     </div>
                                 </div>
@@ -13989,7 +13989,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                         <div style="width: 48px; height: 48px; background: rgba(220, 38, 38, 0.1); color: #dc2626; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; margin-bottom: 12px;">
                             <i class="fa-solid fa-vector-square"></i>
                         </div>
-                        <h3 style="font-size: 1.05rem; font-weight: 800; color: #0f172a; margin: 0 0 4px 0;">Official Brand Logo Package</h3>
+                        <h3 style="font-size: 1.05rem; font-weight: 700; color: #0f172a; margin: 0 0 4px 0;">Official Brand Logo Package</h3>
                         <p style="font-size: 0.8rem; color: #64748b; margin-bottom: 14px;">Vector SVG, PNG, EPS logo kit (Light & Dark variants)</p>
                         <button type="button" class="btn-save-primary" style="width: 100%; justify-content: center;" onclick="alert('Downloading Brand Logo Package...')">
                             <i class="fa-solid fa-download"></i> Download Package
@@ -13999,7 +13999,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                         <div style="width: 48px; height: 48px; background: rgba(2, 132, 199, 0.1); color: #0284c7; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; margin-bottom: 12px;">
                             <i class="fa-solid fa-film"></i>
                         </div>
-                        <h3 style="font-size: 1.05rem; font-weight: 800; color: #0f172a; margin: 0 0 4px 0;">4K Showreel B-Roll Clips</h3>
+                        <h3 style="font-size: 1.05rem; font-weight: 700; color: #0f172a; margin: 0 0 4px 0;">4K Showreel B-Roll Clips</h3>
                         <p style="font-size: 0.8rem; color: #64748b; margin-bottom: 14px;">High-bitrate ProRes cinematic b-roll for marketing campaigns.</p>
                         <button type="button" class="btn-save-primary" style="width: 100%; justify-content: center; background: #0284c7;" onclick="alert('Downloading Showreel B-Roll Footage...')">
                             <i class="fa-solid fa-download"></i> Download B-Roll
@@ -14009,7 +14009,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                         <div style="width: 48px; height: 48px; background: rgba(147, 51, 234, 0.1); color: #9333ea; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; margin-bottom: 12px;">
                             <i class="fa-solid fa-file-powerpoint"></i>
                         </div>
-                        <h3 style="font-size: 1.05rem; font-weight: 800; color: #0f172a; margin: 0 0 4px 0;">Client Pitch Deck Template</h3>
+                        <h3 style="font-size: 1.05rem; font-weight: 700; color: #0f172a; margin: 0 0 4px 0;">Client Pitch Deck Template</h3>
                         <p style="font-size: 0.8rem; color: #64748b; margin-bottom: 14px;">Keynote & PowerPoint proposal presentation decks.</p>
                         <button type="button" class="btn-save-primary" style="width: 100%; justify-content: center; background: #9333ea;" onclick="alert('Downloading Pitch Deck Template...')">
                             <i class="fa-solid fa-download"></i> Download Deck
@@ -14340,7 +14340,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                     <!-- METRIC 1: CELEBRATIONS TODAY -->
                     <div class="dashboard-card" style="margin-bottom: 0; padding: 20px; border-radius: 14px; <?php echo !empty($celebrationsTodayList) ? 'background: linear-gradient(135deg, #fff1f2 0%, #ffffff 100%); border: 1px solid #fbcfe8;' : ''; ?>">
                         <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
-                            <span style="font-size: 0.74rem; font-weight: 800; color: #be185d; text-transform: uppercase; letter-spacing: 0.6px;">Celebrations Today</span>
+                            <span style="font-size: 0.74rem; font-weight: 700; color: #be185d; text-transform: uppercase; letter-spacing: 0.6px;">Celebrations Today</span>
                             <div style="width: 34px; height: 34px; border-radius: 8px; background: rgba(236, 72, 153, 0.12); color: #ec4899; display: flex; align-items: center; justify-content: center; font-size: 0.95rem;">
                                 <i class="fa-solid fa-cake-candles"></i>
                             </div>
@@ -14350,7 +14350,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                         </div>
                         <div style="font-size: 0.78rem; color: #64748b; line-height: 1.4;">
                             <?php if (!empty($celebrationsTodayList)): ?>
-                                <span style="color: #be185d; font-weight: 800;">
+                                <span style="color: #be185d; font-weight: 700;">
                                     <?php 
                                     $todayLabels = array_map(function($c) {
                                         return htmlspecialchars($c['name']) . ' (' . htmlspecialchars($c['type']) . ')';
@@ -14367,7 +14367,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                     <!-- METRIC 2: UPCOMING MILESTONES (30 DAYS) -->
                     <div class="dashboard-card" style="margin-bottom: 0; padding: 20px; border-radius: 14px;">
                         <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
-                            <span style="font-size: 0.74rem; font-weight: 800; color: #0284c7; text-transform: uppercase; letter-spacing: 0.6px;">Upcoming (30 Days)</span>
+                            <span style="font-size: 0.74rem; font-weight: 700; color: #0284c7; text-transform: uppercase; letter-spacing: 0.6px;">Upcoming (30 Days)</span>
                             <div style="width: 34px; height: 34px; border-radius: 8px; background: rgba(2, 132, 199, 0.1); color: #0284c7; display: flex; align-items: center; justify-content: center; font-size: 0.95rem;">
                                 <i class="fa-solid fa-calendar-check"></i>
                             </div>
@@ -14383,7 +14383,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                     <!-- METRIC 3: TOTAL TEAM MEMBERS -->
                     <div class="dashboard-card" style="margin-bottom: 0; padding: 20px; border-radius: 14px;">
                         <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
-                            <span style="font-size: 0.74rem; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.6px;">Team Profiles</span>
+                            <span style="font-size: 0.74rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.6px;">Team Profiles</span>
                             <div style="width: 34px; height: 34px; border-radius: 8px; background: rgba(15, 23, 42, 0.08); color: #0f172a; display: flex; align-items: center; justify-content: center; font-size: 0.95rem;">
                                 <i class="fa-solid fa-users"></i>
                             </div>
@@ -14399,7 +14399,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                     <!-- METRIC 4: AUTO-BROADCAST ENGINE -->
                     <div class="dashboard-card" style="margin-bottom: 0; padding: 20px; border-radius: 14px;">
                         <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
-                            <span style="font-size: 0.74rem; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.6px;">Auto-Broadcast Engine</span>
+                            <span style="font-size: 0.74rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.6px;">Auto-Broadcast Engine</span>
                             <div style="width: 34px; height: 34px; border-radius: 8px; background: <?php echo $autoAnnounce ? 'rgba(22, 163, 74, 0.1)' : 'rgba(220, 38, 38, 0.1)'; ?>; color: <?php echo $autoAnnounce ? '#16a34a' : '#dc2626'; ?>; display: flex; align-items: center; justify-content: center; font-size: 0.95rem;">
                                 <i class="fa-solid fa-tower-broadcast"></i>
                             </div>
@@ -14435,7 +14435,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                             <!-- Master Switch -->
                             <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px 16px; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; gap: 14px;">
                                 <div>
-                                    <div style="font-size: 0.88rem; font-weight: 800; color: #0f172a;">Master Celebration Broadcast</div>
+                                    <div style="font-size: 0.88rem; font-weight: 700; color: #0f172a;">Master Celebration Broadcast</div>
                                     <div style="font-size: 0.76rem; color: #64748b; margin-top: 2px;">
                                         Publish celebratory cards on dashboard and announcement feeds automatically.
                                     </div>
@@ -14449,7 +14449,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
 
                             <!-- EVENT CATEGORY TOGGLES -->
                             <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px; margin-bottom: 20px;">
-                                <div style="font-size: 0.76rem; font-weight: 800; color: #475569; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px;">
+                                <div style="font-size: 0.76rem; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px;">
                                     Included Milestone Events:
                                 </div>
                                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
@@ -14478,32 +14478,32 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
 
                             <!-- Announcer Signature Title -->
                             <div class="form-field" style="margin-bottom: 18px;">
-                                <label class="form-label-title" style="font-size: 0.82rem; font-weight: 800; color: #0f172a;">Announcer Signature Title <span style="color: #dc2626;">*</span></label>
+                                <label class="form-label-title" style="font-size: 0.82rem; font-weight: 700; color: #0f172a;">Announcer Signature Title <span style="color: #dc2626;">*</span></label>
                                 <input type="text" name="author_title" id="author_title_input" class="form-text-input" value="<?php echo htmlspecialchars($authorTitle); ?>" placeholder="e.g. Falhen HR & Culture Team" required oninput="updateCelebrationLivePreview()" style="font-size: 0.88rem;">
                             </div>
 
                             <!-- TEMPLATE SELECTOR TABS -->
                             <div style="margin-bottom: 12px;">
-                                <label class="form-label-title" style="font-size: 0.82rem; font-weight: 800; color: #0f172a; margin-bottom: 8px;">Milestone Message Templates <span style="color: #dc2626;">*</span></label>
+                                <label class="form-label-title" style="font-size: 0.82rem; font-weight: 700; color: #0f172a; margin-bottom: 8px;">Milestone Message Templates <span style="color: #dc2626;">*</span></label>
                                 
                                 <!-- Tab Buttons -->
                                 <div style="display: flex; gap: 6px; overflow-x: auto; padding-bottom: 6px; scrollbar-width: none;">
-                                    <button type="button" class="celeb-tab-btn active-celeb-tab" onclick="switchCelebTemplateTab('birthday')" id="tab_btn_birthday" style="padding: 5px 10px; font-size: 0.74rem; font-weight: 800; border-radius: 6px; border: 1px solid #cbd5e1; background: #0f172a; color: #ffffff; cursor: pointer; white-space: nowrap;">
+                                    <button type="button" class="celeb-tab-btn active-celeb-tab" onclick="switchCelebTemplateTab('birthday')" id="tab_btn_birthday" style="padding: 5px 10px; font-size: 0.74rem; font-weight: 700; border-radius: 6px; border: 1px solid #cbd5e1; background: #0f172a; color: #ffffff; cursor: pointer; white-space: nowrap;">
                                         🎂 Birthday
                                     </button>
-                                    <button type="button" class="celeb-tab-btn" onclick="switchCelebTemplateTab('45d')" id="tab_btn_45d" style="padding: 5px 10px; font-size: 0.74rem; font-weight: 800; border-radius: 6px; border: 1px solid #cbd5e1; background: #ffffff; color: #475569; cursor: pointer; white-space: nowrap;">
+                                    <button type="button" class="celeb-tab-btn" onclick="switchCelebTemplateTab('45d')" id="tab_btn_45d" style="padding: 5px 10px; font-size: 0.74rem; font-weight: 700; border-radius: 6px; border: 1px solid #cbd5e1; background: #ffffff; color: #475569; cursor: pointer; white-space: nowrap;">
                                         🚀 45 Days
                                     </button>
-                                    <button type="button" class="celeb-tab-btn" onclick="switchCelebTemplateTab('90d')" id="tab_btn_90d" style="padding: 5px 10px; font-size: 0.74rem; font-weight: 800; border-radius: 6px; border: 1px solid #cbd5e1; background: #ffffff; color: #475569; cursor: pointer; white-space: nowrap;">
+                                    <button type="button" class="celeb-tab-btn" onclick="switchCelebTemplateTab('90d')" id="tab_btn_90d" style="padding: 5px 10px; font-size: 0.74rem; font-weight: 700; border-radius: 6px; border: 1px solid #cbd5e1; background: #ffffff; color: #475569; cursor: pointer; white-space: nowrap;">
                                         🏆 90 Days
                                     </button>
-                                    <button type="button" class="celeb-tab-btn" onclick="switchCelebTemplateTab('6m')" id="tab_btn_6m" style="padding: 5px 10px; font-size: 0.74rem; font-weight: 800; border-radius: 6px; border: 1px solid #cbd5e1; background: #ffffff; color: #475569; cursor: pointer; white-space: nowrap;">
+                                    <button type="button" class="celeb-tab-btn" onclick="switchCelebTemplateTab('6m')" id="tab_btn_6m" style="padding: 5px 10px; font-size: 0.74rem; font-weight: 700; border-radius: 6px; border: 1px solid #cbd5e1; background: #ffffff; color: #475569; cursor: pointer; white-space: nowrap;">
                                         💫 6 Months
                                     </button>
-                                    <button type="button" class="celeb-tab-btn" onclick="switchCelebTemplateTab('1y')" id="tab_btn_1y" style="padding: 5px 10px; font-size: 0.74rem; font-weight: 800; border-radius: 6px; border: 1px solid #cbd5e1; background: #ffffff; color: #475569; cursor: pointer; white-space: nowrap;">
+                                    <button type="button" class="celeb-tab-btn" onclick="switchCelebTemplateTab('1y')" id="tab_btn_1y" style="padding: 5px 10px; font-size: 0.74rem; font-weight: 700; border-radius: 6px; border: 1px solid #cbd5e1; background: #ffffff; color: #475569; cursor: pointer; white-space: nowrap;">
                                         🥂 1 Year
                                     </button>
-                                    <button type="button" class="celeb-tab-btn" onclick="switchCelebTemplateTab('multi_year')" id="tab_btn_multi_year" style="padding: 5px 10px; font-size: 0.74rem; font-weight: 800; border-radius: 6px; border: 1px solid #cbd5e1; background: #ffffff; color: #475569; cursor: pointer; white-space: nowrap;">
+                                    <button type="button" class="celeb-tab-btn" onclick="switchCelebTemplateTab('multi_year')" id="tab_btn_multi_year" style="padding: 5px 10px; font-size: 0.74rem; font-weight: 700; border-radius: 6px; border: 1px solid #cbd5e1; background: #ffffff; color: #475569; cursor: pointer; white-space: nowrap;">
                                         🎖️ Multi-Year
                                     </button>
                                 </div>
@@ -14542,21 +14542,21 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                             <!-- Tag Insert Chips -->
                             <div style="margin-top: 8px; margin-bottom: 20px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
                                 <span style="font-size: 0.72rem; color: #64748b; font-weight: 700;">Click to insert:</span>
-                                <button type="button" onclick="insertTagIntoActiveCelebTemplate('{name}')" style="background: #fdf2f8; color: #be185d; border: 1px solid #fbcfe8; border-radius: 6px; padding: 2px 7px; font-size: 0.72rem; font-weight: 800; cursor: pointer;">
+                                <button type="button" onclick="insertTagIntoActiveCelebTemplate('{name}')" style="background: #fdf2f8; color: #be185d; border: 1px solid #fbcfe8; border-radius: 6px; padding: 2px 7px; font-size: 0.72rem; font-weight: 700; cursor: pointer;">
                                     {name}
                                 </button>
-                                <button type="button" onclick="insertTagIntoActiveCelebTemplate('{role}')" style="background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; border-radius: 6px; padding: 2px 7px; font-size: 0.72rem; font-weight: 800; cursor: pointer;">
+                                <button type="button" onclick="insertTagIntoActiveCelebTemplate('{role}')" style="background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; border-radius: 6px; padding: 2px 7px; font-size: 0.72rem; font-weight: 700; cursor: pointer;">
                                     {role}
                                 </button>
-                                <button type="button" onclick="insertTagIntoActiveCelebTemplate('{first_name}')" style="background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe; border-radius: 6px; padding: 2px 7px; font-size: 0.72rem; font-weight: 800; cursor: pointer;">
+                                <button type="button" onclick="insertTagIntoActiveCelebTemplate('{first_name}')" style="background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe; border-radius: 6px; padding: 2px 7px; font-size: 0.72rem; font-weight: 700; cursor: pointer;">
                                     {first_name}
                                 </button>
-                                <button type="button" onclick="insertTagIntoActiveCelebTemplate('{years}')" style="background: #fefce8; color: #854d0e; border: 1px solid #fef08a; border-radius: 6px; padding: 2px 7px; font-size: 0.72rem; font-weight: 800; cursor: pointer;">
+                                <button type="button" onclick="insertTagIntoActiveCelebTemplate('{years}')" style="background: #fefce8; color: #854d0e; border: 1px solid #fef08a; border-radius: 6px; padding: 2px 7px; font-size: 0.72rem; font-weight: 700; cursor: pointer;">
                                     {years}
                                 </button>
                             </div>
 
-                            <button type="submit" class="btn-save-primary" style="width: 100%; justify-content: center; padding: 10px; font-size: 0.88rem; font-weight: 800;">
+                            <button type="submit" class="btn-save-primary" style="width: 100%; justify-content: center; padding: 10px; font-size: 0.88rem; font-weight: 700;">
                                 <i class="fa-solid fa-floppy-disk"></i> Save Celebration Settings
                             </button>
                         </form>
@@ -14564,21 +14564,21 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                         <!-- LIVE INTERACTIVE PREVIEW CARD -->
                         <div style="margin-top: 24px; padding-top: 20px; border-top: 1px solid #f1f5f9;">
                             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-                                <span style="font-size: 0.75rem; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.6px; display: flex; align-items: center; gap: 6px;">
+                                <span style="font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.6px; display: flex; align-items: center; gap: 6px;">
                                     <i class="fa-solid fa-eye" style="color: #ec4899;"></i> Live Card Preview
                                 </span>
-                                <span id="preview_event_type_pill" style="font-size: 0.70rem; font-weight: 800; color: #be185d; background: #fdf2f8; padding: 2px 8px; border-radius: 6px; border: 1px solid #fbcfe8;">
+                                <span id="preview_event_type_pill" style="font-size: 0.70rem; font-weight: 700; color: #be185d; background: #fdf2f8; padding: 2px 8px; border-radius: 6px; border: 1px solid #fbcfe8;">
                                     Birthday Preview
                                 </span>
                             </div>
 
                             <div style="padding: 16px; background: linear-gradient(135deg, #fff1f2 0%, #fdf2f8 50%, #f0fdf4 100%); border: 1px solid #fbcfe8; border-left: 4px solid #ec4899; border-radius: 12px; box-shadow: 0 4px 12px rgba(236, 72, 153, 0.08);">
                                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                                    <div style="font-weight: 800; color: #be185d; font-size: 0.92rem; display: flex; align-items: center; gap: 6px;">
+                                    <div style="font-weight: 700; color: #be185d; font-size: 0.92rem; display: flex; align-items: center; gap: 6px;">
                                         <i class="fa-solid fa-cake-candles" id="preview_card_icon" style="color: #ec4899;"></i>
                                         <span id="preview_celeb_title">🎉 Happy Birthday, Sample Member! 🎂</span>
                                     </div>
-                                    <span style="font-size: 0.68rem; font-weight: 800; color: #be185d; background: #ffffff; padding: 2px 8px; border-radius: 12px; border: 1px solid #fbcfe8; text-transform: uppercase;">
+                                    <span style="font-size: 0.68rem; font-weight: 700; color: #be185d; background: #ffffff; padding: 2px 8px; border-radius: 12px; border: 1px solid #fbcfe8; text-transform: uppercase;">
                                         🎉 CELEBRATION
                                     </span>
                                 </div>
@@ -14636,7 +14636,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                                 <?php if (!empty($pData['avatar'])): ?>
                                                     <img src="<?php echo htmlspecialchars(getCloudinaryUrl($pData['avatar'])); ?>" alt="<?php echo htmlspecialchars($pData['name']); ?>" style="width: 46px; height: 46px; border-radius: 50%; object-fit: cover; border: 2px solid <?php echo $hasEventToday ? '#ec4899' : '#e2e8f0'; ?>;">
                                                 <?php else: ?>
-                                                    <div style="width: 46px; height: 46px; border-radius: 50%; background: #0f172a; color: #ffffff; display: flex; align-items: center; justify-content: center; font-size: 1rem; font-weight: 800;">
+                                                    <div style="width: 46px; height: 46px; border-radius: 50%; background: #0f172a; color: #ffffff; display: flex; align-items: center; justify-content: center; font-size: 1rem; font-weight: 700;">
                                                         <?php echo strtoupper(substr($pData['name'], 0, 1)); ?>
                                                     </div>
                                                 <?php endif; ?>
@@ -14646,15 +14646,15 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                             </div>
 
                                             <div>
-                                                <div style="font-size: 0.92rem; font-weight: 800; color: #0f172a; display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                                                <div style="font-size: 0.92rem; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
                                                     <span><?php echo htmlspecialchars($pData['name']); ?></span>
                                                     <?php if ($pData['is_birthday_today']): ?>
-                                                        <span style="background: #dc2626; color: #ffffff; font-size: 0.65rem; font-weight: 800; padding: 2px 7px; border-radius: 6px;">
+                                                        <span style="background: #dc2626; color: #ffffff; font-size: 0.65rem; font-weight: 700; padding: 2px 7px; border-radius: 6px;">
                                                             🎂 BIRTHDAY TODAY!
                                                         </span>
                                                     <?php endif; ?>
                                                     <?php if ($pData['is_milestone_today']): ?>
-                                                        <span style="background: #16a34a; color: #ffffff; font-size: 0.65rem; font-weight: 800; padding: 2px 7px; border-radius: 6px;">
+                                                        <span style="background: #16a34a; color: #ffffff; font-size: 0.65rem; font-weight: 700; padding: 2px 7px; border-radius: 6px;">
                                                             🌟 <?php echo strtoupper(htmlspecialchars($pData['milestone_today_type'])); ?> TODAY!
                                                         </span>
                                                     <?php endif; ?>
@@ -14712,7 +14712,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                                 <input type="hidden" name="shoutout_title" value="🎉 Celebrating <?php echo htmlspecialchars($pData['name']); ?>! 🌟">
                                                 <input type="hidden" name="message" value="<?php echo htmlspecialchars(!empty($pData['custom_wish']) ? $pData['custom_wish'] : str_replace(['{name}', '{role}', '{first_name}'], [$pData['name'], $pData['role'], explode(' ', $pData['name'])[0]], $defaultTemplate)); ?>">
                                                 
-                                                <button type="submit" style="padding: 6px 12px; font-size: 0.78rem; font-weight: 800; background: #dc2626; border: 1px solid #dc2626; border-radius: 8px; color: #ffffff; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; transition: all 0.15s ease;" onmouseover="this.style.background='#b91c1c'" onmouseout="this.style.background='#dc2626'" title="Broadcast celebration to feed immediately">
+                                                <button type="submit" style="padding: 6px 12px; font-size: 0.78rem; font-weight: 700; background: #dc2626; border: 1px solid #dc2626; border-radius: 8px; color: #ffffff; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; transition: all 0.15s ease;" onmouseover="this.style.background='#b91c1c'" onmouseout="this.style.background='#dc2626'" title="Broadcast celebration to feed immediately">
                                                     <i class="fa-solid fa-bullhorn"></i> Shoutout Now
                                                 </button>
                                             </form>
@@ -14728,20 +14728,20 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                             
                                             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 10px;">
                                                 <div>
-                                                    <label style="font-size: 0.74rem; font-weight: 800; color: #475569; display: block; margin-bottom: 4px;">
+                                                    <label style="font-size: 0.74rem; font-weight: 700; color: #475569; display: block; margin-bottom: 4px;">
                                                         🎂 Date of Birth:
                                                     </label>
                                                     <input type="date" name="dob" value="<?php echo htmlspecialchars($pData['dob']); ?>" class="form-text-input" style="font-size: 0.8rem; padding: 6px 10px;">
                                                 </div>
                                                 <div>
-                                                    <label style="font-size: 0.74rem; font-weight: 800; color: #475569; display: block; margin-bottom: 4px;">
+                                                    <label style="font-size: 0.74rem; font-weight: 700; color: #475569; display: block; margin-bottom: 4px;">
                                                         🚀 Hire / Start Date:
                                                     </label>
                                                     <input type="date" name="hire_date" value="<?php echo htmlspecialchars(!empty($pData['hire_date']) ? date('Y-m-d', strtotime($pData['hire_date'])) : ''); ?>" class="form-text-input" style="font-size: 0.8rem; padding: 6px 10px;">
                                                 </div>
                                             </div>
 
-                                            <label style="font-size: 0.74rem; font-weight: 800; color: #be185d; display: flex; align-items: center; gap: 5px; margin-bottom: 4px;">
+                                            <label style="font-size: 0.74rem; font-weight: 700; color: #be185d; display: flex; align-items: center; gap: 5px; margin-bottom: 4px;">
                                                 <i class="fa-solid fa-heart"></i> Personalized Milestone Wish (Optional):
                                             </label>
                                             <textarea name="custom_wish" class="form-text-input" rows="2" style="font-size: 0.82rem; line-height: 1.45; resize: vertical;" placeholder="Write a customized message specifically for <?php echo htmlspecialchars($pData['name']); ?>..."><?php echo htmlspecialchars($pData['custom_wish']); ?></textarea>
@@ -14750,7 +14750,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                                 <button type="button" onclick="toggleCustomWishDrawer('wish_drawer_<?php echo $idx; ?>')" style="background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; border-radius: 6px; padding: 5px 12px; font-size: 0.76rem; font-weight: 700; cursor: pointer;">
                                                     Cancel
                                                 </button>
-                                                <button type="submit" class="btn-save-primary" style="background: #0f172a; border-color: #0f172a; padding: 5px 14px; font-size: 0.76rem; font-weight: 800; border-radius: 6px;">
+                                                <button type="submit" class="btn-save-primary" style="background: #0f172a; border-color: #0f172a; padding: 5px 14px; font-size: 0.76rem; font-weight: 700; border-radius: 6px;">
                                                     <i class="fa-solid fa-check"></i> Save Dates &amp; Wish
                                                 </button>
                                             </div>
@@ -14897,7 +14897,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                     <div class="section-header-bar">
                         <div>
                             <div style="display: flex; align-items: center; gap: 8px;">
-                                <span style="background: #0284c7; color: #ffffff; font-weight: 800; font-size: 0.75rem; padding: 3px 10px; border-radius: 12px; text-transform: uppercase;">Financial &amp; Payout Engine</span>
+                                <span style="background: #0284c7; color: #ffffff; font-weight: 700; font-size: 0.75rem; padding: 3px 10px; border-radius: 12px; text-transform: uppercase;">Financial &amp; Payout Engine</span>
                                 <h1 class="section-header-title">Global Payment Gateways &amp; Remittance</h1>
                             </div>
                             <p class="section-header-desc">Manage multi-currency collection, diaspora remittance (Raenest, LemFi, Taptap Send), and bank settlement accounts for client invoicing &amp; global staff payroll.</p>
@@ -14909,16 +14909,16 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
 
                     <!-- TAB SELECTOR -->
                     <div style="display: flex; gap: 8px; margin-bottom: 20px; overflow-x: auto; padding-bottom: 4px;">
-                        <button type="button" class="gw-tab-btn active-gw-tab" onclick="switchGwTab('raenest', this)" style="padding: 10px 18px; font-size: 0.86rem; font-weight: 800; border-radius: 10px; border: 1px solid #0284c7; background: #0284c7; color: #ffffff; cursor: pointer; display: flex; align-items: center; gap: 8px;">
+                        <button type="button" class="gw-tab-btn active-gw-tab" onclick="switchGwTab('raenest', this)" style="padding: 10px 18px; font-size: 0.86rem; font-weight: 700; border-radius: 10px; border: 1px solid #0284c7; background: #0284c7; color: #ffffff; cursor: pointer; display: flex; align-items: center; gap: 8px;">
                             <i class="fa-solid fa-globe"></i> Raenest Global
                         </button>
-                        <button type="button" class="gw-tab-btn" onclick="switchGwTab('lemfi', this)" style="padding: 10px 18px; font-size: 0.86rem; font-weight: 800; border-radius: 10px; border: 1px solid #cbd5e1; background: #ffffff; color: #475569; cursor: pointer; display: flex; align-items: center; gap: 8px;">
+                        <button type="button" class="gw-tab-btn" onclick="switchGwTab('lemfi', this)" style="padding: 10px 18px; font-size: 0.86rem; font-weight: 700; border-radius: 10px; border: 1px solid #cbd5e1; background: #ffffff; color: #475569; cursor: pointer; display: flex; align-items: center; gap: 8px;">
                             <i class="fa-solid fa-lemon" style="color: #eab308;"></i> LemFi (Lemonade)
                         </button>
-                        <button type="button" class="gw-tab-btn" onclick="switchGwTab('taptap', this)" style="padding: 10px 18px; font-size: 0.86rem; font-weight: 800; border-radius: 10px; border: 1px solid #cbd5e1; background: #ffffff; color: #475569; cursor: pointer; display: flex; align-items: center; gap: 8px;">
+                        <button type="button" class="gw-tab-btn" onclick="switchGwTab('taptap', this)" style="padding: 10px 18px; font-size: 0.86rem; font-weight: 700; border-radius: 10px; border: 1px solid #cbd5e1; background: #ffffff; color: #475569; cursor: pointer; display: flex; align-items: center; gap: 8px;">
                             <i class="fa-solid fa-paper-plane" style="color: #10b981;"></i> Taptap Send
                         </button>
-                        <button type="button" class="gw-tab-btn" onclick="switchGwTab('bank', this)" style="padding: 10px 18px; font-size: 0.86rem; font-weight: 800; border-radius: 10px; border: 1px solid #cbd5e1; background: #ffffff; color: #475569; cursor: pointer; display: flex; align-items: center; gap: 8px;">
+                        <button type="button" class="gw-tab-btn" onclick="switchGwTab('bank', this)" style="padding: 10px 18px; font-size: 0.86rem; font-weight: 700; border-radius: 10px; border: 1px solid #cbd5e1; background: #ffffff; color: #475569; cursor: pointer; display: flex; align-items: center; gap: 8px;">
                             <i class="fa-solid fa-building-columns"></i> Bank &amp; Paystack
                         </button>
                     </div>
@@ -14933,7 +14933,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                             <i class="fa-solid fa-globe"></i>
                                         </div>
                                         <div>
-                                            <h2 style="font-size: 1.15rem; font-weight: 800; color: #0f172a; margin: 0;">Raenest Multi-Currency Engine &amp; Payouts</h2>
+                                            <h2 style="font-size: 1.15rem; font-weight: 700; color: #0f172a; margin: 0;">Raenest Multi-Currency Engine &amp; Payouts</h2>
                                             <p style="font-size: 0.8rem; color: #64748b; margin: 2px 0 0 0;">Accept USD, GBP, EUR, CAD, USDC/USDT from global clients and automate bulk staff payouts.</p>
                                         </div>
                                     </div>
@@ -14975,13 +14975,13 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                 </button>
                             </div>
 
-                            <h3 style="font-size: 0.95rem; font-weight: 800; color: #0f172a; margin: 0 0 14px 0; display: flex; align-items: center; gap: 6px;">
+                            <h3 style="font-size: 0.95rem; font-weight: 700; color: #0f172a; margin: 0 0 14px 0; display: flex; align-items: center; gap: 6px;">
                                 <i class="fa-solid fa-landmark" style="color: #0284c7;"></i> Virtual Multi-Currency Receiving Accounts (For Client Invoices)
                             </h3>
                             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px;">
                                 <!-- USD Account -->
                                 <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px;">
-                                    <div style="font-size: 0.88rem; font-weight: 800; color: #0f172a; margin-bottom: 10px;">🇺🇸 USD Virtual Account (ACH/Wire)</div>
+                                    <div style="font-size: 0.88rem; font-weight: 700; color: #0f172a; margin-bottom: 10px;">🇺🇸 USD Virtual Account (ACH/Wire)</div>
                                     <div style="margin-bottom: 8px;">
                                         <label style="font-size: 0.72rem; font-weight: 700; color: #64748b; display: block;">Bank Name</label>
                                         <input type="text" name="raenest_usd_bank_name" value="<?php echo htmlspecialchars($rae['usd_bank_name'] ?? ''); ?>" style="width: 100%; padding: 7px 10px; font-size: 0.82rem; border: 1px solid #cbd5e1; border-radius: 6px;">
@@ -14998,7 +14998,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
 
                                 <!-- GBP Account -->
                                 <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px;">
-                                    <div style="font-size: 0.88rem; font-weight: 800; color: #0f172a; margin-bottom: 10px;">🇬🇧 GBP Account (UK Faster Payments)</div>
+                                    <div style="font-size: 0.88rem; font-weight: 700; color: #0f172a; margin-bottom: 10px;">🇬🇧 GBP Account (UK Faster Payments)</div>
                                     <div style="margin-bottom: 8px;">
                                         <label style="font-size: 0.72rem; font-weight: 700; color: #64748b; display: block;">Bank Name</label>
                                         <input type="text" name="raenest_gbp_bank_name" value="<?php echo htmlspecialchars($rae['gbp_bank_name'] ?? ''); ?>" style="width: 100%; padding: 7px 10px; font-size: 0.82rem; border: 1px solid #cbd5e1; border-radius: 6px;">
@@ -15015,7 +15015,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
 
                                 <!-- EUR Account -->
                                 <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px;">
-                                    <div style="font-size: 0.88rem; font-weight: 800; color: #0f172a; margin-bottom: 10px;">🇪🇺 EUR Account (SEPA Transfer)</div>
+                                    <div style="font-size: 0.88rem; font-weight: 700; color: #0f172a; margin-bottom: 10px;">🇪🇺 EUR Account (SEPA Transfer)</div>
                                     <div style="margin-bottom: 8px;">
                                         <label style="font-size: 0.72rem; font-weight: 700; color: #64748b; display: block;">Bank Name</label>
                                         <input type="text" name="raenest_eur_bank_name" value="<?php echo htmlspecialchars($rae['eur_bank_name'] ?? ''); ?>" style="width: 100%; padding: 7px 10px; font-size: 0.82rem; border: 1px solid #cbd5e1; border-radius: 6px;">
@@ -15042,7 +15042,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                         <i class="fa-solid fa-lemon"></i>
                                     </div>
                                     <div>
-                                        <h2 style="font-size: 1.15rem; font-weight: 800; color: #0f172a; margin: 0;">LemFi (Lemonade Finance) Integration</h2>
+                                        <h2 style="font-size: 1.15rem; font-weight: 700; color: #0f172a; margin: 0;">LemFi (Lemonade Finance) Integration</h2>
                                         <p style="font-size: 0.8rem; color: #64748b; margin: 2px 0 0 0;">Zero-fee cross-border remittance for diaspora clients in the UK, US, Canada, and Europe.</p>
                                     </div>
                                 </div>
@@ -15084,7 +15084,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                         <i class="fa-solid fa-paper-plane"></i>
                                     </div>
                                     <div>
-                                        <h2 style="font-size: 1.15rem; font-weight: 800; color: #0f172a; margin: 0;">Taptap Send Remittance Integration</h2>
+                                        <h2 style="font-size: 1.15rem; font-weight: 700; color: #0f172a; margin: 0;">Taptap Send Remittance Integration</h2>
                                         <p style="font-size: 0.8rem; color: #64748b; margin: 2px 0 0 0;">Receive fast, low-cost international transfers from clients in the US, UK, EU, Canada, and UAE.</p>
                                     </div>
                                 </div>
@@ -15119,7 +15119,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                     <!-- TAB 4: BANK & PAYSTACK -->
                     <div id="gw-tab-bank" class="gw-tab-pane" style="display: none;">
                         <div class="dashboard-card" style="border-top: 4px solid #6366f1; margin-bottom: 24px; padding: 24px;">
-                            <h2 style="font-size: 1.15rem; font-weight: 800; color: #0f172a; margin: 0 0 16px 0;">Direct Bank &amp; Domiciliary Accounts</h2>
+                            <h2 style="font-size: 1.15rem; font-weight: 700; color: #0f172a; margin: 0 0 16px 0;">Direct Bank &amp; Domiciliary Accounts</h2>
                             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 18px; margin-bottom: 20px;">
                                 <div>
                                     <label class="form-label-title">Local NGN Bank Name</label>
@@ -15150,7 +15150,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                             <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 24px 0;">
 
                             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
-                                <h3 style="font-size: 1rem; font-weight: 800; color: #0f172a; margin: 0;">Paystack Payment Gateway</h3>
+                                <h3 style="font-size: 1rem; font-weight: 700; color: #0f172a; margin: 0;">Paystack Payment Gateway</h3>
                                 <label style="display: flex; align-items: center; gap: 8px; font-size: 0.85rem; font-weight: 700; color: #0f172a; cursor: pointer;">
                                     <input type="checkbox" name="paystack_enabled" value="1" <?php echo !empty($pst['enabled']) ? 'checked' : ''; ?> style="width: 18px; height: 18px; accent-color: #059669;">
                                     Enable Paystack
@@ -15245,8 +15245,8 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                 <div class="section-header-bar" style="margin-bottom: 22px;">
                     <div>
                         <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
-                            <span style="background: #e11d48; color: #ffffff; font-weight: 800; font-size: 0.72rem; padding: 4px 10px; border-radius: 12px; text-transform: uppercase; letter-spacing: 0.5px;">Talent &amp; Crew Operations</span>
-                            <h1 class="section-header-title" style="margin: 0; font-size: 1.6rem; font-weight: 800; color: #0f172a;">Vendors &amp; Contractor Management</h1>
+                            <span style="background: #e11d48; color: #ffffff; font-weight: 700; font-size: 0.72rem; padding: 4px 10px; border-radius: 12px; text-transform: uppercase; letter-spacing: 0.5px;">Talent &amp; Crew Operations</span>
+                            <h1 class="section-header-title" style="margin: 0; font-size: 1.6rem; font-weight: 700; color: #0f172a;">Vendors &amp; Contractor Management</h1>
                         </div>
                         <p class="section-header-desc" style="margin: 0; color: #64748b; font-size: 0.88rem;">Coordinate talent onboarding, Master Services Agreements (MSA), NDAs, shoot assignments, call sheets, and payouts.</p>
                     </div>
@@ -15274,7 +15274,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                         </div>
                         <div>
                             <div style="font-size: 0.76rem; color: #64748b; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Total Onboarded</div>
-                            <div style="font-size: 1.6rem; font-weight: 800; color: #0f172a;"><?php echo $totalVendors; ?></div>
+                            <div style="font-size: 1.6rem; font-weight: 700; color: #0f172a;"><?php echo $totalVendors; ?></div>
                         </div>
                     </div>
 
@@ -15284,7 +15284,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                         </div>
                         <div>
                             <div style="font-size: 0.76rem; color: #64748b; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Photo / Video Crew</div>
-                            <div style="font-size: 1.6rem; font-weight: 800; color: #0f172a;"><?php echo $photographersCount; ?></div>
+                            <div style="font-size: 1.6rem; font-weight: 700; color: #0f172a;"><?php echo $photographersCount; ?></div>
                         </div>
                     </div>
 
@@ -15294,7 +15294,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                         </div>
                         <div>
                             <div style="font-size: 0.76rem; color: #64748b; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Active Shoots</div>
-                            <div style="font-size: 1.6rem; font-weight: 800; color: #0f172a;"><?php echo $activeGigsCount; ?></div>
+                            <div style="font-size: 1.6rem; font-weight: 700; color: #0f172a;"><?php echo $activeGigsCount; ?></div>
                         </div>
                     </div>
 
@@ -15304,20 +15304,20 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                         </div>
                         <div>
                             <div style="font-size: 0.76rem; color: #64748b; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Completed Shoots</div>
-                            <div style="font-size: 1.6rem; font-weight: 800; color: #0f172a;"><?php echo $doneGigsCount; ?></div>
+                            <div style="font-size: 1.6rem; font-weight: 700; color: #0f172a;"><?php echo $doneGigsCount; ?></div>
                         </div>
                     </div>
                 </div>
 
                 <!-- SUB-NAVIGATION TABS -->
                 <div style="display: flex; gap: 10px; border-bottom: 2px solid #e2e8f0; margin-bottom: 20px; padding-bottom: 2px;">
-                    <a href="/admin/index.php?section=vendors&tab=directory" style="padding: 10px 20px; border-radius: 8px 8px 0 0; font-weight: 800; font-size: 0.9rem; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; <?php echo ($activeTab === 'directory') ? 'background: #ffffff; color: #dc2626; border-bottom: 3px solid #dc2626; margin-bottom: -4px;' : 'color: #64748b; background: transparent;'; ?>">
+                    <a href="/admin/index.php?section=vendors&tab=directory" style="padding: 10px 20px; border-radius: 8px 8px 0 0; font-weight: 700; font-size: 0.9rem; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; <?php echo ($activeTab === 'directory') ? 'background: #ffffff; color: #dc2626; border-bottom: 3px solid #dc2626; margin-bottom: -4px;' : 'color: #64748b; background: transparent;'; ?>">
                         <i class="fa-solid fa-id-card"></i> Talent Directory <span style="background: <?php echo ($activeTab === 'directory') ? '#fee2e2' : '#f1f5f9'; ?>; color: <?php echo ($activeTab === 'directory') ? '#b91c1c' : '#64748b'; ?>; font-size: 0.75rem; padding: 2px 8px; border-radius: 10px;"><?php echo $totalVendors; ?></span>
                     </a>
-                    <a href="/admin/index.php?section=vendors&tab=gigs" style="padding: 10px 20px; border-radius: 8px 8px 0 0; font-weight: 800; font-size: 0.9rem; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; <?php echo ($activeTab === 'gigs') ? 'background: #ffffff; color: #dc2626; border-bottom: 3px solid #dc2626; margin-bottom: -4px;' : 'color: #64748b; background: transparent;'; ?>">
+                    <a href="/admin/index.php?section=vendors&tab=gigs" style="padding: 10px 20px; border-radius: 8px 8px 0 0; font-weight: 700; font-size: 0.9rem; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; <?php echo ($activeTab === 'gigs') ? 'background: #ffffff; color: #dc2626; border-bottom: 3px solid #dc2626; margin-bottom: -4px;' : 'color: #64748b; background: transparent;'; ?>">
                         <i class="fa-solid fa-clapperboard"></i> Production Gigs &amp; Call Sheets <span style="background: <?php echo ($activeTab === 'gigs') ? '#fee2e2' : '#f1f5f9'; ?>; color: <?php echo ($activeTab === 'gigs') ? '#b91c1c' : '#64748b'; ?>; font-size: 0.75rem; padding: 2px 8px; border-radius: 10px;"><?php echo $totalGigs; ?></span>
                     </a>
-                    <a href="/admin/index.php?section=vendors&tab=availability" style="padding: 10px 20px; border-radius: 8px 8px 0 0; font-weight: 800; font-size: 0.9rem; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; <?php echo ($activeTab === 'availability') ? 'background: #ffffff; color: #dc2626; border-bottom: 3px solid #dc2626; margin-bottom: -4px;' : 'color: #64748b; background: transparent;'; ?>">
+                    <a href="/admin/index.php?section=vendors&tab=availability" style="padding: 10px 20px; border-radius: 8px 8px 0 0; font-weight: 700; font-size: 0.9rem; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; <?php echo ($activeTab === 'availability') ? 'background: #ffffff; color: #dc2626; border-bottom: 3px solid #dc2626; margin-bottom: -4px;' : 'color: #64748b; background: transparent;'; ?>">
                         <i class="fa-solid fa-calendar-days"></i> Booking &amp; Availability
                     </a>
                 </div>
@@ -15362,8 +15362,8 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                     <div class="dashboard-card" style="padding: 0; overflow: hidden; border: 1px solid #e2e8f0; border-radius: 16px; background: #ffffff;">
                         <div style="padding: 18px 24px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; background: #ffffff;">
                             <div style="display: flex; align-items: center; gap: 10px;">
-                                <h2 style="font-size: 1.05rem; font-weight: 800; color: #0f172a; margin: 0;">Talent &amp; Contractor Directory</h2>
-                                <span style="background: #f1f5f9; color: #475569; font-size: 0.78rem; font-weight: 800; padding: 2px 8px; border-radius: 6px;"><?php echo count($filteredVendors); ?> Records</span>
+                                <h2 style="font-size: 1.05rem; font-weight: 700; color: #0f172a; margin: 0;">Talent &amp; Contractor Directory</h2>
+                                <span style="background: #f1f5f9; color: #475569; font-size: 0.78rem; font-weight: 700; padding: 2px 8px; border-radius: 6px;"><?php echo count($filteredVendors); ?> Records</span>
                             </div>
                             <button type="button" onclick="openNewVendorModal()" style="font-size: 0.82rem; font-weight: 700; background: #fff1f2; color: #e11d48; border: 1px solid #fecdd3; padding: 6px 12px; border-radius: 6px; cursor: pointer;">
                                 <i class="fa-solid fa-plus"></i> Onboard New Talent
@@ -15375,7 +15375,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                 <div style="width: 56px; height: 56px; border-radius: 50%; background: #f1f5f9; color: #94a3b8; display: inline-flex; align-items: center; justify-content: center; font-size: 1.5rem; margin-bottom: 14px;">
                                     <i class="fa-solid fa-id-card"></i>
                                 </div>
-                                <h3 style="font-size: 1.1rem; font-weight: 800; color: #0f172a; margin-bottom: 6px;">No Talent Records Found</h3>
+                                <h3 style="font-size: 1.1rem; font-weight: 700; color: #0f172a; margin-bottom: 6px;">No Talent Records Found</h3>
                                 <p style="font-size: 0.88rem; color: #64748b; max-width: 420px; margin: 0 auto 16px auto;">New contractors, interns, and volunteers will appear here once onboarded, or you can add them manually.</p>
                                 <button type="button" onclick="openNewVendorModal()" style="display: inline-flex; align-items: center; gap: 8px; background: #e11d48; color: #ffffff; padding: 9px 18px; border-radius: 8px; font-weight: 700; font-size: 0.88rem; border: none; cursor: pointer;">
                                     <i class="fa-solid fa-plus"></i> Add Vendor Record
@@ -15423,7 +15423,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                         ?>
                                         <tr style="border-bottom: 1px solid #f1f5f9; transition: background 0.15s ease;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
                                             <td style="padding: 14px 20px;">
-                                                <span style="font-family: monospace; font-size: 0.82rem; font-weight: 800; color: #0f172a; background: #f1f5f9; padding: 4px 8px; border-radius: 6px; border: 1px solid #e2e8f0; display: inline-block;">
+                                                <span style="font-family: monospace; font-size: 0.82rem; font-weight: 700; color: #0f172a; background: #f1f5f9; padding: 4px 8px; border-radius: 6px; border: 1px solid #e2e8f0; display: inline-block;">
                                                     <?php echo htmlspecialchars($vRef); ?>
                                                 </span>
                                             </td>
@@ -15439,7 +15439,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                                 </div>
                                             </td>
                                             <td style="padding: 14px 20px;">
-                                                <span style="display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 0.74rem; font-weight: 800; background: <?php echo $roleBadgeBg; ?>; color: <?php echo $roleBadgeColor; ?>;">
+                                                <span style="display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 0.74rem; font-weight: 700; background: <?php echo $roleBadgeBg; ?>; color: <?php echo $roleBadgeColor; ?>;">
                                                     <?php echo htmlspecialchars($vRoleLabel); ?>
                                                 </span>
                                             </td>
@@ -15453,7 +15453,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                             </td>
                                             <td style="padding: 14px 20px;">
                                                 <?php if ($assignedGigsCount > 0): ?>
-                                                    <a href="/admin/index.php?section=vendors&tab=gigs&q=<?php echo urlencode($vRef); ?>" style="display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 12px; background: #f0fdf4; color: #15803d; font-weight: 800; font-size: 0.78rem; text-decoration: none;">
+                                                    <a href="/admin/index.php?section=vendors&tab=gigs&q=<?php echo urlencode($vRef); ?>" style="display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 12px; background: #f0fdf4; color: #15803d; font-weight: 700; font-size: 0.78rem; text-decoration: none;">
                                                         <i class="fa-solid fa-clapperboard"></i> <?php echo $assignedGigsCount; ?> Shoots
                                                     </a>
                                                 <?php else: ?>
@@ -15547,8 +15547,8 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                     <div class="dashboard-card" style="padding: 0; overflow: hidden; border: 1px solid #e2e8f0; border-radius: 16px; background: #ffffff;">
                         <div style="padding: 18px 24px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center;">
                             <div style="display: flex; align-items: center; gap: 10px;">
-                                <h2 style="font-size: 1.05rem; font-weight: 800; color: #0f172a; margin: 0;">Production Shoots &amp; Studio Call Sheets</h2>
-                                <span style="background: #f1f5f9; color: #475569; font-size: 0.78rem; font-weight: 800; padding: 2px 8px; border-radius: 6px;"><?php echo count($filteredGigs); ?> Shoots</span>
+                                <h2 style="font-size: 1.05rem; font-weight: 700; color: #0f172a; margin: 0;">Production Shoots &amp; Studio Call Sheets</h2>
+                                <span style="background: #f1f5f9; color: #475569; font-size: 0.78rem; font-weight: 700; padding: 2px 8px; border-radius: 6px;"><?php echo count($filteredGigs); ?> Shoots</span>
                             </div>
                             <button type="button" onclick="openNewGigModal()" style="font-size: 0.82rem; font-weight: 700; background: #dc2626; color: #ffffff; border: none; padding: 6px 14px; border-radius: 6px; cursor: pointer;">
                                 <i class="fa-solid fa-plus"></i> New Production Gig
@@ -15560,7 +15560,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                 <div style="width: 56px; height: 56px; border-radius: 50%; background: #f1f5f9; color: #94a3b8; display: inline-flex; align-items: center; justify-content: center; font-size: 1.5rem; margin-bottom: 14px;">
                                     <i class="fa-solid fa-clapperboard"></i>
                                 </div>
-                                <h3 style="font-size: 1.1rem; font-weight: 800; color: #0f172a; margin-bottom: 6px;">No Production Shoots Found</h3>
+                                <h3 style="font-size: 1.1rem; font-weight: 700; color: #0f172a; margin-bottom: 6px;">No Production Shoots Found</h3>
                                 <p style="font-size: 0.88rem; color: #64748b; max-width: 420px; margin: 0 auto 16px auto;">Schedule production shoots, attach call sheets, assign contractors, and manage wrap reports.</p>
                                 <button type="button" onclick="openNewGigModal()" style="display: inline-flex; align-items: center; gap: 8px; background: #dc2626; color: #ffffff; padding: 9px 18px; border-radius: 8px; font-weight: 700; font-size: 0.88rem; border: none; cursor: pointer;">
                                     <i class="fa-solid fa-plus"></i> Create Production Gig
@@ -15610,11 +15610,11 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                         <tr style="border-bottom: 1px solid #f1f5f9; transition: background 0.15s ease;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
                                             <td style="padding: 14px 20px; max-width: 250px;">
                                                 <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
-                                                    <span style="font-family: monospace; font-size: 0.78rem; font-weight: 800; color: #0f172a; background: #f1f5f9; padding: 2px 6px; border-radius: 4px; border: 1px solid #e2e8f0;">
+                                                    <span style="font-family: monospace; font-size: 0.78rem; font-weight: 700; color: #0f172a; background: #f1f5f9; padding: 2px 6px; border-radius: 4px; border: 1px solid #e2e8f0;">
                                                         <?php echo htmlspecialchars($gId); ?>
                                                     </span>
                                                 </div>
-                                                <div style="font-weight: 800; color: #0f172a; font-size: 0.92rem; line-height: 1.3;">
+                                                <div style="font-weight: 700; color: #0f172a; font-size: 0.92rem; line-height: 1.3;">
                                                     <?php echo htmlspecialchars($gTitle); ?>
                                                 </div>
                                                 <div style="font-size: 0.78rem; color: #64748b; margin-top: 2px;">
@@ -15708,7 +15708,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                     <div class="dashboard-card" style="padding: 24px; margin-bottom: 24px; border: 1px solid #e2e8f0; border-radius: 16px; background: #ffffff;">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
                             <div>
-                                <h2 style="font-size: 1.15rem; font-weight: 800; color: #0f172a; margin: 0 0 4px 0;">Talent Availability Schedule</h2>
+                                <h2 style="font-size: 1.15rem; font-weight: 700; color: #0f172a; margin: 0 0 4px 0;">Talent Availability Schedule</h2>
                                 <p style="font-size: 0.86rem; color: #64748b; margin: 0;">Contractor dates submitted through their individual Vendor Portal calendar bookings.</p>
                             </div>
                             <button type="button" onclick="openNewGigModal()" style="font-size: 0.84rem; font-weight: 700; background: #dc2626; color: #ffffff; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer;">
@@ -15734,10 +15734,10 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                 <div>
                                     <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
                                         <div>
-                                            <div style="font-weight: 800; color: #0f172a; font-size: 0.98rem;"><?php echo htmlspecialchars($vName); ?></div>
+                                            <div style="font-weight: 700; color: #0f172a; font-size: 0.98rem;"><?php echo htmlspecialchars($vName); ?></div>
                                             <div style="font-size: 0.76rem; color: #e11d48; font-weight: 700;"><?php echo htmlspecialchars($vRole); ?></div>
                                         </div>
-                                        <span style="font-family: monospace; font-size: 0.74rem; font-weight: 800; color: #0f172a; background: #ffffff; padding: 2px 6px; border-radius: 4px; border: 1px solid #e2e8f0;">
+                                        <span style="font-family: monospace; font-size: 0.74rem; font-weight: 700; color: #0f172a; background: #ffffff; padding: 2px 6px; border-radius: 4px; border: 1px solid #e2e8f0;">
                                             <?php echo htmlspecialchars($vRef); ?>
                                         </span>
                                     </div>
@@ -15747,13 +15747,13 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                     </div>
 
                                     <div style="margin-bottom: 14px;">
-                                        <div style="font-size: 0.72rem; font-weight: 800; color: #475569; text-transform: uppercase; margin-bottom: 6px; letter-spacing: 0.5px;">
+                                        <div style="font-size: 0.72rem; font-weight: 700; color: #475569; text-transform: uppercase; margin-bottom: 6px; letter-spacing: 0.5px;">
                                             Marked Available Dates (<?php echo count($availDates); ?>)
                                         </div>
                                         <?php if (!empty($availDates)): ?>
                                             <div style="display: flex; gap: 6px; flex-wrap: wrap;">
                                                 <?php foreach (array_slice($availDates, 0, 8) as $ad): ?>
-                                                    <span style="background: #dcfce7; color: #166534; font-size: 0.74rem; font-weight: 800; padding: 3px 8px; border-radius: 6px; border: 1px solid #bbf7d0;">
+                                                    <span style="background: #dcfce7; color: #166534; font-size: 0.74rem; font-weight: 700; padding: 3px 8px; border-radius: 6px; border: 1px solid #bbf7d0;">
                                                         <?php echo htmlspecialchars(date('M j', strtotime($ad))); ?>
                                                     </span>
                                                 <?php endforeach; ?>
@@ -15779,7 +15779,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                     <span style="font-size: 0.78rem; color: #64748b; font-weight: 600;">
                                         <i class="fa-solid fa-clapperboard"></i> <?php echo count($vndGigs); ?> Shoots Assigned
                                     </span>
-                                    <button type="button" onclick="openNewGigModalForVendor('<?php echo htmlspecialchars($vRef); ?>', '<?php echo htmlspecialchars(addslashes($vName)); ?>')" style="padding: 5px 12px; background: #dc2626; color: #ffffff; border: none; border-radius: 6px; font-size: 0.78rem; font-weight: 800; cursor: pointer;">
+                                    <button type="button" onclick="openNewGigModalForVendor('<?php echo htmlspecialchars($vRef); ?>', '<?php echo htmlspecialchars(addslashes($vName)); ?>')" style="padding: 5px 12px; background: #dc2626; color: #ffffff; border: none; border-radius: 6px; font-size: 0.78rem; font-weight: 700; cursor: pointer;">
                                         + Book Shoot
                                     </button>
                                 </div>
@@ -15804,11 +15804,11 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                 <i class="fa-solid fa-id-badge"></i>
                             </div>
                             <div>
-                                <h3 id="dossierName" style="font-size: 1.3rem; font-weight: 800; color: #0f172a; margin: 0 0 4px 0;">Vendor Full Name</h3>
+                                <h3 id="dossierName" style="font-size: 1.3rem; font-weight: 700; color: #0f172a; margin: 0 0 4px 0;">Vendor Full Name</h3>
                                 <div style="display: flex; gap: 8px; align-items: center;">
-                                    <span id="dossierRef" style="font-family: monospace; font-size: 0.8rem; font-weight: 800; background: #f1f5f9; padding: 2px 8px; border-radius: 6px; color: #0f172a;">REF-CODE</span>
-                                    <span id="dossierRole" style="font-size: 0.75rem; font-weight: 800; padding: 2px 10px; border-radius: 12px; background: #eff6ff; color: #2563eb;">Role</span>
-                                    <span id="dossierStatus" style="font-size: 0.75rem; font-weight: 800; padding: 2px 10px; border-radius: 12px; background: #dcfce7; color: #15803d;">Active</span>
+                                    <span id="dossierRef" style="font-family: monospace; font-size: 0.8rem; font-weight: 700; background: #f1f5f9; padding: 2px 8px; border-radius: 6px; color: #0f172a;">REF-CODE</span>
+                                    <span id="dossierRole" style="font-size: 0.75rem; font-weight: 700; padding: 2px 10px; border-radius: 12px; background: #eff6ff; color: #2563eb;">Role</span>
+                                    <span id="dossierStatus" style="font-size: 0.75rem; font-weight: 700; padding: 2px 10px; border-radius: 12px; background: #dcfce7; color: #15803d;">Active</span>
                                 </div>
                             </div>
                         </div>
@@ -15817,7 +15817,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                         <div style="display: flex; flex-direction: column; gap: 16px;">
                             <!-- 1. Contact & Residence -->
                             <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px;">
-                                <div style="font-size: 0.74rem; font-weight: 800; color: #64748b; text-transform: uppercase; margin-bottom: 10px; letter-spacing: 0.5px;">
+                                <div style="font-size: 0.74rem; font-weight: 700; color: #64748b; text-transform: uppercase; margin-bottom: 10px; letter-spacing: 0.5px;">
                                     <i class="fa-solid fa-address-book"></i> Contact &amp; Residential Info
                                 </div>
                                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 0.86rem;">
@@ -15829,7 +15829,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
 
                             <!-- 2. Identification & Tax -->
                             <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px;">
-                                <div style="font-size: 0.74rem; font-weight: 800; color: #64748b; text-transform: uppercase; margin-bottom: 10px; letter-spacing: 0.5px;">
+                                <div style="font-size: 0.74rem; font-weight: 700; color: #64748b; text-transform: uppercase; margin-bottom: 10px; letter-spacing: 0.5px;">
                                     <i class="fa-solid fa-passport"></i> Identity &amp; Tax Verification
                                 </div>
                                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 0.86rem;">
@@ -15843,7 +15843,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
 
                             <!-- 3. Banking & Direct Deposit -->
                             <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px;">
-                                <div style="font-size: 0.74rem; font-weight: 800; color: #64748b; text-transform: uppercase; margin-bottom: 10px; letter-spacing: 0.5px;">
+                                <div style="font-size: 0.74rem; font-weight: 700; color: #64748b; text-transform: uppercase; margin-bottom: 10px; letter-spacing: 0.5px;">
                                     <i class="fa-solid fa-building-columns"></i> Payout &amp; Direct Deposit Account
                                 </div>
                                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 0.86rem;">
@@ -15856,7 +15856,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
 
                             <!-- 4. Emergency Contact -->
                             <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px;">
-                                <div style="font-size: 0.74rem; font-weight: 800; color: #64748b; text-transform: uppercase; margin-bottom: 10px; letter-spacing: 0.5px;">
+                                <div style="font-size: 0.74rem; font-weight: 700; color: #64748b; text-transform: uppercase; margin-bottom: 10px; letter-spacing: 0.5px;">
                                     <i class="fa-solid fa-heart-pulse"></i> Emergency Contact
                                 </div>
                                 <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; font-size: 0.86rem;">
@@ -15868,7 +15868,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
 
                             <!-- 5. Legal Agreements Execution -->
                             <div style="background: #fff1f2; border: 1px solid #fecdd3; border-radius: 12px; padding: 16px;">
-                                <div style="font-size: 0.74rem; font-weight: 800; color: #e11d48; text-transform: uppercase; margin-bottom: 10px; letter-spacing: 0.5px;">
+                                <div style="font-size: 0.74rem; font-weight: 700; color: #e11d48; text-transform: uppercase; margin-bottom: 10px; letter-spacing: 0.5px;">
                                     <i class="fa-solid fa-file-contract"></i> Legal Agreements &amp; Electronic Signature
                                 </div>
                                 <div style="font-size: 0.86rem; color: #475569; line-height: 1.5;">
@@ -15910,7 +15910,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                 <i class="fa-solid fa-user-pen"></i>
                             </div>
                             <div>
-                                <h3 id="vendorEditModalTitle" style="font-size: 1.25rem; font-weight: 800; color: #0f172a; margin: 0 0 2px 0;">Add Vendor / Contractor</h3>
+                                <h3 id="vendorEditModalTitle" style="font-size: 1.25rem; font-weight: 700; color: #0f172a; margin: 0 0 2px 0;">Add Vendor / Contractor</h3>
                                 <p style="font-size: 0.82rem; color: #64748b; margin: 0;">Configure talent contact, role, and direct payout credentials.</p>
                             </div>
                         </div>
@@ -15986,7 +15986,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
 
                             <!-- Payout Details -->
                             <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px; margin-bottom: 16px;">
-                                <div style="font-size: 0.78rem; font-weight: 800; color: #0f172a; margin-bottom: 10px;">Bank / Payout Information</div>
+                                <div style="font-size: 0.78rem; font-weight: 700; color: #0f172a; margin-bottom: 10px;">Bank / Payout Information</div>
                                 <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 10px; margin-bottom: 10px;">
                                     <div>
                                         <label style="display: block; font-size: 0.74rem; font-weight: 700; color: #64748b; margin-bottom: 4px;">Bank Name</label>
@@ -16016,7 +16016,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
 
                             <!-- Emergency Contact -->
                             <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px; margin-bottom: 20px;">
-                                <div style="font-size: 0.78rem; font-weight: 800; color: #0f172a; margin-bottom: 10px;">Emergency Contact</div>
+                                <div style="font-size: 0.78rem; font-weight: 700; color: #0f172a; margin-bottom: 10px;">Emergency Contact</div>
                                 <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px;">
                                     <div>
                                         <label style="display: block; font-size: 0.74rem; font-weight: 700; color: #64748b; margin-bottom: 4px;">Name</label>
@@ -16037,7 +16037,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                 <button type="button" onclick="closeVendorEditModal()" style="padding: 11px 20px; background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; border-radius: 8px; font-weight: 700; font-size: 0.88rem; cursor: pointer;">
                                     Cancel
                                 </button>
-                                <button type="submit" style="padding: 11px 24px; background: #dc2626; color: #ffffff; border: none; border-radius: 8px; font-weight: 800; font-size: 0.88rem; cursor: pointer; box-shadow: 0 4px 12px rgba(220,38,38,0.25);">
+                                <button type="submit" style="padding: 11px 24px; background: #dc2626; color: #ffffff; border: none; border-radius: 8px; font-weight: 700; font-size: 0.88rem; cursor: pointer; box-shadow: 0 4px 12px rgba(220,38,38,0.25);">
                                     Save Talent Record
                                 </button>
                             </div>
@@ -16060,7 +16060,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                 <i class="fa-solid fa-clapperboard"></i>
                             </div>
                             <div>
-                                <h3 id="gigEditModalTitle" style="font-size: 1.25rem; font-weight: 800; color: #0f172a; margin: 0 0 2px 0;">Create Production Shoot</h3>
+                                <h3 id="gigEditModalTitle" style="font-size: 1.25rem; font-weight: 700; color: #0f172a; margin: 0 0 2px 0;">Create Production Shoot</h3>
                                 <p style="font-size: 0.82rem; color: #64748b; margin: 0;">Set shoot date, call time, location, assigned contractor, and call sheet.</p>
                             </div>
                         </div>
@@ -16168,7 +16168,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                 <button type="button" onclick="closeGigEditModal()" style="padding: 11px 20px; background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; border-radius: 8px; font-weight: 700; font-size: 0.88rem; cursor: pointer;">
                                     Cancel
                                 </button>
-                                <button type="submit" style="padding: 11px 24px; background: #dc2626; color: #ffffff; border: none; border-radius: 8px; font-weight: 800; font-size: 0.88rem; cursor: pointer; box-shadow: 0 4px 12px rgba(220,38,38,0.25);">
+                                <button type="submit" style="padding: 11px 24px; background: #dc2626; color: #ffffff; border: none; border-radius: 8px; font-weight: 700; font-size: 0.88rem; cursor: pointer; box-shadow: 0 4px 12px rgba(220,38,38,0.25);">
                                     Save Production Shoot
                                 </button>
                             </div>
@@ -16190,7 +16190,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                             <i class="fa-solid fa-clapperboard"></i>
                         </div>
 
-                        <h3 style="font-size: 1.2rem; font-weight: 800; color: #0f172a; margin: 0 0 6px 0;">Assign Talent to Shoot</h3>
+                        <h3 style="font-size: 1.2rem; font-weight: 700; color: #0f172a; margin: 0 0 6px 0;">Assign Talent to Shoot</h3>
                         <p id="quickAssignSubtitle" style="font-size: 0.85rem; color: #64748b; margin: 0 0 20px 0; line-height: 1.4;">Select the production gig and talent to link together.</p>
 
                         <form method="POST" action="/admin/index.php?section=vendors">
@@ -16225,7 +16225,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                 <button type="button" onclick="closeQuickAssignModal()" style="flex: 1; padding: 11px; background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 8px; font-weight: 700; color: #475569; cursor: pointer;">
                                     Cancel
                                 </button>
-                                <button type="submit" style="flex: 1; padding: 11px; background: #dc2626; border: none; border-radius: 8px; font-weight: 800; color: #ffffff; cursor: pointer; box-shadow: 0 4px 12px rgba(220,38,38,0.25);">
+                                <button type="submit" style="flex: 1; padding: 11px; background: #dc2626; border: none; border-radius: 8px; font-weight: 700; color: #ffffff; cursor: pointer; box-shadow: 0 4px 12px rgba(220,38,38,0.25);">
                                     Confirm Assignment
                                 </button>
                             </div>
@@ -16244,7 +16244,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                         <div style="width: 56px; height: 56px; border-radius: 50%; background: #fff1f2; border: 1px solid #fecdd3; color: #e11d48; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px auto; font-size: 1.5rem;">
                             <i class="fa-solid fa-trash-can"></i>
                         </div>
-                        <h3 style="font-size: 1.25rem; font-weight: 800; color: #0f172a; margin: 0 0 8px 0;">Delete Production Shoot?</h3>
+                        <h3 style="font-size: 1.25rem; font-weight: 700; color: #0f172a; margin: 0 0 8px 0;">Delete Production Shoot?</h3>
                         <p style="font-size: 0.88rem; color: #64748b; margin: 0 0 24px 0; line-height: 1.5;">
                             Are you sure you want to remove gig <strong id="deleteGigTargetTitle" style="color: #0f172a;"></strong>? This will detach assigned call sheets and records.
                         </p>
@@ -16255,7 +16255,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                 <button type="button" onclick="closeDeleteGigModal()" style="flex: 1; padding: 12px; background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 10px; font-weight: 700; color: #475569; cursor: pointer;">
                                     Cancel
                                 </button>
-                                <button type="submit" style="flex: 1; padding: 12px; background: #dc2626; border: none; border-radius: 10px; font-weight: 800; color: #ffffff; cursor: pointer; box-shadow: 0 4px 12px rgba(220,38,38,0.3);">
+                                <button type="submit" style="flex: 1; padding: 12px; background: #dc2626; border: none; border-radius: 10px; font-weight: 700; color: #ffffff; cursor: pointer; box-shadow: 0 4px 12px rgba(220,38,38,0.3);">
                                     Yes, Delete Gig
                                 </button>
                             </div>
@@ -16274,7 +16274,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                         <div style="width: 56px; height: 56px; border-radius: 50%; background: #fff1f2; border: 1px solid #fecdd3; color: #e11d48; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px auto; font-size: 1.5rem;">
                             <i class="fa-solid fa-trash-can"></i>
                         </div>
-                        <h3 style="font-size: 1.25rem; font-weight: 800; color: #0f172a; margin: 0 0 8px 0;">Delete Vendor Record?</h3>
+                        <h3 style="font-size: 1.25rem; font-weight: 700; color: #0f172a; margin: 0 0 8px 0;">Delete Vendor Record?</h3>
                         <p style="font-size: 0.88rem; color: #64748b; margin: 0 0 24px 0; line-height: 1.5;">
                             Are you sure you want to delete vendor record for <strong id="deleteVendorTargetName" style="color: #0f172a;"></strong>? This action cannot be undone.
                         </p>
@@ -16286,7 +16286,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                 <button type="button" onclick="closeDeleteVendorModal()" style="flex: 1; padding: 12px; background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 10px; font-weight: 700; color: #475569; cursor: pointer;">
                                     Cancel
                                 </button>
-                                <button type="submit" style="flex: 1; padding: 12px; background: #dc2626; border: 1px solid #dc2626; border-radius: 10px; font-weight: 800; color: #ffffff; cursor: pointer; box-shadow: 0 4px 12px rgba(220,38,38,0.3);">
+                                <button type="submit" style="flex: 1; padding: 12px; background: #dc2626; border: 1px solid #dc2626; border-radius: 10px; font-weight: 700; color: #ffffff; cursor: pointer; box-shadow: 0 4px 12px rgba(220,38,38,0.3);">
                                     Yes, Delete Vendor
                                 </button>
                             </div>
@@ -16696,7 +16696,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                         <div style="color: #ef4444; font-size: 1.1rem; margin-bottom: 6px;">
                             <i class="fa-solid ${iconFa}"></i>
                         </div>
-                        <div style="font-size: 1.35rem; font-weight: 800; color: #ffffff; line-height: 1;">
+                        <div style="font-size: 1.35rem; font-weight: 700; color: #ffffff; line-height: 1;">
                             ${prefix}${num}${suffix}
                         </div>
                         <div style="font-size: 0.78rem; font-weight: 700; color: #f8fafc; margin-top: 4px;">
@@ -17183,7 +17183,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
     <div id="btsDriveUrlsModal" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.65); backdrop-filter: blur(5px); z-index: 99999; align-items: center; justify-content: center; padding: 20px;">
         <div style="background: #ffffff; border-radius: 16px; width: 100%; max-width: 540px; overflow: hidden; box-shadow: 0 25px 60px rgba(0,0,0,0.3);">
             <div style="padding: 20px 24px; border-bottom: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: space-between;">
-                <h3 style="font-size: 1.15rem; font-weight: 800; color: #0f172a; margin: 0; display: flex; align-items: center; gap: 10px;">
+                <h3 style="font-size: 1.15rem; font-weight: 700; color: #0f172a; margin: 0; display: flex; align-items: center; gap: 10px;">
                     <i class="fa-solid fa-link" style="color: #16a34a;"></i> Import Drive / Image URLs
                 </h3>
                 <button type="button" onclick="closeDriveUrlsModal()" style="background: none; border: none; font-size: 1.2rem; color: #94a3b8; cursor: pointer;">
@@ -17209,7 +17209,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
     <div id="btsDriveFolderModal" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.65); backdrop-filter: blur(5px); z-index: 99999; align-items: center; justify-content: center; padding: 20px;">
         <div style="background: #ffffff; border-radius: 16px; width: 100%; max-width: 520px; overflow: hidden; box-shadow: 0 25px 60px rgba(0,0,0,0.3);">
             <div style="padding: 20px 24px; border-bottom: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: space-between;">
-                <h3 style="font-size: 1.15rem; font-weight: 800; color: #0f172a; margin: 0; display: flex; align-items: center; gap: 10px;">
+                <h3 style="font-size: 1.15rem; font-weight: 700; color: #0f172a; margin: 0; display: flex; align-items: center; gap: 10px;">
                     <i class="fa-brands fa-google-drive" style="color: #16a34a;"></i> Google Drive Folder Sync
                 </h3>
                 <button type="button" onclick="closeDriveFolderModal()" style="background: none; border: none; font-size: 1.2rem; color: #94a3b8; cursor: pointer;">
@@ -17247,7 +17247,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
     <div id="customAddModal" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.65); backdrop-filter: blur(5px); z-index: 99999; align-items: center; justify-content: center; padding: 20px;">
         <div style="background: #ffffff; border-radius: 16px; width: 100%; max-width: 480px; overflow: hidden; box-shadow: 0 25px 60px rgba(0,0,0,0.3);">
             <div style="padding: 20px 24px; border-bottom: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: space-between;">
-                <h3 id="customModalTitle" style="font-size: 1.15rem; font-weight: 800; color: #0f172a; margin: 0; display: flex; align-items: center; gap: 10px;">
+                <h3 id="customModalTitle" style="font-size: 1.15rem; font-weight: 700; color: #0f172a; margin: 0; display: flex; align-items: center; gap: 10px;">
                     <i class="fa-solid fa-circle-plus" style="color: #dc2626;"></i> Add New Option
                 </h3>
                 <button type="button" onclick="closeCustomAddModal()" style="background: none; border: none; font-size: 1.2rem; color: #94a3b8; cursor: pointer;" onmouseover="this.style.color='#0f172a'" onmouseout="this.style.color='#94a3b8'">
@@ -18144,7 +18144,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                 <div style="width: 54px; height: 54px; border-radius: 50%; background: #fef2f2; border: 1px solid #fecaca; color: #dc2626; display: flex; align-items: center; justify-content: center; margin: 0 auto 12px auto; font-size: 1.4rem;">
                     <i class="fa-solid fa-list-check"></i>
                 </div>
-                <h2 style="font-size: 1.3rem; font-weight: 800; color: #0f172a; margin: 0 0 4px 0;">Create New Task</h2>
+                <h2 style="font-size: 1.3rem; font-weight: 700; color: #0f172a; margin: 0 0 4px 0;">Create New Task</h2>
                 <p style="font-size: 0.84rem; color: #64748b; margin: 0;">Add a new task with checklist items, tags, and priority level.</p>
             </div>
 
@@ -18236,7 +18236,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                     <button type="button" onclick="closeCreateTaskModal()" style="flex: 1; padding: 11px; background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 10px; font-weight: 700; color: #475569; cursor: pointer;">
                         Cancel
                     </button>
-                    <button type="submit" style="flex: 1; padding: 11px; background: #dc2626; border: 1px solid #dc2626; border-radius: 10px; font-weight: 800; color: #ffffff; cursor: pointer; box-shadow: 0 4px 12px rgba(220,38,38,0.3);">
+                    <button type="submit" style="flex: 1; padding: 11px; background: #dc2626; border: 1px solid #dc2626; border-radius: 10px; font-weight: 700; color: #ffffff; cursor: pointer; box-shadow: 0 4px 12px rgba(220,38,38,0.3);">
                         Create New Task
                     </button>
                 </div>
@@ -18256,7 +18256,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                 <div style="width: 54px; height: 54px; border-radius: 50%; background: #fef2f2; border: 1px solid #fecaca; color: #dc2626; display: flex; align-items: center; justify-content: center; margin: 0 auto 12px auto; font-size: 1.4rem;">
                     <i class="fa-solid fa-pen-to-square"></i>
                 </div>
-                <h2 style="font-size: 1.3rem; font-weight: 800; color: #0f172a; margin: 0 0 4px 0;">Edit Task</h2>
+                <h2 style="font-size: 1.3rem; font-weight: 700; color: #0f172a; margin: 0 0 4px 0;">Edit Task</h2>
                 <p style="font-size: 0.84rem; color: #64748b; margin: 0;">Modify task details, priority, checklist, assignees, or stage.</p>
             </div>
 
@@ -18349,7 +18349,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                     <button type="button" onclick="closeEditTaskModal()" style="flex: 1; padding: 11px; background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 10px; font-weight: 700; color: #475569; cursor: pointer;">
                         Cancel
                     </button>
-                    <button type="submit" style="flex: 1; padding: 11px; background: #dc2626; border: 1px solid #dc2626; border-radius: 10px; font-weight: 800; color: #ffffff; cursor: pointer; box-shadow: 0 4px 12px rgba(220,38,38,0.3);">
+                    <button type="submit" style="flex: 1; padding: 11px; background: #dc2626; border: 1px solid #dc2626; border-radius: 10px; font-weight: 700; color: #ffffff; cursor: pointer; box-shadow: 0 4px 12px rgba(220,38,38,0.3);">
                         Save Task Changes
                     </button>
                 </div>
@@ -18369,7 +18369,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                 <div style="width: 54px; height: 54px; border-radius: 50%; background: #f0fdf4; border: 1px solid #bbf7d0; color: #16a34a; display: flex; align-items: center; justify-content: center; margin: 0 auto 12px auto; font-size: 1.4rem;">
                     <i class="fa-solid fa-tags"></i>
                 </div>
-                <h2 style="font-size: 1.3rem; font-weight: 800; color: #0f172a; margin: 0 0 4px 0;">Create Section Label</h2>
+                <h2 style="font-size: 1.3rem; font-weight: 700; color: #0f172a; margin: 0 0 4px 0;">Create Section Label</h2>
                 <p style="font-size: 0.84rem; color: #64748b; margin: 0;">Add a new stage column to the task board (Super Admin only).</p>
             </div>
 
@@ -18390,7 +18390,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                     <button type="button" onclick="closeCreateStageModal()" style="flex: 1; padding: 11px; background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 10px; font-weight: 700; color: #475569; cursor: pointer;">
                         Cancel
                     </button>
-                    <button type="submit" style="flex: 1; padding: 11px; background: #16a34a; border: 1px solid #16a34a; border-radius: 10px; font-weight: 800; color: #ffffff; cursor: pointer; box-shadow: 0 4px 12px rgba(22,163,74,0.3);">
+                    <button type="submit" style="flex: 1; padding: 11px; background: #16a34a; border: 1px solid #16a34a; border-radius: 10px; font-weight: 700; color: #ffffff; cursor: pointer; box-shadow: 0 4px 12px rgba(22,163,74,0.3);">
                         Create Section
                     </button>
                 </div>
@@ -18410,7 +18410,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                 <div style="width: 54px; height: 54px; border-radius: 50%; background: #f0f9ff; border: 1px solid #bae6fd; color: #0284c7; display: flex; align-items: center; justify-content: center; margin: 0 auto 12px auto; font-size: 1.4rem;">
                     <i class="fa-solid fa-pen-to-square"></i>
                 </div>
-                <h2 style="font-size: 1.3rem; font-weight: 800; color: #0f172a; margin: 0 0 4px 0;">Rename Section Label</h2>
+                <h2 style="font-size: 1.3rem; font-weight: 700; color: #0f172a; margin: 0 0 4px 0;">Rename Section Label</h2>
                 <p style="font-size: 0.84rem; color: #64748b; margin: 0;">Update stage title or accent color (Super Admin only).</p>
             </div>
 
@@ -18432,7 +18432,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                     <button type="button" onclick="closeEditStageModal()" style="flex: 1; padding: 11px; background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 10px; font-weight: 700; color: #475569; cursor: pointer;">
                         Cancel
                     </button>
-                    <button type="submit" style="flex: 1; padding: 11px; background: #0284c7; border: 1px solid #0284c7; border-radius: 10px; font-weight: 800; color: #ffffff; cursor: pointer; box-shadow: 0 4px 12px rgba(2,132,199,0.3);">
+                    <button type="submit" style="flex: 1; padding: 11px; background: #0284c7; border: 1px solid #0284c7; border-radius: 10px; font-weight: 700; color: #ffffff; cursor: pointer; box-shadow: 0 4px 12px rgba(2,132,199,0.3);">
                         Save Changes
                     </button>
                 </div>
@@ -18452,14 +18452,14 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                 <i class="fa-solid fa-trash-can"></i>
             </div>
             
-            <h3 style="font-size: 1.25rem; font-weight: 800; color: #0f172a; margin: 0 0 8px 0;">Delete Task Card?</h3>
+            <h3 style="font-size: 1.25rem; font-weight: 700; color: #0f172a; margin: 0 0 8px 0;">Delete Task Card?</h3>
             <p style="font-size: 0.86rem; color: #64748b; margin: 0 0 24px 0; line-height: 1.5;">Are you sure you want to delete this task card from your team's board? This action cannot be undone.</p>
 
             <div style="display: flex; gap: 12px;">
                 <button type="button" onclick="closeDeleteTaskModal()" style="flex: 1; padding: 12px; background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 10px; font-weight: 700; color: #475569; cursor: pointer; transition: all 0.15s ease;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='#f1f5f9'">
                     Cancel
                 </button>
-                <button type="button" onclick="confirmTaskDeleteAction()" style="flex: 1; padding: 12px; background: #dc2626; border: 1px solid #dc2626; border-radius: 10px; font-weight: 800; color: #ffffff; cursor: pointer; box-shadow: 0 4px 12px rgba(220,38,38,0.3); transition: all 0.15s ease;" onmouseover="this.style.background='#b91c1c'" onmouseout="this.style.background='#dc2626'">
+                <button type="button" onclick="confirmTaskDeleteAction()" style="flex: 1; padding: 12px; background: #dc2626; border: 1px solid #dc2626; border-radius: 10px; font-weight: 700; color: #ffffff; cursor: pointer; box-shadow: 0 4px 12px rgba(220,38,38,0.3); transition: all 0.15s ease;" onmouseover="this.style.background='#b91c1c'" onmouseout="this.style.background='#dc2626'">
                     Yes, Delete Task
                 </button>
             </div>
@@ -18718,7 +18718,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                     <i class="fa-solid fa-user-clock" style="animation: pulseClock 2s infinite;"></i>
                 </div>
 
-                <h2 style="font-size: 1.35rem; font-weight: 800; color: #0f172a; margin: 0 0 8px 0;">Don't Forget to Clock In!</h2>
+                <h2 style="font-size: 1.35rem; font-weight: 700; color: #0f172a; margin: 0 0 8px 0;">Don't Forget to Clock In!</h2>
                 <p style="font-size: 0.88rem; color: #64748b; margin: 0 0 24px 0; line-height: 1.5;">
                     Hello <strong><?php echo htmlspecialchars($_SESSION['admin_name'] ?? $username); ?></strong>, you are currently active on the studio portal but haven't recorded your workday clock-in yet.
                 </p>
@@ -18769,7 +18769,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                 <div style="width: 54px; height: 54px; border-radius: 50%; background: #fef2f2; border: 1px solid #fecaca; color: #dc2626; display: flex; align-items: center; justify-content: center; margin: 0 auto 12px auto; font-size: 1.5rem;">
                     <i class="fa-solid fa-bullhorn"></i>
                 </div>
-                <h2 style="font-size: 1.3rem; font-weight: 800; color: #0f172a; margin: 0 0 4px 0;">Post Studio Announcement</h2>
+                <h2 style="font-size: 1.3rem; font-weight: 700; color: #0f172a; margin: 0 0 4px 0;">Post Studio Announcement</h2>
                 <p style="font-size: 0.84rem; color: #64748b; margin: 0;">Broadcast news & updates to all studio staff members.</p>
             </div>
 
@@ -18880,7 +18880,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                 <div style="width: 58px; height: 58px; border-radius: 50%; background: #fef2f2; color: #dc2626; display: inline-flex; align-items: center; justify-content: center; font-size: 1.5rem; margin-bottom: 16px; border: 1px solid #fecaca; box-shadow: 0 4px 12px rgba(220, 38, 38, 0.12);">
                     <i class="fa-solid fa-triangle-exclamation"></i>
                 </div>
-                <h3 id="confirmModalTitle" style="font-size: 1.2rem; font-weight: 800; color: #0f172a; margin-bottom: 8px;">Confirm Action</h3>
+                <h3 id="confirmModalTitle" style="font-size: 1.2rem; font-weight: 700; color: #0f172a; margin-bottom: 8px;">Confirm Action</h3>
                 <p id="confirmModalMessage" style="font-size: 0.88rem; color: #64748b; line-height: 1.5; margin: 0;">Are you sure you want to proceed with this action?</p>
             </div>
             <div style="padding: 16px 28px 24px 28px; display: flex; gap: 12px; justify-content: center; background: #f8fafc; border-top: 1px solid #f1f5f9;">
@@ -18904,10 +18904,10 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                     <img id="incomingCallerAvatar" src="/assets/img/team/team_henry.png" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">
                 </div>
                 <div style="overflow: hidden; min-width: 0;">
-                    <div style="font-size: 0.68rem; font-weight: 800; color: #ef4444; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 2px;" id="incomingCallBadge">
+                    <div style="font-size: 0.68rem; font-weight: 700; color: #ef4444; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 2px;" id="incomingCallBadge">
                         INCOMING AUDIO CALL
                     </div>
-                    <h4 id="incomingCallerName" style="font-size: 0.96rem; font-weight: 800; color: #ffffff; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                    <h4 id="incomingCallerName" style="font-size: 0.96rem; font-weight: 700; color: #ffffff; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
                         Mojisola Emjay
                     </h4>
                     <p style="font-size: 0.74rem; color: #94a3b8; margin: 0; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Ringing studio line...</p>
@@ -18918,7 +18918,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                 <button type="button" onclick="declineIncomingCall()" style="padding: 9px 14px; border-radius: 12px; background: #334155; color: #f8fafc; border: none; font-weight: 700; font-size: 0.8rem; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: all 0.15s ease;" onmouseover="this.style.background='#ef4444'; this.style.color='#ffffff';" onmouseout="this.style.background='#334155'; this.style.color='#f8fafc';">
                     <i class="fa-solid fa-phone-slash"></i> Decline
                 </button>
-                <button type="button" onclick="acceptIncomingCall()" style="padding: 9px 16px; border-radius: 12px; background: #22c55e; color: #ffffff; border: none; font-weight: 800; font-size: 0.8rem; cursor: pointer; display: flex; align-items: center; gap: 6px; box-shadow: 0 4px 14px rgba(34, 197, 94, 0.4); transition: all 0.15s ease;" onmouseover="this.style.background='#16a34a'" onmouseout="this.style.background='#22c55e'">
+                <button type="button" onclick="acceptIncomingCall()" style="padding: 9px 16px; border-radius: 12px; background: #22c55e; color: #ffffff; border: none; font-weight: 700; font-size: 0.8rem; cursor: pointer; display: flex; align-items: center; gap: 6px; box-shadow: 0 4px 14px rgba(34, 197, 94, 0.4); transition: all 0.15s ease;" onmouseover="this.style.background='#16a34a'" onmouseout="this.style.background='#22c55e'">
                     <i class="fa-solid fa-phone"></i> Accept
                 </button>
             </div>
@@ -18931,11 +18931,11 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
             
             <!-- Header Bar -->
             <div style="padding: 16px 20px; background: rgba(15, 23, 42, 0.6); display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(255, 255, 255, 0.08);">
-                <div style="display: flex; align-items: center; gap: 8px; font-size: 0.82rem; font-weight: 800; color: #f8fafc; text-transform: uppercase; letter-spacing: 0.05em;">
+                <div style="display: flex; align-items: center; gap: 8px; font-size: 0.82rem; font-weight: 700; color: #f8fafc; text-transform: uppercase; letter-spacing: 0.05em;">
                     <span id="callTypeBadgeIcon"><i class="fa-solid fa-phone" style="color: #22c55e;"></i></span>
                     <span id="callTypeTitle">Studio Audio Call</span>
                 </div>
-                <div id="callTimerContainer" style="display: none; background: rgba(34, 197, 94, 0.15); color: #4ade80; border: 1px solid rgba(74, 222, 128, 0.3); font-size: 0.76rem; font-weight: 800; padding: 3px 10px; border-radius: 20px; font-family: monospace;">
+                <div id="callTimerContainer" style="display: none; background: rgba(34, 197, 94, 0.15); color: #4ade80; border: 1px solid rgba(74, 222, 128, 0.3); font-size: 0.76rem; font-weight: 700; padding: 3px 10px; border-radius: 20px; font-family: monospace;">
                     ● <span id="callTimerText">00:00</span>
                 </div>
             </div>
@@ -18964,7 +18964,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
 
                 <!-- Target User Details -->
                 <div style="position: relative; z-index: 5;">
-                    <h3 id="callTargetName" style="font-size: 1.35rem; font-weight: 800; color: #ffffff; margin: 0 0 6px 0;">Staff Member</h3>
+                    <h3 id="callTargetName" style="font-size: 1.35rem; font-weight: 700; color: #ffffff; margin: 0 0 6px 0;">Staff Member</h3>
                     <p id="callStatusText" style="font-size: 0.88rem; color: #94a3b8; margin: 0; font-weight: 600;">Initiating Studio Connection...</p>
                 </div>
 
@@ -19327,7 +19327,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                 <div style="width: 56px; height: 56px; border-radius: 50%; background: #f0fdf4; border: 1px solid #bbf7d0; color: #16a34a; display: flex; align-items: center; justify-content: center; margin: 0 auto 12px auto; font-size: 1.5rem; box-shadow: 0 4px 12px rgba(22, 163, 74, 0.15);">
                     <i class="fa-solid fa-money-bill-transfer"></i>
                 </div>
-                <h2 style="font-size: 1.3rem; font-weight: 800; color: #0f172a; margin: 0 0 4px 0;">Disburse Employee Salary</h2>
+                <h2 style="font-size: 1.3rem; font-weight: 700; color: #0f172a; margin: 0 0 4px 0;">Disburse Employee Salary</h2>
                 <p style="font-size: 0.84rem; color: #64748b; margin: 0;">Confirm monthly compensation breakdown and issue disbursement advice.</p>
             </div>
 
@@ -19335,10 +19335,10 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
             <div style="display: flex; align-items: center; gap: 14px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 12px 16px; margin-bottom: 18px;">
                 <img id="pay_modal_avatar" src="/assets/img/team/team_henry.png" alt="Employee" style="width: 46px; height: 46px; border-radius: 50%; object-fit: cover; border: 2px solid #ffffff; box-shadow: 0 2px 6px rgba(0,0,0,0.08); flex-shrink: 0;">
                 <div style="flex: 1; min-width: 0;">
-                    <div id="pay_modal_fullname" style="font-size: 0.96rem; font-weight: 800; color: #0f172a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Staff Member</div>
+                    <div id="pay_modal_fullname" style="font-size: 0.96rem; font-weight: 700; color: #0f172a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Staff Member</div>
                     <div style="display: flex; align-items: center; gap: 8px; margin-top: 2px; flex-wrap: wrap;">
                         <span id="pay_modal_designation" style="font-size: 0.76rem; color: #64748b; font-weight: 700;">Creative Specialist</span>
-                        <span style="font-size: 0.72rem; background: #fee2e2; color: #dc2626; font-weight: 800; padding: 1px 8px; border-radius: 10px;" id="pay_modal_period_badge">August 2026</span>
+                        <span style="font-size: 0.72rem; background: #fee2e2; color: #dc2626; font-weight: 700; padding: 1px 8px; border-radius: 10px;" id="pay_modal_period_badge">August 2026</span>
                     </div>
                 </div>
             </div>
@@ -19356,7 +19356,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                 <!-- Currency Selector -->
                 <div>
                     <label style="font-size: 0.74rem; font-weight: 700; color: #475569; display: block; margin-bottom: 4px;">Payment Currency *</label>
-                    <select name="currency" id="pay_modal_currency" style="width: 100%; padding: 9px 10px; font-size: 0.86rem; font-weight: 800; border: 1px solid #cbd5e1; border-radius: 8px; background: #ffffff;" onchange="recalculateModalNetPay()">
+                    <select name="currency" id="pay_modal_currency" style="width: 100%; padding: 9px 10px; font-size: 0.86rem; font-weight: 700; border: 1px solid #cbd5e1; border-radius: 8px; background: #ffffff;" onchange="recalculateModalNetPay()">
                         <option value="NGN">NGN (₦) - Nigerian Naira</option>
                         <option value="USD">USD ($) - US Dollar</option>
                         <option value="GBP">GBP (£) - British Pound</option>
@@ -19385,10 +19385,10 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                 <!-- Total Net Payable Box -->
                 <div style="background: linear-gradient(135deg, #0f172a, #1e293b); color: #ffffff; border-radius: 12px; padding: 14px 18px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 4px 12px rgba(15, 23, 42, 0.15);">
                     <div>
-                        <div style="font-size: 0.72rem; text-transform: uppercase; font-weight: 800; color: #94a3b8; letter-spacing: 0.04em;">Net Payable Amount</div>
+                        <div style="font-size: 0.72rem; text-transform: uppercase; font-weight: 700; color: #94a3b8; letter-spacing: 0.04em;">Net Payable Amount</div>
                         <div style="font-size: 0.78rem; color: #cbd5e1; margin-top: 1px;">Calculated Total Take-Home</div>
                     </div>
-                    <div id="pay_modal_net_display" style="font-size: 1.45rem; font-weight: 800; color: #4ade80; font-family: monospace;">&#8358;0.00</div>
+                    <div id="pay_modal_net_display" style="font-size: 1.45rem; font-weight: 700; color: #4ade80; font-family: monospace;">&#8358;0.00</div>
                 </div>
 
                 <!-- Payment Rail Selector -->
@@ -19404,7 +19404,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
 
                 <!-- Destination Account Details Live Display Box -->
                 <div id="pay_modal_destination_box" style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 10px; padding: 12px 14px;">
-                    <div style="font-size: 0.72rem; font-weight: 800; color: #64748b; text-transform: uppercase; margin-bottom: 4px;">Destination Account Details:</div>
+                    <div style="font-size: 0.72rem; font-weight: 700; color: #64748b; text-transform: uppercase; margin-bottom: 4px;">Destination Account Details:</div>
                     <div id="pay_modal_destination_text" style="font-size: 0.86rem; font-weight: 700; color: #0f172a; line-height: 1.4;">Zenith Bank PLC &bull; Account: 1012345678</div>
                 </div>
 
@@ -19419,7 +19419,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                     <button type="button" onclick="closeProcessPaymentModal()" style="flex: 1; padding: 12px; background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 10px; font-weight: 700; color: #475569; cursor: pointer; transition: all 0.15s ease;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='#f1f5f9'">
                         Cancel
                     </button>
-                    <button type="submit" id="pay_modal_submit_btn" style="flex: 1.5; padding: 12px; background: #16a34a; border: 1px solid #16a34a; border-radius: 10px; font-weight: 800; color: #ffffff; cursor: pointer; box-shadow: 0 4px 14px rgba(22, 163, 74, 0.35); display: inline-flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.15s ease;" onmouseover="this.style.background='#15803d'" onmouseout="this.style.background='#16a34a'">
+                    <button type="submit" id="pay_modal_submit_btn" style="flex: 1.5; padding: 12px; background: #16a34a; border: 1px solid #16a34a; border-radius: 10px; font-weight: 700; color: #ffffff; cursor: pointer; box-shadow: 0 4px 14px rgba(22, 163, 74, 0.35); display: inline-flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.15s ease;" onmouseover="this.style.background='#15803d'" onmouseout="this.style.background='#16a34a'">
                         <i class="fa-solid fa-circle-check"></i> Disburse Salary Now
                     </button>
                 </div>
@@ -19439,7 +19439,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                 <i class="fa-solid fa-money-bill-transfer"></i>
             </div>
             
-            <h3 style="font-size: 1.3rem; font-weight: 800; color: #0f172a; margin: 0 0 6px 0;">Disburse All Staff Salaries</h3>
+            <h3 style="font-size: 1.3rem; font-weight: 700; color: #0f172a; margin: 0 0 6px 0;">Disburse All Staff Salaries</h3>
             <p style="font-size: 0.86rem; color: #64748b; margin: 0 0 18px 0; line-height: 1.5;">
                 Process and record monthly payroll payouts for all <strong><?php echo isset($allStaffForPayroll) ? count($allStaffForPayroll) : 0; ?> active employees</strong> for <strong><?php echo htmlspecialchars($selectedPeriodStr ?? date('F Y')); ?></strong>.
             </p>
@@ -19464,7 +19464,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                         <span>Total Active Staff:</span>
                         <strong><?php echo isset($allStaffForPayroll) ? count($allStaffForPayroll) : 0; ?> Employees</strong>
                     </div>
-                    <div style="display: flex; justify-content: space-between; font-size: 0.88rem; color: #0f172a; font-weight: 800;">
+                    <div style="display: flex; justify-content: space-between; font-size: 0.88rem; color: #0f172a; font-weight: 700;">
                         <span>Active Currencies:</span>
                         <span style="color: #16a34a;">Multi-Currency Supported</span>
                     </div>
@@ -19474,7 +19474,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                     <button type="button" onclick="closeBulkPayrollModal()" style="flex: 1; padding: 12px; background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 10px; font-weight: 700; color: #475569; cursor: pointer; transition: all 0.15s ease;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='#f1f5f9'">
                         Cancel
                     </button>
-                    <button type="submit" style="flex: 1.5; padding: 12px; background: #16a34a; border: 1px solid #16a34a; border-radius: 10px; font-weight: 800; color: #ffffff; cursor: pointer; box-shadow: 0 4px 12px rgba(22,163,74,0.35); display: inline-flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.15s ease;" onmouseover="this.style.background='#15803d'" onmouseout="this.style.background='#16a34a'">
+                    <button type="submit" style="flex: 1.5; padding: 12px; background: #16a34a; border: 1px solid #16a34a; border-radius: 10px; font-weight: 700; color: #ffffff; cursor: pointer; box-shadow: 0 4px 12px rgba(22,163,74,0.35); display: inline-flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.15s ease;" onmouseover="this.style.background='#15803d'" onmouseout="this.style.background='#16a34a'">
                         <i class="fa-solid fa-check-double"></i> Confirm &amp; Pay All
                     </button>
                 </div>

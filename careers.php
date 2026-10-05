@@ -120,7 +120,7 @@ $jobOpenings = array_values(array_filter($jobOpeningsMap, function($j) {
 
         .careers-hero-title {
             font-size: 4rem;
-            font-weight: 800;
+            font-weight: 700;
             color: #ffffff;
             letter-spacing: -1.5px;
             margin: 0 0 16px 0;
@@ -169,7 +169,7 @@ $jobOpenings = array_values(array_filter($jobOpeningsMap, function($j) {
 
         .metric-val {
             font-size: 1rem;
-            font-weight: 800;
+            font-weight: 700;
             color: #ffffff;
             line-height: 1.2;
         }
@@ -320,7 +320,7 @@ $jobOpenings = array_values(array_filter($jobOpeningsMap, function($j) {
 
         .job-title {
             font-size: 1.4rem;
-            font-weight: 800;
+            font-weight: 700;
             color: #ffffff;
             margin: 0 0 10px 0;
         }
@@ -405,7 +405,7 @@ $jobOpenings = array_values(array_filter($jobOpeningsMap, function($j) {
 
         .job-section-heading {
             font-size: 1.05rem;
-            font-weight: 800;
+            font-weight: 700;
             color: #ffffff;
             margin-bottom: 14px;
             display: flex;
@@ -505,7 +505,7 @@ $jobOpenings = array_values(array_filter($jobOpeningsMap, function($j) {
 
         .why-work-title {
             font-size: 2.8rem;
-            font-weight: 800;
+            font-weight: 700;
             color: #ffffff;
             margin: 12px 0 12px 0;
             letter-spacing: -0.5px;
@@ -554,7 +554,7 @@ $jobOpenings = array_values(array_filter($jobOpeningsMap, function($j) {
 
         .perk-card-title {
             font-size: 1.2rem;
-            font-weight: 800;
+            font-weight: 700;
             color: #ffffff;
             margin-bottom: 10px;
         }
@@ -592,7 +592,7 @@ $jobOpenings = array_values(array_filter($jobOpeningsMap, function($j) {
 
         .not-right-role-title {
             font-size: 2.2rem;
-            font-weight: 800;
+            font-weight: 700;
             color: #ffffff;
             margin: 0 0 10px 0;
         }
@@ -698,7 +698,7 @@ $jobOpenings = array_values(array_filter($jobOpeningsMap, function($j) {
 
         .apply-modal-title {
             font-size: 1.6rem;
-            font-weight: 800;
+            font-weight: 700;
             color: #ffffff;
             margin: 0 0 6px 0;
         }

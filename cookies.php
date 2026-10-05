@@ -135,7 +135,7 @@ $pageTitle = "Cookie Policy | Falhen Media";
 
         .policy-title {
             font-size: 3.5rem;
-            font-weight: 800;
+            font-weight: 700;
             color: #ffffff;
             margin: 0 0 20px 0;
             letter-spacing: -1px;
@@ -186,7 +186,7 @@ $pageTitle = "Cookie Policy | Falhen Media";
         .notice-content h4 {
             color: #10b981;
             font-size: 0.95rem;
-            font-weight: 800;
+            font-weight: 700;
             margin: 0 0 8px 0;
         }
 
@@ -232,7 +232,7 @@ $pageTitle = "Cookie Policy | Falhen Media";
 
         .category-name {
             font-size: 1rem;
-            font-weight: 800;
+            font-weight: 700;
             color: #ffffff;
         }
 
@@ -321,7 +321,7 @@ $pageTitle = "Cookie Policy | Falhen Media";
 
         .article-heading {
             font-size: 1.35rem;
-            font-weight: 800;
+            font-weight: 700;
             color: #ffffff;
             margin-bottom: 16px;
         }
@@ -419,7 +419,7 @@ $pageTitle = "Cookie Policy | Falhen Media";
 
             <!-- Cookie Categories Section -->
             <div class="categories-section">
-                <h2 style="font-size: 1.6rem; font-weight: 800; color: #fff; margin-bottom: 24px;">Cookie Categories</h2>
+                <h2 style="font-size: 1.6rem; font-weight: 700; color: #fff; margin-bottom: 24px;">Cookie Categories</h2>
 
                 <!-- Category 1: Strictly Necessary (Open by Default) -->
                 <div class="category-card open">

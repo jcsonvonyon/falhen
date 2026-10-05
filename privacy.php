@@ -119,7 +119,7 @@ $pageTitle = "Privacy Policy — Falhen Media";
             border: 1px solid rgba(220, 38, 38, 0.4);
             color: #ef4444;
             font-size: 0.78rem;
-            font-weight: 800;
+            font-weight: 700;
             padding: 4px 12px;
             border-radius: 6px;
         }
@@ -129,7 +129,7 @@ $pageTitle = "Privacy Policy — Falhen Media";
             border: 1px solid rgba(16, 185, 129, 0.3);
             color: #10b981;
             font-size: 0.78rem;
-            font-weight: 800;
+            font-weight: 700;
             padding: 4px 12px;
             border-radius: 6px;
         }
@@ -146,7 +146,7 @@ $pageTitle = "Privacy Policy — Falhen Media";
 
         .privacy-hero-title {
             font-size: 3.5rem;
-            font-weight: 800;
+            font-weight: 700;
             color: #ffffff;
             letter-spacing: -1.5px;
             margin: 0 0 16px 0;
@@ -202,7 +202,7 @@ $pageTitle = "Privacy Policy — Falhen Media";
         .compliance-content h4 {
             color: #10b981;
             font-size: 0.98rem;
-            font-weight: 800;
+            font-weight: 700;
             margin: 0 0 6px 0;
         }
 
@@ -224,7 +224,7 @@ $pageTitle = "Privacy Policy — Falhen Media";
 
         .contents-title {
             font-size: 0.82rem;
-            font-weight: 800;
+            font-weight: 700;
             color: #71717a;
             letter-spacing: 1.2px;
             text-transform: uppercase;
@@ -265,7 +265,7 @@ $pageTitle = "Privacy Policy — Falhen Media";
 
         .legal-section-heading {
             font-size: 1.8rem;
-            font-weight: 800;
+            font-weight: 700;
             color: #ffffff;
             margin: 0 0 20px 0;
             letter-spacing: -0.5px;
@@ -275,7 +275,7 @@ $pageTitle = "Privacy Policy — Falhen Media";
 
         .legal-sub-heading {
             font-size: 1.05rem;
-            font-weight: 800;
+            font-weight: 700;
             color: #ef4444;
             margin: 20px 0 10px 0;
         }
@@ -298,7 +298,7 @@ $pageTitle = "Privacy Policy — Falhen Media";
 
         .dsar-badge {
             font-size: 0.78rem;
-            font-weight: 800;
+            font-weight: 700;
             letter-spacing: 1.2px;
             color: #71717a;
             text-transform: uppercase;
@@ -330,7 +330,7 @@ $pageTitle = "Privacy Policy — Falhen Media";
 
         .dsar-title {
             font-size: 1.3rem;
-            font-weight: 800;
+            font-weight: 700;
             color: #ffffff;
             margin: 0 0 4px 0;
         }
@@ -403,7 +403,7 @@ $pageTitle = "Privacy Policy — Falhen Media";
 
         .dsar-type-name {
             font-size: 0.92rem;
-            font-weight: 800;
+            font-weight: 700;
             color: #ffffff;
             margin-bottom: 2px;
         }

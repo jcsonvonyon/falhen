@@ -286,7 +286,7 @@ $jsonLdSchema = [
 
         .faq-hero-title {
             font-size: 4rem;
-            font-weight: 800;
+            font-weight: 700;
             color: #ffffff;
             letter-spacing: -1.5px;
             margin: 0 0 16px 0;
@@ -423,7 +423,7 @@ $jsonLdSchema = [
             background: rgba(220, 38, 38, 0.15);
             color: #ef4444;
             font-size: 0.8rem;
-            font-weight: 800;
+            font-weight: 700;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -432,7 +432,7 @@ $jsonLdSchema = [
 
         .faq-question-text {
             font-size: 1.15rem;
-            font-weight: 800;
+            font-weight: 700;
             color: #ffffff;
             margin: 0;
             line-height: 1.3;
@@ -487,7 +487,7 @@ $jsonLdSchema = [
 
         .faq-cta-title {
             font-size: 2rem;
-            font-weight: 800;
+            font-weight: 700;
             color: #ffffff;
             margin: 0 0 10px 0;
         }

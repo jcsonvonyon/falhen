@@ -165,7 +165,7 @@ if (!empty($dynamicServices)) {
 
     .pro-card-title {
         font-size: 1.35rem;
-        font-weight: 800;
+        font-weight: 700;
         color: #ffffff;
         margin: 0 0 10px 0;
         line-height: 1.25;
@@ -275,7 +275,7 @@ if (!empty($dynamicServices)) {
     <div class="container">
         <div class="section-title-wrapper" style="text-align: center;">
             <div class="badge" style="display: inline-flex; align-items: center; gap: 8px; margin-bottom: 16px;"><i class="fa-solid fa-clapperboard"></i> Full-Service Media Agency</div>
-            <h2 class="section-title" style="font-size: 3rem; font-weight: 800; color: #ffffff; margin-bottom: 14px;">End-to-End <span style="color: #dc2626;">Media Services</span></h2>
+            <h2 class="section-title" style="font-size: 3rem; font-weight: 700; color: #ffffff; margin-bottom: 14px;">End-to-End <span style="color: #dc2626;">Media Services</span></h2>
             <p class="section-subtitle" style="font-size: 1.1rem; color: #a1a1aa; max-width: 680px; margin: 0 auto;">We handle every stage of visual media creation — from concept development to red-carpet delivery.</p>
         </div>
 

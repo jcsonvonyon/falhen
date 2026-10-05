@@ -423,7 +423,7 @@ $displayBreadcrumb = $sectionTitles[$activeSection] ?? 'Dashboard';
 
         .user-pill-tag {
             font-size: 0.68rem;
-            font-weight: 800;
+            font-weight: 700;
             background: #dcfce7;
             color: #15803d;
             padding: 2px 7px;
@@ -437,7 +437,7 @@ $displayBreadcrumb = $sectionTitles[$activeSection] ?? 'Dashboard';
         .nav-category {
             padding: 14px 20px 6px 20px;
             font-size: 0.72rem;
-            font-weight: 800;
+            font-weight: 700;
             color: var(--text-muted);
             letter-spacing: 0.8px;
             text-transform: uppercase;
@@ -493,7 +493,7 @@ $displayBreadcrumb = $sectionTitles[$activeSection] ?? 'Dashboard';
 
         .nav-badge-pill {
             font-size: 0.7rem;
-            font-weight: 800;
+            font-weight: 700;
             padding: 2px 7px;
             border-radius: 10px;
             background: #e2e8f0;
@@ -619,7 +619,7 @@ $displayBreadcrumb = $sectionTitles[$activeSection] ?? 'Dashboard';
         .ref-pill-btn code {
             font-family: monospace;
             color: var(--accent-red);
-            font-weight: 800;
+            font-weight: 700;
         }
 
         .user-avatar-btn {
@@ -638,7 +638,7 @@ $displayBreadcrumb = $sectionTitles[$activeSection] ?? 'Dashboard';
             border-radius: 50%;
             background-color: var(--accent-red);
             color: #ffffff;
-            font-weight: 800;
+            font-weight: 700;
             font-size: 0.9rem;
             display: flex;
             align-items: center;
@@ -713,7 +713,7 @@ $displayBreadcrumb = $sectionTitles[$activeSection] ?? 'Dashboard';
 
         .section-header-title {
             font-size: 1.85rem;
-            font-weight: 800;
+            font-weight: 700;
             color: var(--text-primary);
             letter-spacing: -0.5px;
             margin-bottom: 6px;
@@ -850,7 +850,7 @@ $displayBreadcrumb = $sectionTitles[$activeSection] ?? 'Dashboard';
 
         .stat-info-title {
             font-size: 0.95rem;
-            font-weight: 800;
+            font-weight: 700;
             color: #0f172a;
         }
 
@@ -940,7 +940,7 @@ $displayBreadcrumb = $sectionTitles[$activeSection] ?? 'Dashboard';
             padding: 4px 12px;
             border-radius: 20px;
             font-size: 0.74rem;
-            font-weight: 800;
+            font-weight: 700;
             text-transform: uppercase;
             letter-spacing: 0.6px;
             color: #f1f5f9;
@@ -949,7 +949,7 @@ $displayBreadcrumb = $sectionTitles[$activeSection] ?? 'Dashboard';
 
         .spotlight-title {
             font-size: 1.45rem;
-            font-weight: 800;
+            font-weight: 700;
             letter-spacing: -0.4px;
             margin-bottom: 8px;
         }
@@ -990,14 +990,14 @@ $displayBreadcrumb = $sectionTitles[$activeSection] ?? 'Dashboard';
 
         .gig-title {
             font-size: 1.15rem;
-            font-weight: 800;
+            font-weight: 700;
             color: #0f172a;
             letter-spacing: -0.3px;
         }
 
         .gig-status-pill {
             font-size: 0.74rem;
-            font-weight: 800;
+            font-weight: 700;
             padding: 4px 10px;
             border-radius: 20px;
             text-transform: uppercase;
@@ -1062,7 +1062,7 @@ $displayBreadcrumb = $sectionTitles[$activeSection] ?? 'Dashboard';
 
         .cal-day-name {
             font-size: 0.76rem;
-            font-weight: 800;
+            font-weight: 700;
             color: var(--text-muted);
             text-transform: uppercase;
             text-align: center;
@@ -1145,7 +1145,7 @@ $displayBreadcrumb = $sectionTitles[$activeSection] ?? 'Dashboard';
             padding: 12px 16px;
             text-align: left;
             font-size: 0.76rem;
-            font-weight: 800;
+            font-weight: 700;
             color: #64748b;
             text-transform: uppercase;
             letter-spacing: 0.5px;
@@ -1327,7 +1327,7 @@ $displayBreadcrumb = $sectionTitles[$activeSection] ?? 'Dashboard';
 
         .mobile-nav-item.active {
             color: var(--accent-red);
-            font-weight: 800;
+            font-weight: 700;
         }
 
         .mobile-nav-item.active::before {
@@ -1348,7 +1348,7 @@ $displayBreadcrumb = $sectionTitles[$activeSection] ?? 'Dashboard';
             background: var(--accent-red);
             color: #ffffff;
             font-size: 0.65rem;
-            font-weight: 800;
+            font-weight: 700;
             padding: 1px 5px;
             border-radius: 10px;
             line-height: 1.2;
@@ -1773,11 +1773,11 @@ $displayBreadcrumb = $sectionTitles[$activeSection] ?? 'Dashboard';
                     <!-- Avatar Dropdown Menu -->
                     <div class="avatar-dropdown-menu" id="vendorAvatarDropdown">
                         <div style="padding: 16px 18px; background: #f8fafc; border-bottom: 1px solid #f1f5f9; display: flex; align-items: center; gap: 12px;">
-                            <div style="width: 40px; height: 40px; border-radius: 50%; background: var(--accent-red); color: #ffffff; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1.05rem; flex-shrink: 0;">
+                            <div style="width: 40px; height: 40px; border-radius: 50%; background: var(--accent-red); color: #ffffff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 1.05rem; flex-shrink: 0;">
                                 <?php echo $userInitial; ?>
                             </div>
                             <div style="overflow: hidden; flex-grow: 1; text-align: left;">
-                                <div style="font-weight: 800; font-size: 0.9rem; color: #0f172a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"><?php echo htmlspecialchars($fullName); ?></div>
+                                <div style="font-weight: 700; font-size: 0.9rem; color: #0f172a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"><?php echo htmlspecialchars($fullName); ?></div>
                                 <div style="font-size: 0.74rem; font-weight: 700; color: #16a34a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 1px;">
                                     <i class="fa-solid fa-shield-check"></i> <?php echo htmlspecialchars($roleLabel); ?>
                                 </div>
@@ -1823,12 +1823,12 @@ $displayBreadcrumb = $sectionTitles[$activeSection] ?? 'Dashboard';
                 <div style="display: flex; align-items: center; gap: 12px; min-width: 0;">
                     <img src="/assets/img/icons/pwa-192.png" alt="Falhen Icon" style="width: 42px; height: 42px; border-radius: 10px; flex-shrink: 0; box-shadow: 0 2px 8px rgba(0,0,0,0.3);">
                     <div style="min-width: 0;">
-                        <div style="font-weight: 800; font-size: 0.92rem; color: #ffffff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Install Falhen Vendor Portal</div>
+                        <div style="font-weight: 700; font-size: 0.92rem; color: #ffffff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Install Falhen Vendor Portal</div>
                         <div style="font-size: 0.76rem; color: #94a3b8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Quick mobile access, call sheets &amp; schedule alerts</div>
                     </div>
                 </div>
                 <div style="display: flex; align-items: center; gap: 8px; flex-shrink: 0;">
-                    <button type="button" id="btnPwaInstall" class="btn-save-primary" style="padding: 7px 14px; font-size: 0.8rem; background: var(--accent-red); border-color: var(--accent-red); border-radius: 8px; font-weight: 800; color: #ffffff;">
+                    <button type="button" id="btnPwaInstall" class="btn-save-primary" style="padding: 7px 14px; font-size: 0.8rem; background: var(--accent-red); border-color: var(--accent-red); border-radius: 8px; font-weight: 700; color: #ffffff;">
                         <i class="fa-solid fa-download"></i> Install App
                     </button>
                     <button type="button" id="btnPwaDismiss" aria-label="Dismiss banner" style="background: none; border: none; color: #94a3b8; font-size: 1.15rem; padding: 6px 8px; cursor: pointer;">
@@ -1937,13 +1937,13 @@ $displayBreadcrumb = $sectionTitles[$activeSection] ?? 'Dashboard';
                             <div class="spotlight-meta">
                                 <span><i class="fa-regular fa-calendar"></i> <?php echo date('l, M j, Y', strtotime($nextGig['shoot_date'])); ?></span>
                                 <span>&bull;</span>
-                                <span style="color: #fca5a5; font-weight: 800;"><i class="fa-solid fa-clock"></i> Call Time: <?php echo htmlspecialchars($nextGig['call_time']); ?></span>
+                                <span style="color: #fca5a5; font-weight: 700;"><i class="fa-solid fa-clock"></i> Call Time: <?php echo htmlspecialchars($nextGig['call_time']); ?></span>
                                 <span>&bull;</span>
                                 <span><i class="fa-solid fa-location-dot"></i> <?php echo htmlspecialchars($nextGig['location']); ?></span>
                             </div>
                         </div>
                         <div style="position: relative; z-index: 2; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-                            <a href="/download_call_sheet.php?gig_id=<?php echo urlencode($nextGig['id']); ?>" target="_blank" class="btn-save-primary" style="background: #ffffff; color: var(--accent-red); font-weight: 800; box-shadow: 0 4px 14px rgba(0,0,0,0.25);">
+                            <a href="/download_call_sheet.php?gig_id=<?php echo urlencode($nextGig['id']); ?>" target="_blank" class="btn-save-primary" style="background: #ffffff; color: var(--accent-red); font-weight: 700; box-shadow: 0 4px 14px rgba(0,0,0,0.25);">
                                 <i class="fa-solid fa-file-arrow-down"></i> Download Call Sheet
                             </a>
                             <button type="button" class="btn-header-action" onclick="openUploadModal('<?php echo htmlspecialchars($nextGig['id']); ?>', '<?php echo htmlspecialchars(addslashes($nextGig['title'])); ?>')" style="background: rgba(255,255,255,0.15); color: #ffffff; border-color: rgba(255,255,255,0.25);">
@@ -1993,19 +1993,19 @@ $displayBreadcrumb = $sectionTitles[$activeSection] ?? 'Dashboard';
 
                                         <div class="gig-details-grid">
                                             <div>
-                                                <div style="font-size: 0.72rem; font-weight: 800; color: #64748b; text-transform: uppercase;">Call Time</div>
-                                                <div style="font-weight: 800; color: var(--accent-red); font-size: 0.95rem; margin-top: 2px;">
+                                                <div style="font-size: 0.72rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Call Time</div>
+                                                <div style="font-weight: 700; color: var(--accent-red); font-size: 0.95rem; margin-top: 2px;">
                                                     <?php echo htmlspecialchars($gig['call_time']); ?>
                                                 </div>
                                             </div>
                                             <div>
-                                                <div style="font-size: 0.72rem; font-weight: 800; color: #64748b; text-transform: uppercase;">Shoot Date</div>
+                                                <div style="font-size: 0.72rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Shoot Date</div>
                                                 <div style="font-weight: 700; color: #0f172a; font-size: 0.9rem; margin-top: 2px;">
                                                     <?php echo date('M d, Y', strtotime($gig['shoot_date'])); ?>
                                                 </div>
                                             </div>
                                             <div>
-                                                <div style="font-size: 0.72rem; font-weight: 800; color: #64748b; text-transform: uppercase;">Rate</div>
+                                                <div style="font-size: 0.72rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Rate</div>
                                                 <div style="font-weight: 700; color: #15803d; font-size: 0.9rem; margin-top: 2px;">
                                                     <?php echo htmlspecialchars($gig['day_rate'] ?? 'Per SOW'); ?>
                                                 </div>
@@ -2092,7 +2092,7 @@ $displayBreadcrumb = $sectionTitles[$activeSection] ?? 'Dashboard';
                                                 <div style="font-weight: 700; font-size: 0.86rem; color: #0f172a;"><?php echo htmlspecialchars($dGig['title']); ?></div>
                                                 <div style="font-size: 0.74rem; color: #64748b;"><?php echo date('M d, Y', strtotime($dGig['shoot_date'])); ?> &bull; Wrapped</div>
                                             </div>
-                                            <span style="font-size: 0.72rem; font-weight: 800; color: #15803d; background: #dcfce7; padding: 2px 8px; border-radius: 6px;">Done</span>
+                                            <span style="font-size: 0.72rem; font-weight: 700; color: #15803d; background: #dcfce7; padding: 2px 8px; border-radius: 6px;">Done</span>
                                         </div>
                                     <?php endforeach; ?>
                                 <?php endif; ?>
@@ -2122,7 +2122,7 @@ $displayBreadcrumb = $sectionTitles[$activeSection] ?? 'Dashboard';
                 <?php if (empty($assignedGigs)): ?>
                     <div class="dashboard-card" style="text-align: center; padding: 48px 24px;">
                         <i class="fa-solid fa-clapperboard" style="font-size: 3rem; color: #cbd5e1; margin-bottom: 16px; display: block;"></i>
-                        <h2 style="font-size: 1.25rem; font-weight: 800; color: #0f172a; margin-bottom: 8px;">No Gigs Currently Assigned</h2>
+                        <h2 style="font-size: 1.25rem; font-weight: 700; color: #0f172a; margin-bottom: 8px;">No Gigs Currently Assigned</h2>
                         <p style="font-size: 0.92rem; color: #64748b; max-width: 480px; margin: 0 auto 20px auto;">
                             You currently have no active shoots assigned. Keep your calendar availability up to date so the production team can book you for upcoming commercial and video projects.
                         </p>
@@ -2150,28 +2150,28 @@ $displayBreadcrumb = $sectionTitles[$activeSection] ?? 'Dashboard';
 
                             <div class="gig-details-grid">
                                 <div>
-                                    <div style="font-size: 0.72rem; font-weight: 800; color: #64748b; text-transform: uppercase;">Call Time</div>
-                                    <div style="font-weight: 800; color: var(--accent-red); font-size: 1.1rem; margin-top: 2px;">
+                                    <div style="font-size: 0.72rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Call Time</div>
+                                    <div style="font-weight: 700; color: var(--accent-red); font-size: 1.1rem; margin-top: 2px;">
                                         <?php echo htmlspecialchars($gig['call_time']); ?>
                                     </div>
                                     <div style="font-size: 0.74rem; color: #64748b;">Wrap: <?php echo htmlspecialchars($gig['wrap_time'] ?? '06:00 PM'); ?></div>
                                 </div>
                                 <div>
-                                    <div style="font-size: 0.72rem; font-weight: 800; color: #64748b; text-transform: uppercase;">Shoot Date</div>
+                                    <div style="font-size: 0.72rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Shoot Date</div>
                                     <div style="font-weight: 700; color: #0f172a; font-size: 0.95rem; margin-top: 2px;">
                                         <?php echo date('l, F j, Y', strtotime($gig['shoot_date'])); ?>
                                     </div>
                                     <div style="font-size: 0.74rem; color: #64748b;">Production Day 1 of 1</div>
                                 </div>
                                 <div>
-                                    <div style="font-size: 0.72rem; font-weight: 800; color: #64748b; text-transform: uppercase;">Role &amp; Rate</div>
+                                    <div style="font-size: 0.72rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Role &amp; Rate</div>
                                     <div style="font-weight: 700; color: #0f172a; font-size: 0.95rem; margin-top: 2px;">
                                         <?php echo htmlspecialchars($gig['role']); ?>
                                     </div>
                                     <div style="font-size: 0.74rem; color: #15803d; font-weight: 700;"><?php echo htmlspecialchars($gig['day_rate'] ?? 'Per SOW'); ?></div>
                                 </div>
                                 <div>
-                                    <div style="font-size: 0.72rem; font-weight: 800; color: #64748b; text-transform: uppercase;">Location / Stage</div>
+                                    <div style="font-size: 0.72rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Location / Stage</div>
                                     <div style="font-weight: 700; color: #0f172a; font-size: 0.9rem; margin-top: 2px; line-height: 1.4;">
                                         <?php echo htmlspecialchars($gig['location']); ?>
                                     </div>
@@ -2255,7 +2255,7 @@ $displayBreadcrumb = $sectionTitles[$activeSection] ?? 'Dashboard';
                 <?php if (empty($doneGigs)): ?>
                     <div class="dashboard-card" style="text-align: center; padding: 48px 24px;">
                         <i class="fa-solid fa-circle-check" style="font-size: 3rem; color: #cbd5e1; margin-bottom: 16px; display: block;"></i>
-                        <h2 style="font-size: 1.25rem; font-weight: 800; color: #0f172a; margin-bottom: 8px;">No Completed Gigs in Archive</h2>
+                        <h2 style="font-size: 1.25rem; font-weight: 700; color: #0f172a; margin-bottom: 8px;">No Completed Gigs in Archive</h2>
                         <p style="font-size: 0.92rem; color: #64748b; max-width: 480px; margin: 0 auto;">
                             Completed productions will be catalogued here once shoot wraps are recorded and deliverables are signed off.
                         </p>
@@ -2277,7 +2277,7 @@ $displayBreadcrumb = $sectionTitles[$activeSection] ?? 'Dashboard';
                                 <?php foreach ($doneGigs as $gig): ?>
                                     <tr>
                                         <td data-label="Production">
-                                            <div style="font-weight: 800; color: #0f172a;"><?php echo htmlspecialchars($gig['title']); ?></div>
+                                            <div style="font-weight: 700; color: #0f172a;"><?php echo htmlspecialchars($gig['title']); ?></div>
                                             <div style="font-size: 0.78rem; color: #64748b; margin-top: 2px;">
                                                 Client: <?php echo htmlspecialchars($gig['client']); ?> &bull; Ref: <?php echo htmlspecialchars($gig['id']); ?>
                                             </div>
@@ -2288,7 +2288,7 @@ $displayBreadcrumb = $sectionTitles[$activeSection] ?? 'Dashboard';
                                         </td>
                                         <td data-label="Role &amp; Rate">
                                             <div style="font-weight: 700; color: #0f172a;"><?php echo htmlspecialchars($gig['role']); ?></div>
-                                            <div style="font-size: 0.76rem; color: #15803d; font-weight: 800;"><?php echo htmlspecialchars($gig['day_rate'] ?? 'Per SOW'); ?></div>
+                                            <div style="font-size: 0.76rem; color: #15803d; font-weight: 700;"><?php echo htmlspecialchars($gig['day_rate'] ?? 'Per SOW'); ?></div>
                                         </td>
                                         <td data-label="Deliverables">
                                             <div style="font-size: 0.84rem; font-weight: 700; color: #0f172a;">
@@ -2311,7 +2311,7 @@ $displayBreadcrumb = $sectionTitles[$activeSection] ?? 'Dashboard';
                                             <?php endif; ?>
                                         </td>
                                         <td data-label="Status">
-                                            <span style="font-size: 0.72rem; font-weight: 800; background: #dcfce7; color: #15803d; padding: 3px 9px; border-radius: 20px; display: inline-flex; align-items: center; gap: 4px;">
+                                            <span style="font-size: 0.72rem; font-weight: 700; background: #dcfce7; color: #15803d; padding: 3px 9px; border-radius: 20px; display: inline-flex; align-items: center; gap: 4px;">
                                                 <i class="fa-solid fa-circle-check"></i> Wrapped
                                             </span>
                                         </td>
@@ -2343,7 +2343,7 @@ $displayBreadcrumb = $sectionTitles[$activeSection] ?? 'Dashboard';
                     <!-- Calendar Month Nav -->
                     <div class="calendar-header-nav">
                         <div style="display: flex; align-items: center; gap: 12px;">
-                            <h2 style="font-size: 1.35rem; font-weight: 800; color: #0f172a; letter-spacing: -0.3px;">
+                            <h2 style="font-size: 1.35rem; font-weight: 700; color: #0f172a; letter-spacing: -0.3px;">
                                 <?php echo $monthName; ?>
                             </h2>
                             <span style="font-size: 0.76rem; font-weight: 700; background: #fee2e2; color: var(--accent-red); padding: 3px 8px; border-radius: 6px;">
@@ -2457,11 +2457,11 @@ $displayBreadcrumb = $sectionTitles[$activeSection] ?? 'Dashboard';
                             <?php foreach ($allVendorGigs as $gig): ?>
                                 <tr>
                                     <td data-label="Production">
-                                        <div style="font-weight: 800; color: #0f172a;"><?php echo htmlspecialchars($gig['title']); ?></div>
+                                        <div style="font-weight: 700; color: #0f172a;"><?php echo htmlspecialchars($gig['title']); ?></div>
                                         <div style="font-size: 0.76rem; color: #64748b;">Ref: <?php echo htmlspecialchars($gig['id']); ?> &bull; <?php echo htmlspecialchars($gig['location']); ?></div>
                                     </td>
                                     <td data-label="Call Time">
-                                        <div style="font-weight: 800; color: var(--accent-red);"><?php echo htmlspecialchars($gig['call_time']); ?></div>
+                                        <div style="font-weight: 700; color: var(--accent-red);"><?php echo htmlspecialchars($gig['call_time']); ?></div>
                                         <div style="font-size: 0.74rem; color: #0f172a;"><?php echo date('M d, Y', strtotime($gig['shoot_date'])); ?></div>
                                     </td>
                                     <td data-label="Director">
@@ -2622,7 +2622,7 @@ $displayBreadcrumb = $sectionTitles[$activeSection] ?? 'Dashboard';
                             </div>
                             <h2 class="card-title-text">Digital Document Vault</h2>
                         </div>
-                        <span style="font-size: 0.8rem; font-weight: 800; background: #dcfce7; color: #15803d; padding: 4px 10px; border-radius: 8px;">
+                        <span style="font-size: 0.8rem; font-weight: 700; background: #dcfce7; color: #15803d; padding: 4px 10px; border-radius: 8px;">
                             <i class="fa-solid fa-circle-check"></i> Legally Binding Execution
                         </span>
                     </div>
@@ -2633,7 +2633,7 @@ $displayBreadcrumb = $sectionTitles[$activeSection] ?? 'Dashboard';
                                 <i class="fa-solid fa-file-pdf"></i>
                             </div>
                             <div>
-                                <div style="font-weight: 800; font-size: 1rem; color: #0f172a;">Master Services Agreement &amp; Non-Disclosure Agreement</div>
+                                <div style="font-weight: 700; font-size: 1rem; color: #0f172a;">Master Services Agreement &amp; Non-Disclosure Agreement</div>
                                 <div style="font-size: 0.8rem; color: #64748b; margin-top: 2px;">Signed on <?php echo htmlspecialchars($sigDate); ?> &bull; Ref: <?php echo htmlspecialchars($refCode); ?></div>
                             </div>
                         </div>
@@ -2666,7 +2666,7 @@ $displayBreadcrumb = $sectionTitles[$activeSection] ?? 'Dashboard';
                             <i class="fa-solid fa-shield-check"></i>
                         </div>
                         <div>
-                            <h2 style="font-weight: 800; color: #15803d; font-size: 1.05rem; margin-bottom: 4px;">Bank-Grade Direct Deposit via Stripe Connect</h2>
+                            <h2 style="font-weight: 700; color: #15803d; font-size: 1.05rem; margin-bottom: 4px;">Bank-Grade Direct Deposit via Stripe Connect</h2>
                             <p style="color: #166534; font-size: 0.88rem; line-height: 1.6;">
                                 No bank account or routing numbers are stored directly on our servers. When projects and Statements of Work (SOWs) are wrapped, Falhen Media initiates a tokenized direct deposit payout via <strong>Stripe Connect</strong> with 256-bit encryption.
                             </p>
@@ -2775,7 +2775,7 @@ $displayBreadcrumb = $sectionTitles[$activeSection] ?? 'Dashboard';
             <button type="button" class="modal-close-btn" onclick="closeUploadModal()" aria-label="Close modal">
                 <i class="fa-solid fa-xmark"></i>
             </button>
-            <h2 style="font-size: 1.35rem; font-weight: 800; color: #0f172a; margin-bottom: 6px;">
+            <h2 style="font-size: 1.35rem; font-weight: 700; color: #0f172a; margin-bottom: 6px;">
                 Upload Signed Call Sheet / Wrap Report
             </h2>
             <p id="modalGigTitleDesc" style="font-size: 0.86rem; color: #64748b; margin-bottom: 20px;">
@@ -2809,7 +2809,7 @@ $displayBreadcrumb = $sectionTitles[$activeSection] ?? 'Dashboard';
             <button type="button" class="modal-close-btn" onclick="closeAvailabilityModal()" aria-label="Close modal">
                 <i class="fa-solid fa-xmark"></i>
             </button>
-            <h2 style="font-size: 1.35rem; font-weight: 800; color: #0f172a; margin-bottom: 6px;">
+            <h2 style="font-size: 1.35rem; font-weight: 700; color: #0f172a; margin-bottom: 6px;">
                 Set Calendar Availability
             </h2>
             <p style="font-size: 0.86rem; color: #64748b; margin-bottom: 20px;">
@@ -2913,7 +2913,7 @@ $displayBreadcrumb = $sectionTitles[$activeSection] ?? 'Dashboard';
                     html += `
                         <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 14px; display: flex; justify-content: space-between; align-items: center;">
                             <div>
-                                <div style="font-weight: 800; font-size: 0.95rem; color: #0f172a;">${g.title}</div>
+                                <div style="font-weight: 700; font-size: 0.95rem; color: #0f172a;">${g.title}</div>
                                 <div style="font-size: 0.8rem; color: #64748b; margin-top: 2px;">Call Time: <strong style="color: #dc2626;">${g.call_time}</strong> &bull; Location: ${g.location}</div>
                             </div>
                             <a href="/download_call_sheet.php?gig_id=${encodeURIComponent(g.id)}" target="_blank" class="btn-save-primary" style="padding: 6px 12px; font-size: 0.78rem;">

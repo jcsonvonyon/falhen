@@ -145,7 +145,7 @@ if (!preg_match('/^[₦$€£]/u', $totalEarnings)) $totalEarnings = $sym . $tot
         }
         .breakdown-title {
             font-size: 0.95rem;
-            font-weight: 800;
+            font-weight: 700;
             color: #0f172a;
             margin-bottom: 14px;
             border-bottom: 1px solid #e2e8f0;
@@ -163,7 +163,7 @@ if (!preg_match('/^[₦$€£]/u', $totalEarnings)) $totalEarnings = $sym . $tot
             border-bottom: none;
             padding-top: 12px;
             margin-top: 6px;
-            font-weight: 800;
+            font-weight: 700;
             font-size: 1rem;
             color: #166534;
         }
@@ -272,7 +272,7 @@ if (!preg_match('/^[₦$€£]/u', $totalEarnings)) $totalEarnings = $sym . $tot
 
         <div style="margin-top: 40px; display: flex; justify-content: space-between; align-items: flex-end; padding-top: 20px; border-top: 2px dashed #cbd5e1;">
             <div>
-                <div style="font-weight: 800; font-size: 0.95rem; color: #0f172a;"><?php echo htmlspecialchars($issuerName); ?></div>
+                <div style="font-weight: 700; font-size: 0.95rem; color: #0f172a;"><?php echo htmlspecialchars($issuerName); ?></div>
                 <div style="font-size: 0.82rem; color: #64748b;">Human Resources Lead, Falhen Media</div>
             </div>
             <div style="text-align: right;">
@@ -281,7 +281,7 @@ if (!preg_match('/^[₦$€£]/u', $totalEarnings)) $totalEarnings = $sym . $tot
                         <img src="<?php echo htmlspecialchars($offerInfo['signature_data']); ?>" alt="Candidate Signature" style="max-height: 45px; display: block;">
                     </div>
                 <?php endif; ?>
-                <div style="font-weight: 800; font-size: 0.95rem; color: #166534;"><i class="fa-solid fa-certificate"></i> Verified Studio Offer</div>
+                <div style="font-weight: 700; font-size: 0.95rem; color: #166534;"><i class="fa-solid fa-certificate"></i> Verified Studio Offer</div>
                 <div style="font-size: 0.82rem; color: #64748b;">Response Deadline: <?php echo htmlspecialchars(date('F j, Y', strtotime($expiryDate))); ?></div>
             </div>
         </div>

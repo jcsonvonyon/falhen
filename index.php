@@ -298,7 +298,7 @@ $heroVideoUrl = 'https://www.youtube.com/embed/' . $heroYtId;
 <section class="section" id="testimonials" style="background: #09090b; border-top: 1px solid rgba(255, 255, 255, 0.08);">
     <div class="container">
         <div class="section-title-wrapper" style="text-align: center; margin-bottom: 50px;">
-            <h2 class="section-title" style="font-size: 2.75rem; font-weight: 800;">What Our Clients <span style="color: #dc2626;">Say</span></h2>
+            <h2 class="section-title" style="font-size: 2.75rem; font-weight: 700;">What Our Clients <span style="color: #dc2626;">Say</span></h2>
             <p class="section-subtitle" style="max-width: 620px; margin: 0 auto; color: var(--text-muted); font-size: 1.05rem;">Don't take our word for it — here's what the brands we've worked with have to say.</p>
         </div>
 
@@ -405,7 +405,7 @@ $btsItems = $settings['bts_items'] ?? [
     <div class="container">
         <!-- Section Header -->
         <div class="section-title-wrapper" style="text-align: center; margin-bottom: 50px;">
-            <h2 class="section-title" style="font-size: 2.75rem; font-weight: 800;">Book a <span style="color: #dc2626;">Discovery Call</span></h2>
+            <h2 class="section-title" style="font-size: 2.75rem; font-weight: 700;">Book a <span style="color: #dc2626;">Discovery Call</span></h2>
             <p class="section-subtitle" style="max-width: 620px; margin: 0 auto; color: var(--text-muted); font-size: 1.05rem;">30 minutes. No sales pitch. Just a candid conversation about your project.</p>
         </div>
 

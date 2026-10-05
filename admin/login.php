@@ -574,7 +574,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         /* Headings */
         .section-title {
             font-size: 1.7rem;
-            font-weight: 800;
+            font-weight: 700;
             color: #ffffff;
             letter-spacing: -0.5px;
             margin: 0 0 6px 0;
@@ -1281,7 +1281,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                         <div class="form-group">
                             <label for="activation_code" class="form-label" style="text-align: center; width: 100%; font-weight: 700;">Enter 6-Digit Activation Code</label>
-                            <input type="text" id="activation_code" name="activation_code" class="form-input" placeholder="e.g. 849201" maxlength="6" pattern="[0-9]{6}" required style="text-align: center; letter-spacing: 8px; font-size: 1.4rem; font-weight: 800; font-family: monospace;" autofocus>
+                            <input type="text" id="activation_code" name="activation_code" class="form-input" placeholder="e.g. 849201" maxlength="6" pattern="[0-9]{6}" required style="text-align: center; letter-spacing: 8px; font-size: 1.4rem; font-weight: 700; font-family: monospace;" autofocus>
                         </div>
 
                         <button type="submit" class="btn-submit" style="margin-top: 12px; background: #dc2626;">

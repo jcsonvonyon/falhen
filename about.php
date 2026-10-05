@@ -130,10 +130,11 @@ foreach ($rawMembers as $m) {
         }
 
         .about-hero-title {
-            font-size: 4.2rem;
-            font-weight: 700;
+            font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+            font-size: 60px;
+            font-weight: 800;
             color: #ffffff;
-            letter-spacing: -1.5px;
+            letter-spacing: -1px;
             margin: 4px 0 14px 0;
             line-height: 1.1;
         }
