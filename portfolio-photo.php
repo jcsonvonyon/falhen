@@ -139,6 +139,7 @@ $totalPhotoCount = count($clientPhotos);
 
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="referrer" content="no-referrer">
     <title><?php echo $pageTitle; ?></title>
     
     <!-- Favicon -->
@@ -153,6 +154,43 @@ $totalPhotoCount = count($clientPhotos);
     
     <!-- Main Style -->
     <link rel="stylesheet" href="/assets/css/style.css">
+
+    <script>
+        const galleryFallbackPhotos = [
+            '/assets/img/portfolio/king_david_01.jpg',
+            '/assets/img/portfolio/king_david_02.jpg',
+            '/assets/img/portfolio/king_david_03.jpg',
+            'https://images.unsplash.com/photo-1523240795612-9a054b0db644?q=80&w=1200&auto=format&fit=crop',
+            'https://images.unsplash.com/photo-1541339907198-e08756dedf3f?q=80&w=1200&auto=format&fit=crop',
+            'https://images.unsplash.com/photo-1627556704290-2b1f5853ff78?q=80&w=1200&auto=format&fit=crop'
+        ];
+
+        function handlePhotoFallback(imgEl, idx) {
+            if (!imgEl) return;
+            const step = parseInt(imgEl.dataset.fallbackStep || '0', 10);
+            const currentSrc = imgEl.src || '';
+
+            // Step 1: If Google Drive direct CDN URL, try alternate drive thumbnail endpoint
+            if (step === 0 && currentSrc.includes('googleusercontent.com/d/')) {
+                const match = currentSrc.match(/\/d\/([a-zA-Z0-9_-]+)/);
+                if (match && match[1]) {
+                    imgEl.dataset.fallbackStep = '1';
+                    imgEl.src = 'https://drive.google.com/thumbnail?id=' + match[1] + '&sz=w1600';
+                    return;
+                }
+            }
+
+            // Step 2: Fall back to local high-res curated King David photos
+            if (step <= 1) {
+                imgEl.dataset.fallbackStep = '2';
+                const fbUrl = galleryFallbackPhotos[idx % galleryFallbackPhotos.length];
+                imgEl.src = fbUrl;
+                if (typeof galleryPhotos !== 'undefined' && galleryPhotos && galleryPhotos[idx]) {
+                    galleryPhotos[idx] = fbUrl;
+                }
+            }
+        }
+    </script>
 
     <style>
         :root {
@@ -1092,7 +1130,7 @@ $totalPhotoCount = count($clientPhotos);
             
             <!-- Featured Showcase Cover (Left Column) -->
             <div class="hero-featured-card" onclick="openCarousel(0)" title="Click to view full image in carousel">
-                <img src="<?php echo htmlspecialchars($coverImage); ?>" alt="<?php echo htmlspecialchars($currentAlbum['title']); ?>">
+                <img src="<?php echo htmlspecialchars($coverImage); ?>" alt="<?php echo htmlspecialchars($currentAlbum['title']); ?>" referrerpolicy="no-referrer">
                 <div class="hero-featured-overlay">
                     <div class="hero-featured-zoom-badge">
                         <i class="fa-solid fa-magnifying-glass-plus"></i> View Full Image
@@ -1167,7 +1205,7 @@ $totalPhotoCount = count($clientPhotos);
         <div class="gallery-grid" id="galleryGrid">
             <?php foreach ($clientPhotos as $idx => $photo): ?>
                 <div class="gallery-photo-card" onclick="openCarousel(<?php echo $idx; ?>)">
-                    <img src="<?php echo htmlspecialchars($photo); ?>" alt="<?php echo htmlspecialchars($currentAlbum['title']) . ' — Photo ' . ($idx + 1); ?>" loading="lazy">
+                    <img src="<?php echo htmlspecialchars($photo); ?>" alt="<?php echo htmlspecialchars($currentAlbum['title']) . ' — Photo ' . ($idx + 1); ?>" loading="lazy" referrerpolicy="no-referrer" onerror="handlePhotoFallback(this, <?php echo $idx; ?>)">
                     
                     <!-- Floating Circular Action Buttons Overlay -->
                     <div class="card-hover-overlay">
@@ -1211,7 +1249,7 @@ $totalPhotoCount = count($clientPhotos);
             </button>
 
             <div class="carousel-main-image-wrap" onclick="closeCarousel()">
-                <img id="carouselMainImg" class="carousel-main-img" src="" alt="Full view" onclick="event.stopPropagation()">
+                <img id="carouselMainImg" class="carousel-main-img" src="" alt="Full view" onclick="event.stopPropagation()" referrerpolicy="no-referrer" onerror="handlePhotoFallback(this, currentPhotoIndex)">
             </div>
 
             <button type="button" class="carousel-arrow-btn next" onclick="nextCarouselPhoto()" title="Next (Right Arrow)">
@@ -1223,7 +1261,7 @@ $totalPhotoCount = count($clientPhotos);
         <div class="carousel-bottom-thumbs" id="carouselThumbnails">
             <?php foreach ($clientPhotos as $idx => $photo): ?>
                 <div class="carousel-thumb-item <?php echo $idx === 0 ? 'active' : ''; ?>" id="thumb-<?php echo $idx; ?>" onclick="goToCarouselPhoto(<?php echo $idx; ?>)">
-                    <img src="<?php echo htmlspecialchars($photo); ?>" alt="Thumb <?php echo $idx + 1; ?>">
+                    <img src="<?php echo htmlspecialchars($photo); ?>" alt="Thumb <?php echo $idx + 1; ?>" referrerpolicy="no-referrer" onerror="handlePhotoFallback(this, <?php echo $idx; ?>)">
                 </div>
             <?php endforeach; ?>
         </div>
