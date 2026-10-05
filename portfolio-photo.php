@@ -39,6 +39,33 @@ $isClientLoggedIn = !empty($_SESSION['registered_client_email']) || !empty($_COO
 $clientEmail = $_SESSION['registered_client_email'] ?? $_COOKIE['falhen_client_email'] ?? '';
 $clientName = $_SESSION['registered_client_name'] ?? '';
 
+// Related albums for footer "More [Category] Albums"
+$albumCategory = trim($currentAlbum['category'] ?? 'Portrait');
+if (empty($albumCategory)) $albumCategory = 'Portrait';
+$currentAlbumId = (int)($currentAlbum['id'] ?? 0);
+$relatedAlbums = [];
+
+// 1. Same category first (photo only)
+foreach ($masterPortfolioItems as $mIt) {
+    if ((int)($mIt['id'] ?? 0) === $currentAlbumId) continue;
+    if (($mIt['media_type'] ?? 'photo') !== 'photo' && isset($mIt['media_type'])) continue;
+    if (strcasecmp(trim($mIt['category'] ?? ''), $albumCategory) === 0) {
+        $relatedAlbums[] = $mIt;
+    }
+}
+
+// 2. If none in exact same category, fallback to other photo albums and adjust title
+$sectionHeading = "More {$albumCategory} Albums";
+if (empty($relatedAlbums)) {
+    $sectionHeading = "More Albums";
+    foreach ($masterPortfolioItems as $mIt) {
+        if ((int)($mIt['id'] ?? 0) === $currentAlbumId) continue;
+        if (($mIt['media_type'] ?? 'photo') !== 'photo' && isset($mIt['media_type'])) continue;
+        $relatedAlbums[] = $mIt;
+        if (count($relatedAlbums) >= 3) break;
+    }
+}
+
 // Curate client-specific gallery photo sets
 $clientPhotos = [];
 
@@ -914,6 +941,264 @@ $totalPhotoCount = count($clientPhotos);
                 align-items: flex-end;
                 padding-bottom: 14px;
             }
+        /* Portfolio Gallery Footer Section */
+        .gallery-footer-section {
+            width: 100%;
+            background: #030305;
+            padding: 20px 0 70px;
+        }
+
+        .gallery-footer-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 32px;
+            box-sizing: border-box;
+        }
+
+        /* 1. "Love what you see?" CTA Card matching Readdy mockup */
+        .gallery-cta-banner {
+            background: #0d0f17;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 18px;
+            padding: 22px 28px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 24px;
+            margin-bottom: 48px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        .gallery-cta-left {
+            display: flex;
+            align-items: center;
+            gap: 18px;
+        }
+
+        .gallery-cta-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            background: rgba(220, 38, 38, 0.15);
+            border: 1px solid rgba(220, 38, 38, 0.35);
+            color: #ef4444;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            flex-shrink: 0;
+        }
+
+        .gallery-cta-title {
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: #ffffff;
+            margin: 0 0 4px 0;
+        }
+
+        .gallery-cta-sub {
+            font-size: 0.88rem;
+            color: #94a3b8;
+            margin: 0;
+        }
+
+        .gallery-cta-actions {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-shrink: 0;
+        }
+
+        .btn-cta-share {
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            color: #ffffff;
+            padding: 9px 18px;
+            border-radius: 10px;
+            font-size: 0.88rem;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-cta-share:hover {
+            background: rgba(255, 255, 255, 0.12);
+            border-color: rgba(255, 255, 255, 0.25);
+            color: #ffffff;
+        }
+
+        .btn-cta-book {
+            background: var(--brand-red, #dc2626);
+            color: #ffffff;
+            border: none;
+            padding: 9px 20px;
+            border-radius: 10px;
+            font-size: 0.88rem;
+            font-weight: 700;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 14px rgba(220, 38, 38, 0.35);
+            transition: all 0.2s ease;
+        }
+
+        .btn-cta-book:hover {
+            background: var(--brand-red-hover, #ef4444);
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(220, 38, 38, 0.5);
+            color: #ffffff;
+        }
+
+        /* 2. "More [Category] Albums" Section */
+        .gallery-related-section {
+            margin-bottom: 50px;
+        }
+
+        .gallery-related-heading {
+            font-size: 1.35rem;
+            font-weight: 700;
+            color: #ffffff;
+            margin: 0 0 22px 0;
+            letter-spacing: -0.3px;
+        }
+
+        .gallery-related-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 360px));
+            gap: 26px;
+        }
+
+        .related-album-card {
+            text-decoration: none;
+            display: block;
+        }
+
+        .related-album-thumb {
+            position: relative;
+            border-radius: 16px;
+            overflow: hidden;
+            background: #0b0b0f;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            aspect-ratio: 4 / 3;
+            margin-bottom: 12px;
+            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.3s, box-shadow 0.3s;
+        }
+
+        .related-album-card:hover .related-album-thumb {
+            transform: translateY(-3px);
+            border-color: rgba(255, 255, 255, 0.25);
+            box-shadow: 0 16px 36px rgba(0, 0, 0, 0.7);
+        }
+
+        .related-album-thumb img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+            transition: transform 0.4s ease;
+        }
+
+        .related-album-card:hover .related-album-thumb img {
+            transform: scale(1.04);
+        }
+
+        .related-album-overlay {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(to top, rgba(0,0,0,0.65) 0%, transparent 60%);
+            display: flex;
+            align-items: flex-end;
+            padding: 14px;
+            opacity: 0;
+            transition: opacity 0.25s ease;
+        }
+
+        .related-album-card:hover .related-album-overlay {
+            opacity: 1;
+        }
+
+        .related-album-badge {
+            background: rgba(0,0,0,0.7);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255,255,255,0.2);
+            color: #ffffff;
+            font-size: 0.78rem;
+            font-weight: 600;
+            padding: 5px 12px;
+            border-radius: 14px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .related-album-title {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: #f4f4f5;
+            margin: 0;
+            line-height: 1.4;
+            transition: color 0.2s;
+        }
+
+        .related-album-card:hover .related-album-title {
+            color: #ffffff;
+        }
+
+        /* 3. Bottom Navigation Bar */
+        .gallery-bottom-nav {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding-top: 26px;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .btn-bottom-back {
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            color: #ffffff;
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-size: 0.88rem;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s ease;
+        }
+
+        .btn-bottom-back:hover {
+            background: rgba(255, 255, 255, 0.12);
+            border-color: rgba(255, 255, 255, 0.25);
+            color: #ffffff;
+        }
+
+        .btn-bottom-book {
+            background: var(--brand-red, #dc2626);
+            color: #ffffff;
+            border: none;
+            padding: 10px 22px;
+            border-radius: 10px;
+            font-size: 0.88rem;
+            font-weight: 700;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 14px rgba(220, 38, 38, 0.35);
+            transition: all 0.2s ease;
+        }
+
+        .btn-bottom-book:hover {
+            background: var(--brand-red-hover, #ef4444);
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(220, 38, 38, 0.5);
+            color: #ffffff;
         }
 
         /* Client Verification / Download Modal matching Readdy mockup */
@@ -1220,6 +1505,64 @@ $totalPhotoCount = count($clientPhotos);
             <?php endforeach; ?>
         </div>
     </main>
+
+    <!-- Portfolio Gallery Footer Section -->
+    <footer class="gallery-footer-section">
+        <div class="gallery-footer-container">
+            
+            <!-- 1. "Love what you see?" CTA Card -->
+            <div class="gallery-cta-banner">
+                <div class="gallery-cta-left">
+                    <div class="gallery-cta-icon">
+                        <i class="fa-solid fa-camera"></i>
+                    </div>
+                    <div class="gallery-cta-text">
+                        <h3 class="gallery-cta-title">Love what you see?</h3>
+                        <p class="gallery-cta-sub">Book your own session &mdash; portraits, weddings, events, corporate.</p>
+                    </div>
+                </div>
+                <div class="gallery-cta-actions">
+                    <button type="button" class="btn-cta-share" onclick="shareGalleryPage()">
+                        <i class="fa-solid fa-share-nodes"></i> <span>Share</span>
+                    </button>
+                    <a href="/contact.php" class="btn-cta-book">
+                        <i class="fa-regular fa-calendar-check"></i> Book a Shoot
+                    </a>
+                </div>
+            </div>
+
+            <!-- 2. "More [Category] Albums" Section -->
+            <?php if (!empty($relatedAlbums)): ?>
+                <section class="gallery-related-section">
+                    <h2 class="gallery-related-heading"><?php echo htmlspecialchars($sectionHeading); ?></h2>
+                    <div class="gallery-related-grid">
+                        <?php foreach ($relatedAlbums as $rel): ?>
+                            <a href="/portfolio-photo.php?id=<?php echo (int)$rel['id']; ?>" class="related-album-card">
+                                <div class="related-album-thumb">
+                                    <img src="<?php echo htmlspecialchars(getCloudinaryUrl($rel['cover'] ?? $rel['image'] ?? '')); ?>" alt="<?php echo htmlspecialchars($rel['title']); ?>" loading="lazy" referrerpolicy="no-referrer">
+                                    <div class="related-album-overlay">
+                                        <span class="related-album-badge"><i class="fa-regular fa-images"></i> View Album</span>
+                                    </div>
+                                </div>
+                                <h3 class="related-album-title"><?php echo htmlspecialchars($rel['title']); ?></h3>
+                            </a>
+                        <?php endforeach; ?>
+                    </div>
+                </section>
+            <?php endif; ?>
+
+            <!-- 3. Bottom Navigation Bar -->
+            <div class="gallery-bottom-nav">
+                <a href="/portfolio.php?tab=photo" class="btn-bottom-back">
+                    <i class="fa-solid fa-arrow-left"></i> Back to Portfolio
+                </a>
+                <a href="/contact.php" class="btn-bottom-book">
+                    <i class="fa-regular fa-calendar-check"></i> Book a Shoot
+                </a>
+            </div>
+
+        </div>
+    </footer>
 
     <!-- Fullscreen Carousel / Lightbox Viewer Modal -->
     <div id="carouselModal" class="carousel-modal" role="dialog" aria-modal="true">
