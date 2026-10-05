@@ -500,6 +500,15 @@ ul {
   margin-bottom: 24px;
 }
 
+.stories-heading {
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-size: 60px;
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -1.5px;
+  color: #ffffff;
+}
+
 .hero-gradient-text {
   color: #dc2626 !important;
   background: none !important;
@@ -3355,6 +3364,10 @@ textarea.form-control {
 
   .hero-title {
     font-size: 2.8rem;
+  }
+
+  .stories-heading {
+    font-size: 2.4rem !important;
   }
 
   .hero-subtitle {
