@@ -547,11 +547,11 @@ $totalPhotoCount = count($clientPhotos);
             width: 48px;
             height: 48px;
             border-radius: 50%;
-            border: 1px solid rgba(255, 255, 255, 0.25);
+            border: none;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.05rem;
+            font-size: 1.15rem;
             cursor: pointer;
             transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
             color: #ffffff;
@@ -559,22 +559,27 @@ $totalPhotoCount = count($clientPhotos);
         }
 
         .overlay-circle-btn.zoom-btn {
-            background: rgba(37, 99, 235, 0.88);
-            backdrop-filter: blur(8px);
+            background: rgba(255, 255, 255, 0.32);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.22);
+            color: #ffffff;
         }
 
         .overlay-circle-btn.zoom-btn:hover {
-            background: #1d4ed8;
-            transform: scale(1.14);
+            background: rgba(255, 255, 255, 0.46);
+            transform: scale(1.12);
         }
 
         .overlay-circle-btn.download-btn {
-            background: var(--brand-green);
+            background: #16a34a;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: #ffffff;
         }
 
         .overlay-circle-btn.download-btn:hover {
-            background: var(--brand-green-hover);
-            transform: scale(1.14);
+            background: #15803d;
+            transform: scale(1.12);
         }
 
         /* Carousel / Lightbox Viewer Modal */
@@ -977,7 +982,7 @@ $totalPhotoCount = count($clientPhotos);
                             <i class="fa-solid fa-magnifying-glass-plus"></i>
                         </button>
                         <button type="button" class="overlay-circle-btn download-btn" title="Download Photo" onclick="event.stopPropagation(); downloadSinglePhoto('<?php echo htmlspecialchars($photo); ?>', <?php echo $idx + 1; ?>)">
-                            <i class="fa-solid fa-arrow-down-to-bracket"></i>
+                            <i class="fa-solid fa-download"></i>
                         </button>
                     </div>
                 </div>

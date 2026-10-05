@@ -18,3 +18,4 @@ Thumbs.db
 # Temporary storage / uploads
 scratch/
 tmp/
+backups/*gdrive_cache*
