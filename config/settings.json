@@ -1190,6 +1190,19 @@
     ],
     "attendance_logs": [
         {
+            "id": 15,
+            "username": "admin",
+            "full_name": "Oluwatosin Ligali",
+            "date": "2026-10-05",
+            "clock_in": "03:14 PM",
+            "clock_out": null,
+            "break_start": null,
+            "break_end": null,
+            "duration": "In Progress",
+            "status": "Clocked In",
+            "work_state": "working"
+        },
+        {
             "id": 14,
             "username": "admin",
             "full_name": "Oluwatosin Ligali",

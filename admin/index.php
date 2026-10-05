@@ -15386,12 +15386,11 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                 <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.88rem;">
                                     <thead>
                                         <tr style="background: #f8fafc; border-bottom: 1px solid #e2e8f0; color: #64748b; font-weight: 700; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.5px;">
-                                            <th style="padding: 14px 20px;">Ref Code</th>
                                             <th style="padding: 14px 20px;">Vendor / Talent</th>
                                             <th style="padding: 14px 20px;">Role</th>
                                             <th style="padding: 14px 20px;">Payout &amp; Bank</th>
                                             <th style="padding: 14px 20px;">Gigs Assigned</th>
-                                            <th style="padding: 14px 20px;">Status</th>
+                                            <th style="padding: 14px 14px;">Status</th>
                                             <th style="padding: 14px 20px; text-align: right;">Actions</th>
                                         </tr>
                                     </thead>
@@ -15423,19 +15422,22 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                         ?>
                                         <tr style="border-bottom: 1px solid #f1f5f9; transition: background 0.15s ease;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
                                             <td style="padding: 14px 20px;">
-                                                <span style="font-family: monospace; font-size: 0.82rem; font-weight: 700; color: #0f172a; background: #f1f5f9; padding: 4px 8px; border-radius: 6px; border: 1px solid #e2e8f0; display: inline-block;">
-                                                    <?php echo htmlspecialchars($vRef); ?>
-                                                </span>
-                                            </td>
-                                            <td style="padding: 14px 20px;">
                                                 <div style="font-weight: 700; color: #0f172a; font-size: 0.92rem; display: flex; align-items: center; gap: 6px;">
                                                     <?php echo htmlspecialchars($vName); ?>
                                                     <?php if (!empty($vnd['id_document_url'])): ?>
                                                         <i class="fa-solid fa-file-circle-check" style="color: #10b981; font-size: 0.8rem;" title="ID Document Verified"></i>
                                                     <?php endif; ?>
                                                 </div>
-                                                <div style="font-size: 0.78rem; color: #64748b;">
-                                                    <?php echo htmlspecialchars($vEmail); ?> &bull; <?php echo htmlspecialchars($vPhone); ?>
+                                                <div style="display: flex; align-items: center; gap: 6px; margin-top: 3px; font-size: 0.78rem; color: #64748b; flex-wrap: wrap;">
+                                                    <span style="font-family: monospace; font-size: 0.74rem; font-weight: 700; color: #475569; background: #f1f5f9; padding: 1px 6px; border-radius: 4px; border: 1px solid #e2e8f0; white-space: nowrap;">
+                                                        <?php echo htmlspecialchars($vRef); ?>
+                                                    </span>
+                                                    <span>&bull;</span>
+                                                    <span><?php echo htmlspecialchars($vEmail); ?></span>
+                                                    <?php if (!empty($vPhone)): ?>
+                                                        <span>&bull;</span>
+                                                        <span><?php echo htmlspecialchars($vPhone); ?></span>
+                                                    <?php endif; ?>
                                                 </div>
                                             </td>
                                             <td style="padding: 14px 20px;">
@@ -15462,12 +15464,12 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                                     </button>
                                                 <?php endif; ?>
                                             </td>
-                                            <td style="padding: 14px 20px;">
+                                            <td style="padding: 14px 14px;">
                                                 <form method="POST" action="/admin/index.php?section=vendors" style="display: inline-block;">
                                                     <input type="hidden" name="action" value="update_vendor_status">
                                                     <input type="hidden" name="vendor_id" value="<?php echo htmlspecialchars($vId); ?>">
                                                     <input type="hidden" name="redirect_tab" value="directory">
-                                                    <select name="status" onchange="this.form.submit()" style="padding: 4px 8px; border-radius: 6px; font-size: 0.78rem; font-weight: 700; border: 1px solid #cbd5e1; background: #ffffff; cursor: pointer; color: <?php echo ($vStatus === 'active') ? '#15803d' : (($vStatus === 'suspended') ? '#b91c1c' : '#b45309'); ?>;">
+                                                    <select name="status" onchange="this.form.submit()" style="width: 100px; padding: 4px 6px; border-radius: 6px; font-size: 0.78rem; font-weight: 700; border: 1px solid #cbd5e1; background: #ffffff; cursor: pointer; color: <?php echo ($vStatus === 'active') ? '#15803d' : (($vStatus === 'suspended') ? '#b91c1c' : '#b45309'); ?>;">
                                                         <option value="active" <?php echo ($vStatus === 'active') ? 'selected' : ''; ?>>🟢 Active</option>
                                                         <option value="under_review" <?php echo ($vStatus === 'under_review') ? 'selected' : ''; ?>>🟡 Under Review</option>
                                                         <option value="completed" <?php echo ($vStatus === 'completed') ? 'selected' : ''; ?>>🔵 Completed</option>
@@ -15479,7 +15481,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                                 <div style="display: inline-flex; gap: 6px; align-items: center;">
                                                     <!-- View Profile / Dossier -->
                                                     <button type="button" onclick="viewVendorDossier(<?php echo $vndJson; ?>)" title="View Full Talent Dossier &amp; Legal Records" style="padding: 6px 10px; background: #f1f5f9; color: #334155; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.8rem; font-weight: 700; cursor: pointer;">
-                                                        <i class="fa-solid fa-eye"></i> View
+                                                        <i class="fa-solid fa-eye"></i>
                                                     </button>
                                                     <!-- Edit Details -->
                                                     <button type="button" onclick="editVendorDetails(<?php echo $vndJson; ?>)" title="Edit Talent Details" style="padding: 6px 10px; background: #f8fafc; color: #0f172a; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.8rem; font-weight: 700; cursor: pointer;">
@@ -15575,7 +15577,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                             <th style="padding: 14px 20px;">Date &amp; Call Time</th>
                                             <th style="padding: 14px 20px;">Assigned Talent</th>
                                             <th style="padding: 14px 20px;">Day Rate</th>
-                                            <th style="padding: 14px 20px;">Status</th>
+                                            <th style="padding: 14px 14px;">Status</th>
                                             <th style="padding: 14px 20px;">Call Sheet &amp; Deliverables</th>
                                             <th style="padding: 14px 20px; text-align: right;">Actions</th>
                                         </tr>
@@ -15653,12 +15655,12 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                             <td style="padding: 14px 20px; font-weight: 700; color: #0f172a; white-space: nowrap;">
                                                 <?php echo htmlspecialchars($gRate); ?>
                                             </td>
-                                            <td style="padding: 14px 20px;">
+                                            <td style="padding: 14px 14px;">
                                                 <form method="POST" action="/admin/index.php?section=vendors" style="display: inline-block;">
                                                     <input type="hidden" name="action" value="update_gig_status">
                                                     <input type="hidden" name="gig_id" value="<?php echo htmlspecialchars($gId); ?>">
                                                     <input type="hidden" name="redirect_tab" value="gigs">
-                                                    <select name="status" onchange="this.form.submit()" style="padding: 4px 8px; border-radius: 6px; font-size: 0.78rem; font-weight: 700; border: 1px solid #cbd5e1; background: #ffffff; cursor: pointer; color: <?php echo ($gStatus === 'done') ? '#15803d' : (($gStatus === 'confirmed') ? '#0284c7' : '#b45309'); ?>;">
+                                                    <select name="status" onchange="this.form.submit()" style="width: 100px; padding: 4px 6px; border-radius: 6px; font-size: 0.78rem; font-weight: 700; border: 1px solid #cbd5e1; background: #ffffff; cursor: pointer; color: <?php echo ($gStatus === 'done') ? '#15803d' : (($gStatus === 'confirmed') ? '#0284c7' : '#b45309'); ?>;">
                                                         <option value="assigned" <?php echo ($gStatus === 'assigned') ? 'selected' : ''; ?>>🟡 Assigned</option>
                                                         <option value="confirmed" <?php echo ($gStatus === 'confirmed') ? 'selected' : ''; ?>>🔵 Confirmed</option>
                                                         <option value="done" <?php echo ($gStatus === 'done') ? 'selected' : ''; ?>>🟢 Done</option>
