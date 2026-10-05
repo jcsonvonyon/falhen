@@ -4522,7 +4522,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                 $homeSections = ['dashboard', 'onboarding', 'directory', 'announcements', 'attendance', 'leaves', 'payslips', 'home', 'hero'];
                 $isHomeActive = in_array($activeSection, $homeSections, true);
                 ?>
-                <nav class="topbar-primary-nav" style="display: flex; align-items: center; gap: 4px; background: #f1f5f9; padding: 4px; border-radius: 10px; border: 1px solid #cbd5e1; margin-left: 8px;">
+                <nav class="topbar-primary-nav" style="display: flex; align-items: center; gap: 4px; background: #f1f5f9; padding: 4px; border-radius: 10px; border: 1px solid #cbd5e1; margin-left: 18px;">
                     <a href="/admin/index.php?section=<?php echo (isAdminUser($userRole, $userEmail, $username) && !isTalentManager($userRole)) ? 'hero' : 'dashboard'; ?>" class="topbar-nav-link" style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; font-size: 0.84rem; font-weight: 700; text-decoration: none; border-radius: 7px; transition: all 0.15s ease; <?php echo $isHomeActive ? 'background: #ffffff; color: #dc2626; box-shadow: 0 1px 3px rgba(0,0,0,0.08);' : 'color: #475569;'; ?>">
                         <i class="fa-solid fa-house" style="font-size: 0.8rem; <?php echo $isHomeActive ? 'color: #dc2626;' : 'color: #64748b;'; ?>"></i>
                         <span>Home</span>
@@ -15242,27 +15242,37 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                 ?>
 
                 <!-- SECTION HEADER -->
-                <div class="section-header-bar" style="margin-bottom: 22px;">
-                    <div>
-                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
-                            <span style="background: #e11d48; color: #ffffff; font-weight: 700; font-size: 0.72rem; padding: 4px 10px; border-radius: 12px; text-transform: uppercase; letter-spacing: 0.5px;">Talent &amp; Crew Operations</span>
-                            <h1 class="section-header-title" style="margin: 0; font-size: 1.6rem; font-weight: 700; color: #0f172a;">Vendors &amp; Contractor Management</h1>
+                <div class="section-header-bar" style="display: flex; justify-content: space-between; align-items: flex-start; gap: 20px; flex-wrap: wrap; margin-bottom: 24px; padding-bottom: 20px; border-bottom: 1px solid #f1f5f9;">
+                    <div style="max-width: 650px;">
+                        <div style="display: inline-flex; align-items: center; gap: 6px; background: #fff1f2; color: #e11d48; border: 1px solid #fecdd3; padding: 3px 10px; border-radius: 20px; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 8px;">
+                            <i class="fa-solid fa-users-gear" style="font-size: 0.72rem;"></i> Talent &amp; Crew Operations
                         </div>
-                        <p class="section-header-desc" style="margin: 0; color: #64748b; font-size: 0.88rem;">Coordinate talent onboarding, Master Services Agreements (MSA), NDAs, shoot assignments, call sheets, and payouts.</p>
+                        <h1 class="section-header-title" style="margin: 0 0 6px 0; font-size: 1.85rem; font-weight: 800; color: #0f172a; letter-spacing: -0.5px; line-height: 1.2;">
+                            Vendors &amp; Contractor Management
+                        </h1>
+                        <p class="section-header-desc" style="margin: 0; color: #64748b; font-size: 0.88rem; line-height: 1.5;">
+                            Coordinate talent onboarding, Master Services Agreements (MSA), NDAs, shoot assignments, call sheets, and payouts.
+                        </p>
                     </div>
-                    <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
-                        <button type="button" onclick="openNewVendorModal()" class="btn-save-primary" style="background: #0f172a; border-color: #0f172a; display: inline-flex; align-items: center; gap: 8px; padding: 9px 16px; border-radius: 8px; font-weight: 700; font-size: 0.86rem; color: #ffffff; cursor: pointer;">
-                            <i class="fa-solid fa-user-plus"></i> Add Talent
-                        </button>
-                        <button type="button" onclick="openNewGigModal()" class="btn-save-primary" style="background: #dc2626; border-color: #dc2626; display: inline-flex; align-items: center; gap: 8px; padding: 9px 16px; border-radius: 8px; font-weight: 700; font-size: 0.86rem; color: #ffffff; cursor: pointer; box-shadow: 0 4px 12px rgba(220,38,38,0.25);">
-                            <i class="fa-solid fa-clapperboard"></i> Create Production Gig
-                        </button>
-                        <a href="/vendor-onboarding.php" target="_blank" style="padding: 9px 14px; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.86rem; font-weight: 700; color: #334155; text-decoration: none; display: inline-flex; align-items: center; gap: 6px;" title="Open Public Contractor Onboarding Page">
-                            <i class="fa-solid fa-arrow-up-right-from-square"></i> Public Portal
-                        </a>
-                        <a href="/vendor/index.php" target="_blank" style="padding: 9px 14px; background: #fff1f2; border: 1px solid #fecdd3; border-radius: 8px; font-size: 0.86rem; font-weight: 700; color: #e11d48; text-decoration: none; display: inline-flex; align-items: center; gap: 6px;" title="Preview Vendor Dashboard Portal">
-                            <i class="fa-solid fa-id-badge"></i> Vendor Portal
-                        </a>
+                    <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 8px;">
+                        <!-- Primary Actions -->
+                        <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                            <button type="button" onclick="openNewVendorModal()" style="display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px; background: #0f172a; color: #ffffff; border: 1px solid #0f172a; border-radius: 8px; font-weight: 700; font-size: 0.84rem; cursor: pointer; transition: all 0.15s ease; box-shadow: 0 1px 3px rgba(15,23,42,0.12);">
+                                <i class="fa-solid fa-user-plus"></i> Add Talent
+                            </button>
+                            <button type="button" onclick="openNewGigModal()" style="display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px; background: #dc2626; color: #ffffff; border: 1px solid #dc2626; border-radius: 8px; font-weight: 700; font-size: 0.84rem; cursor: pointer; transition: all 0.15s ease; box-shadow: 0 2px 6px rgba(220,38,38,0.22);">
+                                <i class="fa-solid fa-clapperboard"></i> Create Production Gig
+                            </button>
+                        </div>
+                        <!-- Secondary Portal Links -->
+                        <div style="display: flex; gap: 8px; align-items: center;">
+                            <a href="/vendor-onboarding.php" target="_blank" style="display: inline-flex; align-items: center; gap: 6px; padding: 5px 11px; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.78rem; font-weight: 700; color: #475569; text-decoration: none; transition: all 0.15s ease;" title="Open Public Contractor Onboarding Page">
+                                <i class="fa-solid fa-arrow-up-right-from-square" style="font-size: 0.7rem; color: #64748b;"></i> Public Portal
+                            </a>
+                            <a href="/vendor/index.php" target="_blank" style="display: inline-flex; align-items: center; gap: 6px; padding: 5px 11px; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.78rem; font-weight: 700; color: #e11d48; text-decoration: none; transition: all 0.15s ease;" title="Preview Vendor Dashboard Portal">
+                                <i class="fa-solid fa-id-badge" style="font-size: 0.72rem; color: #e11d48;"></i> Vendor Portal
+                            </a>
+                        </div>
                     </div>
                 </div>
 
