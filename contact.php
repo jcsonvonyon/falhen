@@ -15,7 +15,7 @@ require_once __DIR__ . '/includes/header.php';
     /* Hero Section */
     .contact-hero-stage {
         position: relative;
-        padding: 100px 0 60px 0;
+        padding: 150px 0 60px 0;
         background: linear-gradient(180deg, rgba(3, 3, 5, 0.75) 0%, rgba(3, 3, 5, 0.95) 100%), url('/assets/img/contact.jpeg') center/cover no-repeat;
         border-bottom: 1px solid rgba(255, 255, 255, 0.08);
         text-align: center;

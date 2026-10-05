@@ -151,7 +151,7 @@ $gridPosts = array_filter($blogPosts, fn($p) => $featuredPost && $p['id'] !== $f
 
         .blog-hero-title {
             font-size: 2.5rem;
-            font-weight: 700;
+            font-weight: 850;
             color: #ffffff;
             margin: 0 0 12px 0;
             line-height: 1.1;
