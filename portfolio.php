@@ -145,8 +145,9 @@ $featuredAllProjects = array_filter($allProjects, function($item) {
         }
 
         .port-hero-title {
-            font-size: 4rem;
-            font-weight: 700;
+            font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+            font-size: 72px;
+            font-weight: 850;
             color: #ffffff;
             letter-spacing: -1.5px;
             margin: 0 0 12px 0;
@@ -160,7 +161,7 @@ $featuredAllProjects = array_filter($allProjects, function($item) {
         .port-hero-subtitle {
             font-size: 1.15rem;
             color: #a1a1aa;
-            margin: 0 0 40px 0;
+            margin: 0 0 110px 0;
             font-weight: 500;
         }
 

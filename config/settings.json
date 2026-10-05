@@ -432,9 +432,15 @@
             "featured": true,
             "client": "King David",
             "location": "Chicago",
-            "image": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=800&auto=format&fit=crop",
-            "desc": "Commemorative academic graduate portrait session capturing milestone achievements with editorial studio lighting.",
-            "photosCount": 30
+            "image": "https://res.cloudinary.com/pnabfi91/image/upload/v1791221350/falhen/portfolio/sqojlxu2ib3xd109gkg6.jpg",
+            "desc": "Graduate shoot session at our studio in Oakbrook",
+            "photosCount": 30,
+            "duration": "",
+            "year": "2024",
+            "project_date": "2024",
+            "video_url": "",
+            "gdrive_url": "",
+            "services": "Video Production, Live Streaming, Post Production"
         },
         {
             "id": 2,
@@ -444,9 +450,15 @@
             "featured": true,
             "client": "Halima Ogunde",
             "location": "Lagos",
-            "image": "/assets/img/portfolio/portfolio_halima.png",
+            "image": "https://res.cloudinary.com/pnabfi91/image/upload/v1791224271/falhen/portfolio/ysfriy8jlhhkcuzl8j16.jpg",
             "desc": "A golden-hour pre-wedding & birthday session set in a lush garden estate. Every frame tells the story of elegance, captured with cinematic warmth.",
-            "photosCount": 30
+            "photosCount": 30,
+            "duration": "",
+            "year": "2024",
+            "project_date": "2024",
+            "video_url": "",
+            "gdrive_url": "",
+            "services": "Video Production, Live Streaming, Post Production"
         },
         {
             "id": 3,
@@ -456,9 +468,15 @@
             "featured": true,
             "client": "Demola The Violinist",
             "location": "London",
-            "image": "/assets/img/portfolio/portfolio_wedding.png",
+            "image": "https://res.cloudinary.com/pnabfi91/image/upload/v1791222750/falhen/portfolio/blpzc2fznaqr0czm3ji8.jpg",
             "desc": "Live concert and tour performance capturing electric stage energy, dramatic lighting, and musical virtuosity.",
-            "photosCount": 30
+            "photosCount": 30,
+            "duration": "",
+            "year": "2024",
+            "project_date": "2024",
+            "video_url": "",
+            "gdrive_url": "",
+            "services": "Video Production, Live Streaming, Post Production"
         },
         {
             "id": 4,
@@ -468,9 +486,15 @@
             "featured": false,
             "client": "Dex Million",
             "location": "Atlanta",
-            "image": "https://images.unsplash.com/photo-1511795409834-ef04bbd61622?q=80&w=800&auto=format&fit=crop",
+            "image": "https://res.cloudinary.com/pnabfi91/image/upload/v1791222920/falhen/portfolio/c5k5xwoa1misejie2oxy.jpg",
             "desc": "Surprise milestone celebration featuring high-profile guests, live music, and candid moment capture.",
-            "photosCount": 30
+            "photosCount": 30,
+            "duration": "",
+            "year": "2024",
+            "project_date": "2024",
+            "video_url": "",
+            "gdrive_url": "",
+            "services": "Video Production, Live Streaming, Post Production"
         },
         {
             "id": 5,
@@ -480,9 +504,15 @@
             "featured": false,
             "client": "Jussoul",
             "location": "California",
-            "image": "/assets/img/portfolio/portfolio_award.png",
+            "image": "https://res.cloudinary.com/pnabfi91/image/upload/v1791226024/falhen/portfolio/ldtm77cjygkwcgijkdqq.jpg",
             "desc": "Acoustic live sessions and winery tour performance captured in intimate 4K resolution.",
-            "photosCount": 30
+            "photosCount": 30,
+            "duration": "",
+            "year": "2024",
+            "project_date": "2024",
+            "video_url": "",
+            "gdrive_url": "",
+            "services": "Video Production, Live Streaming, Post Production"
         },
         {
             "id": 6,
@@ -492,9 +522,15 @@
             "featured": false,
             "client": "Halima Ogunde",
             "location": "Lagos",
-            "image": "/assets/img/portfolio/portfolio_halima.png",
+            "image": "https://res.cloudinary.com/pnabfi91/image/upload/v1791224320/falhen/portfolio/qdkldutyaqhrena0mrza.jpg",
             "desc": "High-fashion portrait and luxury event coverage.",
-            "photosCount": 30
+            "photosCount": 30,
+            "duration": "",
+            "year": "2024",
+            "project_date": "2024",
+            "video_url": "",
+            "gdrive_url": "",
+            "services": "Video Production, Live Streaming, Post Production"
         },
         {
             "id": 7,
@@ -504,9 +540,15 @@
             "featured": false,
             "client": "Darasinmi",
             "location": "Oakbrook",
-            "image": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=800&auto=format&fit=crop",
+            "image": "https://res.cloudinary.com/pnabfi91/image/upload/v1791226059/falhen/portfolio/lavtrjw84dyapshxdgpl.jpg",
             "desc": "Creative indoor studio portrait session with modern color tones and dramatic contrast.",
-            "photosCount": 30
+            "photosCount": 30,
+            "duration": "",
+            "year": "2024",
+            "project_date": "2024",
+            "video_url": "",
+            "gdrive_url": "",
+            "services": "Video Production, Live Streaming, Post Production"
         },
         {
             "id": 8,
@@ -528,9 +570,15 @@
             "featured": false,
             "client": "Adetutu Family",
             "location": "Lagos",
-            "image": "/assets/img/portfolio/portfolio_commercial.png",
+            "image": "https://res.cloudinary.com/pnabfi91/image/upload/v1791226088/falhen/portfolio/sfa4gof0yfr0bc14r1eg.jpg",
             "desc": "Traditional cultural celebration and remembrance service photography.",
-            "photosCount": 30
+            "photosCount": 30,
+            "duration": "",
+            "year": "2024",
+            "project_date": "2024",
+            "video_url": "",
+            "gdrive_url": "",
+            "services": "Video Production, Live Streaming, Post Production"
         },
         {
             "id": 10,
