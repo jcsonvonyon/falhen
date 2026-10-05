@@ -298,7 +298,7 @@ $heroVideoUrl = 'https://www.youtube.com/embed/' . $heroYtId;
 <section class="section" id="testimonials" style="background: #09090b; border-top: 1px solid rgba(255, 255, 255, 0.08);">
     <div class="container">
         <div class="section-title-wrapper" style="text-align: center; margin-bottom: 50px;">
-            <h2 class="section-title" style="font-size: 2.75rem; font-weight: 700;">What Our Clients <span style="color: #dc2626;">Say</span></h2>
+            <h2 class="section-title testimonials-heading" style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; font-size: 60px; font-weight: 800; letter-spacing: -1.5px; line-height: 1.1;">What Our Clients <span style="color: #dc2626;">Say</span></h2>
             <p class="section-subtitle" style="max-width: 620px; margin: 0 auto; color: var(--text-muted); font-size: 1.05rem;">Don't take our word for it — here's what the brands we've worked with have to say.</p>
         </div>
 
