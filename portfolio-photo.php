@@ -51,6 +51,9 @@ if (!empty($currentAlbum['gallery_photos']) && is_array($currentAlbum['gallery_p
     if ($clientId === 1 || strpos($clientName, 'king david') !== false || strpos($clientTitle, 'king david') !== false) {
         // King David - Academic Graduation & Studio Celebration Shoot
         $clientPhotos = [
+            '/assets/img/portfolio/king_david_01.jpg',
+            '/assets/img/portfolio/king_david_02.jpg',
+            '/assets/img/portfolio/king_david_03.jpg',
             $coverImage,
             'https://images.unsplash.com/photo-1523240795612-9a054b0db644?q=80&w=1200&auto=format&fit=crop',
             'https://images.unsplash.com/photo-1541339907198-e08756dedf3f?q=80&w=1200&auto=format&fit=crop',
@@ -59,10 +62,7 @@ if (!empty($currentAlbum['gallery_photos']) && is_array($currentAlbum['gallery_p
             'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=1200&auto=format&fit=crop',
             'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=1200&auto=format&fit=crop',
             'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?q=80&w=1200&auto=format&fit=crop',
-            'https://images.unsplash.com/photo-1571260899304-425eee4c7efc?q=80&w=1200&auto=format&fit=crop',
-            'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?q=80&w=1200&auto=format&fit=crop',
-            'https://images.unsplash.com/photo-1562774053-701939374585?q=80&w=1200&auto=format&fit=crop',
-            'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=1200&auto=format&fit=crop'
+            'https://images.unsplash.com/photo-1571260899304-425eee4c7efc?q=80&w=1200&auto=format&fit=crop'
         ];
     } elseif ($clientId === 3 || strpos($clientName, 'demola') !== false || strpos($clientTitle, 'demola') !== false) {
         // Demola The Violinist - Live Concert Tour
@@ -493,7 +493,7 @@ $totalPhotoCount = count($clientPhotos);
             overflow: hidden;
             background: var(--surface-card);
             border: 1px solid var(--border-subtle);
-            aspect-ratio: 4 / 3;
+            aspect-ratio: 2 / 3;
             cursor: pointer;
             transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.3s, box-shadow 0.3s;
         }
