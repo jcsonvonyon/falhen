@@ -37,8 +37,15 @@ $pageTitle = htmlspecialchars($currentAlbum['title']) . " — Gallery | Falhen M
 // Curate client-specific gallery photo sets
 $clientPhotos = [];
 
-// 1. Check if custom photos array is saved in settings
-if (!empty($currentAlbum['gallery_photos']) && is_array($currentAlbum['gallery_photos'])) {
+// 1. Check if a Google Drive link or folder was configured and fetch its photos
+$gdrivePhotos = [];
+if (!empty($currentAlbum['gdrive_url'])) {
+    $gdrivePhotos = getGoogleDriveFolderPhotos($currentAlbum['gdrive_url']);
+}
+
+if (!empty($gdrivePhotos)) {
+    $clientPhotos = $gdrivePhotos;
+} elseif (!empty($currentAlbum['gallery_photos']) && is_array($currentAlbum['gallery_photos'])) {
     $clientPhotos = $currentAlbum['gallery_photos'];
 } elseif (!empty($currentAlbum['photos']) && is_array($currentAlbum['photos'])) {
     $clientPhotos = $currentAlbum['photos'];
@@ -943,6 +950,11 @@ $totalPhotoCount = count($clientPhotos);
                         <div class="meta-pill-chip">
                             <i class="fa-solid fa-location-dot"></i> <?php echo htmlspecialchars($currentAlbum['location']); ?>
                         </div>
+                    <?php endif; ?>
+                    <?php if (!empty($currentAlbum['gdrive_url'])): ?>
+                        <a href="<?php echo htmlspecialchars($currentAlbum['gdrive_url']); ?>" target="_blank" rel="noopener noreferrer" class="meta-pill-chip" style="background: rgba(66, 133, 244, 0.15); border-color: rgba(66, 133, 244, 0.3); color: #93c5fd; text-decoration: none;">
+                            <i class="fa-brands fa-google-drive" style="color: #60a5fa;"></i> Google Drive Folder
+                        </a>
                     <?php endif; ?>
                 </div>
 
