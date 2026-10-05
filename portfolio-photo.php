@@ -941,11 +941,13 @@ $totalPhotoCount = count($clientPhotos);
                 align-items: flex-end;
                 padding-bottom: 14px;
             }
+        }
+
         /* Portfolio Gallery Footer Section */
         .gallery-footer-section {
             width: 100%;
             background: #030305;
-            padding: 20px 0 70px;
+            padding: 30px 0 80px;
         }
 
         .gallery-footer-container {
@@ -1199,6 +1201,27 @@ $totalPhotoCount = count($clientPhotos);
             transform: translateY(-1px);
             box-shadow: 0 6px 20px rgba(220, 38, 38, 0.5);
             color: #ffffff;
+        }
+
+        @media (max-width: 768px) {
+            .gallery-cta-banner {
+                flex-direction: column;
+                align-items: flex-start;
+                padding: 20px;
+                gap: 18px;
+            }
+            .gallery-cta-actions {
+                width: 100%;
+                justify-content: flex-start;
+                gap: 10px;
+            }
+            .gallery-related-grid {
+                grid-template-columns: 1fr;
+            }
+            .gallery-bottom-nav {
+                flex-direction: row;
+                gap: 12px;
+            }
         }
 
         /* Client Verification / Download Modal matching Readdy mockup */
