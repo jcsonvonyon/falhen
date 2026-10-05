@@ -19,3 +19,4 @@ Thumbs.db
 scratch/
 tmp/
 backups/*gdrive_cache*
+config/downloads_log.json

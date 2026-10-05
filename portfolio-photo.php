@@ -34,6 +34,11 @@ if (isset($albumsRepo[$albumId])) {
 $coverImage = getCloudinaryUrl($currentAlbum['image'] ?? $currentAlbum['cover'] ?? '/assets/img/portfolio/portfolio_halima.png');
 $pageTitle = htmlspecialchars($currentAlbum['title']) . " — Gallery | Falhen Media";
 
+// Registered Client Authentication Status
+$isClientLoggedIn = !empty($_SESSION['registered_client_email']) || !empty($_COOKIE['falhen_client_email']);
+$clientEmail = $_SESSION['registered_client_email'] ?? $_COOKIE['falhen_client_email'] ?? '';
+$clientName = $_SESSION['registered_client_name'] ?? '';
+
 // Curate client-specific gallery photo sets
 $clientPhotos = [];
 
@@ -451,9 +456,9 @@ $totalPhotoCount = count($clientPhotos);
             font-size: 0.82rem;
         }
 
-        /* Download All Green Action Button */
-        .btn-download-all-green {
-            background: var(--brand-green);
+        /* Download All Client Blue Action Button */
+        .btn-download-all-green, .btn-download-all-blue {
+            background: #2563eb;
             color: #ffffff;
             border: none;
             padding: 12px 24px;
@@ -464,14 +469,14 @@ $totalPhotoCount = count($clientPhotos);
             align-items: center;
             gap: 10px;
             cursor: pointer;
-            box-shadow: 0 4px 16px rgba(16, 185, 129, 0.35);
+            box-shadow: 0 4px 16px rgba(37, 99, 235, 0.35);
             transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
-        .btn-download-all-green:hover {
-            background: var(--brand-green-hover);
+        .btn-download-all-green:hover, .btn-download-all-blue:hover {
+            background: #1d4ed8;
             transform: translateY(-2px);
-            box-shadow: 0 8px 24px rgba(16, 185, 129, 0.5);
+            box-shadow: 0 8px 24px rgba(37, 99, 235, 0.5);
             color: #ffffff;
         }
 
@@ -572,14 +577,16 @@ $totalPhotoCount = count($clientPhotos);
         }
 
         .overlay-circle-btn.download-btn {
-            background: #16a34a;
-            border: 1px solid rgba(255, 255, 255, 0.15);
+            background: #2563eb;
+            border: 1px solid rgba(255, 255, 255, 0.2);
             color: #ffffff;
+            box-shadow: 0 4px 14px rgba(37, 99, 235, 0.45);
         }
 
         .overlay-circle-btn.download-btn:hover {
-            background: #15803d;
+            background: #1d4ed8;
             transform: scale(1.12);
+            box-shadow: 0 6px 20px rgba(37, 99, 235, 0.6);
         }
 
         /* Carousel / Lightbox Viewer Modal */
@@ -641,7 +648,7 @@ $totalPhotoCount = count($clientPhotos);
         }
 
         .btn-carousel-download {
-            background: var(--brand-green);
+            background: #2563eb;
             color: #ffffff;
             border: none;
             padding: 8px 18px;
@@ -652,11 +659,14 @@ $totalPhotoCount = count($clientPhotos);
             display: inline-flex;
             align-items: center;
             gap: 8px;
+            box-shadow: 0 4px 14px rgba(37, 99, 235, 0.4);
             transition: all 0.2s;
         }
 
         .btn-carousel-download:hover {
-            background: var(--brand-green-hover);
+            background: #1d4ed8;
+            transform: translateY(-1px);
+            box-shadow: 0 6px 18px rgba(37, 99, 235, 0.55);
         }
 
         .btn-carousel-close {
@@ -813,7 +823,7 @@ $totalPhotoCount = count($clientPhotos);
         }
 
         .download-toast i {
-            color: var(--brand-green);
+            color: #3b82f6;
             font-size: 1.2rem;
         }
 
@@ -866,6 +876,189 @@ $totalPhotoCount = count($clientPhotos);
                 align-items: flex-end;
                 padding-bottom: 14px;
             }
+        }
+
+        /* Client Verification / Download Modal matching Readdy mockup */
+        .client-modal-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.78);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            z-index: 100001;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            animation: fadeIn 0.2s ease;
+        }
+
+        .client-modal-box {
+            background: #111218;
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            border-radius: 20px;
+            width: 100%;
+            max-width: 480px;
+            overflow: hidden;
+            box-shadow: 0 25px 70px rgba(0, 0, 0, 0.9), 0 0 35px rgba(37, 99, 235, 0.15);
+            position: relative;
+        }
+
+        .client-modal-header {
+            padding: 24px 28px 18px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            display: flex;
+            align-items: flex-start;
+            gap: 16px;
+        }
+
+        .client-icon-badge {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            background: rgba(37, 99, 235, 0.15);
+            border: 1px solid rgba(37, 99, 235, 0.35);
+            color: #3b82f6;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+            flex-shrink: 0;
+        }
+
+        .client-modal-title {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #ffffff;
+            margin: 0 0 4px 0;
+        }
+
+        .client-modal-subtitle {
+            font-size: 0.85rem;
+            color: #94a3b8;
+            margin: 0 0 8px 0;
+        }
+
+        .client-stats-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 0.76rem;
+            color: #d4d4d8;
+        }
+
+        .client-modal-body {
+            padding: 22px 28px 24px;
+        }
+
+        .cdm-form-group {
+            margin-bottom: 16px;
+            text-align: left;
+        }
+
+        .cdm-label {
+            display: block;
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: #e4e4e7;
+            margin-bottom: 6px;
+        }
+
+        .cdm-input {
+            width: 100%;
+            background: #181922;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 10px;
+            padding: 10px 14px;
+            color: #ffffff;
+            font-size: 0.9rem;
+            box-sizing: border-box;
+            transition: all 0.2s ease;
+            outline: none;
+        }
+
+        .cdm-input:focus {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.25);
+            background: #1c1d28;
+        }
+
+        .cdm-privacy-note {
+            font-size: 0.77rem;
+            color: #71717a;
+            line-height: 1.5;
+            margin: 12px 0 0 0;
+        }
+
+        .client-modal-footer {
+            padding: 16px 28px 22px;
+            background: rgba(0, 0, 0, 0.25);
+            border-top: 1px solid rgba(255, 255, 255, 0.06);
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 12px;
+        }
+
+        .btn-cdm-cancel {
+            background: transparent;
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            color: #d4d4d8;
+            padding: 9px 20px;
+            border-radius: 10px;
+            font-size: 0.88rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-cdm-cancel:hover {
+            background: rgba(255, 255, 255, 0.08);
+            color: #ffffff;
+        }
+
+        .btn-cdm-submit {
+            background: #2563eb;
+            color: #ffffff;
+            border: none;
+            padding: 9px 22px;
+            border-radius: 10px;
+            font-size: 0.88rem;
+            font-weight: 700;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 14px rgba(37, 99, 235, 0.4);
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .btn-cdm-submit:hover {
+            background: #1d4ed8;
+            transform: translateY(-1px);
+            box-shadow: 0 6px 18px rgba(37, 99, 235, 0.55);
+        }
+
+        .cdm-error-alert {
+            background: rgba(220, 38, 38, 0.12);
+            border: 1px solid rgba(220, 38, 38, 0.35);
+            color: #f87171;
+            padding: 10px 14px;
+            border-radius: 10px;
+            font-size: 0.82rem;
+            line-height: 1.45;
+            margin-bottom: 14px;
+            display: none;
+            text-align: left;
+        }
+
+        .cdm-error-alert a {
+            color: #93c5fd;
+            text-decoration: underline;
         }
     </style>
 </head>
@@ -1037,6 +1230,58 @@ $totalPhotoCount = count($clientPhotos);
 
     </div>
 
+    <!-- Client Verification & Download Modal matching Readdy mockup -->
+    <div id="clientDownloadModal" class="client-modal-backdrop" onclick="closeClientDownloadModal()">
+        <div class="client-modal-box" onclick="event.stopPropagation()">
+            <!-- Modal Header -->
+            <div class="client-modal-header">
+                <div class="client-icon-badge">
+                    <i class="fa-solid fa-cloud-arrow-down"></i>
+                </div>
+                <div style="flex: 1; text-align: left;">
+                    <h3 class="client-modal-title">Download Photos</h3>
+                    <div class="client-modal-subtitle"><?php echo htmlspecialchars($currentAlbum['title']); ?></div>
+                    <div class="client-stats-pill" id="downloadModalStats">
+                        <i class="fa-regular fa-image"></i> 1 photo ~5 MB
+                    </div>
+                </div>
+                <button type="button" onclick="closeClientDownloadModal()" style="background:none; border:none; color:#a1a1aa; font-size:1.4rem; cursor:pointer; padding:0; line-height:1;">&times;</button>
+            </div>
+
+            <!-- Modal Form Body -->
+            <div class="client-modal-body">
+                <div id="cdm_error" class="cdm-error-alert"></div>
+
+                <div class="cdm-form-group">
+                    <label class="cdm-label" for="cdm_name">Full Name *</label>
+                    <input type="text" id="cdm_name" class="cdm-input" placeholder="Your full name" value="<?php echo htmlspecialchars($clientName); ?>" required>
+                </div>
+
+                <div class="cdm-form-group">
+                    <label class="cdm-label" for="cdm_email">Email Address *</label>
+                    <input type="email" id="cdm_email" class="cdm-input" placeholder="your@email.com" value="<?php echo htmlspecialchars($clientEmail); ?>" required>
+                </div>
+
+                <div class="cdm-form-group">
+                    <label class="cdm-label" for="cdm_phone">Phone Number *</label>
+                    <input type="tel" id="cdm_phone" class="cdm-input" placeholder="+1 (555) 000-0000">
+                </div>
+
+                <p class="cdm-privacy-note">
+                    <i class="fa-solid fa-shield-halved" style="color: #3b82f6; margin-right: 4px;"></i> Your information verifies authorized client access. Only registered clients can download original gallery assets.
+                </p>
+            </div>
+
+            <!-- Modal Action Buttons -->
+            <div class="client-modal-footer">
+                <button type="button" class="btn-cdm-cancel" onclick="closeClientDownloadModal()">Cancel</button>
+                <button type="button" class="btn-cdm-submit" id="btnCdmSubmit" onclick="submitClientVerification()">
+                    <i class="fa-solid fa-download"></i> Start Download
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Download Toast Feedback -->
     <div id="downloadToast" class="download-toast">
         <i class="fa-solid fa-circle-check"></i>
@@ -1182,8 +1427,105 @@ $totalPhotoCount = count($clientPhotos);
             }
         }
 
-        // Download Single Photo
-        async function downloadSinglePhoto(url, photoNum) {
+        // Client Verification & Download Interception
+        let isClientVerified = <?php echo json_encode($isClientLoggedIn); ?>;
+        let pendingDownload = null;
+
+        function checkClientAuthBeforeDownload(downloadAction, statsText) {
+            if (isClientVerified) {
+                downloadAction();
+            } else {
+                pendingDownload = downloadAction;
+                openClientDownloadModal(statsText);
+            }
+        }
+
+        function openClientDownloadModal(statsText) {
+            const statsEl = document.getElementById('downloadModalStats');
+            if (statsEl) {
+                statsEl.innerHTML = statsText || '<i class="fa-regular fa-image"></i> 1 photo ~5 MB';
+            }
+            const errEl = document.getElementById('cdm_error');
+            if (errEl) errEl.style.display = 'none';
+
+            document.getElementById('clientDownloadModal').style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+
+            setTimeout(() => {
+                const nameInput = document.getElementById('cdm_name');
+                if (nameInput && !nameInput.value) nameInput.focus();
+            }, 100);
+        }
+
+        function closeClientDownloadModal() {
+            document.getElementById('clientDownloadModal').style.display = 'none';
+            document.body.style.overflow = '';
+        }
+
+        async function submitClientVerification() {
+            const name = document.getElementById('cdm_name').value.trim();
+            const email = document.getElementById('cdm_email').value.trim();
+            const phone = document.getElementById('cdm_phone').value.trim();
+            const errBox = document.getElementById('cdm_error');
+            const submitBtn = document.getElementById('btnCdmSubmit');
+
+            if (!name) {
+                errBox.style.display = 'block';
+                errBox.textContent = 'Please enter your full name.';
+                return;
+            }
+            if (!email || !email.includes('@')) {
+                errBox.style.display = 'block';
+                errBox.textContent = 'Please enter a valid email address.';
+                return;
+            }
+
+            errBox.style.display = 'none';
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Verifying Client...';
+
+            try {
+                const fd = new FormData();
+                fd.append('action', 'verify_client_download');
+                fd.append('name', name);
+                fd.append('email', email);
+                fd.append('phone', phone);
+                fd.append('album_id', <?php echo (int)($currentAlbum['id'] ?? 0); ?>);
+                fd.append('album_title', shootTitle);
+
+                const resp = await fetch('/api/verify-download.php', { method: 'POST', body: fd });
+                const res = await resp.json();
+
+                if (res.success) {
+                    isClientVerified = true;
+                    closeClientDownloadModal();
+                    showToast('Client verified! Starting download...');
+                    if (typeof pendingDownload === 'function') {
+                        pendingDownload();
+                        pendingDownload = null;
+                    }
+                } else {
+                    errBox.style.display = 'block';
+                    errBox.innerHTML = (res.message || 'Access Restricted: You must be a registered client to download gallery assets.') + 
+                        '<br><span style="display:inline-block; margin-top:6px;"><a href="/contact.php" target="_blank">Contact Falhen Media to register as a client</a></span>';
+                }
+            } catch (err) {
+                errBox.style.display = 'block';
+                errBox.textContent = 'Connection error. Please try again.';
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="fa-solid fa-download"></i> Start Download';
+            }
+        }
+
+        // Download Single Photo (Protected by Client Verification)
+        function downloadSinglePhoto(url, photoNum) {
+            checkClientAuthBeforeDownload(() => {
+                executeSinglePhotoDownload(url, photoNum);
+            }, '<i class="fa-regular fa-image"></i> 1 photo ~5 MB');
+        }
+
+        async function executeSinglePhotoDownload(url, photoNum) {
             const cleanTitle = shootTitle.replace(/[^a-zA-Z0-9_-]/g, '_');
             const filename = `${cleanTitle}_Photo_${String(photoNum).padStart(2, '0')}.jpg`;
             showToast(`Downloading photo ${photoNum}...`);
@@ -1214,13 +1556,19 @@ $totalPhotoCount = count($clientPhotos);
             }
         }
 
-        // Download from Carousel
+        // Download from Carousel (Protected by Client Verification)
         function downloadCurrentCarouselPhoto() {
             downloadSinglePhoto(galleryPhotos[currentPhotoIndex], currentPhotoIndex + 1);
         }
 
-        // Download All Photos Functionality
-        async function downloadAllPhotos() {
+        // Download All Photos Functionality (Protected by Client Verification)
+        function downloadAllPhotos() {
+            checkClientAuthBeforeDownload(() => {
+                executeAllPhotosDownload();
+            }, `<i class="fa-solid fa-images"></i> ${galleryPhotos.length} photos ~${galleryPhotos.length * 5} MB`);
+        }
+
+        async function executeAllPhotosDownload() {
             const btn = document.getElementById('btnDownloadAll');
             const originalHtml = btn.innerHTML;
             
@@ -1235,7 +1583,7 @@ $totalPhotoCount = count($clientPhotos);
             showToast(`Starting download of ${galleryPhotos.length} high-resolution photos...`);
 
             for (let i = 0; i < galleryPhotos.length; i++) {
-                await downloadSinglePhoto(galleryPhotos[i], i + 1);
+                await executeSinglePhotoDownload(galleryPhotos[i], i + 1);
                 // Stagger downloads by 350ms to prevent browser blocking
                 await new Promise(r => setTimeout(r, 350));
             }

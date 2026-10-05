@@ -615,6 +615,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             transform: translateY(-2px);
         }
 
+        .portal-card-client:hover {
+            border-color: rgba(59, 130, 246, 0.6) !important;
+            background-color: rgba(37, 99, 235, 0.05) !important;
+            box-shadow: 0 8px 24px rgba(37, 99, 235, 0.18) !important;
+        }
+
+        .portal-card-vendor:hover {
+            border-color: rgba(16, 185, 129, 0.6) !important;
+            background-color: rgba(16, 185, 129, 0.05) !important;
+            box-shadow: 0 8px 24px rgba(16, 185, 129, 0.18) !important;
+        }
+
+        .portal-card-featured:hover {
+            border-color: rgba(239, 68, 68, 0.6) !important;
+            background-color: rgba(239, 68, 68, 0.05) !important;
+            box-shadow: 0 8px 24px rgba(239, 68, 68, 0.18) !important;
+        }
+
         .portal-card-featured {
             grid-column: 1 / -1;
             display: flex;
@@ -987,8 +1005,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         </div>
 
                         <!-- Client Gallery Card -->
-                        <div class="portal-card" onclick="switchView('client')">
-                            <div class="portal-icon-box">
+                        <div class="portal-card portal-card-client" onclick="switchView('client')">
+                            <div class="portal-icon-box" style="background: rgba(37, 99, 235, 0.12); border-color: rgba(37, 99, 235, 0.35); color: #3b82f6;">
                                 <i class="fa-regular fa-image"></i>
                             </div>
                             <h2 class="portal-card-title">Client Gallery</h2>
@@ -996,7 +1014,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         </div>
 
                         <!-- Vendor Portal Card -->
-                        <div class="portal-card" onclick="switchView('vendor')">
+                        <div class="portal-card portal-card-vendor" onclick="switchView('vendor')">
                             <div class="portal-icon-box" style="background: rgba(16, 185, 129, 0.12); border-color: rgba(16, 185, 129, 0.35); color: #10b981;">
                                 <i class="fa-solid fa-id-card-clip"></i>
                             </div>
@@ -1161,6 +1179,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <i class="fa-solid fa-arrow-left"></i> Back to Portal Selection
                     </a>
 
+                    <!-- Client Badge Icon in Blue -->
+                    <div class="shield-icon-box" style="background: rgba(37, 99, 235, 0.15); border-color: rgba(37, 99, 235, 0.35); color: #3b82f6;">
+                        <i class="fa-regular fa-image"></i>
+                    </div>
+
                     <h1 class="section-title" style="font-size: 1.4rem;">Client Gallery Portal</h1>
                     <p class="section-subtitle">Enter your client email address to receive your gallery access link.</p>
 
@@ -1174,7 +1197,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <input type="email" id="client_email" name="client_email" class="form-input" placeholder="client@example.com" required>
                         </div>
 
-                        <button type="submit" class="btn-submit" style="margin-top: 8px;">
+                        <button type="submit" class="btn-submit" style="margin-top: 8px; background-color: #2563eb; border-color: #2563eb;">
                             Access Private Gallery
                         </button>
                     </form>
