@@ -39,7 +39,7 @@ $isClientLoggedIn = !empty($_SESSION['registered_client_email']) || !empty($_COO
 $clientEmail = $_SESSION['registered_client_email'] ?? $_COOKIE['falhen_client_email'] ?? '';
 $clientName = $_SESSION['registered_client_name'] ?? '';
 
-// Related albums for footer "More [Category] Albums"
+// Related albums for footer "More Portfolio Albums" (always display 3 albums)
 $albumCategory = trim($currentAlbum['category'] ?? 'Portrait');
 if (empty($albumCategory)) $albumCategory = 'Portrait';
 $currentAlbumId = (int)($currentAlbum['id'] ?? 0);
@@ -54,17 +54,37 @@ foreach ($masterPortfolioItems as $mIt) {
     }
 }
 
-// 2. If none in exact same category, fallback to other photo albums and adjust title
-$sectionHeading = "More {$albumCategory} Albums";
-if (empty($relatedAlbums)) {
-    $sectionHeading = "More Albums";
+// 2. Backfill with other photo albums until we have 3 albums
+if (count($relatedAlbums) < 3) {
     foreach ($masterPortfolioItems as $mIt) {
         if ((int)($mIt['id'] ?? 0) === $currentAlbumId) continue;
         if (($mIt['media_type'] ?? 'photo') !== 'photo' && isset($mIt['media_type'])) continue;
-        $relatedAlbums[] = $mIt;
+
+        $alreadyAdded = false;
+        foreach ($relatedAlbums as $r) {
+            if ((int)($r['id'] ?? 0) === (int)($mIt['id'] ?? 0)) {
+                $alreadyAdded = true;
+                break;
+            }
+        }
+        if (!$alreadyAdded) {
+            $relatedAlbums[] = $mIt;
+        }
         if (count($relatedAlbums) >= 3) break;
     }
 }
+
+$relatedAlbums = array_slice($relatedAlbums, 0, 3);
+
+// Dynamic heading: if all 3 are from the same category, use "More {Category} Albums", otherwise "More Portfolio Albums"
+$allSameCat = true;
+foreach ($relatedAlbums as $r) {
+    if (strcasecmp(trim($r['category'] ?? ''), $albumCategory) !== 0) {
+        $allSameCat = false;
+        break;
+    }
+}
+$sectionHeading = $allSameCat ? "More {$albumCategory} Albums" : "More Portfolio Albums";
 
 // Curate client-specific gallery photo sets
 $clientPhotos = [];
@@ -1070,8 +1090,8 @@ $totalPhotoCount = count($clientPhotos);
 
         .gallery-related-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(320px, 360px));
-            gap: 26px;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 24px;
         }
 
         .related-album-card {
@@ -1203,7 +1223,14 @@ $totalPhotoCount = count($clientPhotos);
             color: #ffffff;
         }
 
-        @media (max-width: 768px) {
+        @media (max-width: 900px) {
+            .gallery-related-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 20px;
+            }
+        }
+
+        @media (max-width: 640px) {
             .gallery-cta-banner {
                 flex-direction: column;
                 align-items: flex-start;
