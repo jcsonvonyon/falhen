@@ -24,7 +24,7 @@
 
     # Remove .php extension from URLs
     RewriteCond %{REQUEST_FILENAME}.php -f
-    RewriteRule ^([^/]+)/?$ $1.php [L]
+    RewriteRule ^([^/]+)/?$ $1.php [QSA,L]
 </IfModule>
 
 # Security Headers & Cache Settings

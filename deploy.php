@@ -8,6 +8,133 @@ $secretKey = 'falhen_deploy_2026';
 $providedKey = $_GET['key'] ?? $_POST['key'] ?? '';
 
 if ($providedKey !== $secretKey) {
+    // If accessed from a web browser without key in URL, present an authentication form
+    $isHtml = (strpos($_SERVER['HTTP_ACCEPT'] ?? '', 'text/html') !== false);
+    if ($isHtml) {
+        http_response_code(401);
+        ?>
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Falhen Media &mdash; cPanel Git Deployment</title>
+            <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+            <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+            <style>
+                body {
+                    margin: 0;
+                    padding: 0;
+                    background: #09090b;
+                    color: #fafafa;
+                    font-family: 'Plus Jakarta Sans', sans-serif;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    min-height: 100vh;
+                }
+                .deploy-card {
+                    background: #18181b;
+                    border: 1px solid rgba(255, 255, 255, 0.1);
+                    border-radius: 16px;
+                    padding: 36px 32px;
+                    max-width: 440px;
+                    width: 90%;
+                    box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+                    text-align: center;
+                }
+                .deploy-icon {
+                    width: 56px;
+                    height: 56px;
+                    border-radius: 12px;
+                    background: rgba(239, 68, 68, 0.12);
+                    border: 1px solid rgba(239, 68, 68, 0.3);
+                    color: #ef4444;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-size: 1.5rem;
+                    margin: 0 auto 20px;
+                }
+                h1 {
+                    font-size: 1.3rem;
+                    margin: 0 0 8px;
+                    font-weight: 700;
+                }
+                p {
+                    font-size: 0.85rem;
+                    color: #a1a1aa;
+                    margin: 0 0 24px;
+                    line-height: 1.5;
+                }
+                .deploy-input {
+                    width: 100%;
+                    box-sizing: border-box;
+                    background: #27272a;
+                    border: 1px solid rgba(255, 255, 255, 0.12);
+                    border-radius: 8px;
+                    padding: 12px 14px;
+                    color: #ffffff;
+                    font-size: 0.92rem;
+                    font-family: 'JetBrains Mono', monospace;
+                    margin-bottom: 16px;
+                    outline: none;
+                    text-align: center;
+                }
+                .deploy-input:focus {
+                    border-color: #ef4444;
+                }
+                .btn-deploy {
+                    width: 100%;
+                    background: #dc2626;
+                    color: #ffffff;
+                    border: none;
+                    padding: 12px 20px;
+                    border-radius: 8px;
+                    font-weight: 700;
+                    font-size: 0.95rem;
+                    cursor: pointer;
+                    transition: background 0.2s;
+                    display: inline-flex;
+                    align-items: center;
+                    justify-content: center;
+                    gap: 8px;
+                }
+                .btn-deploy:hover {
+                    background: #b91c1c;
+                }
+                .direct-link-note {
+                    margin-top: 18px;
+                    font-size: 0.78rem;
+                    color: #71717a;
+                }
+                .direct-link-note a {
+                    color: #ef4444;
+                    text-decoration: none;
+                    word-break: break-all;
+                }
+            </style>
+        </head>
+        <body>
+            <div class="deploy-card">
+                <div class="deploy-icon"><i class="fa-solid fa-cloud-arrow-up"></i></div>
+                <h1>cPanel Git Deployment</h1>
+                <p>Enter your secret deployment key below or click the button to trigger a production git pull.</p>
+                <form method="POST" action="deploy.php">
+                    <input type="password" name="key" class="deploy-input" value="falhen_deploy_2026" placeholder="Enter Secret Key" required>
+                    <button type="submit" class="btn-deploy"><i class="fa-solid fa-rocket"></i> Deploy Latest Commit</button>
+                </form>
+                <div class="direct-link-note">
+                    Or access directly via: <br>
+                    <a href="deploy.php?key=falhen_deploy_2026">deploy.php?key=falhen_deploy_2026</a>
+                </div>
+            </div>
+        </body>
+        </html>
+        <?php
+        exit;
+    }
+
     http_response_code(403);
     echo json_encode([
         'status' => 'error',
