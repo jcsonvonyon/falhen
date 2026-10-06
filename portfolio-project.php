@@ -772,7 +772,18 @@ $relatedProjects = array_slice($relatedProjects, 0, 3);
                 font-size: 0.8rem;
             }
             .more-projects-grid {
-                grid-template-columns: 1fr;
+                grid-template-columns: repeat(2, 1fr) !important;
+                gap: 12px !important;
+            }
+            .more-projects-grid .project-card-info {
+                padding: 8px 10px 10px 10px;
+            }
+            .more-projects-grid .project-card-cat {
+                font-size: 0.68rem;
+            }
+            .more-projects-grid .project-card-title {
+                font-size: 0.78rem !important;
+                line-height: 1.25;
             }
         }
     </style>

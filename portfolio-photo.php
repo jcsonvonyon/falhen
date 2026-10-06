@@ -930,25 +930,119 @@ $totalPhotoCount = count($clientPhotos);
             }
         }
 
+        .gallery-action-btns-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-top: 10px;
+        }
+
+        .btn-hero-share {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            color: #ffffff;
+            padding: 12px 22px;
+            border-radius: 12px;
+            font-size: 0.95rem;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-hero-share:hover {
+            background: rgba(255, 255, 255, 0.16);
+            border-color: rgba(255, 255, 255, 0.3);
+            color: #ffffff;
+            transform: translateY(-2px);
+        }
+
         @media (max-width: 640px) {
             .gallery-nav-bar {
-                padding: 12px 18px;
+                padding: 12px 16px;
+            }
+            .gallery-nav-back span {
+                display: none;
+            }
+            .gallery-nav-back {
+                width: 38px;
+                height: 38px;
+                padding: 0;
+                justify-content: center;
+                background: rgba(255, 255, 255, 0.06);
+                border: 1px solid rgba(255, 255, 255, 0.1);
+                border-radius: 10px;
+                font-size: 0.95rem;
+            }
+            .btn-nav-book {
+                display: none;
+            }
+            .btn-nav-share {
+                width: 38px;
+                height: 38px;
+                padding: 0;
+                justify-content: center;
+                border-radius: 10px;
+                font-size: 0.95rem;
             }
             .btn-nav-share span {
                 display: none;
             }
             .gallery-hero-section {
-                padding: 30px 18px 24px;
+                padding: 20px 16px 20px;
+            }
+            .gallery-hero-grid {
+                gap: 24px;
+            }
+            .hero-featured-card {
+                border-radius: 16px;
             }
             .gallery-main-title {
-                font-size: 2.1rem;
+                font-size: 1.85rem;
+                letter-spacing: -0.3px;
+                margin-bottom: 6px;
+            }
+            .gallery-description {
+                font-size: 0.88rem;
+                margin-bottom: 16px;
+            }
+            .gallery-meta-pills-row {
+                gap: 8px;
+                margin-bottom: 20px;
+            }
+            .meta-pill-chip {
+                padding: 5px 12px;
+                font-size: 0.78rem;
+            }
+            .gallery-action-btns-row {
+                width: 100%;
+                gap: 8px;
+            }
+            .btn-download-all-green {
+                flex: 1;
+                justify-content: center;
+                padding: 11px 14px;
+                font-size: 0.85rem;
+                border-radius: 10px;
+            }
+            .btn-hero-share {
+                padding: 11px 16px;
+                font-size: 0.85rem;
+                border-radius: 10px;
             }
             .gallery-photos-container {
-                padding: 10px 18px 80px;
+                padding: 10px 16px 75px;
             }
             .gallery-grid {
-                grid-template-columns: 1fr;
-                gap: 16px;
+                grid-template-columns: repeat(2, 1fr) !important;
+                gap: 10px !important;
+            }
+            .gallery-photo-card {
+                border-radius: 12px;
+                aspect-ratio: 4 / 5;
             }
             .carousel-arrow-btn {
                 width: 42px;
@@ -959,7 +1053,17 @@ $totalPhotoCount = count($clientPhotos);
                 opacity: 1;
                 background: linear-gradient(to top, rgba(0,0,0,0.7) 0%, transparent 60%);
                 align-items: flex-end;
-                padding-bottom: 14px;
+                padding-bottom: 12px;
+                gap: 10px;
+            }
+            .overlay-circle-btn {
+                width: 36px;
+                height: 36px;
+                font-size: 0.92rem;
+            }
+            .gallery-related-grid {
+                grid-template-columns: repeat(2, 1fr) !important;
+                gap: 12px !important;
             }
         }
 
@@ -1524,10 +1628,15 @@ $totalPhotoCount = count($clientPhotos);
                     <?php endif; ?>
                 </div>
 
-                <!-- Green Download All Action Button -->
-                <button type="button" class="btn-download-all-green" id="btnDownloadAll" onclick="downloadAllPhotos()">
-                    <i class="fa-solid fa-cloud-arrow-down"></i> Download All (<?php echo $totalPhotoCount; ?>)
-                </button>
+                <!-- Action Buttons: Download All and Share (matching reference) -->
+                <div class="gallery-action-btns-row">
+                    <button type="button" class="btn-download-all-green" id="btnDownloadAll" onclick="downloadAllPhotos()">
+                        <i class="fa-solid fa-cloud-arrow-down"></i> Download All (<?php echo $totalPhotoCount; ?>)
+                    </button>
+                    <button type="button" class="btn-hero-share" onclick="shareGalleryPage()">
+                        <i class="fa-solid fa-share-nodes"></i> Share
+                    </button>
+                </div>
             </div>
 
         </div>

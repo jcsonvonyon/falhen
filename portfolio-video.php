@@ -516,10 +516,21 @@ $relatedVideos = array_slice($relatedVideos, 0, 3);
 
         @media (max-width: 600px) {
             .more-videos-grid {
-                grid-template-columns: 1fr;
+                grid-template-columns: repeat(2, 1fr) !important;
+                gap: 12px !important;
             }
             .video-main-heading {
                 font-size: 1.8rem;
+            }
+            .more-video-card-info {
+                padding: 8px 10px 10px 10px;
+            }
+            .more-video-title {
+                font-size: 0.78rem !important;
+                line-height: 1.25;
+            }
+            .more-video-sub {
+                font-size: 0.68rem;
             }
         }
 

@@ -528,81 +528,61 @@ $featuredAllProjects = array_filter($allProjects, function($item) {
             gap: 8px;
         }
 
-        /* Category Filter Tabs */
+        /* Category Filter Tabs with Horizontal Scroll and Underline Indicator */
         .filter-pills-row {
             display: flex;
             align-items: center;
-            gap: 10px;
-            margin-bottom: 30px;
-            flex-wrap: wrap;
+            gap: 24px;
+            margin-bottom: 28px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            padding-bottom: 10px;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+            white-space: nowrap;
+        }
+
+        .filter-pills-row::-webkit-scrollbar {
+            display: none;
         }
 
         .cat-pill-btn,
         .project-pill-btn {
-            background: transparent;
-            border: 1px solid rgba(255, 255, 255, 0.22);
-            color: #ffffff;
-            font-family: inherit;
-            font-size: 0.86rem;
-            font-weight: 700;
-            padding: 8px 22px;
-            border-radius: 50px;
-            cursor: pointer;
-            transition: all 0.25s ease;
-        }
-
-        .cat-pill-btn.active,
-        .cat-pill-btn:hover,
-        .project-pill-btn.active,
-        .project-pill-btn:hover {
-            background: #dc2626;
-            border-color: #dc2626;
-            color: #ffffff;
-            box-shadow: 0 4px 15px rgba(220, 38, 38, 0.4);
-        }
-
-        /* Projects Underline Navigation Tabs (matching reference) */
-        #projectsGalleryView .filter-pills-row {
-            display: flex;
-            align-items: center;
-            gap: 28px;
-            margin-bottom: 32px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-            padding-bottom: 12px;
-        }
-
-        #projectsGalleryView .project-pill-btn {
             background: transparent;
             border: none;
             border-bottom: 2px solid transparent;
             border-radius: 0;
             color: #94a3b8;
             font-family: inherit;
-            font-size: 0.9rem;
+            font-size: 0.88rem;
             font-weight: 800;
-            letter-spacing: 0.8px;
+            letter-spacing: 0.6px;
             text-transform: uppercase;
-            padding: 4px 2px 10px 2px;
+            padding: 4px 4px 10px 4px;
             cursor: pointer;
             box-shadow: none;
             transition: all 0.25s ease;
+            flex-shrink: 0;
+            white-space: nowrap;
         }
 
-        #projectsGalleryView .project-pill-btn:hover {
+        .cat-pill-btn:hover,
+        .project-pill-btn:hover {
             color: #ffffff;
             border-bottom-color: transparent;
             background: transparent;
             box-shadow: none;
         }
 
-        #projectsGalleryView .project-pill-btn.active {
+        .cat-pill-btn.active,
+        .project-pill-btn.active {
             color: #ef4444;
             border-bottom: 2px solid #ef4444;
             background: transparent;
             box-shadow: none;
         }
 
-        /* All Albums & Video Grid (3 columns) */
+        /* All Albums 3-Column Grid on Desktop, 2-Column on Tablet & Mobile */
         .all-albums-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
@@ -613,16 +593,19 @@ $featuredAllProjects = array_filter($allProjects, function($item) {
         @media (max-width: 992px) {
             .all-albums-grid {
                 grid-template-columns: repeat(2, 1fr);
+                gap: 16px;
             }
         }
 
-        @media (max-width: 600px) {
+        @media (max-width: 640px) {
             .all-albums-grid {
-                grid-template-columns: 1fr;
+                grid-template-columns: repeat(2, 1fr);
+                gap: 12px;
+                margin-bottom: 36px;
             }
         }
 
-        /* Projects 4-Column Grid & Card Styling */
+        /* Projects 4-Column Grid on Desktop, 2-Column on Mobile */
         .projects-4col-grid {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
@@ -639,13 +622,66 @@ $featuredAllProjects = array_filter($allProjects, function($item) {
         @media (max-width: 900px) {
             .projects-4col-grid {
                 grid-template-columns: repeat(2, 1fr);
+                gap: 16px;
             }
         }
 
-        @media (max-width: 600px) {
+        @media (max-width: 640px) {
             .projects-4col-grid {
-                grid-template-columns: 1fr;
+                grid-template-columns: repeat(2, 1fr);
+                gap: 12px;
+                margin-bottom: 36px;
             }
+        }
+
+        /* Projects Search Bar */
+        .port-search-bar-wrap {
+            margin-bottom: 22px;
+            width: 100%;
+        }
+
+        .port-search-box {
+            display: flex;
+            align-items: center;
+            background: #101015;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 9999px;
+            padding: 10px 18px;
+            gap: 12px;
+            transition: all 0.25s ease;
+        }
+
+        .port-search-box:focus-within {
+            border-color: rgba(239, 68, 68, 0.7);
+            background: #14141a;
+            box-shadow: 0 0 16px rgba(239, 68, 68, 0.18);
+        }
+
+        .port-search-box .search-icon {
+            color: #71717a;
+            font-size: 0.9rem;
+            flex-shrink: 0;
+        }
+
+        .port-search-box input {
+            background: transparent;
+            border: none;
+            outline: none;
+            color: #ffffff;
+            font-size: 0.88rem;
+            font-family: inherit;
+            width: 100%;
+        }
+
+        .port-search-box input::placeholder {
+            color: #71717a;
+            font-size: 0.84rem;
+        }
+
+        .port-search-box .search-end-icon {
+            color: #71717a;
+            font-size: 0.82rem;
+            flex-shrink: 0;
         }
 
         .project-card {
@@ -931,12 +967,15 @@ $featuredAllProjects = array_filter($allProjects, function($item) {
         @media (max-width: 992px) {
             .video-grid {
                 grid-template-columns: repeat(2, 1fr);
+                gap: 16px;
             }
         }
 
         @media (max-width: 640px) {
             .video-grid {
-                grid-template-columns: 1fr;
+                grid-template-columns: repeat(2, 1fr);
+                gap: 12px;
+                margin-bottom: 36px;
             }
         }
 
@@ -1172,25 +1211,266 @@ $featuredAllProjects = array_filter($allProjects, function($item) {
             object-fit: contain;
         }
 
+        .tab-label-short {
+            display: none;
+        }
+
+        .tab-label-full {
+            display: inline;
+        }
+
         @media (max-width: 992px) {
             .featured-albums-grid,
             .all-albums-grid {
                 grid-template-columns: repeat(2, 1fr);
+                gap: 16px;
             }
             .book-shoot-card {
                 flex-direction: column;
                 align-items: flex-start;
-                gap: 20px;
+                gap: 16px;
             }
         }
 
-        @media (max-width: 600px) {
-            .featured-albums-grid,
-            .all-albums-grid {
-                grid-template-columns: 1fr;
+        @media (max-width: 640px) {
+            /* Header */
+            .port-nav-bar {
+                padding: 12px 0;
+            }
+            .port-nav-container {
+                padding: 0 16px;
+            }
+            .port-back-link {
+                width: 38px;
+                height: 38px;
+                padding: 0;
+                justify-content: center;
+                background: rgba(255, 255, 255, 0.05);
+                border: 1px solid rgba(255, 255, 255, 0.1);
+                border-radius: 10px;
+                color: #e4e4e7;
+                font-size: 0.95rem;
+            }
+            .port-back-link .nav-text {
+                display: none;
+            }
+            .port-logo-center img {
+                height: 24px;
+            }
+            .btn-port-contact {
+                width: 38px;
+                height: 38px;
+                padding: 0;
+                justify-content: center;
+                border-radius: 10px;
+                font-size: 0.95rem;
+            }
+            .btn-port-contact .nav-text {
+                display: none;
+            }
+
+            /* Hero */
+            .port-hero-section {
+                padding: 42px 16px 28px 16px;
             }
             .port-hero-title {
-                font-size: 2.8rem;
+                font-size: 2.15rem;
+                letter-spacing: -0.5px;
+                margin-bottom: 6px;
+            }
+            .port-hero-subtitle {
+                font-size: 0.88rem;
+                margin: 0 0 22px 0;
+            }
+
+            /* Switcher Pills */
+            .gallery-type-bar {
+                padding: 4px;
+                gap: 4px;
+                border-radius: 12px;
+                background: rgba(14, 14, 18, 0.96);
+                max-width: 320px;
+                width: calc(100% - 24px);
+                margin: 0 auto;
+                display: inline-flex;
+            }
+            .gallery-tab-btn {
+                flex: 1;
+                justify-content: center;
+                padding: 7px 10px;
+                font-size: 0.78rem;
+                border-radius: 8px;
+                gap: 5px;
+            }
+            .gallery-tab-btn .tab-tag {
+                display: none !important;
+            }
+            .gallery-tab-btn .tab-full-label {
+                display: none;
+            }
+            .gallery-tab-btn .tab-short-label {
+                display: inline;
+            }
+
+            /* Main Container */
+            .port-main-container {
+                padding: 24px 16px 80px;
+            }
+
+            /* Booking Callout Banner */
+            .book-shoot-card {
+                padding: 12px 14px;
+                border-radius: 12px;
+                margin-bottom: 24px;
+                flex-direction: row;
+                align-items: center;
+                justify-content: space-between;
+                gap: 10px;
+            }
+            .book-shoot-left {
+                gap: 10px;
+            }
+            .book-shoot-icon {
+                width: 34px;
+                height: 34px;
+                border-radius: 8px;
+                font-size: 0.9rem;
+            }
+            .book-shoot-title {
+                font-size: 0.85rem;
+                margin: 0;
+            }
+            .book-shoot-desc {
+                display: none;
+            }
+            .btn-book-shoot {
+                padding: 8px 12px;
+                font-size: 0.76rem;
+                border-radius: 8px;
+                white-space: nowrap;
+                gap: 5px;
+            }
+
+            /* Section Headers */
+            .port-section-header {
+                margin-bottom: 16px;
+                padding-bottom: 10px;
+            }
+            .port-section-title {
+                font-size: 1.15rem;
+            }
+            .port-section-subtitle {
+                font-size: 0.8rem;
+            }
+
+            /* Featured Album Hero */
+            .featured-albums-grid {
+                grid-template-columns: 1fr;
+                gap: 16px;
+                margin-bottom: 28px;
+            }
+            .album-thumb-wrap {
+                height: 220px;
+            }
+            .album-content-body {
+                padding: 14px 16px;
+            }
+            .album-title-text {
+                font-size: 0.95rem;
+            }
+
+            /* All Albums Cards (2 Columns) */
+            .grid-thumb-box {
+                height: auto !important;
+                aspect-ratio: 4 / 4.8 !important;
+            }
+            .grid-card-footer {
+                padding: 8px 10px 10px 10px;
+            }
+            .grid-card-title {
+                font-size: 0.78rem !important;
+                line-height: 1.25;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+            .grid-card-cat {
+                font-size: 0.68rem;
+            }
+            .grid-card-arrow {
+                font-size: 0.75rem;
+            }
+
+            /* Project Cards (2 Columns) */
+            .project-card-image-wrap {
+                aspect-ratio: 16 / 10;
+            }
+            .project-card-info {
+                padding: 8px 10px 10px 10px;
+            }
+            .project-card-cat {
+                font-size: 0.68rem;
+                color: #ef4444;
+                font-weight: 700;
+                margin-bottom: 2px;
+            }
+            .project-card-title {
+                font-size: 0.78rem !important;
+                line-height: 1.25;
+                display: -webkit-box;
+                -webkit-line-clamp: 2;
+                -webkit-box-orient: vertical;
+                overflow: hidden;
+            }
+
+            /* Video Cards (2 Columns) */
+            .video-card-thumb {
+                aspect-ratio: 16 / 9;
+            }
+            .video-featured-tag {
+                top: 8px;
+                left: 8px;
+                font-size: 0.62rem;
+                padding: 2px 5px;
+            }
+            .video-duration-pill,
+            .video-duration-badge {
+                bottom: 8px;
+                right: 8px;
+                font-size: 0.65rem;
+                padding: 2px 6px;
+            }
+            .video-card-info {
+                padding: 8px 10px 10px 10px;
+                gap: 2px;
+            }
+            .video-card-title {
+                font-size: 0.78rem !important;
+                line-height: 1.25;
+                display: -webkit-box;
+                -webkit-line-clamp: 2;
+                -webkit-box-orient: vertical;
+                overflow: hidden;
+            }
+            .video-card-sub {
+                font-size: 0.68rem;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+
+            /* Footer */
+            .port-footer-bar {
+                flex-direction: column;
+                gap: 14px;
+                text-align: center;
+                padding-bottom: 75px;
+            }
+            .port-footer-links {
+                justify-content: center;
+                flex-wrap: wrap;
+                gap: 14px;
+                font-size: 0.82rem;
             }
         }
     </style>
@@ -1200,14 +1480,14 @@ $featuredAllProjects = array_filter($allProjects, function($item) {
     <!-- Top Sub-Nav Bar -->
     <header class="port-nav-bar">
         <div class="port-nav-container">
-            <a href="/index.php" class="port-back-link">
-                <i class="fa-solid fa-arrow-left"></i> Back to Home
+            <a href="/index.php" class="port-back-link" title="Back to Home">
+                <i class="fa-solid fa-arrow-left"></i> <span class="nav-text">Back to Home</span>
             </a>
             <a href="/" class="port-logo-center">
                 <img src="/assets/img/icons/logo.png" alt="Falhen Logo">
             </a>
-            <a href="/contact.php" class="btn-port-contact">
-                <i class="fa-regular fa-paper-plane"></i> Contact Us
+            <a href="/contact.php" class="btn-port-contact" title="Contact Us">
+                <i class="fa-solid fa-envelope"></i> <span class="nav-text">Contact Us</span>
             </a>
         </div>
     </header>
@@ -1220,13 +1500,13 @@ $featuredAllProjects = array_filter($allProjects, function($item) {
         <!-- Gallery Type Switcher Bar -->
         <div class="gallery-type-bar">
             <button class="gallery-tab-btn active" id="btnTypePhoto" onclick="switchGalleryType('photo')">
-                <i class="fa-solid fa-camera"></i> Photo Gallery <span class="tab-tag">Albums</span>
+                <i class="fa-solid fa-camera"></i> <span class="tab-label-full">Photo Gallery</span><span class="tab-label-short">Photo</span> <span class="tab-tag">Albums</span>
             </button>
             <button class="gallery-tab-btn" id="btnTypeVideo" onclick="switchGalleryType('video')">
-                <i class="fa-solid fa-film"></i> Video Gallery <span class="tab-tag">Reels</span>
+                <i class="fa-solid fa-film"></i> <span class="tab-label-full">Video Gallery</span><span class="tab-label-short">Video</span> <span class="tab-tag">Reels</span>
             </button>
             <button class="gallery-tab-btn" id="btnTypeProject" onclick="switchGalleryType('project')">
-                <i class="fa-solid fa-border-all"></i> All Projects <span class="tab-tag"><?php echo count($portfolioProjects); ?> projects</span>
+                <i class="fa-solid fa-border-all"></i> <span class="tab-label-full">All Projects</span><span class="tab-label-short">All</span> <span class="tab-tag"><?php echo count($portfolioProjects); ?> projects</span>
             </button>
         </div>
     </section>
@@ -1251,13 +1531,55 @@ $featuredAllProjects = array_filter($allProjects, function($item) {
 
         <!-- Photo Gallery View -->
         <div id="photoGalleryView">
+            <?php if (!empty($featuredAlbums)): ?>
+                <!-- Featured Albums Section -->
+                <div class="port-section-header">
+                    <div>
+                        <h2 class="port-section-title"><i class="fa-solid fa-star"></i> Featured Albums</h2>
+                        <p class="port-section-subtitle">Our best work, hand-picked</p>
+                    </div>
+                </div>
+
+                <div class="featured-albums-grid">
+                    <?php foreach ($featuredAlbums as $fItem): ?>
+                        <div class="album-card" onclick="window.location.href='/portfolio-photo.php?id=<?php echo $fItem['id']; ?>'">
+                            <div class="album-thumb-wrap">
+                                <div class="album-badges">
+                                    <span class="badge-feat"><i class="fa-solid fa-star"></i> FEATURED</span>
+                                    <span class="badge-cat"><?php echo htmlspecialchars(strtoupper($fItem['category'])); ?></span>
+                                </div>
+                                <img src="<?php echo htmlspecialchars($fItem['image']); ?>" alt="<?php echo htmlspecialchars($fItem['title']); ?>" loading="lazy">
+                            </div>
+                            <div class="album-content-body">
+                                <div>
+                                    <h3 class="album-title-text"><?php echo htmlspecialchars($fItem['title']); ?></h3>
+                                    <?php if (!empty($fItem['client'])): ?>
+                                        <div style="font-size: 0.8rem; color: #a1a1aa; margin-top: 4px; display: flex; align-items: center; gap: 6px;">
+                                            <i class="fa-regular fa-user" style="font-size: 0.75rem;"></i> <?php echo htmlspecialchars($fItem['client']); ?>
+                                        </div>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+
+                <!-- All Albums Section Header -->
+                <div class="port-section-header" style="margin-top: 24px;">
+                    <div>
+                        <h2 class="port-section-title"><i class="fa-solid fa-images"></i> All Albums</h2>
+                        <p class="port-section-subtitle">Browse the full collection</p>
+                    </div>
+                </div>
+            <?php endif; ?>
+
             <!-- Category Filter Tabs -->
             <div class="filter-pills-row">
-                <button class="cat-pill-btn active" data-filter="all" onclick="filterCategory('all', this)">All</button>
-                <button class="cat-pill-btn" data-filter="Portrait" onclick="filterCategory('Portrait', this)">Portrait</button>
-                <button class="cat-pill-btn" data-filter="Event" onclick="filterCategory('Event', this)">Event</button>
-                <button class="cat-pill-btn" data-filter="Birthday" onclick="filterCategory('Birthday', this)">Birthday</button>
-                <button class="cat-pill-btn" data-filter="Wedding" onclick="filterCategory('Wedding', this)">Wedding</button>
+                <button class="cat-pill-btn active" data-filter="all" onclick="filterCategory('all', this)">ALL</button>
+                <button class="cat-pill-btn" data-filter="Portrait" onclick="filterCategory('Portrait', this)">PORTRAIT</button>
+                <button class="cat-pill-btn" data-filter="Event" onclick="filterCategory('Event', this)">EVENT</button>
+                <button class="cat-pill-btn" data-filter="Birthday" onclick="filterCategory('Birthday', this)">BIRTHDAY</button>
+                <button class="cat-pill-btn" data-filter="Wedding" onclick="filterCategory('Wedding', this)">WEDDING</button>
             </div>
 
             <!-- All Albums 3-Column Grid -->
@@ -1345,7 +1667,16 @@ $featuredAllProjects = array_filter($allProjects, function($item) {
                 <button class="project-pill-btn" onclick="filterProjectsCategory('Events', this)">EVENTS</button>
             </div>
 
-            <!-- Projects 4-Column Grid -->
+            <!-- Search Bar Matching Reference Mockup -->
+            <div class="port-search-bar-wrap">
+                <div class="port-search-box">
+                    <i class="fa-solid fa-magnifying-glass search-icon"></i>
+                    <input type="text" id="projectSearchInput" placeholder="Search by keyword, e.g. Live Streaming" oninput="filterProjectsKeyword(this.value)">
+                    <span class="search-end-icon"><i class="fa-solid fa-link"></i></span>
+                </div>
+            </div>
+
+            <!-- Projects 4-Column Grid (2-Column on Mobile) -->
             <div class="projects-4col-grid" id="projectsGrid">
                 <?php foreach ($portfolioProjects as $pItem): ?>
                     <div class="project-card" data-cat="<?php echo htmlspecialchars($pItem['category']); ?>" onclick="window.location.href='/portfolio-project.php?id=<?php echo $pItem['id']; ?>'">
@@ -1514,6 +1845,19 @@ $featuredAllProjects = array_filter($allProjects, function($item) {
                     cardCat.includes(target) || 
                     target.includes(cardCat)
                 ) {
+                    card.style.display = 'flex';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        }
+
+        function filterProjectsKeyword(query) {
+            const q = (query || '').toLowerCase().trim();
+            const cards = document.querySelectorAll('#projectsGrid .project-card, #projectsGrid .grid-album-card');
+            cards.forEach(card => {
+                const text = (card.innerText || '').toLowerCase();
+                if (!q || text.includes(q)) {
                     card.style.display = 'flex';
                 } else {
                     card.style.display = 'none';
