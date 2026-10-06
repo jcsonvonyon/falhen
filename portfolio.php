@@ -1319,36 +1319,43 @@ $featuredAllProjects = array_filter($allProjects, function($item) {
 
             /* Booking Callout Banner */
             .book-shoot-card {
-                padding: 12px 14px;
+                padding: 10px 14px;
                 border-radius: 12px;
                 margin-bottom: 24px;
                 flex-direction: row;
                 align-items: center;
                 justify-content: space-between;
-                gap: 10px;
+                gap: 8px;
             }
             .book-shoot-left {
-                gap: 10px;
+                gap: 8px;
+                flex-shrink: 1;
+                min-width: 0;
             }
             .book-shoot-icon {
-                width: 34px;
-                height: 34px;
+                width: 32px;
+                height: 32px;
                 border-radius: 8px;
-                font-size: 0.9rem;
+                font-size: 0.85rem;
+                flex-shrink: 0;
             }
             .book-shoot-title {
-                font-size: 0.85rem;
+                font-size: 0.74rem !important;
                 margin: 0;
+                white-space: nowrap;
+                letter-spacing: -0.2px;
+                font-weight: 700;
             }
             .book-shoot-desc {
                 display: none;
             }
             .btn-book-shoot {
-                padding: 8px 12px;
-                font-size: 0.76rem;
+                padding: 7px 12px;
+                font-size: 0.74rem;
                 border-radius: 8px;
                 white-space: nowrap;
                 gap: 5px;
+                flex-shrink: 0;
             }
 
             /* Section Headers */
