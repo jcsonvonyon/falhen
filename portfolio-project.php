@@ -750,10 +750,20 @@ $relatedProjects = array_slice($relatedProjects, 0, 3);
             .project-cta-card {
                 flex-direction: column;
                 align-items: flex-start;
+                padding: 20px;
+                gap: 18px;
+            }
+            .project-cta-title {
+                font-size: 1.05rem;
+            }
+            .project-cta-subtitle {
+                font-size: 0.84rem;
             }
             .btn-project-cta {
                 width: 100%;
                 justify-content: center;
+                font-size: 0.85rem;
+                padding: 11px 20px;
             }
         }
 
@@ -770,6 +780,33 @@ $relatedProjects = array_slice($relatedProjects, 0, 3);
             .nav-right-actions .btn-nav-cta {
                 padding: 7px 14px;
                 font-size: 0.8rem;
+            }
+            .project-cta-card {
+                padding: 16px;
+                gap: 14px;
+                border-radius: 14px;
+            }
+            .project-cta-left {
+                gap: 12px;
+            }
+            .project-cta-star {
+                width: 38px;
+                height: 38px;
+                font-size: 0.95rem;
+            }
+            .project-cta-title {
+                font-size: 0.92rem;
+                margin: 0 0 2px 0;
+            }
+            .project-cta-subtitle {
+                font-size: 0.76rem;
+                line-height: 1.4;
+            }
+            .btn-project-cta {
+                font-size: 0.78rem;
+                padding: 9px 16px;
+                border-radius: 9px;
+                gap: 6px;
             }
             .more-projects-grid {
                 grid-template-columns: repeat(2, 1fr) !important;
