@@ -233,12 +233,12 @@ require_once __DIR__ . '/includes/header.php';
 
     .service-tag-pill {
         background: transparent;
-        border: 1px solid transparent;
+        /* border: 1px solid transparent; */
         color: #94a3b8;
         font-size: 0.84rem;
         font-weight: 500;
-        padding: 5px 12px;
-        border-radius: 6px;
+        /* padding: 5px 12px; */
+        /* border-radius: 6px; */
         text-decoration: none;
         transition: all 0.2s ease;
         display: inline-block;
@@ -389,22 +389,218 @@ require_once __DIR__ . '/includes/header.php';
     }
 
     @media (max-width: 992px) {
+        .contact-hero-stage {
+            padding: 120px 0 45px 0;
+        }
         .contact-main-grid {
             grid-template-columns: 1fr;
-            gap: 40px;
+            gap: 36px;
+            margin-bottom: 60px;
         }
         .contact-hero-title {
-            font-size: 3rem;
+            font-size: 2.8rem;
+        }
+        .contact-form-card {
+            padding: 30px 28px;
         }
     }
 
-    @media (max-width: 640px) {
-        .contact-form-row {
-            grid-template-columns: 1fr;
-            gap: 16px;
+    @media (max-width: 768px) {
+        .contact-hero-stage {
+            padding: 105px 0 32px 0;
+        }
+        .contact-hero-title {
+            font-size: 2.3rem;
+            letter-spacing: -0.8px;
+            margin-bottom: 18px;
+            line-height: 1.15;
+        }
+        .contact-trust-row {
+            gap: 18px;
+            margin-top: 16px;
+            flex-wrap: wrap;
+        }
+        .contact-trust-item {
+            font-size: 0.84rem;
+        }
+        .contact-subheader-section {
+            padding: 28px 0 12px 0;
+        }
+        .contact-sub-desc {
+            font-size: 0.95rem;
+            margin: 0 auto 30px auto;
+            padding: 0 12px;
+            line-height: 1.55;
+        }
+        .contact-main-grid {
+            gap: 28px;
+            margin-bottom: 45px;
+        }
+        .conversation-heading {
+            font-size: 1.85rem;
+            margin-bottom: 10px;
+        }
+        .conversation-desc {
+            font-size: 0.88rem;
+            margin-bottom: 18px;
+            line-height: 1.55;
+        }
+        .contact-info-list {
+            gap: 12px;
+        }
+        .contact-info-card {
+            padding: 13px 16px;
+            gap: 14px;
+        }
+        .contact-info-icon-box {
+            width: 38px;
+            height: 38px;
+            font-size: 0.95rem;
+        }
+        .contact-info-label {
+            font-size: 0.88rem;
+        }
+        .contact-info-val {
+            font-size: 0.85rem;
+        }
+        .services-tag-box {
+            padding: 18px 18px;
+        }
+        .services-tag-title {
+            font-size: 0.9rem;
+            margin-bottom: 12px;
+        }
+        .services-tag-cloud {
+            gap: 7px 8px;
+        }
+        .service-tag-pill {
+            font-size: 0.8rem;
+            padding: 5px 11px;
         }
         .contact-form-card {
             padding: 24px 20px;
+            border-radius: 16px;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .contact-hero-stage {
+            padding: 95px 0 26px 0;
+        }
+        .contact-hero-title {
+            font-size: 1.95rem;
+            letter-spacing: -0.5px;
+            margin-bottom: 14px;
+            line-height: 1.18;
+        }
+        .contact-trust-row {
+            gap: 14px;
+            margin-top: 14px;
+        }
+        .contact-trust-item {
+            font-size: 0.78rem;
+            gap: 6px;
+        }
+        .contact-subheader-section {
+            padding: 20px 0 8px 0;
+        }
+        .contact-sub-desc {
+            font-size: 0.88rem;
+            margin: 0 auto 24px auto;
+            padding: 0 4px;
+            line-height: 1.5;
+        }
+        .contact-main-grid {
+            gap: 24px;
+            margin-bottom: 35px;
+        }
+        .conversation-heading {
+            font-size: 1.6rem;
+            margin-bottom: 8px;
+            line-height: 1.2;
+        }
+        .conversation-desc {
+            font-size: 0.84rem;
+            margin-bottom: 16px;
+            line-height: 1.5;
+        }
+        .contact-info-list {
+            gap: 10px;
+        }
+        .contact-info-card {
+            padding: 11px 13px;
+            gap: 12px;
+            border-radius: 12px;
+        }
+        .contact-info-icon-box {
+            width: 36px;
+            height: 36px;
+            font-size: 0.9rem;
+            border-radius: 10px;
+        }
+        .contact-info-label {
+            font-size: 0.82rem;
+        }
+        .contact-info-val {
+            font-size: 0.82rem;
+        }
+        .services-tag-box {
+            padding: 14px 14px;
+            border-radius: 12px;
+        }
+        .services-tag-title {
+            font-size: 0.85rem;
+            margin-bottom: 10px;
+        }
+        .services-tag-cloud {
+            gap: 6px 6px;
+        }
+        .service-tag-pill {
+            font-size: 0.76rem;
+            padding: 4px 9px;
+            border-radius: 5px;
+        }
+        .contact-form-card {
+            padding: 20px 15px;
+            border-radius: 14px;
+        }
+        .contact-form-row {
+            grid-template-columns: 1fr;
+            gap: 14px;
+            margin-bottom: 14px;
+        }
+        .contact-field-group {
+            margin-bottom: 14px;
+        }
+        .contact-field-label {
+            font-size: 0.8rem;
+            margin-bottom: 6px;
+        }
+        .contact-field-control {
+            padding: 11px 13px;
+            font-size: 0.86rem;
+            border-radius: 9px;
+        }
+        select.contact-field-control {
+            background-size: 14px;
+            padding-right: 36px;
+        }
+        textarea.contact-field-control {
+            min-height: 90px;
+        }
+        .char-counter-text {
+            font-size: 0.72rem;
+            margin-top: 5px;
+        }
+        .btn-send-message {
+            padding: 13px 18px;
+            font-size: 0.92rem;
+            border-radius: 10px;
+            margin-top: 6px;
+        }
+        .service-preselected-notice {
+            font-size: 0.75rem;
+            margin-top: 6px;
         }
     }
 </style>
