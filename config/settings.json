@@ -203,7 +203,7 @@
             "icon": "fa-solid fa-film",
             "short_description": "Professional video production services from concept to completion, including scripting, filming, and editing with state-of-the-art equipment.",
             "detail_description": "Our full-service video production team handles every stage of the process \u2014 from initial creative briefs and scriptwriting through on-set filming with cinema-grade cameras to the final polished edit. Whether you need a 30-second ad or a 30-minute brand documentary, we bring precision and artistry to every frame.",
-            "image": "https://res.cloudinary.com/pnabfi91/image/upload/v1786584437/falhen/services/ofbxty4lh9mvblwic5pk.jpg",
+            "image": "https://res.cloudinary.com/pnabfi91/image/upload/v1791294690/falhen/services/b6urkmrrjaqvwtovwtqz.jpg",
             "card_features": [
                 "Corporate videos & commercials",
                 "4K & 8K video capture",
@@ -217,7 +217,9 @@
                 "Scriptwriting & Storyboarding",
                 "Director & DP on Set",
                 "Color Grading & VFX Finishing"
-            ]
+            ],
+            "focal_point_desktop": "bottom center",
+            "focal_point_mobile": "center center"
         },
         {
             "id": 2,
@@ -1192,27 +1194,47 @@
             "full_name": "Henry Falonipe",
             "username": "admin",
             "email": "admin@falhen.com",
-            "role": "Creative Director & Founder",
+            "role": "Super Admin",
             "status": "active",
             "avatar": "https://res.cloudinary.com/pnabfi91/image/upload/v1786712075/falhen/team/ctxjp9mymgqdh2ecg2hu.jpg",
             "created_at": "2024-01-10",
             "password_hash": "$2y$10$JXpfSKp9kdnpy8wSqB2iX.sNB2VlRi6.iKose61vMIL131MPHtkny",
             "base_salary": 2700,
-            "allowances": 300,
+            "allowances": 100,
             "designation": "Creative Director & Founder",
             "department": "Media Production & Post Studio",
-            "currency": "USD"
+            "currency": "USD",
+            "bank_name": "Zenith Bank PLC",
+            "account_number": "1012345678",
+            "account_name": "Henry Falonipe",
+            "raenest_email": "henry@falhen.com",
+            "raenest_id": "RAE-HFAL-01",
+            "lemfi_tag": "@henryfalhen",
+            "taptap_account": "01012345678",
+            "deductions": 200
         },
         {
             "id": 2,
             "full_name": "Kingsley Falonipe",
             "username": "kingsley.falonipe",
             "email": "kingsley@falhen.com",
-            "role": "Operations Specialist",
+            "role": "Production Manager",
             "status": "active",
             "avatar": "https://res.cloudinary.com/pnabfi91/image/upload/v1786713360/falhen/team/ftmzlwwv1szlyurijyno.png",
             "created_at": "2024-02-01",
-            "password_hash": "$2y$10$JXpfSKp9kdnpy8wSqB2iX.sNB2VlRi6.iKose61vMIL131MPHtkny"
+            "password_hash": "$2y$10$JXpfSKp9kdnpy8wSqB2iX.sNB2VlRi6.iKose61vMIL131MPHtkny",
+            "currency": "NGN",
+            "designation": "Operations Specialist",
+            "base_salary": 350000,
+            "allowances": 30000,
+            "deductions": 15000,
+            "bank_name": "Guaranty Trust Bank (GTBank)",
+            "account_number": "0123456789",
+            "account_name": "Kingsley Falonipe",
+            "raenest_email": "kingsley@falhen.com",
+            "raenest_id": "RAE-KFAL-02",
+            "lemfi_tag": "@kingsleyfalhen",
+            "taptap_account": "01023456789"
         },
         {
             "id": 3,
@@ -1223,7 +1245,19 @@
             "status": "active",
             "avatar": "https://res.cloudinary.com/pnabfi91/image/upload/v1786713962/falhen/team/b5v6o8oirs95xihokmgc.jpg",
             "created_at": "2024-02-15",
-            "password_hash": "$2y$10$JXpfSKp9kdnpy8wSqB2iX.sNB2VlRi6.iKose61vMIL131MPHtkny"
+            "password_hash": "$2y$10$JXpfSKp9kdnpy8wSqB2iX.sNB2VlRi6.iKose61vMIL131MPHtkny",
+            "currency": "NGN",
+            "designation": "Head of Marketing & Client Partnerships",
+            "base_salary": 280000,
+            "allowances": 25000,
+            "deductions": 12000,
+            "bank_name": "Access Bank PLC",
+            "account_number": "0691234567",
+            "account_name": "Lisa Okoli",
+            "raenest_email": "lisa@falhen.com",
+            "raenest_id": "RAE-LOKO-03",
+            "lemfi_tag": "@lisaokoli",
+            "taptap_account": "01069123456"
         },
         {
             "id": 4,
@@ -1234,7 +1268,19 @@
             "status": "active",
             "avatar": "https://res.cloudinary.com/pnabfi91/image/upload/v1786714006/falhen/team/ini79za7jvbjokrf1dup.jpg",
             "created_at": "2024-03-01",
-            "password_hash": "$2y$10$Q7Esv78DED/3yH6hcjV4lOJgZm8eOeNK6NkgpoM.3Oh9HISuUeMY."
+            "password_hash": "$2y$10$Q7Esv78DED/3yH6hcjV4lOJgZm8eOeNK6NkgpoM.3Oh9HISuUeMY.",
+            "currency": "NGN",
+            "designation": "Resource & HR Manager",
+            "base_salary": 300000,
+            "allowances": 25000,
+            "deductions": 15000,
+            "bank_name": "United Bank for Africa (UBA)",
+            "account_number": "2098765432",
+            "account_name": "Mojisola Emjay",
+            "raenest_email": "mojisola@falhen.com",
+            "raenest_id": "RAE-MEMJ-04",
+            "lemfi_tag": "@mojisolaemjay",
+            "taptap_account": "02098765432"
         },
         {
             "id": 5,
@@ -1253,7 +1299,18 @@
             "address": "Ikeja, Lagos",
             "location": "Ikeja, Lagos",
             "alternative_email": "daniel.personal@gmail.com",
-            "designation": "Staff"
+            "designation": "Staff",
+            "currency": "NGN",
+            "base_salary": 200000,
+            "allowances": 80000,
+            "deductions": 20000,
+            "bank_name": "First Bank of Nigeria",
+            "account_number": "3087654321",
+            "account_name": "Daniel Ifeoluwa",
+            "raenest_email": "daniel@falhen.com",
+            "raenest_id": "RAE-DIFE-05",
+            "lemfi_tag": "@danielife",
+            "taptap_account": "03087654321"
         },
         {
             "id": 6,
@@ -1264,7 +1321,19 @@
             "status": "active",
             "avatar": "https://res.cloudinary.com/pnabfi91/image/upload/v1786714208/falhen/team/ri0fc0rdmjfvyzx1lihn.jpg",
             "created_at": "2024-04-05",
-            "password_hash": "$2y$10$JXpfSKp9kdnpy8wSqB2iX.sNB2VlRi6.iKose61vMIL131MPHtkny"
+            "password_hash": "$2y$10$JXpfSKp9kdnpy8wSqB2iX.sNB2VlRi6.iKose61vMIL131MPHtkny",
+            "currency": "NGN",
+            "designation": "Social Media Manager",
+            "base_salary": 220000,
+            "allowances": 20000,
+            "deductions": 10000,
+            "bank_name": "Stanbic IBTC Bank",
+            "account_number": "0034567890",
+            "account_name": "Victoria Opemipo",
+            "raenest_email": "victoria@falhen.com",
+            "raenest_id": "RAE-VOPE-06",
+            "lemfi_tag": "@victoriaop",
+            "taptap_account": "00034567890"
         },
         {
             "id": 8,
@@ -1280,10 +1349,15 @@
             "account_number": "2089123456",
             "account_name": "Ligali Oluwatosin",
             "base_salary": 120000,
-            "allowances": 30000,
+            "allowances": 20000,
             "designation": "Super Admin",
             "department": "Media Production & Post Studio",
-            "currency": "NGN"
+            "currency": "NGN",
+            "deductions": 10000,
+            "alt_email": "",
+            "dob": "",
+            "activation_code": "935747",
+            "activation_status": "activated"
         }
     ],
     "attendance_logs": [

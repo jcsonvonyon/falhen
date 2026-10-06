@@ -122,6 +122,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $fileToUpload = $_FILES['file']['tmp_name'];
         } else if (!empty($_POST['cropped_data'])) {
             $fileToUpload = $_POST['cropped_data'];
+        } else if (!empty($_POST['image_data'])) {
+            $fileToUpload = $_POST['image_data'];
+        } else if (!empty($_POST['image_url'])) {
+            $fileToUpload = trim($_POST['image_url']);
         }
 
         if (empty($fileToUpload)) {
@@ -131,11 +135,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         $res = uploadToCloudinary($fileToUpload, $folder);
         if (!empty($res['success']) && !empty($res['url'])) {
-            $newAvatarUrl = $res['url'];
+            $uploadedUrl = $res['url'];
 
             // Auto-persist immediately if uploading a profile photo
             if ($folder === 'falhen/profile' || !empty($_POST['is_profile_avatar'])) {
-                $_SESSION['admin_avatar'] = $newAvatarUrl;
+                $_SESSION['admin_avatar'] = $uploadedUrl;
 
                 $curUser = $_SESSION['admin_username'] ?? '';
                 $curEmail = $_SESSION['admin_email'] ?? '';
@@ -143,29 +147,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 if (isAdminUser($curRole, $curEmail, $curUser)) {
                     if (strtolower($curUser) === 'admin' || strtolower($curUser) === 'henry.falonipe' || strtolower($curEmail) === 'admin@falhen.com') {
-                        saveAdminUserProfile(['avatar' => $newAvatarUrl]);
-                        saveStaffAccountByUsername('admin', ['avatar' => $newAvatarUrl]);
+                        saveAdminUserProfile(['avatar' => $uploadedUrl]);
+                        saveStaffAccountByUsername('admin', ['avatar' => $uploadedUrl]);
                     } else {
-                        saveStaffAccountByUsername($curUser, ['avatar' => $newAvatarUrl]);
+                        saveStaffAccountByUsername($curUser, ['avatar' => $uploadedUrl]);
                     }
                 }
 
                 if (!empty($curUser)) {
-                    saveStaffAccountByUsername($curUser, ['avatar' => $newAvatarUrl]);
+                    saveStaffAccountByUsername($curUser, ['avatar' => $uploadedUrl]);
                 }
                 if (!empty($curEmail)) {
-                    saveStaffAccountByUsername($curEmail, ['avatar' => $newAvatarUrl]);
+                    saveStaffAccountByUsername($curEmail, ['avatar' => $uploadedUrl]);
                 }
 
                 if ($pdo) {
                     try {
                         $stmt = $pdo->prepare("UPDATE `admin_users` SET `avatar` = ? WHERE `username` = ? OR `email` = ?");
-                        $stmt->execute([$newAvatarUrl, $curUser, $curEmail]);
+                        $stmt->execute([$uploadedUrl, $curUser, $curEmail]);
                     } catch (Exception $e) {}
                 }
             }
 
-            echo json_encode(['success' => true, 'url' => $newAvatarUrl]);
+            echo json_encode(['success' => true, 'url' => $uploadedUrl]);
         } else {
             echo json_encode(['success' => false, 'message' => $res['message'] ?? 'Cloudinary upload failed.']);
         }
@@ -1486,15 +1490,40 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         $image = trim(strip_tags($_POST['existing_image'] ?? ''));
         $croppedData = trim($_POST['cropped_image_data'] ?? '');
+        $imageUrlInput = trim(strip_tags($_POST['image_url'] ?? ''));
 
-        if (!empty($croppedData)) {
+        // 1. If base64 cropped data was provided, upload to Cloudinary
+        if (!empty($croppedData) && strpos($croppedData, 'data:image') === 0) {
             $res = uploadToCloudinary($croppedData, 'falhen/services');
-            if ($res['success']) {
+            if (!empty($res['success']) && !empty($res['url'])) {
                 $image = $res['url'];
             }
-        } else if (!empty($_FILES['service_image_file']['tmp_name'])) {
+        } 
+        // 2. If a local file was uploaded via file input
+        else if (!empty($_FILES['service_image_file']['tmp_name'])) {
             $res = uploadToCloudinary($_FILES['service_image_file']['tmp_name'], 'falhen/services');
-            if ($res['success']) {
+            if (!empty($res['success']) && !empty($res['url'])) {
+                $image = $res['url'];
+            }
+        } 
+        // 3. If an image URL was pasted/provided
+        else if (!empty($imageUrlInput)) {
+            if (!isCloudinaryUrl($imageUrlInput)) {
+                $res = uploadToCloudinary($imageUrlInput, 'falhen/services');
+                if (!empty($res['success']) && !empty($res['url'])) {
+                    $image = $res['url'];
+                } else {
+                    $image = $imageUrlInput;
+                }
+            } else {
+                $image = $imageUrlInput;
+            }
+        }
+
+        // 4. Fallback guarantee: if image is not yet on Cloudinary, upload it now
+        if (!empty($image) && !isCloudinaryUrl($image)) {
+            $res = uploadToCloudinary($image, 'falhen/services');
+            if (!empty($res['success']) && !empty($res['url'])) {
                 $image = $res['url'];
             }
         }
@@ -1509,10 +1538,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         $focalDesktop = trim(strip_tags($_POST['focal_point_desktop'] ?? 'center center'));
         $focalMobile = trim(strip_tags($_POST['focal_point_mobile'] ?? 'center center'));
-        $imageUrlInput = trim(strip_tags($_POST['image_url'] ?? ''));
-        if (!empty($imageUrlInput)) {
-            $image = $imageUrlInput;
-        }
 
         $currentSettings = getSiteSettings();
         $services = $currentSettings['services_items'] ?? [];
@@ -2657,6 +2682,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $target = $_FILES['file']['tmp_name'];
         } else if (!empty($_POST['image_data'])) {
             $target = trim($_POST['image_data']);
+        } else if (!empty($_POST['cropped_data'])) {
+            $target = trim($_POST['cropped_data']);
+        } else if (!empty($_POST['image_url'])) {
+            $target = trim($_POST['image_url']);
         }
 
         if (empty($target)) {
@@ -5784,7 +5813,10 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
 
                             <!-- Service Image Uploader with Re-crop and Replace Pill Buttons -->
                             <div class="form-field" style="margin-bottom: 20px;">
-                                <label class="form-label-title">Service Image</label>
+                                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                                    <label class="form-label-title" style="margin: 0;">Service Image</label>
+                                    <span id="service_upload_status_badge" style="display: none; font-size: 0.78rem; font-weight: 600; padding: 4px 10px; border-radius: 20px; align-items: center; gap: 6px;"></span>
+                                </div>
                                 <div style="position: relative; width: 380px; aspect-ratio: 16/9; border-radius: 14px; overflow: hidden; background: #0f172a; border: 1px solid #e2e8f0; margin-bottom: 8px;" class="service-img-wrap">
                                     <img 
                                         id="service_img_preview" 
@@ -5819,7 +5851,12 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                 </div>
 
                                 <div id="service_image_url_wrap" style="display: none; margin-top: 8px;">
-                                    <input type="text" id="service_image_url_input" name="image_url" placeholder="https://..." class="form-text-input" style="font-size: 0.85rem; padding: 8px 12px;" oninput="handleImageUrlInput(this.value)">
+                                    <div style="display: flex; gap: 8px; align-items: center;">
+                                        <input type="text" id="service_image_url_input" name="image_url" placeholder="https://..." class="form-text-input" style="font-size: 0.85rem; padding: 8px 12px; flex-grow: 1;" oninput="handleImageUrlInput(this.value)">
+                                        <button type="button" onclick="uploadPastedServiceImageUrl()" style="background: #0f172a; color: #ffffff; border: none; border-radius: 8px; padding: 8px 16px; font-size: 0.82rem; font-weight: 700; cursor: pointer; white-space: nowrap; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                                            <i class="fa-solid fa-cloud-arrow-up"></i> Upload to Cloudinary
+                                        </button>
+                                    </div>
                                 </div>
 
                                 <input 
@@ -17955,11 +17992,61 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
             } else {
                 const imgPreview = document.getElementById('service_img_preview');
                 const dataInput = document.getElementById('cropped_image_data');
+                const existingImageInput = document.querySelector('input[name="existing_image"]');
+                const urlInput = document.getElementById('service_image_url_input');
+                const statusBadge = document.getElementById('service_upload_status_badge');
+
                 if (imgPreview) imgPreview.src = croppedDataUrl;
                 if (dataInput) dataInput.value = croppedDataUrl;
                 if (typeof updateFocalPreviewImages === 'function') {
                     updateFocalPreviewImages(croppedDataUrl);
                 }
+
+                if (statusBadge) {
+                    statusBadge.style.display = 'inline-flex';
+                    statusBadge.style.background = '#eff6ff';
+                    statusBadge.style.color = '#1d4ed8';
+                    statusBadge.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Uploading crop to Cloudinary...';
+                }
+
+                // Immediate AJAX upload to Cloudinary
+                const formData = new FormData();
+                formData.append('action', 'upload_cloudinary_ajax');
+                formData.append('image_data', croppedDataUrl);
+                formData.append('folder', 'falhen/services');
+
+                fetch('/admin/index.php', { method: 'POST', body: formData })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success && data.url) {
+                        if (imgPreview) imgPreview.src = data.url;
+                        if (existingImageInput) existingImageInput.value = data.url;
+                        if (urlInput) urlInput.value = data.url;
+                        if (dataInput) dataInput.value = '';
+                        if (typeof updateFocalPreviewImages === 'function') {
+                            updateFocalPreviewImages(data.url);
+                        }
+                        if (statusBadge) {
+                            statusBadge.style.background = '#f0fdf4';
+                            statusBadge.style.color = '#15803d';
+                            statusBadge.innerHTML = '<i class="fa-solid fa-circle-check"></i> Uploaded to Cloudinary!';
+                            setTimeout(() => { statusBadge.style.display = 'none'; }, 3500);
+                        }
+                    } else {
+                        if (statusBadge) {
+                            statusBadge.style.background = '#fef2f2';
+                            statusBadge.style.color = '#991b1b';
+                            statusBadge.innerHTML = '<i class="fa-solid fa-circle-exclamation"></i> Upload failed: ' + (data.message || 'Error');
+                        }
+                    }
+                })
+                .catch(err => {
+                    if (statusBadge) {
+                        statusBadge.style.background = '#fef2f2';
+                        statusBadge.style.color = '#991b1b';
+                        statusBadge.innerHTML = '<i class="fa-solid fa-circle-exclamation"></i> Network error';
+                    }
+                });
             }
 
             closeCropperModal();
@@ -18786,6 +18873,62 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
             if (mImg) mImg.src = src;
             if (dLink) dLink.href = src;
             if (mLink) mLink.href = src;
+        }
+
+        function uploadPastedServiceImageUrl() {
+            const inp = document.getElementById('service_image_url_input');
+            if (!inp || !inp.value.trim()) {
+                alert('Please enter or paste an image link first.');
+                return;
+            }
+            const url = inp.value.trim();
+            const statusBadge = document.getElementById('service_upload_status_badge');
+            const imgPreview = document.getElementById('service_img_preview');
+            const existingImageInput = document.querySelector('input[name="existing_image"]');
+
+            if (statusBadge) {
+                statusBadge.style.display = 'inline-flex';
+                statusBadge.style.background = '#eff6ff';
+                statusBadge.style.color = '#1d4ed8';
+                statusBadge.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Uploading to Cloudinary...';
+            }
+
+            const formData = new FormData();
+            formData.append('action', 'upload_cloudinary_ajax');
+            formData.append('image_url', url);
+            formData.append('folder', 'falhen/services');
+
+            fetch('/admin/index.php', { method: 'POST', body: formData })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success && data.url) {
+                    inp.value = data.url;
+                    if (imgPreview) imgPreview.src = data.url;
+                    if (existingImageInput) existingImageInput.value = data.url;
+                    if (typeof updateFocalPreviewImages === 'function') {
+                        updateFocalPreviewImages(data.url);
+                    }
+                    if (statusBadge) {
+                        statusBadge.style.background = '#f0fdf4';
+                        statusBadge.style.color = '#15803d';
+                        statusBadge.innerHTML = '<i class="fa-solid fa-circle-check"></i> Uploaded to Cloudinary!';
+                        setTimeout(() => { statusBadge.style.display = 'none'; }, 3500);
+                    }
+                } else {
+                    if (statusBadge) {
+                        statusBadge.style.background = '#fef2f2';
+                        statusBadge.style.color = '#991b1b';
+                        statusBadge.innerHTML = '<i class="fa-solid fa-circle-exclamation"></i> Upload failed: ' + (data.message || 'Error');
+                    }
+                }
+            })
+            .catch(err => {
+                if (statusBadge) {
+                    statusBadge.style.background = '#fef2f2';
+                    statusBadge.style.color = '#991b1b';
+                    statusBadge.innerHTML = '<i class="fa-solid fa-circle-exclamation"></i> Network error';
+                }
+            });
         }
 
         // ==========================================
