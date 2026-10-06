@@ -52,9 +52,13 @@ foreach ($rawMembers as $m) {
         body {
             background-color: #030305;
             color: #d4d4d8;
-            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
             margin: 0;
             padding: 0;
+        }
+
+        h1, h2, h3, h4, h5, h6, button, input, select, textarea {
+            font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
         }
 
         .about-nav-bar {
