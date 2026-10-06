@@ -481,7 +481,7 @@ function savePaymentGatewaysSettings($gatewayData) {
 /**
  * Get Dynamic Master Services Repository
  */
-function getServicesRepo() {
+function getServicesRepo($includeHidden = false) {
     $settings = getSiteSettings();
     $items = $settings['services_items'] ?? [];
     
@@ -503,6 +503,9 @@ function getServicesRepo() {
     
     $repo = [];
     foreach ($items as $item) {
+        if (!$includeHidden && !empty($item['hidden'])) {
+            continue;
+        }
         $title = $item['title'] ?? 'Service';
         $slug = !empty($item['slug']) ? $item['slug'] : strtolower(trim(preg_replace('/[^a-zA-Z0-9]+/', '-', $title), '-'));
         $img = getCloudinaryUrl($item['image'] ?? '');

@@ -40,6 +40,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'save_single_featured_item'  => 'portfolio',
         'save_service'               => 'services',
         'delete_service'             => 'services',
+        'save_service_item'          => 'services',
+        'delete_service_item'        => 'services',
+        'toggle_service_visibility'  => 'services',
+        'reorder_services'           => 'services',
         'save_testimonial'           => 'testimonials',
         'delete_testimonial'         => 'testimonials',
         'save_team_member'           => 'team',
@@ -1517,6 +1521,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $s['image'] = $image;
                 $s['card_features'] = $cardFeatures;
                 $s['detail_features'] = $detailFeatures;
+                if (isset($_POST['hidden'])) {
+                    $s['hidden'] = !empty($_POST['hidden']) ? 1 : 0;
+                }
                 $found = true;
                 break;
             }
@@ -1533,7 +1540,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'detail_description' => $detailDescription,
                 'image' => $image,
                 'card_features' => $cardFeatures,
-                'detail_features' => $detailFeatures
+                'detail_features' => $detailFeatures,
+                'hidden' => !empty($_POST['hidden']) ? 1 : 0
             ];
         }
 
@@ -1550,6 +1558,74 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         saveSiteSettings(['services_items' => $newServices]);
         $savedSuccess = true;
         $savedMessage = "✓ Service deleted successfully!";
+    } else if ($action === 'toggle_service_visibility') {
+        $serviceId = (int)($_POST['service_id'] ?? ($_POST['id'] ?? 0));
+        $currentSettings = getSiteSettings();
+        $services = $currentSettings['services_items'] ?? [];
+        $newStatus = false;
+        foreach ($services as &$s) {
+            if ((int)($s['id'] ?? 0) === $serviceId) {
+                $s['hidden'] = empty($s['hidden']) ? 1 : 0;
+                $newStatus = !empty($s['hidden']);
+                break;
+            }
+        }
+        saveSiteSettings(['services_items' => $services]);
+        if (isset($_POST['ajax']) && $_POST['ajax'] == 1) {
+            header('Content-Type: application/json');
+            echo json_encode([
+                'success' => true,
+                'hidden' => $newStatus,
+                'message' => $newStatus ? 'Service is now hidden from live site' : 'Service is now visible on live site'
+            ]);
+            exit;
+        }
+        $savedSuccess = true;
+        $savedMessage = "✓ Service visibility updated!";
+        header('Location: /admin/index.php?section=services');
+        exit;
+    } else if ($action === 'reorder_services') {
+        $orderedIds = $_POST['order'] ?? [];
+        if (!is_array($orderedIds)) {
+            $orderedIds = explode(',', (string)$orderedIds);
+        }
+        $orderedIds = array_map('intval', array_filter($orderedIds));
+
+        $currentSettings = getSiteSettings();
+        $existing = $currentSettings['services_items'] ?? [];
+        $indexed = [];
+        foreach ($existing as $item) {
+            $id = (int)($item['id'] ?? 0);
+            if ($id > 0) {
+                $indexed[$id] = $item;
+            }
+        }
+
+        $newItems = [];
+        $seen = [];
+        foreach ($orderedIds as $id) {
+            if (isset($indexed[$id])) {
+                $newItems[] = $indexed[$id];
+                $seen[$id] = true;
+            }
+        }
+        foreach ($existing as $item) {
+            $id = (int)($item['id'] ?? 0);
+            if (!isset($seen[$id])) {
+                $newItems[] = $item;
+            }
+        }
+
+        saveSiteSettings(['services_items' => $newItems]);
+        if (isset($_POST['ajax']) && $_POST['ajax'] == 1) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => true, 'message' => 'Services reordered successfully!']);
+            exit;
+        }
+        $savedSuccess = true;
+        $savedMessage = "✓ Services reordered successfully!";
+        header('Location: /admin/index.php?section=services');
+        exit;
     } else if ($action === 'save_testimonial_item') {
         $tId = (int)($_POST['id'] ?? 0);
         $name = trim(strip_tags($_POST['name'] ?? ''));
@@ -5741,9 +5817,18 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                             </div>
 
                             <!-- Detail Features (one per line) -->
-                            <div class="form-field" style="margin-bottom: 28px;">
+                            <div class="form-field" style="margin-bottom: 24px;">
                                 <label class="form-label-title">Detail Features (one per line)</label>
                                 <textarea name="detail_features" class="form-text-input" rows="5" placeholder="4K & 8K Cinema Capture&#10;Drone Aerial Cinematography&#10;Multi-Camera Rigs"><?php echo htmlspecialchars(implode("\n", $editingService['detail_features'] ?? [])); ?></textarea>
+                            </div>
+
+                            <!-- Visibility Option -->
+                            <div class="form-field" style="margin-bottom: 28px; padding: 14px 18px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px;">
+                                <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 0.9rem; font-weight: 600; color: #0f172a; margin: 0;">
+                                    <input type="checkbox" name="hidden" value="1" <?php echo !empty($editingService['hidden']) ? 'checked' : ''; ?> style="width: 18px; height: 18px; accent-color: #dc2626;">
+                                    <span>Hide service from live website</span>
+                                </label>
+                                <p style="font-size: 0.78rem; color: #64748b; margin-top: 4px; margin-bottom: 0; margin-left: 28px;">If checked, this service will be hidden from the homepage and services catalog.</p>
                             </div>
 
                             <!-- Action Buttons -->
@@ -5758,68 +5843,123 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
 
                 <?php else: ?>
                     <!-- VIEW A: SERVICES LIST VIEW -->
-                    <div class="section-header-bar" style="align-items: center; margin-bottom: 24px;">
+                    <div class="section-header-bar" style="align-items: center; margin-bottom: 24px; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 16px;">
                         <div>
-                            <h1 class="section-header-title" style="font-size: 1.75rem; font-weight: 700; color: #0f172a; margin-bottom: 4px;">Services</h1>
-                            <p class="section-header-desc" style="font-size: 0.88rem; color: #64748b; margin: 0; display: flex; align-items: center; gap: 8px;">
-                                <strong style="color: #0f172a;"><?php echo count($servicesItems); ?> services</strong>
+                            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 4px;">
+                                <h1 class="section-header-title" style="font-size: 1.75rem; font-weight: 700; color: #0f172a; margin: 0;">Services</h1>
+                                <span id="servicesCountBadge" style="background: #f1f5f9; color: #64748b; font-size: 0.8rem; font-weight: 600; padding: 4px 10px; border-radius: 20px;">
+                                    <?php echo count($servicesItems); ?> services
+                                </span>
+                                <span id="servicesReorderStatus" style="display: none; font-size: 0.78rem; font-weight: 700; padding: 4px 10px; border-radius: 20px; align-items: center; gap: 6px;"></span>
+                            </div>
+                            <p class="section-header-desc" style="font-size: 0.85rem; color: #64748b; margin: 0;">
+                                Changes are live on the services page instantly &middot; drag the grip to reorder
                             </p>
-                            <p style="font-size: 0.8rem; color: #94a3b8; font-weight: 500; margin-top: 4px; margin-bottom: 0;">Changes are live on the services page instantly</p>
                         </div>
                         <div style="display: flex; gap: 12px; align-items: center;">
-                            <a href="index.php?section=services&sub_action=add" class="btn-save-primary" style="text-decoration: none; background-color: #dc2626; font-weight: 700; font-size: 0.88rem; padding: 9px 18px; border-radius: 8px; box-shadow: 0 4px 14px rgba(220,38,38,0.3); display: inline-flex; align-items: center; gap: 6px;">
+                            <button type="button" id="btnToggleShowHidden" onclick="toggleFilterHidden()" style="background: #ffffff; border: 1px solid #cbd5e1; color: #475569; font-size: 0.85rem; font-weight: 600; padding: 9px 16px; border-radius: 8px; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; transition: all 0.2s ease; box-shadow: 0 1px 2px rgba(0,0,0,0.02);">
+                                <i class="fa-regular fa-eye"></i> <span id="filterHiddenText">Show hidden only</span>
+                            </button>
+                            <a href="index.php?section=services&sub_action=add" class="btn-save-primary" style="text-decoration: none; background-color: #dc2626; font-weight: 700; font-size: 0.88rem; padding: 9px 18px; border-radius: 8px; box-shadow: 0 4px 14px rgba(220,38,38,0.25); display: inline-flex; align-items: center; gap: 6px;">
                                 <i class="fa-solid fa-plus"></i> Add Service
                             </a>
                         </div>
                     </div>
 
-                    <div id="servicesCardsContainer">
-                        <?php foreach ($servicesItems as $item): ?>
-                            <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 22px; margin-bottom: 16px; box-shadow: 0 1px 4px rgba(0,0,0,0.02); display: flex; gap: 22px; align-items: flex-start; justify-content: space-between; transition: all 0.2s ease;">
-                                <!-- Left Image Thumbnail -->
-                                <div style="width: 170px; height: 106px; border-radius: 10px; overflow: hidden; background: #0f172a; flex-shrink: 0; box-shadow: 0 2px 6px rgba(0,0,0,0.08);">
-                                    <img 
-                                        src="<?php echo htmlspecialchars(getCloudinaryUrl($item['image'])); ?>" 
-                                        alt="<?php echo htmlspecialchars($item['title']); ?>"
-                                        style="width: 100%; height: 100%; object-fit: cover;"
-                                        onerror="this.src='/assets/img/hero.jpg';"
-                                    >
-                                </div>
+                    <div id="noHiddenServicesMsg" style="display: none; padding: 48px 24px; text-align: center; background: #ffffff; border: 1px dashed #cbd5e1; border-radius: 14px; color: #64748b; margin-bottom: 20px;">
+                        <i class="fa-regular fa-eye-slash" style="font-size: 1.8rem; margin-bottom: 10px; color: #94a3b8; display: block;"></i>
+                        <h4 style="font-size: 1rem; font-weight: 700; color: #0f172a; margin-bottom: 4px;">No hidden services</h4>
+                        <p style="font-size: 0.85rem; color: #64748b; margin: 0;">All services are currently visible on the live site.</p>
+                    </div>
 
-                                <!-- Middle Details Column -->
-                                <div style="flex-grow: 1;">
-                                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 6px;">
-                                        <div style="width: 32px; height: 32px; border-radius: 8px; background: rgba(239,68,68,0.1); color: #ef4444; display: inline-flex; align-items: center; justify-content: center; font-size: 1.1rem; flex-shrink: 0;">
-                                            <i class="<?php echo htmlspecialchars($item['icon']); ?>"></i>
+                    <div id="servicesCardsContainer" style="display: flex; flex-direction: column; gap: 14px;">
+                        <?php 
+                        $orderIndex = 1;
+                        foreach ($servicesItems as $item): 
+                            $isHidden = !empty($item['hidden']);
+                        ?>
+                            <div class="service-card-item" draggable="true" data-id="<?php echo $item['id']; ?>" data-hidden="<?php echo $isHidden ? '1' : '0'; ?>" style="background: <?php echo $isHidden ? '#fffdfd' : '#ffffff'; ?>; border: 1px solid <?php echo $isHidden ? '#fecaca' : '#e2e8f0'; ?>; border-radius: 14px; padding: 18px 22px; box-shadow: 0 1px 3px rgba(0,0,0,0.02); transition: all 0.2s ease; <?php echo $isHidden ? 'opacity: 0.85;' : ''; ?>">
+                                
+                                <!-- Top Row: Grip + Order Num + Thumbnail + Content -->
+                                <div style="display: flex; gap: 16px; align-items: flex-start;">
+                                    
+                                    <!-- Drag Grip Handle -->
+                                    <div class="service-drag-grip" title="Drag to reorder" style="width: 32px; height: 32px; border: 1px solid #e2e8f0; border-radius: 8px; background: #ffffff; display: flex; align-items: center; justify-content: center; cursor: grab; color: #94a3b8; flex-shrink: 0; box-shadow: 0 1px 2px rgba(0,0,0,0.03); margin-top: 4px;">
+                                        <svg width="10" height="14" viewBox="0 0 10 14" fill="#94a3b8">
+                                            <circle cx="2" cy="2" r="1.5"/>
+                                            <circle cx="8" cy="2" r="1.5"/>
+                                            <circle cx="2" cy="7" r="1.5"/>
+                                            <circle cx="8" cy="7" r="1.5"/>
+                                            <circle cx="2" cy="12" r="1.5"/>
+                                            <circle cx="8" cy="12" r="1.5"/>
+                                        </svg>
+                                    </div>
+
+                                    <!-- Numeric Order Indicator -->
+                                    <span class="service-order-num" style="font-size: 0.95rem; font-weight: 600; color: #64748b; width: 16px; text-align: center; margin-top: 8px; flex-shrink: 0;">
+                                        <?php echo $orderIndex++; ?>
+                                    </span>
+
+                                    <!-- Service Thumbnail -->
+                                    <div style="width: 140px; height: 86px; border-radius: 8px; overflow: hidden; background: #0f172a; flex-shrink: 0; box-shadow: 0 2px 6px rgba(0,0,0,0.08);">
+                                        <img 
+                                            src="<?php echo htmlspecialchars(getCloudinaryUrl($item['image'])); ?>" 
+                                            alt="<?php echo htmlspecialchars($item['title']); ?>"
+                                            style="width: 100%; height: 100%; object-fit: cover;"
+                                            onerror="this.src='/assets/img/hero.jpg';"
+                                        >
+                                    </div>
+
+                                    <!-- Main Details Column -->
+                                    <div style="flex-grow: 1; min-width: 0;">
+                                        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 6px; flex-wrap: wrap;">
+                                            <!-- Icon Box (Light red square with red icon) -->
+                                            <div style="width: 28px; height: 28px; border-radius: 6px; border: 1px solid rgba(220,38,38,0.2); background: rgba(239,68,68,0.08); color: #dc2626; display: inline-flex; align-items: center; justify-content: center; font-size: 0.85rem; flex-shrink: 0;">
+                                                <i class="<?php echo htmlspecialchars(!empty($item['icon']) ? $item['icon'] : 'fa-solid fa-film'); ?>"></i>
+                                            </div>
+
+                                            <h3 style="font-size: 1.05rem; font-weight: 700; color: #0f172a; margin: 0;"><?php echo htmlspecialchars($item['title']); ?></h3>
+
+                                            <span style="background: #f1f5f9; color: #64748b; font-weight: 500; font-size: 0.75rem; padding: 2px 8px; border-radius: 6px;">/services/<?php echo htmlspecialchars($item['slug']); ?></span>
+
+                                            <span class="service-hidden-badge" style="<?php echo $isHidden ? 'display: inline-flex;' : 'display: none;'; ?> align-items: center; gap: 4px; background: #fee2e2; color: #b91c1c; font-size: 0.72rem; font-weight: 600; padding: 2px 8px; border-radius: 6px;">
+                                                <i class="fa-regular fa-eye-slash"></i> Hidden
+                                            </span>
                                         </div>
-                                        <h3 style="font-size: 1.1rem; font-weight: 700; color: #0f172a; margin: 0;"><?php echo htmlspecialchars($item['title']); ?></h3>
-                                        <span style="background: #f1f5f9; color: #64748b; font-weight: 600; font-size: 0.75rem; padding: 3px 10px; border-radius: 12px;">/services/<?php echo htmlspecialchars($item['slug']); ?></span>
-                                    </div>
 
-                                    <p style="font-size: 0.88rem; color: #64748b; margin: 0 0 12px; line-height: 1.5; max-width: 860px;"><?php echo htmlspecialchars($item['short_description']); ?></p>
+                                        <p style="font-size: 0.84rem; color: #64748b; margin: 0 0 10px; line-height: 1.45; max-width: 860px; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">
+                                            <?php echo htmlspecialchars($item['short_description']); ?>
+                                        </p>
 
-                                    <!-- Card Features Pills -->
-                                    <div style="display: flex; flex-wrap: wrap; gap: 6px;">
-                                        <?php foreach ($item['card_features'] as $feature): ?>
-                                            <span style="background: #f8fafc; border: 1px solid #e2e8f0; color: #475569; font-size: 0.78rem; font-weight: 500; padding: 4px 12px; border-radius: 14px; font-family: sans-serif;"><?php echo htmlspecialchars($feature); ?></span>
-                                        <?php endforeach; ?>
+                                        <!-- Card Features Pills -->
+                                        <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+                                            <?php foreach (($item['card_features'] ?? []) as $feature): ?>
+                                                <span style="background: #f8fafc; border: 1px solid #e2e8f0; color: #475569; font-size: 0.76rem; font-weight: 500; padding: 3px 11px; border-radius: 12px;"><?php echo htmlspecialchars($feature); ?></span>
+                                            <?php endforeach; ?>
+                                        </div>
                                     </div>
                                 </div>
 
-                                <!-- Right Edit & Delete Actions -->
-                                <div style="display: flex; align-items: center; gap: 14px; flex-shrink: 0;">
-                                    <a href="index.php?section=services&edit_id=<?php echo $item['id']; ?>" style="color: #64748b; font-size: 0.85rem; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 5px;" onmouseover="this.style.color='#0f172a'" onmouseout="this.style.color='#64748b'">
-                                        <i class="fa-solid fa-pen" style="font-size: 0.75rem;"></i> Edit
-                                    </a>
+                                <!-- Bottom Divider & Action Bar -->
+                                <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 14px; padding-top: 12px; border-top: 1px solid #f1f5f9;">
+                                    <!-- Left: Hide / Unhide Action -->
+                                    <button type="button" class="btn-toggle-service-hide" onclick="toggleServiceVisibility(<?php echo $item['id']; ?>, this)" style="background: none; border: none; color: #64748b; font-size: 0.82rem; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; padding: 0;" onmouseover="this.style.color='#0f172a'" onmouseout="this.style.color='#64748b'">
+                                        <i class="fa-regular <?php echo $isHidden ? 'fa-eye-slash' : 'fa-eye'; ?>"></i>
+                                        <span><?php echo $isHidden ? 'Unhide' : 'Hide'; ?></span>
+                                    </button>
 
-                                    <form method="POST" action="/admin/index.php?section=services" style="margin: 0;" onsubmit="return confirm('Delete this service?');">
-                                        <input type="hidden" name="action" value="delete_service_item">
-                                        <input type="hidden" name="service_id" value="<?php echo $item['id']; ?>">
-                                        <button type="submit" style="background: none; border: none; color: #94a3b8; font-size: 0.85rem; font-weight: 500; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; padding: 0;" onmouseover="this.style.color='#ef4444'" onmouseout="this.style.color='#94a3b8'">
+                                    <!-- Right: Delete & Edit Actions -->
+                                    <div style="display: flex; align-items: center; gap: 16px;">
+                                        <button type="button" onclick="deleteServiceItem(<?php echo $item['id']; ?>, '<?php echo addslashes(htmlspecialchars($item['title'])); ?>')" style="background: none; border: none; color: #94a3b8; font-size: 0.82rem; font-weight: 500; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; padding: 0;" onmouseover="this.style.color='#ef4444'" onmouseout="this.style.color='#94a3b8'">
                                             <i class="fa-regular fa-trash-can" style="font-size: 0.78rem;"></i> Delete
                                         </button>
-                                    </form>
+
+                                        <a href="index.php?section=services&edit_id=<?php echo $item['id']; ?>" style="color: #64748b; font-size: 0.82rem; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 5px;" onmouseover="this.style.color='#0f172a'" onmouseout="this.style.color='#64748b'">
+                                            <i class="fa-solid fa-pen" style="font-size: 0.74rem;"></i> Edit
+                                        </a>
+                                    </div>
                                 </div>
+
                             </div>
                         <?php endforeach; ?>
                     </div>
@@ -18416,6 +18556,222 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                 editor.addEventListener('mouseup', updateNativeToolbarState);
             }
             syncNativeEditorContent();
+        });
+
+        // ==========================================
+        // SERVICES SECTION: DRAG & DROP AND VISIBILITY
+        // ==========================================
+        window.isFilteringHiddenOnly = false;
+
+        function toggleFilterHidden() {
+            window.isFilteringHiddenOnly = !window.isFilteringHiddenOnly;
+            const btn = document.getElementById('btnToggleShowHidden');
+            const text = document.getElementById('filterHiddenText');
+            const cards = document.querySelectorAll('#servicesCardsContainer .service-card-item');
+            const emptyMsg = document.getElementById('noHiddenServicesMsg');
+            let visibleCount = 0;
+
+            cards.forEach(card => {
+                const isHidden = card.getAttribute('data-hidden') === '1';
+                if (window.isFilteringHiddenOnly) {
+                    if (isHidden) {
+                        card.style.display = 'block';
+                        visibleCount++;
+                    } else {
+                        card.style.display = 'none';
+                    }
+                } else {
+                    card.style.display = 'block';
+                    visibleCount++;
+                }
+            });
+
+            if (emptyMsg) {
+                emptyMsg.style.display = (window.isFilteringHiddenOnly && visibleCount === 0) ? 'block' : 'none';
+            }
+
+            if (btn && text) {
+                if (window.isFilteringHiddenOnly) {
+                    btn.style.background = '#0f172a';
+                    btn.style.color = '#ffffff';
+                    btn.style.borderColor = '#0f172a';
+                    const icon = btn.querySelector('i');
+                    if (icon) icon.className = 'fa-solid fa-eye';
+                    text.textContent = 'Show all';
+                } else {
+                    btn.style.background = '#ffffff';
+                    btn.style.color = '#475569';
+                    btn.style.borderColor = '#cbd5e1';
+                    const icon = btn.querySelector('i');
+                    if (icon) icon.className = 'fa-regular fa-eye';
+                    text.textContent = 'Show hidden only';
+                }
+            }
+        }
+
+        function toggleServiceVisibility(id, btn) {
+            const card = btn.closest('.service-card-item');
+            if (!card) return;
+            const isCurrentlyHidden = card.getAttribute('data-hidden') === '1';
+            const newHidden = !isCurrentlyHidden;
+
+            // Optimistic UI updates
+            card.setAttribute('data-hidden', newHidden ? '1' : '0');
+            card.style.background = newHidden ? '#fffdfd' : '#ffffff';
+            card.style.borderColor = newHidden ? '#fecaca' : '#e2e8f0';
+            card.style.opacity = newHidden ? '0.85' : '1';
+
+            const badge = card.querySelector('.service-hidden-badge');
+            if (badge) badge.style.display = newHidden ? 'inline-flex' : 'none';
+
+            const icon = btn.querySelector('i');
+            const label = btn.querySelector('span');
+            if (icon) icon.className = newHidden ? 'fa-regular fa-eye-slash' : 'fa-regular fa-eye';
+            if (label) label.textContent = newHidden ? 'Unhide' : 'Hide';
+
+            if (window.isFilteringHiddenOnly && !newHidden) {
+                card.style.display = 'none';
+                const visibleLeft = Array.from(document.querySelectorAll('#servicesCardsContainer .service-card-item')).filter(c => c.style.display !== 'none');
+                const emptyMsg = document.getElementById('noHiddenServicesMsg');
+                if (emptyMsg) emptyMsg.style.display = (visibleLeft.length === 0) ? 'block' : 'none';
+            }
+
+            const formData = new FormData();
+            formData.append('action', 'toggle_service_visibility');
+            formData.append('service_id', id);
+            formData.append('ajax', '1');
+
+            fetch('/admin/index.php?section=services', {
+                method: 'POST',
+                body: formData
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (!data.success) {
+                    alert(data.message || 'Error updating service visibility');
+                    location.reload();
+                }
+            })
+            .catch(err => {
+                console.error('Visibility update error:', err);
+            });
+        }
+
+        function deleteServiceItem(id, title) {
+            if (confirm("Are you sure you want to delete '" + title + "'?")) {
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = '/admin/index.php?section=services';
+                const actInput = document.createElement('input');
+                actInput.type = 'hidden';
+                actInput.name = 'action';
+                actInput.value = 'delete_service_item';
+                const idInput = document.createElement('input');
+                idInput.type = 'hidden';
+                idInput.name = 'service_id';
+                idInput.value = id;
+                form.appendChild(actInput);
+                form.appendChild(idInput);
+                document.body.appendChild(form);
+                form.submit();
+            }
+        }
+
+        function updateServiceNumbers() {
+            const cards = document.querySelectorAll('#servicesCardsContainer .service-card-item');
+            cards.forEach((card, idx) => {
+                const numEl = card.querySelector('.service-order-num');
+                if (numEl) numEl.textContent = (idx + 1);
+            });
+        }
+
+        function saveServicesOrder() {
+            const cards = document.querySelectorAll('#servicesCardsContainer .service-card-item');
+            const order = [];
+            cards.forEach(card => {
+                const id = card.getAttribute('data-id');
+                if (id) order.push(id);
+            });
+
+            const statusText = document.getElementById('servicesReorderStatus');
+            if (statusText) {
+                statusText.style.display = 'inline-flex';
+                statusText.style.background = '#eff6ff';
+                statusText.style.color = '#1d4ed8';
+                statusText.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Saving order...';
+            }
+
+            const formData = new FormData();
+            formData.append('action', 'reorder_services');
+            formData.append('ajax', '1');
+            order.forEach(id => formData.append('order[]', id));
+
+            fetch('/admin/index.php?section=services', {
+                method: 'POST',
+                body: formData
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (statusText) {
+                    if (data.success) {
+                        statusText.style.background = '#f0fdf4';
+                        statusText.style.color = '#166534';
+                        statusText.innerHTML = '<i class="fa-solid fa-circle-check" style="color:#22c55e;"></i> Saved!';
+                        setTimeout(() => { statusText.style.display = 'none'; }, 2500);
+                    } else {
+                        statusText.style.background = '#fef2f2';
+                        statusText.style.color = '#991b1b';
+                        statusText.innerHTML = '<i class="fa-solid fa-circle-exclamation"></i> Save failed';
+                    }
+                }
+            })
+            .catch(() => {
+                if (statusText) {
+                    statusText.style.background = '#fef2f2';
+                    statusText.style.color = '#991b1b';
+                    statusText.innerHTML = '<i class="fa-solid fa-circle-exclamation"></i> Network error';
+                }
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const container = document.getElementById('servicesCardsContainer');
+            if (container) {
+                let draggedCard = null;
+
+                container.addEventListener('dragstart', function(e) {
+                    const card = e.target.closest('.service-card-item');
+                    if (card) {
+                        draggedCard = card;
+                        card.style.opacity = '0.45';
+                        card.classList.add('dragging');
+                        e.dataTransfer.effectAllowed = 'move';
+                    }
+                });
+
+                container.addEventListener('dragend', function(e) {
+                    const card = e.target.closest('.service-card-item');
+                    if (card) {
+                        const isHidden = card.getAttribute('data-hidden') === '1';
+                        card.style.opacity = isHidden ? '0.85' : '1';
+                        card.classList.remove('dragging');
+                    }
+                    draggedCard = null;
+                    updateServiceNumbers();
+                    saveServicesOrder();
+                });
+
+                container.addEventListener('dragover', function(e) {
+                    e.preventDefault();
+                    e.dataTransfer.dropEffect = 'move';
+                    const targetCard = e.target.closest('.service-card-item');
+                    if (targetCard && targetCard !== draggedCard) {
+                        const rect = targetCard.getBoundingClientRect();
+                        const next = (e.clientY - rect.top) / (rect.bottom - rect.top) > 0.5;
+                        container.insertBefore(draggedCard, next ? targetCard.nextSibling : targetCard);
+                    }
+                });
+            }
         });
     </script>
 

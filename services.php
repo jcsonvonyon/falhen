@@ -6,6 +6,11 @@ require_once __DIR__ . '/includes/header.php';
 
 $settings = getSiteSettings();
 $dynamicServices = $settings['services_items'] ?? [];
+if (!empty($dynamicServices)) {
+    $dynamicServices = array_values(array_filter($dynamicServices, function($s) {
+        return empty($s['hidden']);
+    }));
+}
 
 if (!empty($dynamicServices)) {
     $servicesList = array_map(function($item) {
