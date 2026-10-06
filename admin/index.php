@@ -1666,7 +1666,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         $found = false;
         foreach ($items as &$it) {
-            if ((int)($it['id'] ?? 0) === $pId) {
+            if ($pId > 0 && (int)($it['id'] ?? 0) === $pId) {
                 $it['title'] = $title;
                 $it['category'] = $category;
                 $it['media_type'] = $mediaType;
@@ -1687,6 +1687,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 break;
             }
         }
+        unset($it);
 
         if (!$found) {
             $maxId = 0;
@@ -6933,6 +6934,9 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                 <input type="hidden" name="id" value="<?php echo $editingPortfolioId; ?>">
                             <?php endif; ?>
 
+                            <?php 
+                                $currentMediaType = $editingPortfolio['media_type'] ?? ($typeFilter !== 'all' ? $typeFilter : 'photo');
+                            ?>
                             <!-- 2-Column Inputs Grid -->
                             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 18px;" class="form-field">
                                 <div>
@@ -6943,9 +6947,9 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                 <div>
                                     <label class="form-label-title">Media Type &amp; Source <span style="color: #ef4444;">*</span></label>
                                     <select name="media_type" id="portfolio_media_type_select" class="form-text-input" onchange="togglePortfolioMediaFields(this.value)">
-                                        <option value="photo" <?php echo ($editingPortfolio['media_type'] ?? 'photo') === 'photo' ? 'selected' : ''; ?>>Photo Album (Google Drive Photos)</option>
-                                        <option value="video" <?php echo ($editingPortfolio['media_type'] ?? 'photo') === 'video' ? 'selected' : ''; ?>>Video Reel (YouTube Video)</option>
-                                        <option value="project" <?php echo ($editingPortfolio['media_type'] ?? 'photo') === 'project' ? 'selected' : ''; ?>>Project / Production (Case Study / Drive Link)</option>
+                                        <option value="photo" <?php echo $currentMediaType === 'photo' ? 'selected' : ''; ?>>Photo Album (Google Drive Photos)</option>
+                                        <option value="video" <?php echo $currentMediaType === 'video' ? 'selected' : ''; ?>>Video Reel (YouTube Video)</option>
+                                        <option value="project" <?php echo $currentMediaType === 'project' ? 'selected' : ''; ?>>Project / Production (Case Study / Drive Link)</option>
                                     </select>
                                 </div>
 
@@ -6982,14 +6986,14 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                     <input type="text" name="location" class="form-text-input" value="<?php echo htmlspecialchars($editingPortfolio['location'] ?? ''); ?>" placeholder="e.g. Lagos, Chicago, London">
                                 </div>
 
-                                <div id="portfolio_duration_wrapper" style="display: <?php echo ($editingPortfolio['media_type'] ?? 'photo') === 'video' ? 'block' : 'none'; ?>;">
+                                <div id="portfolio_duration_wrapper" style="display: <?php echo $currentMediaType === 'video' ? 'block' : 'none'; ?>;">
                                     <label class="form-label-title">Video Duration (mm:ss)</label>
                                     <input type="text" name="duration" class="form-text-input" value="<?php echo htmlspecialchars($editingPortfolio['duration'] ?? ''); ?>" placeholder="02:30">
                                 </div>
                             </div>
 
                             <!-- Google Drive Folder / Share Link Input (For Photo Albums & Projects) -->
-                            <div id="portfolio_gdrive_url_wrapper" style="margin-top: 18px; display: <?php echo (($editingPortfolio['media_type'] ?? 'photo') === 'photo' || ($editingPortfolio['media_type'] ?? 'photo') === 'project') ? 'block' : 'none'; ?>;">
+                            <div id="portfolio_gdrive_url_wrapper" style="margin-top: 18px; display: <?php echo ($currentMediaType === 'photo' || $currentMediaType === 'project') ? 'block' : 'none'; ?>;">
                                 <label class="form-label-title" style="display: flex; align-items: center; gap: 6px;">
                                     <i class="fa-brands fa-google-drive" style="color: #4285F4; font-size: 1.1rem;"></i> Google Drive Folder or Album Share Link
                                 </label>
@@ -7003,12 +7007,12 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                     oninput="handleGDriveUrlChange(this.value)"
                                 >
                                 <span style="font-size: 0.76rem; color: #64748b; margin-top: 4px; display: block;">
-                                    Photo album images will come from this Google Drive folder/album link.
+                                    Photo album or project gallery images can come from this Google Drive link.
                                 </span>
                             </div>
 
                             <!-- YouTube URL Input (For Video Reels) -->
-                            <div id="portfolio_video_url_wrapper" style="margin-top: 18px; display: <?php echo ($editingPortfolio['media_type'] ?? 'photo') === 'video' ? 'block' : 'none'; ?>;">
+                            <div id="portfolio_video_url_wrapper" style="margin-top: 18px; display: <?php echo $currentMediaType === 'video' ? 'block' : 'none'; ?>;">
                                 <label class="form-label-title" style="display: flex; align-items: center; gap: 6px;">
                                     <i class="fa-brands fa-youtube" style="color: #FF0000; font-size: 1.1rem;"></i> YouTube Video URL or Video ID
                                 </label>
@@ -7122,7 +7126,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                 <button type="submit" class="btn-save-primary" style="padding: 10px 26px; background-color: #dc2626;">
                                     Save Portfolio Item
                                 </button>
-                                <a href="index.php?section=portfolio" class="btn-live-site" style="text-decoration: none; padding: 10px 20px;">
+                                <a href="index.php?section=portfolio&type=<?php echo urlencode($typeFilter); ?>" class="btn-live-site" style="text-decoration: none; padding: 10px 20px;">
                                     Cancel
                                 </a>
                             </div>
@@ -7281,20 +7285,103 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                             <i class="fa-solid fa-pen-to-square" style="font-size: 0.75rem; color: #dc2626;"></i> Edit Item
                                         </a>
 
-                                        <form action="index.php?section=portfolio" method="POST" onsubmit="return confirm('Are you sure you want to delete this portfolio item?');" style="margin: 0;">
-                                            <input type="hidden" name="action" value="delete_portfolio_item">
-                                            <input type="hidden" name="type_filter" value="<?php echo htmlspecialchars($typeFilter); ?>">
-                                            <input type="hidden" name="id" value="<?php echo $pItem['id']; ?>">
-                                            <button type="submit" style="background: none; border: none; color: #94a3b8; font-size: 0.82rem; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; padding: 4px 8px;" onmouseover="this.style.color='#dc2626'" onmouseout="this.style.color='#94a3b8'">
-                                                <i class="fa-solid fa-trash-can" style="font-size: 0.75rem;"></i> Delete
-                                            </button>
-                                        </form>
+                                        <button type="button" onclick="openDeletePortfolioModal(<?php echo (int)$pItem['id']; ?>, '<?php echo htmlspecialchars(addslashes($pItem['title']), ENT_QUOTES); ?>')" style="background: none; border: none; color: #94a3b8; font-size: 0.82rem; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; padding: 4px 8px; border-radius: 6px; transition: color 0.15s ease;" onmouseover="this.style.color='#dc2626'" onmouseout="this.style.color='#94a3b8'">
+                                            <i class="fa-solid fa-trash-can" style="font-size: 0.75rem;"></i> Delete
+                                        </button>
                                     </div>
                                 </div>
                             </div>
                         <?php endforeach; ?>
                     </div>
                 <?php endif; ?>
+
+                <!-- Custom Delete Portfolio Modal Popup -->
+                <div id="deletePortfolioModal" style="display: none; position: fixed; inset: 0; z-index: 999999; background: rgba(15, 23, 42, 0.65); backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px); align-items: center; justify-content: center; padding: 20px;">
+                    <style>
+                        @keyframes portfolioModalPop {
+                            from { transform: scale(0.95); opacity: 0; }
+                            to { transform: scale(1); opacity: 1; }
+                        }
+                    </style>
+                    <div style="background: #ffffff; border-radius: 20px; width: 100%; max-width: 440px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35); overflow: hidden; border: 1px solid #e2e8f0; position: relative; animation: portfolioModalPop 0.2s cubic-bezier(0.16, 1, 0.3, 1);">
+                        <!-- Close X button -->
+                        <button type="button" onclick="closeDeletePortfolioModal()" style="position: absolute; top: 16px; right: 16px; background: none; border: none; color: #94a3b8; font-size: 1.1rem; cursor: pointer; padding: 4px; display: flex; align-items: center; justify-content: center; border-radius: 6px; transition: color 0.15s ease;" onmouseover="this.style.color='#0f172a'" onmouseout="this.style.color='#94a3b8'">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+
+                        <!-- Modal Body -->
+                        <div style="padding: 32px 28px 24px 28px; text-align: center;">
+                            <div style="width: 56px; height: 56px; border-radius: 50%; background: #fee2e2; color: #dc2626; display: flex; align-items: center; justify-content: center; font-size: 1.35rem; margin: 0 auto 18px auto; box-shadow: 0 0 0 8px #fef2f2;">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </div>
+                            <h3 style="font-size: 1.25rem; font-weight: 700; color: #0f172a; margin: 0 0 8px 0; line-height: 1.3;">
+                                Delete Portfolio Item?
+                            </h3>
+                            <p style="font-size: 0.92rem; color: #64748b; margin: 0 0 12px 0; line-height: 1.5;">
+                                Are you sure you want to delete this portfolio item?
+                            </p>
+                            <div id="deleteModalPortfolioTitle" style="font-size: 0.92rem; font-weight: 700; color: #0f172a; margin: 0 auto 16px auto; background: #f8fafc; padding: 10px 14px; border-radius: 10px; border: 1px dashed #cbd5e1; word-break: break-word; max-width: 90%;">
+                            </div>
+                            <p style="font-size: 0.8rem; color: #94a3b8; margin: 0; line-height: 1.4;">
+                                This action cannot be undone and will immediately remove this item from your live website.
+                            </p>
+                        </div>
+
+                        <!-- Modal Footer Action Buttons -->
+                        <div style="background: #f8fafc; padding: 16px 24px; border-top: 1px solid #f1f5f9; display: flex; gap: 12px; justify-content: flex-end;">
+                            <button type="button" onclick="closeDeletePortfolioModal()" style="flex: 1; padding: 11px 18px; border-radius: 10px; border: 1px solid #cbd5e1; background: #ffffff; color: #475569; font-weight: 600; font-size: 0.88rem; cursor: pointer; transition: all 0.15s ease;" onmouseover="this.style.background='#f1f5f9'; this.style.color='#0f172a';" onmouseout="this.style.background='#ffffff'; this.style.color='#475569';">
+                                Cancel
+                            </button>
+                            <form action="index.php?section=portfolio" method="POST" style="margin: 0; flex: 1;">
+                                <input type="hidden" name="action" value="delete_portfolio_item">
+                                <input type="hidden" name="type_filter" value="<?php echo htmlspecialchars($typeFilter); ?>">
+                                <input type="hidden" name="id" id="deleteModalPortfolioId" value="">
+                                <button type="submit" style="width: 100%; padding: 11px 18px; border-radius: 10px; border: none; background: #dc2626; color: #ffffff; font-weight: 700; font-size: 0.88rem; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 7px; box-shadow: 0 4px 12px rgba(220, 38, 38, 0.25); transition: all 0.15s ease;" onmouseover="this.style.background='#b91c1c';" onmouseout="this.style.background='#dc2626';">
+                                    <i class="fa-solid fa-trash-can" style="font-size: 0.8rem;"></i> Yes, Delete
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <script>
+                function openDeletePortfolioModal(id, title) {
+                    var modal = document.getElementById('deletePortfolioModal');
+                    var inputId = document.getElementById('deleteModalPortfolioId');
+                    var titleEl = document.getElementById('deleteModalPortfolioTitle');
+                    if (modal && inputId) {
+                        inputId.value = id;
+                        if (titleEl) {
+                            titleEl.textContent = title ? title : 'Selected Portfolio Item';
+                        }
+                        modal.style.display = 'flex';
+                    }
+                }
+
+                function closeDeletePortfolioModal() {
+                    var modal = document.getElementById('deletePortfolioModal');
+                    if (modal) {
+                        modal.style.display = 'none';
+                    }
+                }
+
+                document.addEventListener('DOMContentLoaded', function() {
+                    var modal = document.getElementById('deletePortfolioModal');
+                    if (modal) {
+                        modal.addEventListener('click', function(e) {
+                            if (e.target === modal) {
+                                closeDeletePortfolioModal();
+                            }
+                        });
+                    }
+                });
+
+                document.addEventListener('keydown', function(e) {
+                    if (e.key === 'Escape') {
+                        closeDeletePortfolioModal();
+                    }
+                });
+                </script>
 
             <!-- SECTION: CAREERS & HIRING MANAGEMENT -->
             <?php elseif ($activeSection === 'careers'):

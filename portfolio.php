@@ -561,6 +561,47 @@ $featuredAllProjects = array_filter($allProjects, function($item) {
             box-shadow: 0 4px 15px rgba(220, 38, 38, 0.4);
         }
 
+        /* Projects Underline Navigation Tabs (matching reference) */
+        #projectsGalleryView .filter-pills-row {
+            display: flex;
+            align-items: center;
+            gap: 28px;
+            margin-bottom: 32px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            padding-bottom: 12px;
+        }
+
+        #projectsGalleryView .project-pill-btn {
+            background: transparent;
+            border: none;
+            border-bottom: 2px solid transparent;
+            border-radius: 0;
+            color: #94a3b8;
+            font-family: inherit;
+            font-size: 0.9rem;
+            font-weight: 800;
+            letter-spacing: 0.8px;
+            text-transform: uppercase;
+            padding: 4px 2px 10px 2px;
+            cursor: pointer;
+            box-shadow: none;
+            transition: all 0.25s ease;
+        }
+
+        #projectsGalleryView .project-pill-btn:hover {
+            color: #ffffff;
+            border-bottom-color: transparent;
+            background: transparent;
+            box-shadow: none;
+        }
+
+        #projectsGalleryView .project-pill-btn.active {
+            color: #ef4444;
+            border-bottom: 2px solid #ef4444;
+            background: transparent;
+            box-shadow: none;
+        }
+
         /* All Albums & Video Grid (3 columns) */
         .all-albums-grid {
             display: grid;
@@ -892,7 +933,170 @@ $featuredAllProjects = array_filter($allProjects, function($item) {
             transition: color 0.25s ease;
         }
 
-        /* Video Gallery Extensions */
+        /* Video Gallery Extensions & Horizontally Wide 16:9 Layout */
+        .video-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 28px 24px;
+            margin-bottom: 50px;
+        }
+
+        @media (max-width: 992px) {
+            .video-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 640px) {
+            .video-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .video-card {
+            background: #0c0c10;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 16px;
+            overflow: hidden;
+            text-decoration: none;
+            color: inherit;
+            display: flex;
+            flex-direction: column;
+            transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+            cursor: pointer;
+        }
+
+        .video-card:hover {
+            border-color: rgba(220, 38, 38, 0.5);
+            transform: translateY(-5px);
+            box-shadow: 0 16px 36px rgba(0, 0, 0, 0.6), 0 0 20px rgba(220, 38, 38, 0.15);
+        }
+
+        .video-card-thumb {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 16 / 9;
+            background: #000000;
+            overflow: hidden;
+        }
+
+        .video-card-thumb img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+            transform: scale(1.01);
+            transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .video-card:hover .video-card-thumb img {
+            transform: scale(1.06);
+        }
+
+        .video-card-thumb::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(180deg, rgba(0, 0, 0, 0.25) 0%, transparent 45%, rgba(0, 0, 0, 0.75) 100%);
+            pointer-events: none;
+        }
+
+        .video-featured-tag {
+            position: absolute;
+            top: 14px;
+            left: 14px;
+            color: #facc15;
+            font-size: 0.72rem;
+            font-weight: 800;
+            letter-spacing: 0.8px;
+            text-transform: uppercase;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            z-index: 3;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+        }
+
+        .video-duration-pill {
+            position: absolute;
+            bottom: 12px;
+            right: 12px;
+            background: rgba(0, 0, 0, 0.82);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            color: #ffffff;
+            font-size: 0.74rem;
+            font-weight: 700;
+            padding: 3px 8px;
+            border-radius: 6px;
+            backdrop-filter: blur(8px);
+            z-index: 3;
+            font-family: inherit;
+        }
+
+        .video-play-center {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .video-card:hover .video-play-center {
+            opacity: 1;
+        }
+
+        .video-play-btn-circle {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: #dc2626;
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            box-shadow: 0 4px 20px rgba(220, 38, 38, 0.8);
+            transform: scale(0.85);
+            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), background 0.3s ease;
+            padding-left: 3px;
+        }
+
+        .video-card:hover .video-play-btn-circle {
+            transform: scale(1.05);
+            background: #ef4444;
+        }
+
+        .video-card-info {
+            padding: 16px 18px 20px 18px;
+            background: #0c0c10;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .video-card-title {
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: #ffffff;
+            margin: 0;
+            line-height: 1.3;
+            transition: color 0.25s ease;
+        }
+
+        .video-card:hover .video-card-title {
+            color: #ff4d4d;
+        }
+
+        .video-card-sub {
+            font-size: 0.82rem;
+            color: #a1a1aa;
+            font-weight: 500;
+            margin: 0;
+        }
+
         .video-duration-badge {
             position: absolute;
             bottom: 14px;
@@ -1100,38 +1304,45 @@ $featuredAllProjects = array_filter($allProjects, function($item) {
         <div id="videoGalleryView" style="display: none;">
             <!-- Video Category Filter Tabs -->
             <div class="filter-pills-row">
-                <button class="cat-pill-btn active" onclick="filterVideoCategory('all', this)">All</button>
-                <button class="cat-pill-btn" onclick="filterVideoCategory('Commercial', this)">Commercial</button>
-                <button class="cat-pill-btn" onclick="filterVideoCategory('Music Video', this)">Music Video</button>
-                <button class="cat-pill-btn" onclick="filterVideoCategory('Wedding', this)">Wedding</button>
-                <button class="cat-pill-btn" onclick="filterVideoCategory('Reels', this)">Reels</button>
-                <button class="cat-pill-btn" onclick="filterVideoCategory('Documentary', this)">Documentary</button>
+                <button class="cat-pill-btn active" onclick="filterVideoCategory('all', this)">ALL</button>
+                <?php
+                $videoCategories = [];
+                foreach ($portfolioVideos as $vItem) {
+                    if (!empty($vItem['category']) && !in_array($vItem['category'], $videoCategories)) {
+                        $videoCategories[] = $vItem['category'];
+                    }
+                }
+                foreach ($videoCategories as $cat):
+                ?>
+                    <button class="cat-pill-btn" onclick="filterVideoCategory('<?php echo htmlspecialchars($cat); ?>', this)"><?php echo htmlspecialchars(strtoupper($cat)); ?></button>
+                <?php endforeach; ?>
             </div>
 
-            <!-- All Video Productions 3-Column Grid -->
-            <div class="all-albums-grid" id="allVideosGrid">
+            <!-- All Video Productions 3-Column Grid (Horizontally Wide 16:9 Widescreen) -->
+            <div class="video-grid" id="allVideosGrid">
                 <?php foreach ($portfolioVideos as $vItem): ?>
-                    <div class="grid-album-card" data-cat="<?php echo htmlspecialchars($vItem['category']); ?>" onclick="window.location.href='/portfolio-video.php?id=<?php echo $vItem['id']; ?>'">
-                        <div class="grid-thumb-box">
+                    <div class="video-card" data-cat="<?php echo htmlspecialchars($vItem['category']); ?>" onclick="window.location.href='/portfolio-video.php?id=<?php echo $vItem['id']; ?>'">
+                        <div class="video-card-thumb">
                             <?php if (!empty($vItem['featured'])): ?>
-                                <div class="grid-star-badge"><i class="fa-solid fa-star"></i></div>
+                                <div class="video-featured-tag">
+                                    <i class="fa-solid fa-star"></i> FEATURED
+                                </div>
                             <?php endif; ?>
-                            <img src="<?php echo htmlspecialchars($vItem['image']); ?>" alt="<?php echo htmlspecialchars($vItem['title']); ?>">
-                            <div class="video-duration-badge">
-                                <i class="fa-regular fa-clock"></i> <?php echo htmlspecialchars($vItem['duration']); ?>
-                            </div>
-                            <div class="album-overlay-center">
-                                <div class="icon-play-btn">
+                            <img src="<?php echo htmlspecialchars($vItem['image']); ?>" alt="<?php echo htmlspecialchars($vItem['title']); ?>" loading="lazy">
+                            <?php if (!empty($vItem['duration'])): ?>
+                                <div class="video-duration-pill">
+                                    <?php echo htmlspecialchars($vItem['duration']); ?>
+                                </div>
+                            <?php endif; ?>
+                            <div class="video-play-center">
+                                <div class="video-play-btn-circle">
                                     <i class="fa-solid fa-play"></i>
                                 </div>
                             </div>
                         </div>
-                        <div class="grid-card-footer">
-                            <div>
-                                <h4 class="grid-card-title"><?php echo htmlspecialchars($vItem['title']); ?></h4>
-                                <span class="grid-card-cat"><?php echo htmlspecialchars($vItem['category']); ?></span>
-                            </div>
-                            <i class="fa-solid fa-play grid-card-arrow" style="font-size:0.85rem; color:#dc2626;"></i>
+                        <div class="video-card-info">
+                            <h4 class="video-card-title"><?php echo htmlspecialchars($vItem['title']); ?></h4>
+                            <div class="video-card-sub"><?php echo htmlspecialchars(!empty($vItem['client']) ? $vItem['client'] : $vItem['category']); ?></div>
                         </div>
                     </div>
                 <?php endforeach; ?>
@@ -1142,14 +1353,9 @@ $featuredAllProjects = array_filter($allProjects, function($item) {
         <div id="projectsGalleryView" style="display: none;">
             <!-- Category Filter Tabs -->
             <div class="filter-pills-row">
-                <button class="project-pill-btn active" onclick="filterProjectsCategory('all', this)">All Work</button>
-                <button class="project-pill-btn" onclick="filterProjectsCategory('Commercials', this)">Commercials</button>
-                <button class="project-pill-btn" onclick="filterProjectsCategory('Corporate', this)">Corporate</button>
-                <button class="project-pill-btn" onclick="filterProjectsCategory('Events', this)">Events</button>
-                <button class="project-pill-btn" onclick="filterProjectsCategory('Documentary', this)">Documentary</button>
-                <button class="project-pill-btn" onclick="filterProjectsCategory('Social', this)">Social</button>
-                <button class="project-pill-btn" onclick="filterProjectsCategory('Broadcast', this)">Broadcast</button>
-                <button class="project-pill-btn" onclick="filterProjectsCategory('Wedding', this)">Wedding</button>
+                <button class="project-pill-btn active" onclick="filterProjectsCategory('all', this)">ALL WORK</button>
+                <button class="project-pill-btn" onclick="filterProjectsCategory('Corporate', this)">CORPORATE</button>
+                <button class="project-pill-btn" onclick="filterProjectsCategory('Events', this)">EVENTS</button>
             </div>
 
             <!-- Projects 4-Column Grid -->
@@ -1236,6 +1442,8 @@ $featuredAllProjects = array_filter($allProjects, function($item) {
 
     <!-- Interactive Scripts -->
     <script>
+        const albumsData = <?php echo json_encode($portfolioAlbums); ?>;
+        const videosData = <?php echo json_encode($portfolioVideos); ?>;
         const portfolioProjectsData = <?php echo json_encode($portfolioProjects); ?>;
 
         function switchGalleryType(type) {
@@ -1268,6 +1476,45 @@ $featuredAllProjects = array_filter($allProjects, function($item) {
                 if (photoView) photoView.style.display = 'block';
                 if (bookShootCard) bookShootCard.style.display = 'flex';
             }
+
+            try {
+                const url = new URL(window.location.href);
+                url.searchParams.set('tab', type);
+                window.history.replaceState({}, '', url.toString());
+            } catch(e) {}
+        }
+
+        function filterCategory(cat, btn) {
+            const buttons = document.querySelectorAll('#photoGalleryView .cat-pill-btn');
+            buttons.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+
+            const cards = document.querySelectorAll('#allAlbumsGrid .grid-album-card');
+            cards.forEach(card => {
+                const cardCat = card.getAttribute('data-cat');
+                if (cat === 'all' || cardCat === cat) {
+                    card.style.display = 'flex';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        }
+
+        function filterVideoCategory(cat, btn) {
+            const buttons = document.querySelectorAll('#videoGalleryView .cat-pill-btn');
+            buttons.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+
+            const cards = document.querySelectorAll('#allVideosGrid .video-card, #allVideosGrid .grid-album-card');
+            const target = (cat || 'all').toLowerCase();
+            cards.forEach(card => {
+                const cardCat = (card.getAttribute('data-cat') || '').toLowerCase();
+                if (target === 'all' || cardCat === target || cardCat.includes(target) || target.includes(cardCat)) {
+                    card.style.display = 'flex';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
         }
 
         function filterProjectsCategory(cat, btn) {
@@ -1276,13 +1523,16 @@ $featuredAllProjects = array_filter($allProjects, function($item) {
             btn.classList.add('active');
 
             const cards = document.querySelectorAll('#projectsGrid .project-card, #projectsGrid .grid-album-card');
+            const target = (cat || 'all').toLowerCase();
             cards.forEach(card => {
-                const cardCat = card.getAttribute('data-cat');
+                const cardCat = (card.getAttribute('data-cat') || '').toLowerCase();
                 if (
-                    cat === 'all' || 
-                    cardCat === cat || 
-                    (cat === 'Events' && (cardCat === 'Event' || cardCat === 'Events')) ||
-                    (cat === 'Commercials' && (cardCat === 'Commercial' || cardCat === 'Commercials'))
+                    target === 'all' || 
+                    cardCat === target || 
+                    (target === 'events' && (cardCat === 'event' || cardCat === 'events')) ||
+                    (target === 'corporate' && (cardCat === 'corporate' || cardCat.includes('corp'))) ||
+                    cardCat.includes(target) || 
+                    target.includes(cardCat)
                 ) {
                     card.style.display = 'flex';
                 } else {
@@ -1300,11 +1550,12 @@ $featuredAllProjects = array_filter($allProjects, function($item) {
             document.getElementById('lightboxDesc').textContent = `${album.category} • Client: ${album.client} — ${album.desc}`;
             
             const modal = document.getElementById('lightboxModal');
-            modal.classList.add('active');
+            if (modal) modal.classList.add('active');
         }
 
         function closeLightbox() {
-            document.getElementById('lightboxModal').classList.remove('active');
+            const modal = document.getElementById('lightboxModal');
+            if (modal) modal.classList.remove('active');
         }
 
         function extractYouTubeIdJS(urlOrId) {
@@ -1320,6 +1571,7 @@ $featuredAllProjects = array_filter($allProjects, function($item) {
             if (!video) return;
 
             const modal = document.getElementById('videoModal');
+            if (!modal) return;
             const stageWrap = modal.querySelector('.video-stage-wrap');
             const titleEl = document.getElementById('videoModalTitle');
             const descEl = document.getElementById('videoModalDesc');
@@ -1342,6 +1594,7 @@ $featuredAllProjects = array_filter($allProjects, function($item) {
 
         function closeVideoModal() {
             const modal = document.getElementById('videoModal');
+            if (!modal) return;
             const stageWrap = modal.querySelector('.video-stage-wrap');
             if (stageWrap) {
                 stageWrap.innerHTML = '';
@@ -1350,16 +1603,22 @@ $featuredAllProjects = array_filter($allProjects, function($item) {
         }
 
         // Close modals on backdrop click
-        document.getElementById('lightboxModal').addEventListener('click', function(e) {
-            if (e.target === this) {
-                closeLightbox();
-            }
-        });
-        document.getElementById('videoModal').addEventListener('click', function(e) {
-            if (e.target === this) {
-                closeVideoModal();
-            }
-        });
+        const lbModal = document.getElementById('lightboxModal');
+        if (lbModal) {
+            lbModal.addEventListener('click', function(e) {
+                if (e.target === this) {
+                    closeLightbox();
+                }
+            });
+        }
+        const vModal = document.getElementById('videoModal');
+        if (vModal) {
+            vModal.addEventListener('click', function(e) {
+                if (e.target === this) {
+                    closeVideoModal();
+                }
+            });
+        }
 
         // Initialize tab based on URL parameter (e.g., ?tab=all or ?type=all)
         document.addEventListener('DOMContentLoaded', function() {
@@ -1369,7 +1628,10 @@ $featuredAllProjects = array_filter($allProjects, function($item) {
                 switchGalleryType('project');
             } else if (tabParam === 'video') {
                 switchGalleryType('video');
+            } else if (tabParam === 'photo') {
+                switchGalleryType('photo');
             }
+        });
     </script>
 
     <!-- Fixed Mobile Floating Bottom Dock Navigation Widget -->

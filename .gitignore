@@ -20,3 +20,5 @@ scratch/
 tmp/
 backups/*gdrive_cache*
 config/downloads_log.json
+.agents/
+graphify-out/
