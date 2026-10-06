@@ -1305,11 +1305,11 @@ $featuredAllProjects = array_filter($allProjects, function($item) {
             .gallery-tab-btn .tab-tag {
                 display: none !important;
             }
-            .gallery-tab-btn .tab-full-label {
-                display: none;
+            .gallery-tab-btn .tab-label-full {
+                display: none !important;
             }
-            .gallery-tab-btn .tab-short-label {
-                display: inline;
+            .gallery-tab-btn .tab-label-short {
+                display: inline !important;
             }
 
             /* Main Container */
@@ -1363,30 +1363,61 @@ $featuredAllProjects = array_filter($allProjects, function($item) {
                 font-size: 0.8rem;
             }
 
-            /* Featured Album Hero */
-            .featured-albums-grid {
-                grid-template-columns: 1fr;
-                gap: 16px;
+            /* Photo Albums Grids - 2 Cards in a Row on Mobile */
+            .featured-albums-grid,
+            .all-albums-grid {
+                grid-template-columns: repeat(2, 1fr) !important;
+                gap: 12px !important;
                 margin-bottom: 28px;
             }
-            .album-thumb-wrap {
-                height: 220px;
+
+            .featured-albums-grid .album-card {
+                border-radius: 12px;
             }
-            .album-content-body {
-                padding: 14px 16px;
+
+            .featured-albums-grid .album-thumb-wrap {
+                height: auto !important;
+                aspect-ratio: 4 / 4.8 !important;
             }
-            .album-title-text {
-                font-size: 0.95rem;
+
+            .featured-albums-grid .album-content-body {
+                padding: 8px 10px 10px 10px;
+            }
+
+            .featured-albums-grid .album-title-text {
+                font-size: 0.78rem !important;
+                line-height: 1.25;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+
+            .featured-albums-grid .album-badges {
+                top: 8px;
+                left: 8px;
+                gap: 4px;
+            }
+
+            .featured-albums-grid .badge-feat,
+            .featured-albums-grid .badge-cat {
+                font-size: 0.58rem !important;
+                padding: 2px 6px !important;
             }
 
             /* All Albums Cards (2 Columns) */
+            .all-albums-grid .grid-album-card {
+                border-radius: 12px;
+            }
+
             .grid-thumb-box {
                 height: auto !important;
                 aspect-ratio: 4 / 4.8 !important;
             }
+
             .grid-card-footer {
                 padding: 8px 10px 10px 10px;
             }
+
             .grid-card-title {
                 font-size: 0.78rem !important;
                 line-height: 1.25;
@@ -1394,9 +1425,11 @@ $featuredAllProjects = array_filter($allProjects, function($item) {
                 overflow: hidden;
                 text-overflow: ellipsis;
             }
+
             .grid-card-cat {
                 font-size: 0.68rem;
             }
+
             .grid-card-arrow {
                 font-size: 0.75rem;
             }
@@ -1506,7 +1539,7 @@ $featuredAllProjects = array_filter($allProjects, function($item) {
                 <i class="fa-solid fa-film"></i> <span class="tab-label-full">Video Gallery</span><span class="tab-label-short">Video</span> <span class="tab-tag">Reels</span>
             </button>
             <button class="gallery-tab-btn" id="btnTypeProject" onclick="switchGalleryType('project')">
-                <i class="fa-solid fa-border-all"></i> <span class="tab-label-full">All Projects</span><span class="tab-label-short">All</span> <span class="tab-tag"><?php echo count($portfolioProjects); ?> projects</span>
+                <i class="fa-solid fa-border-all"></i> <span class="tab-label-full">All Projects</span><span class="tab-label-short">Projects</span> <span class="tab-tag"><?php echo count($portfolioProjects); ?> projects</span>
             </button>
         </div>
     </section>
