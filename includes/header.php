@@ -48,7 +48,7 @@ $currentPage = basename($_SERVER['PHP_SELF']);
     <link rel="apple-touch-icon" href="/assets/img/icons/favicon.png">
 
     <!-- Stylesheet -->
-    <link rel="stylesheet" href="/assets/css/style.css">
+    <link rel="stylesheet" href="/assets/css/style.css?v=<?php echo file_exists(__DIR__ . '/../assets/css/style.css') ? filemtime(__DIR__ . '/../assets/css/style.css') : '2.2'; ?>">
 </head>
 <body>
 

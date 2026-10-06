@@ -46,7 +46,7 @@ $heroDirectVideo = $settings['hero_direct_video_url'] ?? '';
                     <?php echo htmlspecialchars($settings['hero_badge_label']); ?>
                 </div>
             <?php endif; ?>
-            <h1 class="hero-title">
+            <h1 class="hero-title" style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif !important;">
                 <?php 
                 $line1 = htmlspecialchars($settings['hero_headline_line1'] ?? 'Creating what the');
                 $line2 = htmlspecialchars($settings['hero_headline_line2'] ?? 'World Watches');
