@@ -233,7 +233,7 @@ require_once __DIR__ . '/includes/header.php';
 
     .service-tag-pill {
         background: transparent;
-        /* border: 1px solid transparent; */
+        border: 1px solid transparent;
         color: #94a3b8;
         font-size: 0.84rem;
         font-weight: 500;
@@ -251,7 +251,7 @@ require_once __DIR__ . '/includes/header.php';
 
     .service-tag-pill:hover {
         color: #ef4444;
-        background: rgba(220, 38, 38, 0.06);
+        /* background: rgba(220, 38, 38, 0.06); */
     }
 
     .service-tag-pill.active {
