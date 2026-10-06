@@ -2,6 +2,32 @@
 // contact.php - Contact page matching falhen.com/contact screenshots
 require_once __DIR__ . '/includes/functions.php';
 
+$rawService = trim($_GET['service'] ?? '');
+$serviceSlugMap = [
+    'video-production' => 'Video Production',
+    'live-streaming' => 'Live Streaming',
+    'post-production' => 'Post Production',
+    'animation-motion-graphics' => 'Animation & Motion Graphics',
+    'animation-and-motion-graphics' => 'Animation & Motion Graphics',
+    'content-strategy' => 'Content Strategy',
+    'creative-services' => 'Content Strategy',
+    'commercial-photography' => 'Photography',
+    'photography' => 'Photography',
+    'wedding-events' => 'Wedding & Events',
+    'wedding-and-events' => 'Wedding & Events'
+];
+$selectedService = $serviceSlugMap[strtolower($rawService)] ?? $rawService;
+
+$servicesList = [
+    'Video Production',
+    'Live Streaming',
+    'Post Production',
+    'Animation & Motion Graphics',
+    'Content Strategy',
+    'Photography',
+    'Wedding & Events'
+];
+
 $pageTitle = "Contact Us — Falhen Media";
 require_once __DIR__ . '/includes/header.php';
 ?>
@@ -17,7 +43,7 @@ require_once __DIR__ . '/includes/header.php';
         position: relative;
         padding: 150px 0 60px 0;
         background: linear-gradient(180deg, rgba(3, 3, 5, 0.75) 0%, rgba(3, 3, 5, 0.95) 100%), url('/assets/img/contact.jpeg') center/cover no-repeat;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        /* border-bottom: 1px solid rgba(255, 255, 255, 0.08); */
         text-align: center;
     }
 
@@ -200,26 +226,54 @@ require_once __DIR__ . '/includes/header.php';
     .services-tag-cloud {
         display: flex;
         flex-wrap: wrap;
-        gap: 10px;
+        gap: 8px 10px;
+        align-items: center;
     }
 
     .service-tag-pill {
-        background: rgba(255, 255, 255, 0.03);
-        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: transparent;
+        border: 1px solid transparent;
         color: #94a3b8;
-        font-size: 0.82rem;
+        font-size: 0.84rem;
         font-weight: 500;
-        padding: 6px 14px;
-        border-radius: 8px;
+        padding: 5px 12px;
+        border-radius: 6px;
         text-decoration: none;
-        transition: all 0.25s ease;
+        transition: all 0.2s ease;
         display: inline-block;
+        cursor: pointer;
+        font-family: inherit;
+        line-height: 1.4;
+        user-select: none;
+        outline: none;
     }
 
     .service-tag-pill:hover {
-        background: rgba(220, 38, 38, 0.15);
-        border-color: rgba(220, 38, 38, 0.35);
         color: #ef4444;
+        background: rgba(220, 38, 38, 0.06);
+    }
+
+    .service-tag-pill.active {
+        color: #ffffff !important;
+        background: rgba(220, 38, 38, 0.12) !important;
+        border: 1px solid #ef4444 !important;
+        box-shadow: 0 0 10px rgba(239, 68, 68, 0.2);
+    }
+
+    .service-preselected-notice {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: #ef4444;
+        margin-top: 8px;
+        animation: fadeInNotice 0.25s ease;
+    }
+
+    @keyframes fadeInNotice {
+        from { opacity: 0; transform: translateY(-3px); }
+        to { opacity: 1; transform: translateY(0); }
     }
 
     /* Contact Form Card */
@@ -410,14 +464,14 @@ require_once __DIR__ . '/includes/header.php';
                 <!-- Services Tag Cloud -->
                 <div class="services-tag-box">
                     <div class="services-tag-title">Our Services</div>
-                    <div class="services-tag-cloud">
-                        <a href="/service-single.php?slug=video-production" class="service-tag-pill">Video Production</a>
-                        <a href="/service-single.php?slug=live-streaming" class="service-tag-pill">Live Streaming</a>
-                        <a href="/service-single.php?slug=post-production" class="service-tag-pill">Post Production</a>
-                        <a href="/service-single.php?slug=animation-motion-graphics" class="service-tag-pill">Animation & Motion Graphics</a>
-                        <a href="/service-single.php?slug=creative-services" class="service-tag-pill">Content Strategy</a>
-                        <a href="/service-single.php?slug=commercial-photography" class="service-tag-pill">Photography</a>
-                        <a href="/services.php" class="service-tag-pill">Wedding & Events</a>
+                    <div class="services-tag-cloud" id="servicesTagCloud">
+                        <?php foreach ($servicesList as $srv): 
+                            $isActive = (strcasecmp($selectedService, $srv) === 0);
+                        ?>
+                            <button type="button" class="service-tag-pill <?php echo $isActive ? 'active' : ''; ?>" data-service="<?php echo htmlspecialchars($srv); ?>">
+                                <?php echo htmlspecialchars($srv); ?>
+                            </button>
+                        <?php endforeach; ?>
                     </div>
                 </div>
             </div>
@@ -455,16 +509,19 @@ require_once __DIR__ . '/includes/header.php';
 
                     <div class="contact-field-group" style="text-align: left;">
                         <label class="contact-field-label">Service Interested In *</label>
-                        <select name="service_type" class="contact-field-control" required>
+                        <select name="service_type" id="serviceTypeSelect" class="contact-field-control" required>
                             <option value="">Select a service</option>
-                            <option value="Video Production">Video Production</option>
-                            <option value="Live Streaming">Live Streaming</option>
-                            <option value="Post Production">Post Production</option>
-                            <option value="Animation & Motion Graphics">Animation & Motion Graphics</option>
-                            <option value="Content Strategy">Content Strategy</option>
-                            <option value="Photography">Photography</option>
-                            <option value="Wedding & Events">Wedding & Events</option>
+                            <?php foreach ($servicesList as $srv): 
+                                $isOptSelected = (strcasecmp($selectedService, $srv) === 0);
+                            ?>
+                                <option value="<?php echo htmlspecialchars($srv); ?>" <?php echo $isOptSelected ? 'selected' : ''; ?>>
+                                    <?php echo htmlspecialchars($srv); ?>
+                                </option>
+                            <?php endforeach; ?>
                         </select>
+                        <div id="servicePreselectedNotice" class="service-preselected-notice" style="<?php echo !empty($selectedService) ? 'display: flex;' : 'display: none;'; ?>">
+                            <i class="fa-solid fa-check"></i> Service pre-selected
+                        </div>
                     </div>
 
                     <div class="contact-field-group" style="text-align: left;">
@@ -521,6 +578,8 @@ require_once __DIR__ . '/includes/header.php';
                         alertBox.textContent = data.message || 'Thank you! Your message has been sent successfully. We will contact you within 48 hours.';
                         form.reset();
                         if (charCounter) charCounter.textContent = '0/500 characters';
+                        if (serviceNotice) serviceNotice.style.display = 'none';
+                        serviceButtons.forEach(btn => btn.classList.remove('active'));
                     } else {
                         alertBox.style.background = 'rgba(239, 68, 68, 0.15)';
                         alertBox.style.border = '1px solid rgba(239, 68, 68, 0.4)';
@@ -539,6 +598,64 @@ require_once __DIR__ . '/includes/header.php';
                     submitBtn.disabled = false;
                     submitBtn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Send Message';
                 });
+            });
+        }
+
+        // Service Selection Sync Logic
+        const serviceSelect = document.getElementById('serviceTypeSelect');
+        const serviceNotice = document.getElementById('servicePreselectedNotice');
+        const serviceButtons = document.querySelectorAll('.service-tag-pill');
+
+        function updateServiceSelection(chosenValue, shouldScroll = false) {
+            if (!serviceSelect) return;
+
+            let matched = false;
+            for (let i = 0; i < serviceSelect.options.length; i++) {
+                if (serviceSelect.options[i].value && serviceSelect.options[i].value.toLowerCase() === chosenValue.toLowerCase()) {
+                    serviceSelect.selectedIndex = i;
+                    matched = true;
+                    break;
+                }
+            }
+
+            if (matched && serviceSelect.value) {
+                if (serviceNotice) serviceNotice.style.display = 'flex';
+                serviceButtons.forEach(btn => {
+                    const btnSrv = btn.getAttribute('data-service') || '';
+                    if (btnSrv.toLowerCase() === serviceSelect.value.toLowerCase()) {
+                        btn.classList.add('active');
+                    } else {
+                        btn.classList.remove('active');
+                    }
+                });
+
+                if (shouldScroll && window.innerWidth <= 992) {
+                    serviceSelect.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            } else {
+                serviceSelect.value = '';
+                if (serviceNotice) serviceNotice.style.display = 'none';
+                serviceButtons.forEach(btn => btn.classList.remove('active'));
+            }
+        }
+
+        serviceButtons.forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                const service = this.getAttribute('data-service') || '';
+                updateServiceSelection(service, true);
+            });
+        });
+
+        if (serviceSelect) {
+            serviceSelect.addEventListener('change', function() {
+                if (this.value) {
+                    updateServiceSelection(this.value, false);
+                } else {
+                    if (serviceNotice) serviceNotice.style.display = 'none';
+                    serviceButtons.forEach(btn => btn.classList.remove('active'));
+                }
             });
         }
     });
