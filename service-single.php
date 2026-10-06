@@ -793,7 +793,16 @@ $otherServices = array_filter($servicesRepo, function($item) use ($service) {
                 <p class="service-hero-desc"><?php echo htmlspecialchars($service['subtitle']); ?></p>
             </div>
             <div class="service-hero-right">
-                <img src="<?php echo htmlspecialchars($service['hero_image']); ?>" alt="<?php echo htmlspecialchars($service['title']); ?>">
+                <img src="<?php echo htmlspecialchars($service['hero_image']); ?>" alt="<?php echo htmlspecialchars($service['title']); ?>" style="object-position: <?php echo htmlspecialchars($service['focal_point_desktop'] ?? 'center center'); ?>;">
+                <?php if (!empty($service['focal_point_mobile'])): ?>
+                <style>
+                    @media (max-width: 768px) {
+                        .service-hero-right img {
+                            object-position: <?php echo htmlspecialchars($service['focal_point_mobile']); ?> !important;
+                        }
+                    }
+                </style>
+                <?php endif; ?>
             </div>
         </div>
 

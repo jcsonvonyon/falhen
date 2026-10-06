@@ -1507,6 +1507,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         $slug = strtolower(trim(preg_replace('/[^a-zA-Z0-9]+/', '-', $title), '-'));
 
+        $focalDesktop = trim(strip_tags($_POST['focal_point_desktop'] ?? 'center center'));
+        $focalMobile = trim(strip_tags($_POST['focal_point_mobile'] ?? 'center center'));
+        $imageUrlInput = trim(strip_tags($_POST['image_url'] ?? ''));
+        if (!empty($imageUrlInput)) {
+            $image = $imageUrlInput;
+        }
+
         $currentSettings = getSiteSettings();
         $services = $currentSettings['services_items'] ?? [];
 
@@ -1521,6 +1528,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $s['image'] = $image;
                 $s['card_features'] = $cardFeatures;
                 $s['detail_features'] = $detailFeatures;
+                $s['focal_point_desktop'] = $focalDesktop;
+                $s['focal_point_mobile'] = $focalMobile;
                 if (isset($_POST['hidden'])) {
                     $s['hidden'] = !empty($_POST['hidden']) ? 1 : 0;
                 }
@@ -1541,6 +1550,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'image' => $image,
                 'card_features' => $cardFeatures,
                 'detail_features' => $detailFeatures,
+                'focal_point_desktop' => $focalDesktop,
+                'focal_point_mobile' => $focalMobile,
                 'hidden' => !empty($_POST['hidden']) ? 1 : 0
             ];
         }
@@ -5750,20 +5761,29 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                 </div>
                             </div>
 
-                            <!-- Short Description -->
+                            <?php if (!empty($editingService['slug'])): ?>
+                            <!-- Slug Display -->
                             <div class="form-field" style="margin-bottom: 20px;">
+                                <label class="form-label-title" style="display: flex; align-items: center; justify-content: space-between;">
+                                    <span>Slug</span>
+                                    <span style="font-size: 0.78rem; color: #94a3b8; font-weight: normal;">/services/<?php echo htmlspecialchars($editingService['slug']); ?></span>
+                                </label>
+                                <div style="display: flex; align-items: center; gap: 8px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 4px 12px;">
+                                    <span style="color: #94a3b8; font-size: 0.86rem; font-weight: 500;">/services/</span>
+                                    <input type="text" name="slug" class="form-text-input" value="<?php echo htmlspecialchars($editingService['slug']); ?>" style="border: none; background: transparent; padding: 6px 0; color: #475569; font-weight: 600; outline: none; width: 100%; box-shadow: none;" readonly>
+                                </div>
+                                <p style="font-size: 0.76rem; color: #94a3b8; margin-top: 4px; margin-bottom: 0;">Changing this would break the existing link, so it is kept as-is.</p>
+                            </div>
+                            <?php endif; ?>
+
+                            <!-- Short Description -->
+                            <div class="form-field" style="margin-bottom: 22px;">
                                 <label class="form-label-title">Short Description (card)</label>
                                 <textarea name="short_description" class="form-text-input" rows="3" placeholder="Short summary for overview cards..."><?php echo htmlspecialchars($editingService['short_description'] ?? ''); ?></textarea>
                             </div>
 
-                            <!-- Detail Description -->
-                            <div class="form-field" style="margin-bottom: 24px;">
-                                <label class="form-label-title">Detail Description (service page)</label>
-                                <textarea name="detail_description" class="form-text-input" rows="4" placeholder="Full service description..."><?php echo htmlspecialchars($editingService['detail_description'] ?? ''); ?></textarea>
-                            </div>
-
                             <!-- Service Image Uploader with Re-crop and Replace Pill Buttons -->
-                            <div class="form-field" style="margin-bottom: 24px;">
+                            <div class="form-field" style="margin-bottom: 20px;">
                                 <label class="form-label-title">Service Image</label>
                                 <div style="position: relative; width: 380px; aspect-ratio: 16/9; border-radius: 14px; overflow: hidden; background: #0f172a; border: 1px solid #e2e8f0; margin-bottom: 8px;" class="service-img-wrap">
                                     <img 
@@ -5792,6 +5812,16 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                     </div>
                                 </div>
 
+                                <div style="display: flex; align-items: center; gap: 8px; margin-top: 6px;">
+                                    <button type="button" onclick="toggleImageUrlInput()" style="background: none; border: none; color: #2563eb; font-size: 0.8rem; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; padding: 0;">
+                                        <i class="fa-solid fa-link"></i> Paste an image link (Google Photos / Drive)
+                                    </button>
+                                </div>
+
+                                <div id="service_image_url_wrap" style="display: none; margin-top: 8px;">
+                                    <input type="text" id="service_image_url_input" name="image_url" placeholder="https://..." class="form-text-input" style="font-size: 0.85rem; padding: 8px 12px;" oninput="handleImageUrlInput(this.value)">
+                                </div>
+
                                 <input 
                                     type="file" 
                                     id="service_image_file_input" 
@@ -5807,32 +5837,134 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                     value=""
                                 >
 
-                                <p style="font-size: 0.78rem; color: #64748b; margin-top: 6px; margin-bottom: 0;">Crop to landscape 16:9. Max 10MB.</p>
+                                <p style="font-size: 0.78rem; color: #64748b; margin-top: 6px; margin-bottom: 0;">Crop to landscape 16:9, saved at 1600x900 for a sharp full-width banner. Max 10MB.</p>
                             </div>
 
-                            <!-- Card Features (one per line) -->
-                            <div class="form-field" style="margin-bottom: 20px;">
-                                <label class="form-label-title">Card Features (one per line)</label>
-                                <textarea name="card_features" class="form-text-input" rows="4" placeholder="Corporate videos & commercials&#10;4K & 8K video capture&#10;Drone cinematography"><?php echo htmlspecialchars(implode("\n", $editingService['card_features'] ?? [])); ?></textarea>
+                            <!-- SHOW MORE / ADVANCED OPTIONS TOGGLE BAR -->
+                            <div style="border-top: 1px solid #f1f5f9; border-bottom: 1px solid #f1f5f9; padding: 14px 0; margin: 24px 0 20px 0;">
+                                <div onclick="toggleAdvancedServiceOptions()" style="display: flex; align-items: center; justify-content: space-between; cursor: pointer; user-select: none;">
+                                    <span id="toggleAdvancedLabelWrap" style="font-size: 0.88rem; font-weight: 600; color: #1e293b; display: inline-flex; align-items: center; gap: 8px;">
+                                        <i id="toggleAdvancedIcon" class="fa-solid fa-plus" style="font-size: 0.78rem; color: #64748b;"></i>
+                                        <span id="toggleAdvancedLabel">Show more options</span>
+                                    </span>
+                                    <span style="font-size: 0.8rem; color: #94a3b8; display: inline-flex; align-items: center; gap: 8px;">
+                                        Detail description &middot; focal points &middot; feature lists
+                                        <i id="toggleAdvancedChevron" class="fa-solid fa-chevron-down" style="font-size: 0.75rem; color: #94a3b8; transition: transform 0.2s ease;"></i>
+                                    </span>
+                                </div>
                             </div>
 
-                            <!-- Detail Features (one per line) -->
-                            <div class="form-field" style="margin-bottom: 24px;">
-                                <label class="form-label-title">Detail Features (one per line)</label>
-                                <textarea name="detail_features" class="form-text-input" rows="5" placeholder="4K & 8K Cinema Capture&#10;Drone Aerial Cinematography&#10;Multi-Camera Rigs"><?php echo htmlspecialchars(implode("\n", $editingService['detail_features'] ?? [])); ?></textarea>
-                            </div>
+                            <!-- COLLAPSIBLE ADVANCED OPTIONS CONTAINER -->
+                            <div id="serviceAdvancedOptionsWrap" style="display: none; animation: fadeInModal 0.2s ease;">
+                                
+                                <!-- Detail Description -->
+                                <div class="form-field" style="margin-bottom: 24px;">
+                                    <label class="form-label-title">Detail Description (service page)</label>
+                                    <textarea name="detail_description" class="form-text-input" rows="4" placeholder="Full service description..."><?php echo htmlspecialchars($editingService['detail_description'] ?? ''); ?></textarea>
+                                </div>
 
-                            <!-- Visibility Option -->
-                            <div class="form-field" style="margin-bottom: 28px; padding: 14px 18px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px;">
-                                <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 0.9rem; font-weight: 600; color: #0f172a; margin: 0;">
-                                    <input type="checkbox" name="hidden" value="1" <?php echo !empty($editingService['hidden']) ? 'checked' : ''; ?> style="width: 18px; height: 18px; accent-color: #dc2626;">
-                                    <span>Hide service from live website</span>
-                                </label>
-                                <p style="font-size: 0.78rem; color: #64748b; margin-top: 4px; margin-bottom: 0; margin-left: 28px;">If checked, this service will be hidden from the homepage and services catalog.</p>
+                                <?php
+                                $curImg = getCloudinaryUrl($editingService['image'] ?? 'https://images.unsplash.com/photo-1574717024653-61fd2cf4d44d?auto=format&fit=crop&w=800&q=80');
+                                $focalDesktop = $editingService['focal_point_desktop'] ?? 'center center';
+                                $focalMobile = $editingService['focal_point_mobile'] ?? 'center center';
+                                ?>
+
+                                <!-- Banner Focal Point — Desktop -->
+                                <div class="form-field" style="margin-bottom: 24px;">
+                                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                                        <label class="form-label-title" style="margin: 0;">Banner Focal Point — Desktop</label>
+                                        <button type="button" onclick="resetFocalPoint('desktop')" style="background: none; border: none; color: #94a3b8; font-size: 0.8rem; font-weight: 500; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; padding: 0;" onmouseover="this.style.color='#0f172a'" onmouseout="this.style.color='#94a3b8'">
+                                            <i class="fa-solid fa-rotate-left"></i> Reset to center
+                                        </button>
+                                    </div>
+
+                                    <div style="display: flex; gap: 18px; align-items: center;">
+                                        <!-- 3x3 Grid Picker -->
+                                        <div class="focal-grid-container" id="desktopFocalGrid" style="width: 104px; height: 104px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 6px; display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, 1fr); gap: 4px; flex-shrink: 0; box-shadow: 0 1px 2px rgba(0,0,0,0.02);">
+                                            <?php
+                                            $points = [
+                                                ['top left', 'Top Left'], ['top center', 'Top Center'], ['top right', 'Top Right'],
+                                                ['center left', 'Center Left'], ['center center', 'Center'], ['center right', 'Center Right'],
+                                                ['bottom left', 'Bottom Left'], ['bottom center', 'Bottom Center'], ['bottom right', 'Bottom Right']
+                                            ];
+                                            foreach ($points as $p):
+                                                $isActive = ($focalDesktop === $p[0]);
+                                            ?>
+                                                <button type="button" class="focal-cell-btn <?php echo $isActive ? 'active' : ''; ?>" data-focal="<?php echo $p[0]; ?>" onclick="selectFocalPoint('desktop', '<?php echo $p[0]; ?>', this)" title="<?php echo $p[1]; ?>" style="border: none; background: <?php echo $isActive ? '#dc2626' : 'transparent'; ?>; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0; transition: all 0.15s ease;">
+                                                    <span style="width: <?php echo $isActive ? '6px' : '4px'; ?>; height: <?php echo $isActive ? '6px' : '4px'; ?>; border-radius: 50%; background: <?php echo $isActive ? '#ffffff' : '#94a3b8'; ?>; display: block; pointer-events: none;"></span>
+                                                </button>
+                                            <?php endforeach; ?>
+                                        </div>
+
+                                        <!-- Desktop Preview Frame -->
+                                        <div style="width: 250px; height: 80px; border-radius: 8px; overflow: hidden; background: #0f172a; border: 1px solid #e2e8f0; flex-shrink: 0; box-shadow: 0 1px 4px rgba(0,0,0,0.04);">
+                                            <img id="desktopFocalPreviewImg" src="<?php echo htmlspecialchars($curImg); ?>" alt="Desktop Banner Focal Preview" style="width: 100%; height: 100%; object-fit: cover; object-position: <?php echo htmlspecialchars($focalDesktop); ?>; transition: object-position 0.2s ease;">
+                                        </div>
+
+                                        <a id="desktopViewFullLink" href="<?php echo htmlspecialchars($curImg); ?>" target="_blank" style="font-size: 0.78rem; color: #64748b; text-decoration: none; align-self: flex-start; margin-top: 6px;">View full image</a>
+                                    </div>
+                                    <input type="hidden" name="focal_point_desktop" id="focal_point_desktop_input" value="<?php echo htmlspecialchars($focalDesktop); ?>">
+                                    <p style="font-size: 0.78rem; color: #94a3b8; margin-top: 6px; margin-bottom: 0;">Which part of the photo stays in frame on the wide desktop banner, cards, and backdrop.</p>
+                                </div>
+
+                                <!-- Banner Focal Point — Mobile -->
+                                <div class="form-field" style="margin-bottom: 24px;">
+                                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                                        <label class="form-label-title" style="margin: 0;">Banner Focal Point — Mobile</label>
+                                        <button type="button" onclick="resetFocalPoint('mobile')" style="background: none; border: none; color: #94a3b8; font-size: 0.8rem; font-weight: 500; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; padding: 0;" onmouseover="this.style.color='#0f172a'" onmouseout="this.style.color='#94a3b8'">
+                                            <i class="fa-solid fa-rotate-left"></i> Reset to center
+                                        </button>
+                                    </div>
+
+                                    <div style="display: flex; gap: 18px; align-items: center;">
+                                        <!-- 3x3 Grid Picker -->
+                                        <div class="focal-grid-container" id="mobileFocalGrid" style="width: 104px; height: 104px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 6px; display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, 1fr); gap: 4px; flex-shrink: 0; box-shadow: 0 1px 2px rgba(0,0,0,0.02);">
+                                            <?php
+                                            foreach ($points as $p):
+                                                $isActive = ($focalMobile === $p[0]);
+                                            ?>
+                                                <button type="button" class="focal-cell-btn <?php echo $isActive ? 'active' : ''; ?>" data-focal="<?php echo $p[0]; ?>" onclick="selectFocalPoint('mobile', '<?php echo $p[0]; ?>', this)" title="<?php echo $p[1]; ?>" style="border: none; background: <?php echo $isActive ? '#dc2626' : 'transparent'; ?>; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0; transition: all 0.15s ease;">
+                                                    <span style="width: <?php echo $isActive ? '6px' : '4px'; ?>; height: <?php echo $isActive ? '6px' : '4px'; ?>; border-radius: 50%; background: <?php echo $isActive ? '#ffffff' : '#94a3b8'; ?>; display: block; pointer-events: none;"></span>
+                                                </button>
+                                            <?php endforeach; ?>
+                                        </div>
+
+                                        <!-- Mobile Preview Frame -->
+                                        <div style="width: 85px; height: 85px; border-radius: 8px; overflow: hidden; background: #0f172a; border: 1px solid #e2e8f0; flex-shrink: 0; box-shadow: 0 1px 4px rgba(0,0,0,0.04);">
+                                            <img id="mobileFocalPreviewImg" src="<?php echo htmlspecialchars($curImg); ?>" alt="Mobile Banner Focal Preview" style="width: 100%; height: 100%; object-fit: cover; object-position: <?php echo htmlspecialchars($focalMobile); ?>; transition: object-position 0.2s ease;">
+                                        </div>
+
+                                        <a id="mobileViewFullLink" href="<?php echo htmlspecialchars($curImg); ?>" target="_blank" style="font-size: 0.78rem; color: #64748b; text-decoration: none; align-self: flex-start; margin-top: 6px;">View full image</a>
+                                    </div>
+                                    <input type="hidden" name="focal_point_mobile" id="focal_point_mobile_input" value="<?php echo htmlspecialchars($focalMobile); ?>">
+                                    <p style="font-size: 0.78rem; color: #94a3b8; margin-top: 6px; margin-bottom: 0;">Phones use a much taller frame, so choose a separate focal point to keep the subject in view.</p>
+                                </div>
+
+                                <!-- Card Features (one per line) -->
+                                <div class="form-field" style="margin-bottom: 20px;">
+                                    <label class="form-label-title">Card Features (one per line)</label>
+                                    <textarea name="card_features" class="form-text-input" rows="4" placeholder="Corporate videos & commercials&#10;4K & 8K video capture&#10;Drone cinematography"><?php echo htmlspecialchars(implode("\n", $editingService['card_features'] ?? [])); ?></textarea>
+                                </div>
+
+                                <!-- Detail Features (one per line) -->
+                                <div class="form-field" style="margin-bottom: 24px;">
+                                    <label class="form-label-title">Detail Features (one per line)</label>
+                                    <textarea name="detail_features" class="form-text-input" rows="5" placeholder="4K & 8K Cinema Capture&#10;Drone Aerial Cinematography&#10;Multi-Camera Rigs"><?php echo htmlspecialchars(implode("\n", $editingService['detail_features'] ?? [])); ?></textarea>
+                                </div>
+
+                                <!-- Visibility Option -->
+                                <div class="form-field" style="margin-bottom: 28px; padding: 14px 18px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px;">
+                                    <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 0.9rem; font-weight: 600; color: #0f172a; margin: 0;">
+                                        <input type="checkbox" name="hidden" value="1" <?php echo !empty($editingService['hidden']) ? 'checked' : ''; ?> style="width: 18px; height: 18px; accent-color: #dc2626;">
+                                        <span>Hide service from live website</span>
+                                    </label>
+                                    <p style="font-size: 0.78rem; color: #64748b; margin-top: 4px; margin-bottom: 0; margin-left: 28px;">If checked, this service will be hidden from the homepage and services catalog.</p>
+                                </div>
+
                             </div>
 
                             <!-- Action Buttons -->
-                            <div style="display: flex; gap: 12px;">
+                            <div style="display: flex; gap: 12px; margin-top: 24px;">
                                 <button type="submit" class="btn-save-primary" style="padding: 10px 24px; background-color: #dc2626;">
                                     <i class="fa-solid fa-circle-check"></i> Save Changes
                                 </button>
@@ -17825,6 +17957,9 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                 const dataInput = document.getElementById('cropped_image_data');
                 if (imgPreview) imgPreview.src = croppedDataUrl;
                 if (dataInput) dataInput.value = croppedDataUrl;
+                if (typeof updateFocalPreviewImages === 'function') {
+                    updateFocalPreviewImages(croppedDataUrl);
+                }
             }
 
             closeCropperModal();
@@ -18557,6 +18692,101 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
             }
             syncNativeEditorContent();
         });
+
+        // ==========================================
+        // SERVICES SECTION: ADVANCED OPTIONS & FOCAL POINTS
+        // ==========================================
+        function toggleAdvancedServiceOptions() {
+            const wrap = document.getElementById('serviceAdvancedOptionsWrap');
+            const label = document.getElementById('toggleAdvancedLabel');
+            const icon = document.getElementById('toggleAdvancedIcon');
+            const chevron = document.getElementById('toggleAdvancedChevron');
+            if (!wrap) return;
+
+            const isCurrentlyHidden = (wrap.style.display === 'none' || wrap.style.display === '');
+            if (isCurrentlyHidden) {
+                wrap.style.display = 'block';
+                if (label) label.textContent = 'Hide advanced options';
+                if (icon) icon.className = 'fa-solid fa-minus';
+                if (chevron) chevron.className = 'fa-solid fa-chevron-up';
+            } else {
+                wrap.style.display = 'none';
+                if (label) label.textContent = 'Show more options';
+                if (icon) icon.className = 'fa-solid fa-plus';
+                if (chevron) chevron.className = 'fa-solid fa-chevron-down';
+            }
+        }
+
+        function selectFocalPoint(type, focalValue, btn) {
+            const grid = document.getElementById(type + 'FocalGrid');
+            if (!grid) return;
+
+            grid.querySelectorAll('.focal-cell-btn').forEach(b => {
+                b.classList.remove('active');
+                b.style.background = 'transparent';
+                const dot = b.querySelector('span');
+                if (dot) {
+                    dot.style.background = '#94a3b8';
+                    dot.style.width = '4px';
+                    dot.style.height = '4px';
+                }
+            });
+
+            if (btn) {
+                btn.classList.add('active');
+                btn.style.background = '#dc2626';
+                const dot = btn.querySelector('span');
+                if (dot) {
+                    dot.style.background = '#ffffff';
+                    dot.style.width = '6px';
+                    dot.style.height = '6px';
+                }
+            }
+
+            const input = document.getElementById('focal_point_' + type + '_input');
+            if (input) input.value = focalValue;
+
+            const img = document.getElementById(type + 'FocalPreviewImg');
+            if (img) img.style.objectPosition = focalValue;
+        }
+
+        function resetFocalPoint(type) {
+            const grid = document.getElementById(type + 'FocalGrid');
+            if (!grid) return;
+            const centerBtn = grid.querySelector('.focal-cell-btn[data-focal="center center"]');
+            selectFocalPoint(type, 'center center', centerBtn);
+        }
+
+        function toggleImageUrlInput() {
+            const wrap = document.getElementById('service_image_url_wrap');
+            if (wrap) {
+                wrap.style.display = (wrap.style.display === 'none' || wrap.style.display === '') ? 'block' : 'none';
+                if (wrap.style.display === 'block') {
+                    const inp = document.getElementById('service_image_url_input');
+                    if (inp) inp.focus();
+                }
+            }
+        }
+
+        function handleImageUrlInput(val) {
+            const trimmed = (val || '').trim();
+            if (trimmed !== '') {
+                updateFocalPreviewImages(trimmed);
+                const mainImg = document.getElementById('service_img_preview');
+                if (mainImg) mainImg.src = trimmed;
+            }
+        }
+
+        function updateFocalPreviewImages(src) {
+            const dImg = document.getElementById('desktopFocalPreviewImg');
+            const mImg = document.getElementById('mobileFocalPreviewImg');
+            const dLink = document.getElementById('desktopViewFullLink');
+            const mLink = document.getElementById('mobileViewFullLink');
+            if (dImg) dImg.src = src;
+            if (mImg) mImg.src = src;
+            if (dLink) dLink.href = src;
+            if (mLink) mLink.href = src;
+        }
 
         // ==========================================
         // SERVICES SECTION: DRAG & DROP AND VISIBILITY
