@@ -170,8 +170,9 @@ foreach ($rawMembers as $m) {
         }
 
         .who-we-are-p {
+            font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+            font-size: 16px;
             color: #a1a1aa;
-            font-size: 1rem;
             line-height: 1.7;
             margin-bottom: 20px;
         }
