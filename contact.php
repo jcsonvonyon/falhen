@@ -120,7 +120,7 @@ require_once __DIR__ . '/includes/header.php';
     /* Main 2-Column Section */
     .contact-main-grid {
         display: grid;
-        grid-template-columns: 1fr 1.22fr;
+        grid-template-columns: 1fr 1fr;
         gap: 40px;
         margin-bottom: 90px;
         align-items: start;
@@ -131,6 +131,7 @@ require_once __DIR__ . '/includes/header.php';
         flex-direction: column;
         gap: 20px;
         text-align: left;
+        min-width: 0;
     }
 
     .conversation-heading {
@@ -283,6 +284,7 @@ require_once __DIR__ . '/includes/header.php';
         border-radius: 20px;
         padding: 38px 40px;
         box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+        min-width: 0;
     }
 
     .contact-form-row {
