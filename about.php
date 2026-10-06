@@ -650,16 +650,259 @@ foreach ($rawMembers as $m) {
             }
         }
 
-        @media (max-width: 600px) {
-            .values-grid,
-            .about-team-grid {
+        @media (max-width: 768px) {
+            .about-nav-bar {
+                padding: 16px 0;
+            }
+            .about-nav-container {
+                padding: 0 16px;
+            }
+            .about-nav-container img {
+                height: 30px !important;
+            }
+            .about-back-link {
+                font-size: 0.82rem;
+                gap: 6px;
+            }
+            .btn-contact-top {
+                padding: 6px 14px;
+                font-size: 0.78rem;
+                border-radius: 6px;
+            }
+
+            .about-container {
+                padding: 0 16px;
+            }
+
+            .about-hero-section {
+                padding: 55px 0 35px 0;
+            }
+            .about-hero-title {
+                font-size: 1.85rem;
+                letter-spacing: -0.6px;
+                margin-bottom: 10px;
+                line-height: 1.2;
+            }
+            .about-hero-subtitle {
+                font-size: 0.86rem;
+                line-height: 1.5;
+                max-width: 330px;
+            }
+
+            .who-we-are-section {
+                padding: 40px 0 36px 0;
+            }
+            .who-we-are-grid {
                 grid-template-columns: 1fr;
+                gap: 20px;
+            }
+            .who-we-are-title {
+                font-size: 1.5rem;
+                margin-bottom: 12px;
+                line-height: 1.25;
+            }
+            .who-we-are-p {
+                font-size: 0.85rem;
+                line-height: 1.6;
+                margin-bottom: 14px;
+            }
+            .action-btns-row {
+                gap: 8px;
+                margin-top: 20px;
+            }
+            .btn-work-red,
+            .btn-dark-glass {
+                padding: 10px 18px;
+                font-size: 0.82rem;
+                border-radius: 8px;
+            }
+            .who-we-are-img {
+                display: none;
+            }
+
+            .core-values-section {
+                padding: 40px 0 36px 0;
+            }
+            .section-header-title {
+                font-size: 1.5rem;
+                margin-bottom: 8px;
+            }
+            .section-header-desc {
+                font-size: 0.84rem;
+                line-height: 1.5;
+                max-width: 320px;
+                margin: 0 auto 28px auto;
+            }
+            .values-grid {
+                grid-template-columns: repeat(2, 1fr) !important;
+                gap: 12px;
+            }
+            .value-card-box {
+                padding: 18px 14px;
+                border-radius: 14px;
+            }
+            .value-icon-box {
+                width: 38px;
+                height: 38px;
+                font-size: 1rem;
+                border-radius: 10px;
+                margin-bottom: 14px;
+            }
+            .value-card-title {
+                font-size: 0.92rem;
+                margin-bottom: 6px;
+            }
+            .value-card-desc {
+                font-size: 0.74rem;
+                line-height: 1.45;
+            }
+
+            .team-preview-section {
+                padding: 40px 0 36px 0;
+            }
+            .about-team-grid {
+                grid-template-columns: repeat(2, 1fr) !important;
+                gap: 12px;
+                margin-top: 24px;
+            }
+            .about-team-card {
+                border-radius: 14px;
+            }
+            .about-card-thumb {
+                height: 175px;
+            }
+            .about-card-body {
+                padding: 12px 10px;
+            }
+            .about-card-name {
+                font-size: 0.86rem;
+            }
+            .about-dept-badge {
+                font-size: 0.6rem;
+                padding: 2px 6px;
+            }
+            .about-card-role {
+                font-size: 0.7rem;
+                margin-bottom: 6px;
+                line-height: 1.25;
+            }
+            .about-card-bio {
+                font-size: 0.7rem;
+                line-height: 1.35;
+                margin-bottom: 8px;
+                -webkit-line-clamp: 2;
+                line-clamp: 2;
+            }
+            .about-card-exp {
+                font-size: 0.65rem;
+            }
+
+            .about-contact-section {
+                padding: 36px 0 24px 0;
+            }
+            .about-contact-grid {
+                grid-template-columns: 1fr;
+                gap: 24px;
+            }
+            .about-contact-title {
+                font-size: 1.45rem;
+                margin-bottom: 8px;
+            }
+            .about-contact-desc {
+                font-size: 0.84rem;
+                line-height: 1.5;
+                margin-bottom: 20px;
+            }
+            .about-contact-info-list {
+                gap: 8px;
+                margin-bottom: 20px;
+            }
+            .about-info-item {
+                padding: 12px 14px;
+                border-radius: 12px;
+                gap: 12px;
+            }
+            .about-info-icon-box {
+                width: 36px;
+                height: 36px;
+                font-size: 0.95rem;
+                border-radius: 8px;
+            }
+            .about-info-lbl {
+                font-size: 0.65rem;
+                margin-bottom: 2px;
+            }
+            .about-info-val {
+                font-size: 0.84rem;
+            }
+
+            .about-form-card {
+                padding: 20px 16px;
+                border-radius: 16px;
             }
             .form-row-2col {
                 grid-template-columns: 1fr;
+                gap: 12px;
+                margin-bottom: 12px;
             }
+            .about-form-field {
+                margin-bottom: 14px;
+            }
+            .about-form-field label {
+                font-size: 0.78rem;
+                margin-bottom: 5px;
+            }
+            .about-form-field input,
+            .about-form-field select,
+            .about-form-field textarea {
+                padding: 11px 12px;
+                font-size: 0.86rem;
+                border-radius: 9px;
+            }
+            .btn-submit-about {
+                padding: 13px 18px;
+                font-size: 0.92rem;
+                border-radius: 10px;
+                margin-top: 6px;
+            }
+
+            .about-footer-bar {
+                flex-direction: column;
+                gap: 12px;
+                text-align: center;
+                padding: 20px 0 30px 0;
+            }
+            .about-footer-links {
+                justify-content: center;
+                gap: 16px;
+                font-size: 0.8rem;
+            }
+        }
+
+        @media (max-width: 480px) {
             .about-hero-title {
-                font-size: 3rem;
+                font-size: 1.65rem;
+            }
+            .who-we-are-title {
+                font-size: 1.38rem;
+            }
+            .values-grid {
+                gap: 10px;
+            }
+            .value-card-box {
+                padding: 14px 11px;
+            }
+            .value-card-title {
+                font-size: 0.86rem;
+            }
+            .about-team-grid {
+                gap: 10px;
+            }
+            .about-card-thumb {
+                height: 160px;
+            }
+            .about-card-body {
+                padding: 10px 8px;
             }
         }
     </style>
