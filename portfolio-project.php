@@ -745,7 +745,23 @@ $relatedProjects = array_slice($relatedProjects, 0, 3);
                 font-size: 2.3rem;
             }
             .project-meta-cards-grid {
-                grid-template-columns: 1fr;
+                grid-template-columns: repeat(3, 1fr);
+                gap: 12px;
+                margin-bottom: 28px;
+            }
+            .project-meta-card {
+                padding: 14px 16px;
+                gap: 4px;
+            }
+            .meta-card-icon {
+                font-size: 0.95rem;
+                margin-bottom: 4px;
+            }
+            .meta-card-label {
+                font-size: 0.65rem;
+            }
+            .meta-card-value {
+                font-size: 0.88rem;
             }
             .project-cta-card {
                 flex-direction: column;
@@ -780,6 +796,31 @@ $relatedProjects = array_slice($relatedProjects, 0, 3);
             .nav-right-actions .btn-nav-cta {
                 padding: 7px 14px;
                 font-size: 0.8rem;
+            }
+            .project-meta-cards-grid {
+                grid-template-columns: repeat(3, 1fr) !important;
+                gap: 8px !important;
+                margin-bottom: 24px;
+            }
+            .project-meta-card {
+                padding: 10px 10px !important;
+                border-radius: 12px;
+                gap: 2px !important;
+                min-width: 0;
+            }
+            .meta-card-icon {
+                font-size: 0.85rem !important;
+                margin-bottom: 2px !important;
+            }
+            .meta-card-label {
+                font-size: 0.58rem !important;
+                letter-spacing: 0.4px;
+            }
+            .meta-card-value {
+                font-size: 0.76rem !important;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
             }
             .project-cta-card {
                 padding: 16px;
