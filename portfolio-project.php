@@ -322,7 +322,7 @@ $pageTitle = htmlspecialchars($currentProject['title']) . " — Case Study | Fal
             letter-spacing: 0.2px;
         }
         .project-card-title {
-            font-size: 0.2rem;
+            font-size: 0.9rem;
             font-weight: 700;
             color: #ffffff;
             margin: 0;

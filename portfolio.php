@@ -724,7 +724,7 @@ $featuredAllProjects = array_filter($allProjects, function($item) {
         }
 
         .project-card-title {
-            font-size: 1rem;
+            font-size: 0.9rem;
             font-weight: 700;
             color: #ffffff;
             margin: 0;
