@@ -6119,7 +6119,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
 
                                     <!-- Right: Delete & Edit Actions -->
                                     <div style="display: flex; align-items: center; gap: 16px;">
-                                        <button type="button" onclick="deleteServiceItem(<?php echo $item['id']; ?>, '<?php echo addslashes(htmlspecialchars($item['title'])); ?>')" style="background: none; border: none; color: #94a3b8; font-size: 0.82rem; font-weight: 500; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; padding: 0;" onmouseover="this.style.color='#ef4444'" onmouseout="this.style.color='#94a3b8'">
+                                        <button type="button" onclick="deleteServiceItem(<?php echo (int)$item['id']; ?>, <?php echo htmlspecialchars(json_encode($item['title'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>)" style="background: none; border: none; color: #94a3b8; font-size: 0.82rem; font-weight: 500; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; padding: 0;" onmouseover="this.style.color='#ef4444'" onmouseout="this.style.color='#94a3b8'">
                                             <i class="fa-regular fa-trash-can" style="font-size: 0.78rem;"></i> Delete
                                         </button>
 
@@ -6131,6 +6131,47 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
 
                             </div>
                         <?php endforeach; ?>
+                    </div>
+
+                    <!-- DELETE SERVICE CONFIRMATION MODAL -->
+                    <div id="deleteServiceModal" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.75); backdrop-filter: blur(6px); z-index: 100000; align-items: center; justify-content: center; padding: 20px; animation: fadeInModal 0.2s ease;">
+                        <div style="background: #ffffff; border-radius: 20px; max-width: 440px; width: 100%; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.3); border: 1px solid #e2e8f0; position: relative;">
+                            
+                            <button type="button" onclick="closeDeleteServiceModal()" style="position: absolute; top: 16px; right: 16px; background: #f1f5f9; border: none; width: 32px; height: 32px; border-radius: 50%; color: #64748b; font-size: 1rem; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.15s ease;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='#f1f5f9'">
+                                <i class="fa-solid fa-xmark"></i>
+                            </button>
+
+                            <div style="padding: 32px 28px 24px 28px; text-align: center;">
+                                <div style="width: 56px; height: 56px; border-radius: 50%; background: #fef2f2; border: 1px solid #fecaca; color: #dc2626; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px auto; font-size: 1.5rem;">
+                                    <i class="fa-solid fa-trash-can"></i>
+                                </div>
+                                
+                                <h3 style="font-size: 1.25rem; font-weight: 700; color: #0f172a; margin: 0 0 8px 0;">Delete Service?</h3>
+                                <p style="font-size: 0.88rem; color: #64748b; margin: 0 0 14px 0; line-height: 1.5;">
+                                    Are you sure you want to delete this service?
+                                </p>
+                                
+                                <div id="deleteServiceTargetName" style="font-size: 0.95rem; font-weight: 700; color: #0f172a; margin: 0 auto 16px auto; background: #f8fafc; padding: 10px 16px; border-radius: 10px; border: 1px dashed #cbd5e1; word-break: break-word; max-width: 90%;">
+                                </div>
+
+                                <p style="font-size: 0.8rem; color: #94a3b8; margin: 0; line-height: 1.4;">
+                                    This action will permanently remove this service and its overview card from your live website.
+                                </p>
+                            </div>
+
+                            <div style="background: #f8fafc; padding: 16px 24px; border-top: 1px solid #f1f5f9; display: flex; gap: 12px; justify-content: flex-end;">
+                                <button type="button" onclick="closeDeleteServiceModal()" style="flex: 1; padding: 11px 18px; border-radius: 10px; border: 1px solid #cbd5e1; background: #ffffff; color: #475569; font-weight: 600; font-size: 0.88rem; cursor: pointer; transition: all 0.15s ease;" onmouseover="this.style.background='#f1f5f9'; this.style.color='#0f172a';" onmouseout="this.style.background='#ffffff'; this.style.color='#475569';">
+                                    Cancel
+                                </button>
+                                <form id="deleteServiceForm" action="/admin/index.php?section=services" method="POST" style="margin: 0; flex: 1;" onsubmit="document.getElementById('deleteServiceConfirmBtn').innerHTML = '<i class=\'fa-solid fa-spinner fa-spin\'></i> Deleting...';">
+                                    <input type="hidden" name="action" value="delete_service_item">
+                                    <input type="hidden" name="service_id" id="deleteServiceTargetId" value="">
+                                    <button type="submit" id="deleteServiceConfirmBtn" style="width: 100%; padding: 11px 18px; border-radius: 10px; border: none; background: #dc2626; color: #ffffff; font-weight: 700; font-size: 0.88rem; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 7px; box-shadow: 0 4px 12px rgba(220, 38, 38, 0.25); transition: all 0.15s ease;" onmouseover="this.style.background='#b91c1c';" onmouseout="this.style.background='#dc2626';">
+                                        <i class="fa-solid fa-trash-can"></i> Yes, Delete
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
                     </div>
                 <?php endif; ?>
 
@@ -19031,6 +19072,16 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
         }
 
         function deleteServiceItem(id, title) {
+            const modal = document.getElementById('deleteServiceModal');
+            const nameEl = document.getElementById('deleteServiceTargetName');
+            const idInput = document.getElementById('deleteServiceTargetId');
+            if (modal && nameEl && idInput) {
+                nameEl.textContent = title;
+                idInput.value = id;
+                modal.style.display = 'flex';
+                return;
+            }
+
             if (confirm("Are you sure you want to delete '" + title + "'?")) {
                 const form = document.createElement('form');
                 form.method = 'POST';
@@ -19049,6 +19100,23 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                 form.submit();
             }
         }
+
+        function closeDeleteServiceModal() {
+            const modal = document.getElementById('deleteServiceModal');
+            if (modal) modal.style.display = 'none';
+        }
+
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeDeleteServiceModal();
+            }
+        });
+        window.addEventListener('click', function(e) {
+            const modal = document.getElementById('deleteServiceModal');
+            if (modal && e.target === modal) {
+                closeDeleteServiceModal();
+            }
+        });
 
         function updateServiceNumbers() {
             const cards = document.querySelectorAll('#servicesCardsContainer .service-card-item');

@@ -245,29 +245,6 @@
             ]
         },
         {
-            "id": 3,
-            "slug": "post-production",
-            "title": "Post Production",
-            "icon": "fa-solid fa-sliders",
-            "short_description": "Comprehensive post-production services including editing, color grading, sound design, and visual effects to polish your content.",
-            "detail_description": "Transform raw footage into a cinematic masterpiece. Our DaVinci Resolve colorists, sound designers, and VFX artists bring high-end polish to every visual asset.",
-            "image": "https://res.cloudinary.com/pnabfi91/image/upload/v1786584616/falhen/services/zenpahes1m1rfr5w8grj.jpg",
-            "card_features": [
-                "Professional video editing",
-                "Color correction & grading",
-                "Sound design & mixing",
-                "Visual effects & compositing"
-            ],
-            "detail_features": [
-                "Premiere Pro & DaVinci Resolve",
-                "Hollywood-Grade Color Science",
-                "Dolby Atmos Sound Mixing",
-                "VFX & Motion Compositing",
-                "Proxy & Remote Workflows",
-                "Secure File Delivery"
-            ]
-        },
-        {
             "id": 4,
             "slug": "animation-motion-graphics",
             "title": "Animation & Motion Graphics",
@@ -288,29 +265,6 @@
                 "Logo Stings & Brand Assets",
                 "Explainer & Infographic Video",
                 "Character & Mascot Animation"
-            ]
-        },
-        {
-            "id": 5,
-            "slug": "creative-services",
-            "title": "Creative Services",
-            "icon": "ri-article-line",
-            "short_description": "Strategic content planning and creation to maximise engagement across all digital platforms and social media channels.",
-            "detail_description": "A beautiful video means nothing without the right strategy. We combine data analytics, audience research, and creative direction to build content calendars that grow your brand consistently. From platform-native short-form to long-form series, we plan, produce, and measure what resonates.",
-            "image": "https://res.cloudinary.com/pnabfi91/image/upload/v1786584766/falhen/services/vrtehd9al98vtxkdh6hh.jpg",
-            "card_features": [
-                "Content planning & scheduling",
-                "Social media optimisation",
-                "Brand storytelling",
-                "Analytics & reporting"
-            ],
-            "detail_features": [
-                "Audience & Competitor Research",
-                "Platform-Native Content Plans",
-                "Editorial Calendar Management",
-                "SEO & Hashtag Strategy",
-                "Monthly Performance Reports",
-                "A/B Creative Testing"
             ]
         },
         {
@@ -380,6 +334,52 @@
                 "Multi-Angle Ceremony Capture",
                 "Documentary-Style Coverage",
                 "Blu-Ray & Digital Delivery"
+            ]
+        },
+        {
+            "id": 5,
+            "slug": "creative-services",
+            "title": "Creative Services",
+            "icon": "ri-article-line",
+            "short_description": "Strategic content planning and creation to maximise engagement across all digital platforms and social media channels.",
+            "detail_description": "A beautiful video means nothing without the right strategy. We combine data analytics, audience research, and creative direction to build content calendars that grow your brand consistently. From platform-native short-form to long-form series, we plan, produce, and measure what resonates.",
+            "image": "https://res.cloudinary.com/pnabfi91/image/upload/v1786584766/falhen/services/vrtehd9al98vtxkdh6hh.jpg",
+            "card_features": [
+                "Content planning & scheduling",
+                "Social media optimisation",
+                "Brand storytelling",
+                "Analytics & reporting"
+            ],
+            "detail_features": [
+                "Audience & Competitor Research",
+                "Platform-Native Content Plans",
+                "Editorial Calendar Management",
+                "SEO & Hashtag Strategy",
+                "Monthly Performance Reports",
+                "A/B Creative Testing"
+            ]
+        },
+        {
+            "id": 3,
+            "slug": "post-production",
+            "title": "Post Production",
+            "icon": "fa-solid fa-sliders",
+            "short_description": "Comprehensive post-production services including editing, color grading, sound design, and visual effects to polish your content.",
+            "detail_description": "Transform raw footage into a cinematic masterpiece. Our DaVinci Resolve colorists, sound designers, and VFX artists bring high-end polish to every visual asset.",
+            "image": "https://res.cloudinary.com/pnabfi91/image/upload/v1786584616/falhen/services/zenpahes1m1rfr5w8grj.jpg",
+            "card_features": [
+                "Professional video editing",
+                "Color correction & grading",
+                "Sound design & mixing",
+                "Visual effects & compositing"
+            ],
+            "detail_features": [
+                "Premiere Pro & DaVinci Resolve",
+                "Hollywood-Grade Color Science",
+                "Dolby Atmos Sound Mixing",
+                "VFX & Motion Compositing",
+                "Proxy & Remote Workflows",
+                "Secure File Delivery"
             ]
         }
     ],
