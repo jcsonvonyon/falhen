@@ -67,6 +67,40 @@ $relatedProjects = array_slice($relatedProjects, 0, 3);
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo $pageTitle; ?></title>
     
+    <?php 
+    $servicesRaw = !empty($currentProject['services']) 
+        ? $currentProject['services'] 
+        : (!empty($currentProject['keywords']) ? $currentProject['keywords'] : 'Video Production, Photography, AV Production, Content Strategy, live production, creative services, event design, event management');
+    $cleanDesc = !empty($currentProject['desc']) ? strip_tags($currentProject['desc']) : 'Step inside ' . ($currentProject['title'] ?? 'Falhen Media') . ' — Production and creative direction showcase by Falhen Media.';
+    $cleanDesc = mb_substr(preg_replace('/\s+/', ' ', $cleanDesc), 0, 160);
+    ?>
+    <meta name="description" content="<?php echo htmlspecialchars($cleanDesc); ?>">
+    <meta name="keywords" content="<?php echo htmlspecialchars($servicesRaw); ?>">
+
+    <!-- Schema.org JSON-LD Structured Data (Fed by Services & Keywords) -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "CreativeWork",
+      "name": <?php echo json_encode($currentProject['title']); ?>,
+      "headline": <?php echo json_encode($currentProject['title']); ?>,
+      "description": <?php echo json_encode($cleanDesc); ?>,
+      "image": <?php echo json_encode(getCloudinaryUrl($currentProject['image'] ?? '')); ?>,
+      "creator": {
+        "@type": "Organization",
+        "name": "Falhen Media",
+        "url": "https://falhen.com"
+      },
+      "provider": {
+        "@type": "Organization",
+        "name": <?php echo json_encode(!empty($currentProject['client']) ? $currentProject['client'] : "Falhen Media"); ?>
+      },
+      "keywords": <?php echo json_encode($servicesRaw); ?>,
+      "genre": <?php echo json_encode($currentProject['category'] ?? "Events"); ?>,
+      "dateCreated": <?php echo json_encode(!empty($currentProject['year']) ? (string)$currentProject['year'] : "2026"); ?>
+    }
+    </script>
+    
     <!-- Favicon -->
     <link rel="icon" type="image/png" href="/assets/img/icons/favicon.png">
     
@@ -830,7 +864,7 @@ $relatedProjects = array_slice($relatedProjects, 0, 3);
                 <?php 
                 $servicesRaw = !empty($currentProject['services']) 
                     ? $currentProject['services'] 
-                    : 'Video Production, Photography, AV Production, Content Strategy, live production, creative services, event design, event management';
+                    : (!empty($currentProject['keywords']) ? $currentProject['keywords'] : 'Video Production, Photography, AV Production, Content Strategy, live production, creative services, event design, event management');
                 $servicesArr = array_filter(array_map('trim', explode(',', $servicesRaw)));
                 foreach ($servicesArr as $sName):
                 ?>

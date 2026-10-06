@@ -1628,7 +1628,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $videoUrl = trim(strip_tags($_POST['video_url'] ?? ''));
         $gdriveUrl = trim(strip_tags($_POST['gdrive_url'] ?? ''));
         $desc = trim($_POST['desc'] ?? '');
-        $services = trim(strip_tags($_POST['services'] ?? ''));
+        $rawServices = trim(strip_tags($_POST['services'] ?? ''));
+        $servicesArr = array_filter(array_map('trim', explode(',', $rawServices)));
+        $services = implode(', ', array_slice($servicesArr, 0, 25));
         $featured = !empty($_POST['featured']) ? true : false;
         
         $image = trim(strip_tags($_POST['existing_image'] ?? ''));
@@ -1679,6 +1681,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $it['gdrive_url'] = $gdriveUrl;
                 $it['desc'] = $desc;
                 $it['services'] = $services;
+                $it['keywords'] = $services;
                 $it['featured'] = $featured;
                 if (!empty($image)) {
                     $it['image'] = $image;
@@ -1713,6 +1716,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'image' => !empty($image) ? $image : '/assets/img/portfolio/portfolio_halima.png',
                 'desc' => $desc,
                 'services' => $services,
+                'keywords' => $services,
                 'photosCount' => 30
             ];
         }
@@ -7101,32 +7105,256 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                 ><?php echo htmlspecialchars($editingPortfolio['desc'] ?? ''); ?></textarea>
                             </div>
 
-                            <!-- Services Field (comma separated) -->
-                            <div id="portfolio_services_wrapper" style="margin-top: 18px;">
-                                <label class="form-label-title">Services (comma separated)</label>
+                            <!-- Services & Keywords Component (Matching readdy.ai reference UI) -->
+                            <?php 
+                            $rawServicesVal = $editingPortfolio['services'] ?? ($editingPortfolio['keywords'] ?? '');
+                            if (empty($rawServicesVal) && $subAction === 'add') {
+                                $rawServicesVal = 'Video Production, Photography, AV Production, Content Strategy, live production, creative services, event design, event management';
+                            }
+                            ?>
+                            <div id="portfolio_services_wrapper" style="margin-top: 20px;">
+                                <label class="form-label-title" style="font-size: 0.88rem; font-weight: 700; color: #1e293b; margin-bottom: 8px; display: block;">Services &amp; Keywords</label>
+                                
+                                <div class="services-keywords-box" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px 16px; transition: border-color 0.2s, box-shadow 0.2s;">
+                                    <!-- Pills / Tags Render Flow -->
+                                    <div id="services_pills_list" style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center; min-height: 32px; margin-bottom: 12px;"></div>
+                                    
+                                    <!-- Add Another Input Field -->
+                                    <div style="display: flex; align-items: center; gap: 8px; border-top: 1px solid #f1f5f9; padding-top: 10px;">
+                                        <input 
+                                            type="text" 
+                                            id="services_tag_input" 
+                                            class="form-text-input" 
+                                            placeholder="Add another..." 
+                                            style="flex: 1; border: 1px solid #e2e8f0; border-radius: 8px; padding: 9px 14px; font-size: 0.86rem; background: #fafafa;"
+                                            autocomplete="off"
+                                        >
+                                        <button 
+                                            type="button" 
+                                            id="btn_add_service_tag" 
+                                            onclick="addCurrentServiceInputTag()" 
+                                            style="background: #fee2e2; color: #dc2626; border: 1px solid #fecaca; border-radius: 8px; padding: 9px 16px; font-size: 0.84rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; transition: all 0.15s;"
+                                        >
+                                            <i class="fa-solid fa-plus" style="font-size: 0.78rem;"></i> Add
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Suggestions Bar -->
+                                <div style="margin-top: 10px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px;">
+                                    <span style="font-size: 0.72rem; font-weight: 700; color: #94a3b8; letter-spacing: 0.5px; text-transform: uppercase;">SUGGESTIONS:</span>
+                                    <button type="button" class="btn-service-sugg" onclick="addServiceTag('Audio')">+ Audio</button>
+                                    <button type="button" class="btn-service-sugg" onclick="addServiceTag('Conference')">+ Conference</button>
+                                    <button type="button" class="btn-service-sugg" onclick="addServiceTag('Projection')">+ Projection</button>
+                                    <button type="button" class="btn-service-sugg" onclick="addServiceTag('Visual')">+ Visual</button>
+                                    <button type="button" class="btn-service-sugg" onclick="addServiceTag('Live Streaming')">+ Live Streaming</button>
+                                    <button type="button" class="btn-service-sugg" onclick="addServiceTag('Drone')">+ Drone</button>
+                                    <button type="button" class="btn-service-sugg" onclick="addServiceTag('Color Grading')">+ Color Grading</button>
+                                </div>
+
+                                <!-- Keywords Count & SEO Structured Data Note -->
+                                <div style="margin-top: 8px; font-size: 0.78rem; color: #64748b; font-weight: 600; display: flex; align-items: center; gap: 6px;">
+                                    <span id="services_count_display" style="color: #0f172a; font-weight: 700;">0</span>/25 keywords 
+                                    <span style="color: #94a3b8; font-weight: 400;">these feed your portfolio SEO structured data</span>
+                                </div>
+
+                                <!-- Hidden input for form submission -->
                                 <input 
-                                    type="text" 
+                                    type="hidden" 
                                     name="services" 
-                                    class="form-text-input" 
-                                    value="<?php echo htmlspecialchars($editingPortfolio['services'] ?? 'Video Production, Live Streaming, Post Production'); ?>" 
-                                    placeholder="Video Production, Live Streaming, Post Production"
+                                    id="portfolio_services_hidden" 
+                                    value="<?php echo htmlspecialchars($rawServicesVal); ?>"
                                 >
                             </div>
+
+                            <style>
+                            .service-tag-pill {
+                                display: inline-flex;
+                                align-items: center;
+                                gap: 7px;
+                                background: #fff1f2;
+                                border: 1px solid #fecdd3;
+                                color: #dc2626;
+                                border-radius: 9999px;
+                                padding: 6px 14px;
+                                font-size: 0.82rem;
+                                font-weight: 600;
+                                line-height: 1.2;
+                                transition: all 0.15s ease;
+                            }
+                            .service-tag-pill:hover {
+                                border-color: #fca5a5;
+                                background: #fee2e2;
+                            }
+                            .service-tag-pill .tag-remove-btn {
+                                background: transparent;
+                                border: none;
+                                color: #ef4444;
+                                font-size: 0.95rem;
+                                font-weight: 700;
+                                line-height: 1;
+                                cursor: pointer;
+                                padding: 0;
+                                margin-left: 2px;
+                                display: inline-flex;
+                                align-items: center;
+                                justify-content: center;
+                                width: 16px;
+                                height: 16px;
+                                border-radius: 50%;
+                                transition: all 0.15s;
+                            }
+                            .service-tag-pill .tag-remove-btn:hover {
+                                color: #991b1b;
+                                background: rgba(239, 68, 68, 0.15);
+                            }
+                            .btn-service-sugg {
+                                background: #f8fafc;
+                                border: 1px solid #e2e8f0;
+                                color: #475569;
+                                padding: 4px 12px;
+                                border-radius: 9999px;
+                                font-size: 0.78rem;
+                                font-weight: 600;
+                                cursor: pointer;
+                                display: inline-flex;
+                                align-items: center;
+                                gap: 4px;
+                                transition: all 0.15s ease;
+                            }
+                            .btn-service-sugg:hover {
+                                background: #fff1f2;
+                                border-color: #fecdd3;
+                                color: #dc2626;
+                                transform: translateY(-1px);
+                            }
+                            .btn-service-sugg.added {
+                                opacity: 0.4;
+                                pointer-events: none;
+                                text-decoration: line-through;
+                                background: #f1f5f9;
+                            }
+                            </style>
+
+                            <script>
+                            (function() {
+                                var rawInitial = document.getElementById('portfolio_services_hidden') ? document.getElementById('portfolio_services_hidden').value : '';
+                                var servicesList = [];
+
+                                if (rawInitial && rawInitial.trim().length > 0) {
+                                    servicesList = rawInitial.split(',').map(function(s) { return s.trim(); }).filter(function(s) { return s.length > 0; });
+                                }
+
+                                function syncServicesState() {
+                                    var hiddenInput = document.getElementById('portfolio_services_hidden');
+                                    if (hiddenInput) {
+                                        hiddenInput.value = servicesList.join(', ');
+                                    }
+                                    var countDisplay = document.getElementById('services_count_display');
+                                    if (countDisplay) {
+                                        countDisplay.textContent = servicesList.length;
+                                    }
+
+                                    var container = document.getElementById('services_pills_list');
+                                    if (container) {
+                                        if (servicesList.length === 0) {
+                                            container.innerHTML = '<span style="font-size: 0.8rem; color: #94a3b8; font-style: italic;">No services or keywords added yet. Use the field below or click suggestions.</span>';
+                                        } else {
+                                            var html = '';
+                                            servicesList.forEach(function(tag, idx) {
+                                                var safeTag = tag.replace(/"/g, '&quot;');
+                                                html += '<span class="service-tag-pill">' +
+                                                    '<span>' + safeTag + '</span>' +
+                                                    '<button type="button" class="tag-remove-btn" onclick="removeServiceTag(' + idx + ')" title="Remove">&times;</button>' +
+                                                '</span>';
+                                            });
+                                            container.innerHTML = html;
+                                        }
+                                    }
+
+                                    // Update suggestion pill buttons
+                                    document.querySelectorAll('.btn-service-sugg').forEach(function(btn) {
+                                        var text = btn.textContent.replace('+', '').trim();
+                                        var isAdded = servicesList.some(function(t) { return t.toLowerCase() === text.toLowerCase(); });
+                                        if (isAdded) {
+                                            btn.classList.add('added');
+                                        } else {
+                                            btn.classList.remove('added');
+                                        }
+                                    });
+                                }
+
+                                window.addServiceTag = function(tag) {
+                                    if (!tag) return;
+                                    var clean = tag.trim();
+                                    if (clean.length === 0) return;
+                                    if (servicesList.length >= 25) {
+                                        alert('Maximum 25 keywords reached.');
+                                        return;
+                                    }
+                                    var exists = servicesList.some(function(t) { return t.toLowerCase() === clean.toLowerCase(); });
+                                    if (!exists) {
+                                        servicesList.push(clean);
+                                        syncServicesState();
+                                    }
+                                };
+
+                                window.removeServiceTag = function(idx) {
+                                    if (idx >= 0 && idx < servicesList.length) {
+                                        servicesList.splice(idx, 1);
+                                        syncServicesState();
+                                    }
+                                };
+
+                                window.addCurrentServiceInputTag = function() {
+                                    var input = document.getElementById('services_tag_input');
+                                    if (!input) return;
+                                    var val = input.value.trim();
+                                    if (val.length > 0) {
+                                        var parts = val.split(',');
+                                        parts.forEach(function(p) {
+                                            window.addServiceTag(p.trim());
+                                        });
+                                        input.value = '';
+                                    }
+                                };
+
+                                document.addEventListener('DOMContentLoaded', function() {
+                                    syncServicesState();
+                                    var tagInput = document.getElementById('services_tag_input');
+                                    if (tagInput) {
+                                        tagInput.addEventListener('keydown', function(e) {
+                                            if (e.key === 'Enter' || e.key === ',') {
+                                                e.preventDefault();
+                                                window.addCurrentServiceInputTag();
+                                            }
+                                        });
+                                        tagInput.addEventListener('blur', function() {
+                                            if (tagInput.value.trim().length > 0) {
+                                                window.addCurrentServiceInputTag();
+                                            }
+                                        });
+                                    }
+                                });
+
+                                setTimeout(syncServicesState, 20);
+                            })();
+                            </script>
 
                             <!-- Featured Checkbox -->
                             <div style="margin-top: 18px; display: flex; align-items: center; gap: 10px;">
                                 <input type="checkbox" name="featured" id="portfolio_featured_checkbox" value="1" <?php echo !empty($editingPortfolio['featured']) ? 'checked' : ''; ?> style="width: 18px; height: 18px; accent-color: #dc2626; cursor: pointer;">
                                 <label for="portfolio_featured_checkbox" style="font-size: 0.9rem; font-weight: 700; color: #0f172a; cursor: pointer;">
-                                    Feature on Front Page Showcase &amp; Highlights Slider
+                                    Mark as Featured
                                 </label>
                             </div>
 
                             <!-- Form Action Buttons -->
                             <div style="display: flex; gap: 12px; margin-top: 24px;">
-                                <button type="submit" class="btn-save-primary" style="padding: 10px 26px; background-color: #dc2626;">
-                                    Save Portfolio Item
+                                <button type="submit" class="btn-save-primary" style="padding: 10px 28px; background-color: #dc2626; border-radius: 8px; font-weight: 700; font-size: 0.92rem; border: none; cursor: pointer;">
+                                    Save
                                 </button>
-                                <a href="index.php?section=portfolio&type=<?php echo urlencode($typeFilter); ?>" class="btn-live-site" style="text-decoration: none; padding: 10px 20px;">
+                                <a href="index.php?section=portfolio&type=<?php echo urlencode($typeFilter); ?>" class="btn-live-site" style="text-decoration: none; padding: 10px 22px; background: #f1f5f9; color: #475569; border-radius: 8px; font-weight: 600; font-size: 0.92rem; border: 1px solid #e2e8f0; display: inline-flex; align-items: center;">
                                     Cancel
                                 </a>
                             </div>
