@@ -138,9 +138,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $curRole = $_SESSION['admin_role'] ?? 'Staff';
 
                 if (isAdminUser($curRole, $curEmail, $curUser)) {
-                    saveAdminUserProfile(['avatar' => $newAvatarUrl]);
-                    saveStaffAccountByUsername('admin', ['avatar' => $newAvatarUrl]);
-                    saveStaffAccountByUsername('oluwatosin.ligali', ['avatar' => $newAvatarUrl]);
+                    if (strtolower($curUser) === 'admin' || strtolower($curUser) === 'henry.falonipe' || strtolower($curEmail) === 'admin@falhen.com') {
+                        saveAdminUserProfile(['avatar' => $newAvatarUrl]);
+                        saveStaffAccountByUsername('admin', ['avatar' => $newAvatarUrl]);
+                    } else {
+                        saveStaffAccountByUsername($curUser, ['avatar' => $newAvatarUrl]);
+                    }
                 }
 
                 if (!empty($curUser)) {
@@ -2244,7 +2247,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         // Lock email editing to Super Admin users only
         if (!isSuperAdminUser()) {
-            $isTargetAdmin = (strtolower($targetUser) === 'admin' || strtolower($targetUser) === 'oluwatosin.ligali');
+            $isTargetAdmin = (strtolower($targetUser) === 'admin' || strtolower($targetUser) === 'henry.falonipe');
             if ($isTargetAdmin) {
                 $existingAdmin = getAdminUserProfile();
                 $email = $existingAdmin['email'] ?? ($_SESSION['admin_email'] ?? '');
@@ -2274,7 +2277,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
 
-        $isTargetAdmin = (strtolower($targetUser) === 'admin' || strtolower($targetUser) === 'oluwatosin.ligali' || strtolower($targetUser) === 'oluwatosin.ligali@falhenmedia.com' || strtolower($targetUser) === 'mail@falhenmedia.com' || strtolower($email) === 'mail@falhenmedia.com' || strtolower($email) === 'oluwatosin.ligali@falhenmedia.com' || isAdminUser($role, $email, $targetUser));
+        $isTargetAdmin = (strtolower($targetUser) === 'admin' || strtolower($targetUser) === 'henry.falonipe' || strtolower($email) === 'admin@falhen.com');
 
         $profileDataSave = [
             'full_name'         => $fullName,
@@ -2295,15 +2298,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (!empty($email)) {
             saveStaffAccountByUsername($email, $profileDataSave);
         }
-        if (!empty($username)) {
-            saveStaffAccountByUsername($username, $profileDataSave);
-        }
 
         if ($isTargetAdmin) {
-            $profileDataSave['username'] = $targetUser;
+            $profileDataSave['username'] = 'admin';
             saveAdminUserProfile($profileDataSave);
             saveStaffAccountByUsername('admin', $profileDataSave);
-            saveStaffAccountByUsername('oluwatosin.ligali', $profileDataSave);
         }
 
         // Always sync active session variables for the logged in user
@@ -2393,10 +2392,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             saveStaffAccountByUsername($userEmail, $pwdDataUpdate);
         }
 
-        if ($isTargetAdmin) {
+        if (strtolower($username) === 'admin' || strtolower($username) === 'henry.falonipe' || strtolower($userEmail) === 'admin@falhen.com') {
             saveAdminUserProfile($pwdDataUpdate);
             saveStaffAccountByUsername('admin', $pwdDataUpdate);
-            saveStaffAccountByUsername('oluwatosin.ligali', $pwdDataUpdate);
+        } else {
+            saveStaffAccountByUsername($username, $pwdDataUpdate);
         }
 
         if ($pdo) {
@@ -3101,17 +3101,6 @@ if ($userRole === 'Talent Manager') {
 
 $isSuperAdmin = (strtolower($username) === 'admin' || strtolower($username) === 'oluwatosin.ligali' || strtolower($userEmail) === 'mail@falhenmedia.com' || strtolower($userEmail) === 'admin@falhen.com');
 
-if ($isSuperAdmin) {
-    $userAvatar      = !empty($adminProfile['avatar']) ? $adminProfile['avatar'] : ($_SESSION['admin_avatar'] ?? '');
-    $userFullName    = !empty($adminProfile['full_name']) ? $adminProfile['full_name'] : ($_SESSION['admin_full_name'] ?? 'Henry Falonipe');
-    $userRole        = !empty($adminProfile['role']) ? $adminProfile['role'] : ($_SESSION['admin_role'] ?? 'Super Admin');
-    $userDesignation = !empty($adminProfile['designation']) ? $adminProfile['designation'] : ($_SESSION['admin_designation'] ?? 'IT Support Specialist');
-
-    $_SESSION['admin_avatar']      = $userAvatar;
-    $_SESSION['admin_full_name']   = $userFullName;
-    $_SESSION['admin_role']        = $userRole;
-    $_SESSION['admin_designation'] = $userDesignation;
-} else {
     $currentStaffAcc = getStaffAccountByUsername($username);
     if (!$currentStaffAcc && !empty($userEmail)) {
         $currentStaffAcc = getStaffAccountByUsername($userEmail);
@@ -3127,12 +3116,21 @@ if ($isSuperAdmin) {
         $_SESSION['admin_avatar']      = $userAvatar;
         $_SESSION['admin_role']        = $userRole;
         $_SESSION['admin_designation'] = $userDesignation;
+    } elseif ($isSuperAdmin) {
+        $userAvatar      = !empty($adminProfile['avatar']) ? $adminProfile['avatar'] : ($_SESSION['admin_avatar'] ?? '');
+        $userFullName    = !empty($adminProfile['full_name']) ? $adminProfile['full_name'] : ($_SESSION['admin_full_name'] ?? 'Henry Falonipe');
+        $userRole        = !empty($adminProfile['role']) ? $adminProfile['role'] : ($_SESSION['admin_role'] ?? 'Super Admin');
+        $userDesignation = !empty($adminProfile['designation']) ? $adminProfile['designation'] : ($_SESSION['admin_designation'] ?? 'Creative Director & Founder');
+
+        $_SESSION['admin_avatar']      = $userAvatar;
+        $_SESSION['admin_full_name']   = $userFullName;
+        $_SESSION['admin_role']        = $userRole;
+        $_SESSION['admin_designation'] = $userDesignation;
     } else {
         $userAvatar      = $_SESSION['admin_avatar'] ?? '';
         $userFullName    = $_SESSION['admin_full_name'] ?? ucwords(str_replace('.', ' ', $username));
         $userDesignation = $_SESSION['admin_designation'] ?? 'Creative Specialist';
     }
-}
 $userInitial = strtoupper(substr($userFullName ?: 'S', 0, 1));
 
 // Resolve active section & evaluate RBAC permission
@@ -8150,47 +8148,27 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
             <!-- SECTION: MY PROFILE & ACCOUNT SETTINGS -->
             <?php elseif ($activeSection === 'profile' || $activeSection === 'my_profile'): 
                 $targetProfileUser = trim($_GET['username'] ?? $_GET['target_user'] ?? $username);
-                $isViewingAdmin = (strtolower($targetProfileUser) === 'admin' || strtolower($targetProfileUser) === 'oluwatosin.ligali' || strtolower($targetProfileUser) === 'oluwatosin ligali' || strtolower($targetProfileUser) === 'oluwatosin.ligali@falhenmedia.com' || strtolower($targetProfileUser) === 'mail@falhenmedia.com' || strtolower($userEmail) === 'mail@falhenmedia.com' || strtolower($userEmail) === 'oluwatosin.ligali@falhenmedia.com' || isAdminUser($userRole, $userEmail, $username));
-
-                if ($isViewingAdmin) {
-                    $profileData = getAdminUserProfile();
-                    $staffFallback = getStaffAccountByUsername($targetProfileUser);
-                    if (!$staffFallback && !empty($username)) {
-                        $staffFallback = getStaffAccountByUsername($username);
-                    }
-                    if ($staffFallback) {
-                        foreach ($staffFallback as $fk => $fv) {
-                            if (empty($profileData[$fk]) && !empty($fv)) {
-                                $profileData[$fk] = $fv;
-                            }
-                        }
-                    }
-                    if (!isset($profileData['phone'])) $profileData['phone'] = $profileData['phone'] ?? '';
-                    if (!isset($profileData['address'])) $profileData['address'] = $profileData['address'] ?? ($profileData['location'] ?? '');
-                    if (empty($profileData['alt_email'])) $profileData['alt_email'] = $profileData['alt_email'] ?? ($profileData['alternative_email'] ?? ($_SESSION['admin_alt_email'] ?? ($_SESSION['alt_email'] ?? '')));
-                } else {
-                    $staffObj = getStaffAccountByUsername($targetProfileUser);
-                    if (!$staffObj && !empty($username)) {
-                        $staffObj = getStaffAccountByUsername($username);
-                    }
-                    if ($staffObj) {
-                        $profileData = [
-                            'full_name' => $staffObj['full_name'] ?? ucwords(str_replace('.', ' ', $targetProfileUser)),
-                            'username'  => $staffObj['username'] ?? $targetProfileUser,
-                            'email'     => $staffObj['email'] ?? ($targetProfileUser . '@falhen.com'),
-                            'role'      => $staffObj['role'] ?? 'Staff',
-                            'avatar'    => $staffObj['avatar'] ?? '/assets/img/avatar.png',
-                            'bio'       => $staffObj['bio'] ?? '',
-                            'dob'       => $staffObj['dob'] ?? '',
-                            'alt_email' => $staffObj['alt_email'] ?? ($staffObj['alternative_email'] ?? ($staffObj['recovery_email'] ?? ($staffObj['personal_email'] ?? ''))),
-                            'phone'     => $staffObj['phone'] ?? '',
-                            'address'   => $staffObj['address'] ?? ($staffObj['location'] ?? '')
-                        ];
-                    } else {
-                        $profileData = getAdminUserProfile();
-                        if (!isset($profileData['alt_email'])) $profileData['alt_email'] = $profileData['alt_email'] ?? ($profileData['alternative_email'] ?? ($profileData['recovery_email'] ?? ''));
-                    }
+                $staffObj = getStaffAccountByUsername($targetProfileUser);
+                if (!$staffObj && !empty($username)) {
+                    $staffObj = getStaffAccountByUsername($username);
                 }
+
+                if ($staffObj) {
+                    $profileData = $staffObj;
+                } elseif (strtolower($targetProfileUser) === 'admin' || strtolower($username) === 'admin') {
+                    $profileData = getAdminUserProfile();
+                } else {
+                    $profileData = [
+                        'full_name' => ucwords(str_replace('.', ' ', $targetProfileUser)),
+                        'username'  => $targetProfileUser,
+                        'email'     => $targetProfileUser . '@falhen.com',
+                        'role'      => 'Staff',
+                        'designation' => 'Staff'
+                    ];
+                }
+                if (!isset($profileData['phone'])) $profileData['phone'] = $profileData['phone'] ?? '';
+                if (!isset($profileData['address'])) $profileData['address'] = $profileData['address'] ?? ($profileData['location'] ?? '');
+                if (empty($profileData['alt_email'])) $profileData['alt_email'] = $profileData['alt_email'] ?? ($profileData['alternative_email'] ?? ($_SESSION['admin_alt_email'] ?? ($_SESSION['alt_email'] ?? '')));
                 $pwdError = $_GET['pwd_error'] ?? '';
             ?>
                 <!-- Header Bar -->
@@ -8534,22 +8512,6 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                             break;
                         }
                     }
-                    if ($editingStaff !== null) {
-                        $stUser = strtolower($editingStaff['username'] ?? '');
-                        $stEmail = strtolower($editingStaff['email'] ?? '');
-                        $curUser = strtolower($username);
-                        $curEmail = strtolower($userEmail);
-
-                        $isSelf = ($stUser === $curUser || 
-                                   $stEmail === $curEmail || 
-                                   (($stUser === 'admin' || $stUser === 'oluwatosin.ligali' || $stUser === 'ligali.oluwatosin') && 
-                                    ($curUser === 'admin' || $curUser === 'oluwatosin.ligali' || $curUser === 'ligali.oluwatosin')));
-
-                        if ($isSelf) {
-                            header('Location: index.php?section=my_profile');
-                            exit;
-                        }
-                    }
                 }
             ?>
                 <!-- Header Bar -->
@@ -8855,15 +8817,13 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                      $curUser = strtolower($username);
                                      $curEmail = strtolower($userEmail);
 
-                                     $isSelfAccount = ($stUser === $curUser || 
-                                                       $stEmail === $curEmail || 
-                                                       (($stUser === 'admin' || $stUser === 'oluwatosin.ligali' || $stUser === 'ligali.oluwatosin') && 
-                                                        ($curUser === 'admin' || $curUser === 'oluwatosin.ligali' || $curUser === 'ligali.oluwatosin')));
+                                     $isSelfAccount = (!empty($stUser) && !empty($curUser) && $stUser === $curUser) || 
+                                                       (!empty($stEmail) && !empty($curEmail) && $stEmail === $curEmail);
 
-                                     $editUrl = $isSelfAccount ? 'index.php?section=my_profile' : ('index.php?section=staff_accounts&edit_id=' . $stItem['id']);
+                                     $editUrl = 'index.php?section=staff_accounts&edit_id=' . $stItem['id'];
                                      ?>
                                      <a href="<?php echo $editUrl; ?>" style="color: #0f172a; font-size: 0.82rem; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 5px; background: #f1f5f9; padding: 6px 14px; border-radius: 8px;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='#f1f5f9'">
-                                         <i class="fa-solid fa-user-pen" style="font-size: 0.75rem; color: #dc2626;"></i> <?php echo $isSelfAccount ? 'Edit My Profile' : 'Edit Member'; ?>
+                                         <i class="fa-solid fa-user-pen" style="font-size: 0.75rem; color: #dc2626;"></i> <?php echo $isSelfAccount ? 'Edit My Account' : 'Edit Member'; ?>
                                      </a>
 
                                     <form action="index.php?section=staff_accounts" method="POST" onsubmit="return promptConfirmModal(this, 'Remove Staff Account', 'Are you sure you want to remove <?php echo htmlspecialchars(addslashes($stItem['full_name'])); ?> from staff accounts?');" style="margin: 0;">
@@ -8916,7 +8876,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                         $admUser = strtolower($adminProfileItem['username'] ?? 'admin');
                         $admEmail = strtolower($adminProfileItem['email'] ?? '');
 
-                        if ($saUser === 'admin' || $saUser === 'oluwatosin.ligali' || $saUser === $admUser || (!empty($admEmail) && $saEmail === $admEmail)) {
+                        if (($saUser === 'admin' && $admUser === 'admin') || ($saUser === $admUser && !empty($admUser)) || (!empty($admEmail) && $saEmail === $admEmail)) {
                             $adminInRepo = true;
                             if (!empty($adminProfileItem['dob'])) {
                                 $sa['dob'] = $adminProfileItem['dob'];

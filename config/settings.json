@@ -754,8 +754,9 @@
             "gdrive_url": "",
             "image": "https://res.cloudinary.com/pnabfi91/image/upload/v1791243270/falhen/portfolio/z1myk8vgoeungribns02.jpg",
             "desc": "",
-            "services": "Video Production, Live Streaming, Post Production",
-            "photosCount": 30
+            "services": "Audio, Projection, AV Production, Visual, Conference",
+            "photosCount": 30,
+            "keywords": "Audio, Projection, AV Production, Visual, Conference"
         },
         {
             "id": 25,
@@ -1171,19 +1172,19 @@
         }
     ],
     "admin_profile": {
-        "full_name": "Oluwatosin Ligali",
+        "full_name": "Henry Falonipe",
         "username": "admin",
-        "email": "Oluwatosin.ligali@falhenmedia.com",
-        "role": "IT Support Specialist",
-        "avatar": "https://res.cloudinary.com/pnabfi91/image/upload/v1786752054/falhen/profile/vo0hzeidqes0giydxkmr.png",
+        "email": "admin@falhen.com",
+        "role": "Super Admin",
+        "designation": "Creative Director & Founder",
+        "avatar": "https://res.cloudinary.com/pnabfi91/image/upload/v1786712075/falhen/team/ctxjp9mymgqdh2ecg2hu.jpg",
         "bio": "Visionary Creative Director and founder of Falhen Media.",
         "password_hash": "$2y$10$1WjN6Hyou2/JLvl.rvv7YuceT1EqQh5YuFANe1GEQR8TbXtFcQxvW",
-        "dob": "1985-08-29",
-        "alt_email": "personal@gmail.com",
-        "alternative_email": "",
-        "phone": "08012345678",
-        "address": "Lagos, Nigeria",
-        "location": ""
+        "dob": "1988-06-15",
+        "alt_email": "henry@falhen.com",
+        "phone": "+1 (312) 555-0199",
+        "address": "Chicago, IL, USA",
+        "location": "Chicago, IL, USA"
     },
     "staff_accounts": [
         {
