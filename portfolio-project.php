@@ -268,6 +268,70 @@ $pageTitle = htmlspecialchars($currentProject['title']) . " — Case Study | Fal
             background: rgba(255, 255, 255, 0.12);
             color: #ffffff;
         }
+
+        /* Project Card Styling (matching reference) */
+        .project-card {
+            background: #0e0e12;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            overflow: hidden;
+            position: relative;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            display: flex;
+            flex-direction: column;
+            text-decoration: none;
+        }
+        .project-card:hover {
+            border-color: rgba(220, 38, 38, 0.6);
+            transform: translateY(-4px);
+            box-shadow: 0 16px 36px rgba(0, 0, 0, 0.6), 0 0 20px rgba(220, 38, 38, 0.15);
+        }
+        .project-card-image-wrap {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 16 / 10;
+            background: #000000;
+            overflow: hidden;
+        }
+        .project-card-image-wrap img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+            transform: scale(1.0);
+            transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .project-card:hover .project-card-image-wrap img {
+            transform: scale(1.05);
+        }
+        .project-card-info {
+            padding: 14px 16px 16px 16px;
+            background: #0e0e12;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .project-card-cat {
+            color: #ef4444;
+            font-size: 0.82rem;
+            font-weight: 600;
+            line-height: 1.2;
+            margin: 0;
+            text-transform: capitalize;
+            letter-spacing: 0.2px;
+        }
+        .project-card-title {
+            font-size: 0.2rem;
+            font-weight: 700;
+            color: #ffffff;
+            margin: 0;
+            line-height: 1.35;
+            transition: color 0.2s ease;
+        }
+        .project-card:hover .project-card-title {
+            color: #ff4d4d;
+        }
     </style>
 </head>
 <body>
@@ -343,7 +407,74 @@ $pageTitle = htmlspecialchars($currentProject['title']) . " — Case Study | Fal
                         <?php endif; ?>
                     </div>
                 </div>
+
+                <!-- 3-Column Project Meta Stats (matching reference) -->
+                <div class="project-detail-meta-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 28px;">
+                    <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 12px; padding: 14px 18px;">
+                        <div style="font-size: 0.72rem; font-weight: 700; color: #71717a; letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 4px;">CLIENT</div>
+                        <div style="font-size: 0.95rem; font-weight: 700; color: #ffffff;"><?php echo htmlspecialchars(!empty($currentProject['client']) ? $currentProject['client'] : 'Falhen Client'); ?></div>
+                    </div>
+                    <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 12px; padding: 14px 18px;">
+                        <div style="font-size: 0.72rem; font-weight: 700; color: #71717a; letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 4px;">CATEGORY</div>
+                        <div style="font-size: 0.95rem; font-weight: 700; color: #ffffff;"><?php echo htmlspecialchars(!empty($currentProject['category']) ? $currentProject['category'] : 'Corporate'); ?></div>
+                    </div>
+                    <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 12px; padding: 14px 18px;">
+                        <div style="font-size: 0.72rem; font-weight: 700; color: #71717a; letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 4px;">YEAR</div>
+                        <div style="font-size: 0.95rem; font-weight: 700; color: #ffffff;"><?php echo htmlspecialchars(!empty($currentProject['year']) ? $currentProject['year'] : (!empty($currentProject['project_date']) ? $currentProject['project_date'] : '2026')); ?></div>
+                    </div>
+                </div>
+
+                <!-- CTA Banner (matching reference) -->
+                <div style="margin-top: 24px; background: rgba(220, 38, 38, 0.08); border: 1px solid rgba(220, 38, 38, 0.2); border-radius: 16px; padding: 20px 24px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;">
+                    <div style="display: flex; align-items: center; gap: 14px;">
+                        <div style="width: 44px; height: 44px; border-radius: 50%; background: rgba(220, 38, 38, 0.2); color: #ef4444; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; flex-shrink: 0;">
+                            <i class="fa-solid fa-star"></i>
+                        </div>
+                        <div>
+                            <div style="font-size: 1.05rem; font-weight: 700; color: #ffffff;">Want something like this?</div>
+                            <div style="font-size: 0.86rem; color: #a1a1aa;">Let's craft a story your audience remembers.</div>
+                        </div>
+                    </div>
+                    <a href="/contact.php" style="background: #dc2626; color: #ffffff; text-decoration: none; font-size: 0.88rem; font-weight: 700; padding: 11px 22px; border-radius: 10px; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 4px 14px rgba(220, 38, 38, 0.4); transition: background 0.2s;" onmouseover="this.style.background='#b91c1c'" onmouseout="this.style.background='#dc2626'">
+                        <i class="fa-regular fa-calendar-check"></i> Book a Discovery Call
+                    </a>
+                </div>
+
+                <!-- More Projects Section (matching reference) -->
+                <?php
+                $moreProjects = array_values(array_filter($projectsRepo, function($p) use ($projectId) {
+                    return (int)($p['id'] ?? 0) !== $projectId;
+                }));
+                if (empty($moreProjects)) {
+                    $moreProjects = array_values($projectsRepo);
+                }
+                ?>
+                <?php if (!empty($moreProjects)): ?>
+                    <div style="margin-top: 36px; border-top: 1px solid rgba(255, 255, 255, 0.08); padding-top: 28px;">
+                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;">
+                            <h3 style="font-size: 1.25rem; font-weight: 700; color: #ffffff; margin: 0;">More Projects</h3>
+                            <a href="/portfolio.php?tab=project" style="color: #ef4444; font-size: 0.86rem; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">
+                                All Projects <i class="fa-solid fa-arrow-right"></i>
+                            </a>
+                        </div>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 18px;">
+                            <?php foreach (array_slice($moreProjects, 0, 3) as $mProj): ?>
+                                <a href="/portfolio-project.php?id=<?php echo $mProj['id']; ?>" class="project-card">
+                                    <div class="project-card-image-wrap">
+                                        <img src="<?php echo htmlspecialchars(getCloudinaryUrl($mProj['image'] ?? '/assets/img/portfolio/portfolio_halima.png')); ?>" alt="<?php echo htmlspecialchars($mProj['title']); ?>" onerror="this.src='/assets/img/portfolio/portfolio_halima.png';">
+                                    </div>
+                                    <div class="project-card-info">
+                                        <div class="project-card-cat"><?php echo htmlspecialchars($mProj['category'] ?? 'Events'); ?></div>
+                                        <h4 class="project-card-title"><?php echo htmlspecialchars($mProj['title']); ?></h4>
+                                    </div>
+                                </a>
+                            <?php endforeach; ?>
+                        </div>
+                    </div>
+                <?php endif; ?>
             </div>
+        </div>
+    </div>
 
     <!-- Fixed Mobile Floating Bottom Dock Navigation Widget -->
     <nav class="mobile-bottom-dock">

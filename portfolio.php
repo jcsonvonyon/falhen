@@ -650,27 +650,27 @@ $featuredAllProjects = array_filter($allProjects, function($item) {
 
         .project-card {
             background: #0e0e12;
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 18px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
             overflow: hidden;
             position: relative;
             cursor: pointer;
-            transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
-            height: 260px;
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
             display: flex;
             flex-direction: column;
         }
 
         .project-card:hover {
             border-color: rgba(220, 38, 38, 0.6);
-            transform: translateY(-6px);
-            box-shadow: 0 16px 40px rgba(220, 38, 38, 0.25);
+            transform: translateY(-4px);
+            box-shadow: 0 16px 36px rgba(0, 0, 0, 0.6), 0 0 20px rgba(220, 38, 38, 0.15);
         }
 
         .project-card-image-wrap {
             position: relative;
             width: 100%;
-            height: 100%;
+            aspect-ratio: 16 / 10;
+            background: #000000;
             overflow: hidden;
         }
 
@@ -678,75 +678,62 @@ $featuredAllProjects = array_filter($allProjects, function($item) {
             width: 100%;
             height: 100%;
             object-fit: cover;
-            transform: scale(1.05);
-            transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+            display: block;
+            transform: scale(1.0);
+            transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
         .project-card:hover .project-card-image-wrap img {
-            transform: scale(1.0);
-        }
-
-        .project-card-overlay {
-            position: absolute;
-            inset: 0;
-            background: linear-gradient(180deg, rgba(3, 3, 5, 0.4) 0%, rgba(3, 3, 5, 0.2) 40%, rgba(3, 3, 5, 0.95) 100%);
-            padding: 18px;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            z-index: 2;
-        }
-
-        .project-card-top-row {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .project-cat-badge {
-            background: #dc2626;
-            color: #ffffff;
-            font-size: 0.72rem;
-            font-weight: 700;
-            padding: 4px 12px;
-            border-radius: 50px;
-            box-shadow: 0 2px 8px rgba(220, 38, 38, 0.4);
-            letter-spacing: 0.2px;
+            transform: scale(1.05);
         }
 
         .project-star-badge {
-            width: 22px;
-            height: 22px;
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            width: 24px;
+            height: 24px;
             border-radius: 50%;
-            background: rgba(234, 179, 8, 0.25);
-            border: 1px solid rgba(234, 179, 8, 0.5);
+            background: rgba(0, 0, 0, 0.65);
+            border: 1px solid rgba(234, 179, 8, 0.6);
             color: #facc15;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 0.7rem;
+            font-size: 0.72rem;
             backdrop-filter: blur(4px);
+            z-index: 2;
         }
 
-        .project-card-bottom-info {
+        .project-card-info {
+            padding: 14px 16px 16px 16px;
+            background: #0e0e12;
             display: flex;
             flex-direction: column;
             gap: 4px;
         }
 
-        .project-client-name {
-            font-size: 0.8rem;
+        .project-card-cat {
+            color: #ef4444;
+            font-size: 0.82rem;
             font-weight: 600;
-            color: #a1a1aa;
+            line-height: 1.2;
             margin: 0;
+            text-transform: capitalize;
+            letter-spacing: 0.2px;
         }
 
         .project-card-title {
-            font-size: 1.05rem;
+            font-size: 1rem;
             font-weight: 700;
             color: #ffffff;
             margin: 0;
-            line-height: 1.25;
+            line-height: 1.35;
+            transition: color 0.2s ease;
+        }
+
+        .project-card:hover .project-card-title {
+            color: #ff4d4d;
         }
 
         .grid-album-card {
@@ -1363,21 +1350,14 @@ $featuredAllProjects = array_filter($allProjects, function($item) {
                 <?php foreach ($portfolioProjects as $pItem): ?>
                     <div class="project-card" data-cat="<?php echo htmlspecialchars($pItem['category']); ?>" onclick="window.location.href='/portfolio-project.php?id=<?php echo $pItem['id']; ?>'">
                         <div class="project-card-image-wrap">
-                            <img src="<?php echo htmlspecialchars($pItem['image']); ?>" alt="<?php echo htmlspecialchars($pItem['title']); ?>">
-                            <div class="project-card-overlay">
-                                <div class="project-card-top-row">
-                                    <span class="project-cat-badge"><?php echo htmlspecialchars($pItem['category']); ?></span>
-                                    <?php if (!empty($pItem['featured'])): ?>
-                                        <div class="project-star-badge"><i class="fa-solid fa-star"></i></div>
-                                    <?php endif; ?>
-                                </div>
-                                <div class="project-card-bottom-info">
-                                    <?php if (!empty($pItem['client'])): ?>
-                                        <div class="project-client-name"><?php echo htmlspecialchars($pItem['client']); ?></div>
-                                    <?php endif; ?>
-                                    <h4 class="project-card-title"><?php echo htmlspecialchars($pItem['title']); ?></h4>
-                                </div>
-                            </div>
+                            <img src="<?php echo htmlspecialchars(getCloudinaryUrl($pItem['image'] ?? '/assets/img/portfolio/portfolio_halima.png')); ?>" alt="<?php echo htmlspecialchars($pItem['title']); ?>" onerror="this.src='/assets/img/portfolio/portfolio_halima.png';">
+                            <?php if (!empty($pItem['featured'])): ?>
+                                <div class="project-star-badge"><i class="fa-solid fa-star"></i></div>
+                            <?php endif; ?>
+                        </div>
+                        <div class="project-card-info">
+                            <div class="project-card-cat"><?php echo htmlspecialchars($pItem['category'] ?? 'Events'); ?></div>
+                            <h4 class="project-card-title"><?php echo htmlspecialchars($pItem['title']); ?></h4>
                         </div>
                     </div>
                 <?php endforeach; ?>
