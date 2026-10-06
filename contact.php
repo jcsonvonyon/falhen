@@ -227,38 +227,40 @@ require_once __DIR__ . '/includes/header.php';
     .services-tag-cloud {
         display: flex;
         flex-wrap: wrap;
-        gap: 8px 10px;
+        gap: 10px 16px;
         align-items: center;
     }
 
     .service-tag-pill {
         background: transparent;
-        border: 1px solid transparent;
+        border: none;
+        border-bottom: 2px solid transparent;
         color: #94a3b8;
-        font-size: 0.84rem;
+        font-size: 0.85rem;
         font-weight: 500;
-        /* padding: 5px 12px; */
-        /* border-radius: 6px; */
+        padding: 2px 0 4px 0;
         text-decoration: none;
-        transition: all 0.2s ease;
+        transition: color 0.2s ease, border-color 0.2s ease;
         display: inline-block;
         cursor: pointer;
         font-family: inherit;
         line-height: 1.4;
         user-select: none;
         outline: none;
+        border-radius: 0;
     }
 
     .service-tag-pill:hover {
         color: #ef4444;
-        /* background: rgba(220, 38, 38, 0.06); */
     }
 
     .service-tag-pill.active {
-        color: #ffffff !important;
-        background: rgba(220, 38, 38, 0.12) !important;
-        border: 1px solid #ef4444 !important;
-        box-shadow: 0 0 10px rgba(239, 68, 68, 0.2);
+        color: #ef4444 !important;
+        background: transparent !important;
+        border: none !important;
+        border-bottom: 2px solid #ef4444 !important;
+        border-radius: 0 !important;
+        box-shadow: none !important;
     }
 
     .service-preselected-notice {
@@ -471,11 +473,12 @@ require_once __DIR__ . '/includes/header.php';
             margin-bottom: 12px;
         }
         .services-tag-cloud {
-            gap: 7px 8px;
+            gap: 8px 14px;
         }
         .service-tag-pill {
             font-size: 0.8rem;
-            padding: 5px 11px;
+            padding: 2px 0 3px 0;
+            border-radius: 0;
         }
         .contact-form-card {
             padding: 24px 20px;
@@ -553,12 +556,12 @@ require_once __DIR__ . '/includes/header.php';
             margin-bottom: 10px;
         }
         .services-tag-cloud {
-            gap: 6px 6px;
+            gap: 7px 12px;
         }
         .service-tag-pill {
             font-size: 0.76rem;
-            padding: 4px 9px;
-            border-radius: 5px;
+            padding: 2px 0 3px 0;
+            border-radius: 0;
         }
         .contact-form-card {
             padding: 20px 15px;
