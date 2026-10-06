@@ -707,14 +707,23 @@ foreach ($rawMembers as $m) {
                 margin-bottom: 14px;
             }
             .action-btns-row {
-                gap: 8px;
+                display: grid;
+                grid-template-columns: repeat(3, 1fr);
+                gap: 6px;
                 margin-top: 20px;
+                width: 100%;
             }
             .btn-work-red,
             .btn-dark-glass {
-                padding: 10px 18px;
-                font-size: 0.82rem;
+                padding: 10px 4px;
+                font-size: 0.75rem;
                 border-radius: 8px;
+                text-align: center;
+                white-space: nowrap;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                min-width: 0;
             }
             .who-we-are-img {
                 display: none;
@@ -885,6 +894,14 @@ foreach ($rawMembers as $m) {
             }
             .who-we-are-title {
                 font-size: 1.38rem;
+            }
+            .action-btns-row {
+                gap: 4px;
+            }
+            .btn-work-red,
+            .btn-dark-glass {
+                padding: 9px 2px;
+                font-size: 0.71rem;
             }
             .values-grid {
                 gap: 10px;
