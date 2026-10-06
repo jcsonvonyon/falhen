@@ -107,7 +107,6 @@ foreach ($rawMembers as $m) {
             position: relative;
             padding: 90px 0 70px 0;
             background: linear-gradient(180deg, rgba(3, 3, 5, 0.75) 0%, rgba(3, 3, 5, 0.95) 100%), url('/assets/img/about.jpg') center/cover no-repeat;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
             text-align: center;
         }
 
@@ -161,11 +160,12 @@ foreach ($rawMembers as $m) {
         }
 
         .who-we-are-title {
-            font-size: 2.24rem;
+            font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+            font-size: 32px;
             font-weight: 700;
             color: #ffffff;
             margin: 4px 0 16px 0;
-            line-height: 1.15;
+            line-height: 1.2;
             letter-spacing: -0.5px;
         }
 
