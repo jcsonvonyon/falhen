@@ -143,14 +143,27 @@ $otherServices = array_filter($servicesRepo, function($item) use ($service) {
             z-index: 2;
         }
 
-        /* Breadcrumb */
+        /* Breadcrumb Bar (Before Header Image) */
+        .service-breadcrumb-bar {
+            background: #000000;
+            padding: 16px 0 14px 0;
+            position: relative;
+            z-index: 10;
+        }
+
+        .service-breadcrumb-container {
+            max-width: 1360px;
+            margin: 0 auto;
+            padding: 0 32px;
+        }
+
         .service-breadcrumb {
             display: flex;
             align-items: center;
             gap: 10px;
             font-size: 0.88rem;
             color: #71717a;
-            margin-bottom: 28px;
+            margin: 0;
             font-weight: 500;
         }
 
@@ -738,6 +751,7 @@ $otherServices = array_filter($servicesRepo, function($item) use ($service) {
 
         @media (max-width: 992px) {
             .service-nav-container,
+            .service-breadcrumb-container,
             .service-hero-container,
             .service-main-container {
                 padding-left: 20px;
@@ -787,6 +801,7 @@ $otherServices = array_filter($servicesRepo, function($item) use ($service) {
             .service-nav-container {
                 padding: 0 16px;
             }
+            .service-breadcrumb-container,
             .service-hero-container,
             .service-main-container {
                 padding-left: 16px;
@@ -830,11 +845,9 @@ $otherServices = array_filter($servicesRepo, function($item) use ($service) {
         </div>
     </header>
 
-    <!-- Hero Header Stage - Own background image, scrolls with page, fades to black at foot -->
-    <section class="service-hero-header">
-        <div class="service-hero-overlay"></div>
-        <div class="service-hero-container">
-            <!-- Breadcrumb Navigation -->
+    <!-- Breadcrumb Navigation Bar (Before Header Image) -->
+    <div class="service-breadcrumb-bar">
+        <div class="service-breadcrumb-container">
             <nav class="service-breadcrumb">
                 <a href="/">Home</a>
                 <span class="sep"><i class="fa-solid fa-chevron-right"></i></span>
@@ -842,7 +855,13 @@ $otherServices = array_filter($servicesRepo, function($item) use ($service) {
                 <span class="sep"><i class="fa-solid fa-chevron-right"></i></span>
                 <span class="current"><?php echo htmlspecialchars($service['title']); ?></span>
             </nav>
+        </div>
+    </div>
 
+    <!-- Hero Header Stage - Own background image, scrolls with page, fades to black at foot -->
+    <section class="service-hero-header">
+        <div class="service-hero-overlay"></div>
+        <div class="service-hero-container">
             <!-- Pill / Tag Badge -->
             <div class="service-hero-tag">
                 <i class="fa-regular fa-square"></i> OUR SERVICES
