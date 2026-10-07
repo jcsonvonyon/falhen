@@ -45,41 +45,78 @@ $otherServices = array_filter($servicesRepo, function($item) use ($service) {
 
     <style>
         body {
-            background-color: #030305;
+            background-color: #000000;
             color: #d4d4d8;
             font-family: 'Plus Jakarta Sans', sans-serif;
             margin: 0;
             padding: 0;
             line-height: 1.6;
+            position: relative;
+            min-height: 100vh;
+        }
+
+        /* Cinematic Full-Page Background Atmosphere */
+        .service-backdrop-wrapper {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 0;
+            pointer-events: none;
+            overflow: hidden;
+        }
+
+        .service-backdrop-image {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-size: cover;
+            background-position: <?php echo htmlspecialchars($service['focal_point_desktop'] ?? 'center 20%'); ?>;
+            background-repeat: no-repeat;
+            opacity: 0.9;
+            transform: scale(1.02);
+            filter: brightness(0.95);
+        }
+
+        .service-backdrop-gradient {
+            position: absolute;
+            inset: 0;
+            background: 
+                radial-gradient(circle at 80% 25%, rgba(0, 0, 0, 0.05) 0%, rgba(3, 3, 5, 0.72) 55%, #030305 100%),
+                linear-gradient(90deg, rgba(0, 0, 0, 0.96) 0%, rgba(3, 3, 5, 0.82) 36%, rgba(3, 3, 5, 0.35) 72%, transparent 100%),
+                linear-gradient(180deg, rgba(3, 3, 5, 0.15) 0%, rgba(3, 3, 5, 0.5) 45%, rgba(3, 3, 5, 0.88) 75%, #000000 100%);
         }
 
         /* Nav Bar */
         .service-nav-bar {
-            padding: 20px 0;
+            padding: 16px 0;
             border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-            background: #030305;
+            background: #000000;
             position: sticky;
             top: 0;
             z-index: 100;
         }
 
         .service-nav-container {
-            max-width: 1240px;
+            max-width: 1360px;
             margin: 0 auto;
-            padding: 0 24px;
+            padding: 0 32px;
             display: flex;
             align-items: center;
             justify-content: space-between;
         }
 
         .service-back-link {
-            color: #a1a1aa;
+            color: #d4d4d8;
             text-decoration: none;
-            font-size: 0.9rem;
-            font-weight: 600;
-            display: flex;
+            font-size: 0.95rem;
+            font-weight: 500;
+            display: inline-flex;
             align-items: center;
-            gap: 8px;
+            gap: 10px;
             transition: color 0.25s ease;
         }
 
@@ -88,8 +125,9 @@ $otherServices = array_filter($servicesRepo, function($item) use ($service) {
         }
 
         .service-logo-center img {
-            height: 28px;
+            height: 32px;
             width: auto;
+            display: block;
         }
 
         .btn-service-contact {
@@ -97,11 +135,11 @@ $otherServices = array_filter($servicesRepo, function($item) use ($service) {
             color: #ffffff;
             font-size: 0.88rem;
             font-weight: 700;
-            padding: 10px 22px;
-            border-radius: 10px;
+            padding: 9px 20px;
+            border-radius: 8px;
             text-decoration: none;
             transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(220, 38, 38, 0.4);
+            box-shadow: 0 4px 15px rgba(220, 38, 38, 0.35);
             display: inline-flex;
             align-items: center;
             gap: 8px;
@@ -112,21 +150,27 @@ $otherServices = array_filter($servicesRepo, function($item) use ($service) {
             transform: translateY(-1px);
         }
 
-        /* Container */
-        .service-main-container {
-            max-width: 1240px;
+        /* Hero Header Stage */
+        .service-hero-header {
+            position: relative;
+            z-index: 2;
+            padding: 48px 0 54px 0;
+        }
+
+        .service-hero-container {
+            max-width: 1360px;
             margin: 0 auto;
-            padding: 30px 24px 80px 24px;
+            padding: 0 32px;
         }
 
         /* Breadcrumb */
         .service-breadcrumb {
             display: flex;
             align-items: center;
-            gap: 8px;
-            font-size: 0.86rem;
+            gap: 10px;
+            font-size: 0.88rem;
             color: #71717a;
-            margin-bottom: 24px;
+            margin-bottom: 28px;
             font-weight: 500;
         }
 
@@ -142,95 +186,63 @@ $otherServices = array_filter($servicesRepo, function($item) use ($service) {
 
         .service-breadcrumb span.sep {
             color: #52525b;
-            font-size: 0.75rem;
+            font-size: 0.72rem;
         }
 
         .service-breadcrumb span.current {
-            color: #d4d4d8;
+            color: #f4f4f5;
             font-weight: 600;
         }
 
-        /* Hero Stage */
-        .service-hero-stage {
-            position: relative;
-            border-radius: 24px;
-            overflow: hidden;
-            background: linear-gradient(130deg, rgba(20, 20, 28, 0.95) 0%, rgba(10, 10, 14, 0.98) 100%);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            margin-bottom: 50px;
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            min-height: 380px;
-            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
-        }
-
-        .service-hero-left {
-            padding: 48px 40px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            z-index: 2;
-        }
-
-        .service-pill-badge {
+        .service-hero-tag {
             display: inline-flex;
             align-items: center;
-            gap: 6px;
-            background: #dc2626;
-            color: #ffffff;
-            font-size: 0.78rem;
-            font-weight: 700;
-            padding: 6px 14px;
-            border-radius: 50px;
-            width: fit-content;
-            margin-bottom: 20px;
-            letter-spacing: 0.3px;
+            gap: 8px;
+            color: #ef4444;
+            font-size: 0.8rem;
+            font-weight: 800;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-bottom: 16px;
+        }
+
+        .service-hero-tag i {
+            font-size: 0.75rem;
+            color: #ef4444;
         }
 
         .service-hero-title {
-            font-size: 3.2rem;
-            font-weight: 700;
+            font-size: 3.8rem;
+            font-weight: 800;
             color: #ffffff;
-            margin: 0 0 16px 0;
-            line-height: 1.1;
-            letter-spacing: -1px;
+            margin: 0 0 18px 0;
+            line-height: 1.08;
+            letter-spacing: -1.6px;
         }
 
         .service-hero-desc {
-            font-size: 1.05rem;
-            color: #a1a1aa;
+            font-size: 1.06rem;
+            color: #d4d4d8;
             margin: 0;
-            line-height: 1.6;
+            max-width: 700px;
+            line-height: 1.65;
             font-weight: 400;
         }
 
-        .service-hero-right {
+        /* Container */
+        .service-main-container {
+            max-width: 1360px;
+            margin: 0 auto;
+            padding: 10px 32px 80px 32px;
             position: relative;
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
-        }
-
-        .service-hero-right img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            object-position: center;
-        }
-
-        .service-hero-right::before {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background: linear-gradient(90deg, rgba(10, 10, 14, 1) 0%, rgba(10, 10, 14, 0.4) 40%, transparent 100%);
-            z-index: 1;
+            z-index: 2;
         }
 
         /* 2-Column Main Content Layout */
         .service-content-grid {
             display: grid;
-            grid-template-columns: 1fr 380px;
-            gap: 40px;
+            grid-template-columns: 1fr 390px;
+            gap: 48px;
             margin-bottom: 70px;
         }
 
@@ -246,76 +258,80 @@ $otherServices = array_filter($servicesRepo, function($item) use ($service) {
             font-size: 1.02rem;
             color: #a1a1aa;
             line-height: 1.75;
-            margin-bottom: 50px;
+            margin-bottom: 45px;
         }
 
         /* What's Included Grid */
         .included-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
-            gap: 16px;
-            margin-bottom: 50px;
+            gap: 14px;
+            margin-bottom: 45px;
         }
 
         .included-item-card {
-            background: rgba(255, 255, 255, 0.03);
+            background: rgba(18, 18, 24, 0.75);
             border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 14px;
-            padding: 18px 20px;
+            border-radius: 12px;
+            padding: 16px 18px;
             display: flex;
             align-items: center;
-            gap: 14px;
+            gap: 12px;
+            backdrop-filter: blur(8px);
             transition: all 0.3s ease;
         }
 
         .included-item-card:hover {
-            background: rgba(255, 255, 255, 0.06);
+            background: rgba(255, 255, 255, 0.07);
             border-color: rgba(220, 38, 38, 0.4);
             transform: translateY(-2px);
         }
 
         .included-check-icon {
-            width: 28px;
-            height: 28px;
+            width: 26px;
+            height: 26px;
             border-radius: 50%;
-            background: rgba(220, 38, 38, 0.2);
-            border: 1px solid rgba(220, 38, 38, 0.4);
+            background: rgba(220, 38, 38, 0.15);
+            border: 1px solid rgba(220, 38, 38, 0.35);
             color: #ef4444;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 0.78rem;
+            font-size: 0.72rem;
             flex-shrink: 0;
         }
 
         .included-text {
-            font-size: 0.95rem;
-            font-weight: 700;
-            color: #ffffff;
+            font-size: 0.92rem;
+            font-weight: 600;
+            color: #f4f4f5;
         }
 
         /* Specialisations Pills */
         .spec-pills-wrap {
             display: flex;
             flex-wrap: wrap;
-            gap: 12px;
+            gap: 14px 28px;
+            align-items: center;
         }
 
         .spec-pill {
-            background: rgba(220, 38, 38, 0.1);
-            border: 1px solid rgba(220, 38, 38, 0.3);
-            color: #ff4d4d;
+            color: #ef4444;
             font-size: 0.88rem;
-            font-weight: 600;
-            padding: 8px 18px;
-            border-radius: 50px;
-            transition: all 0.25s ease;
+            font-weight: 700;
+            letter-spacing: 0.8px;
+            text-transform: uppercase;
+            text-decoration: none;
+            background: none;
+            border: none;
+            padding: 0;
+            display: inline-block;
+            transition: color 0.25s ease;
         }
 
         .spec-pill:hover {
-            background: rgba(220, 38, 38, 0.2);
-            border-color: rgba(220, 38, 38, 0.5);
-            color: #ffffff;
+            color: #ff6b6b;
+            background: none;
         }
 
         /* Right Sidebar Cards */
@@ -329,10 +345,11 @@ $otherServices = array_filter($servicesRepo, function($item) use ($service) {
 
         /* Action Card ("Ready to get started?") */
         .ready-action-card {
-            background: linear-gradient(135deg, rgba(20, 20, 26, 0.95) 0%, rgba(12, 12, 16, 0.95) 100%);
-            border: 1px solid rgba(255, 255, 255, 0.12);
+            background: rgba(14, 14, 18, 0.85);
+            border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 20px;
             padding: 30px 24px;
+            backdrop-filter: blur(12px);
             box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
         }
 
@@ -345,9 +362,9 @@ $otherServices = array_filter($servicesRepo, function($item) use ($service) {
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.1rem;
+            font-size: 1.15rem;
             margin-bottom: 20px;
-            box-shadow: 0 4px 15px rgba(220, 38, 38, 0.5);
+            box-shadow: 0 4px 15px rgba(220, 38, 38, 0.4);
         }
 
         .ready-card-title {
@@ -413,10 +430,11 @@ $otherServices = array_filter($servicesRepo, function($item) use ($service) {
 
         /* Stats Card ("BY THE NUMBERS") */
         .stats-sidebar-card {
-            background: linear-gradient(135deg, rgba(20, 20, 26, 0.95) 0%, rgba(12, 12, 16, 0.95) 100%);
-            border: 1px solid rgba(255, 255, 255, 0.12);
+            background: rgba(14, 14, 18, 0.85);
+            border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 20px;
             padding: 24px;
+            backdrop-filter: blur(12px);
             box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
         }
 
@@ -717,11 +735,11 @@ $otherServices = array_filter($servicesRepo, function($item) use ($service) {
         }
 
         @media (max-width: 992px) {
-            .service-hero-stage {
-                grid-template-columns: 1fr;
-            }
-            .service-hero-right {
-                height: 260px;
+            .service-nav-container,
+            .service-hero-container,
+            .service-main-container {
+                padding-left: 20px;
+                padding-right: 20px;
             }
             .service-content-grid {
                 grid-template-columns: 1fr;
@@ -739,23 +757,64 @@ $otherServices = array_filter($servicesRepo, function($item) use ($service) {
                 flex-direction: column;
                 align-items: flex-start;
                 gap: 24px;
+                padding: 32px 24px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .service-hero-title {
+                font-size: 2.6rem;
+                letter-spacing: -1px;
+            }
+            .service-hero-header {
+                padding: 32px 0 40px 0;
+            }
+            .service-backdrop-image {
+                background-position: <?php echo htmlspecialchars($service['focal_point_mobile'] ?? 'center center'); ?> !important;
+                opacity: 0.65;
+            }
+            .service-backdrop-gradient {
+                background: linear-gradient(180deg, rgba(3, 3, 5, 0.85) 0%, rgba(3, 3, 5, 0.95) 50%, #000000 100%) !important;
             }
         }
 
         @media (max-width: 600px) {
+            .service-nav-container {
+                padding: 0 16px;
+            }
+            .service-hero-container,
+            .service-main-container {
+                padding-left: 16px;
+                padding-right: 16px;
+            }
+            .service-hero-title {
+                font-size: 2.1rem;
+            }
             .included-grid {
                 grid-template-columns: 1fr;
             }
             .explore-services-row {
                 grid-template-columns: 1fr;
             }
-            .service-hero-title {
-                font-size: 2.2rem;
+            .service-footer-bar {
+                flex-direction: column;
+                gap: 16px;
+                align-items: flex-start;
+            }
+            .service-footer-links {
+                flex-wrap: wrap;
+                gap: 16px;
             }
         }
     </style>
 </head>
 <body>
+
+    <!-- Cinematic Full-Page Background Atmosphere -->
+    <div class="service-backdrop-wrapper">
+        <div class="service-backdrop-image" style="background-image: url('<?php echo htmlspecialchars($service['hero_image']); ?>');"></div>
+        <div class="service-backdrop-gradient"></div>
+    </div>
 
     <!-- Header Navigation Bar -->
     <header class="service-nav-bar">
@@ -767,44 +826,37 @@ $otherServices = array_filter($servicesRepo, function($item) use ($service) {
                 <img src="/assets/img/icons/logo.png" alt="Falhen Logo">
             </a>
             <a href="/contact.php" class="btn-service-contact">
-                <i class="fa-regular fa-paper-plane"></i> Contact Us
+                <i class="fa-solid fa-envelope"></i> Contact Us
             </a>
         </div>
     </header>
 
-    <main class="service-main-container">
+    <!-- Hero Header Stage -->
+    <section class="service-hero-header">
+        <div class="service-hero-container">
+            <!-- Breadcrumb Navigation -->
+            <nav class="service-breadcrumb">
+                <a href="/">Home</a>
+                <span class="sep"><i class="fa-solid fa-chevron-right"></i></span>
+                <a href="/services.php">Services</a>
+                <span class="sep"><i class="fa-solid fa-chevron-right"></i></span>
+                <span class="current"><?php echo htmlspecialchars($service['title']); ?></span>
+            </nav>
 
-        <!-- Breadcrumb Navigation -->
-        <nav class="service-breadcrumb">
-            <a href="/">Home</a>
-            <span class="sep"><i class="fa-solid fa-chevron-right"></i></span>
-            <a href="/services.php">Services</a>
-            <span class="sep"><i class="fa-solid fa-chevron-right"></i></span>
-            <span class="current"><?php echo htmlspecialchars($service['title']); ?></span>
-        </nav>
+            <!-- Pill / Tag Badge -->
+            <div class="service-hero-tag">
+                <i class="fa-regular fa-square"></i> OUR SERVICES
+            </div>
 
-        <!-- Hero Stage -->
-        <div class="service-hero-stage">
-            <div class="service-hero-left">
-                <div class="service-pill-badge">
-                    <i class="fa-solid fa-square"></i> Our Services
-                </div>
-                <h1 class="service-hero-title"><?php echo htmlspecialchars($service['title']); ?></h1>
-                <p class="service-hero-desc"><?php echo htmlspecialchars($service['subtitle']); ?></p>
-            </div>
-            <div class="service-hero-right">
-                <img src="<?php echo htmlspecialchars($service['hero_image']); ?>" alt="<?php echo htmlspecialchars($service['title']); ?>" style="object-position: <?php echo htmlspecialchars($service['focal_point_desktop'] ?? 'center center'); ?>;">
-                <?php if (!empty($service['focal_point_mobile'])): ?>
-                <style>
-                    @media (max-width: 768px) {
-                        .service-hero-right img {
-                            object-position: <?php echo htmlspecialchars($service['focal_point_mobile']); ?> !important;
-                        }
-                    }
-                </style>
-                <?php endif; ?>
-            </div>
+            <!-- Hero Title -->
+            <h1 class="service-hero-title"><?php echo htmlspecialchars($service['title']); ?></h1>
+
+            <!-- Hero Description -->
+            <p class="service-hero-desc"><?php echo htmlspecialchars($service['subtitle']); ?></p>
         </div>
+    </section>
+
+    <main class="service-main-container">
 
         <!-- Main Content 2-Column Grid -->
         <div class="service-content-grid">
@@ -842,7 +894,7 @@ $otherServices = array_filter($servicesRepo, function($item) use ($service) {
                     <!-- Ready Action Card -->
                     <div class="ready-action-card">
                         <div class="ready-icon-box">
-                            <i class="fa-solid fa-video"></i>
+                            <i class="fa-solid fa-play"></i>
                         </div>
                         <h3 class="ready-card-title">Ready to get started?</h3>
                         <p class="ready-card-desc">Tell us about your project and we'll put together a tailored proposal within 24 hours.</p>
@@ -865,10 +917,6 @@ $otherServices = array_filter($servicesRepo, function($item) use ($service) {
                             <div class="stats-row-item">
                                 <span class="stats-item-label">Years of Experience</span>
                                 <span class="stats-item-value">12</span>
-                            </div>
-                            <div class="stats-row-item">
-                                <span class="stats-item-label">Industry Awards</span>
-                                <span class="stats-item-value">47</span>
                             </div>
                             <div class="stats-row-item">
                                 <span class="stats-item-label">Countries Served</span>
