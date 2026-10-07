@@ -41,7 +41,7 @@
             "icon": "ri-earth-line"
         }
     ],
-    "bts_badge_label": "",
+    "bts_badge_label": "Production BTS",
     "bts_headline_white": "Every Frame",
     "bts_headline_red": "Speaks",
     "bts_description": "A raw look at what it takes to create world-class content \u2014 from location scouts to post-production suites.",
@@ -50,42 +50,42 @@
             "id": 1,
             "title": "On set \u2014 RedBull Campaign, Dubai 2024",
             "subtitle": "Director reviewing footage on set",
-            "image": "https://res.cloudinary.com/pnabfi91/image/upload/v1791380388/falhen/bts/jvrssehzexzcgjla46br.jpg",
+            "image": "https://res.cloudinary.com/pnabfi91/image/upload/v1791380693/falhen/bts/uc34zifoyzeyyqvsm5qj.jpg",
             "visible": true
         },
         {
             "id": 2,
             "title": "ARRI ALEXA Mini LF \u2014 lens prep",
             "subtitle": "Camera rig setup",
-            "image": "https://images.unsplash.com/photo-1585829365295-ab7cd400c167?auto=format&fit=crop&w=800&q=80",
+            "image": "https://res.cloudinary.com/pnabfi91/image/upload/v1791380709/falhen/bts/yqjuxtubd9ka0gyqw68c.jpg",
             "visible": true
         },
         {
             "id": 3,
             "title": "Lighting rig \u2014 HBO Teaser, Cape Town",
             "subtitle": "Lighting setup",
-            "image": "https://images.unsplash.com/photo-1598899134739-24c46f58b8c0?auto=format&fit=crop&w=800&q=80",
+            "image": "https://res.cloudinary.com/pnabfi91/image/upload/v1791380721/falhen/bts/gmw6x8ccznwrjbhsuhja.jpg",
             "visible": true
         },
         {
             "id": 4,
             "title": "Aerial Drone Scout \u2014 Kenya Safari",
             "subtitle": "4K aerial footage capture",
-            "image": "https://images.unsplash.com/photo-1508614589041-895b88991e3e?auto=format&fit=crop&w=800&q=80",
+            "image": "https://res.cloudinary.com/pnabfi91/image/upload/v1791380756/falhen/bts/ufjkbvwtqxd5f15uxx5h.jpg",
             "visible": true
         },
         {
             "id": 5,
             "title": "Post-Production Suite \u2014 Color Grading",
             "subtitle": "DaVinci Resolve studio session",
-            "image": "https://images.unsplash.com/photo-1536240478700-b869070f9279?auto=format&fit=crop&w=800&q=80",
+            "image": "https://res.cloudinary.com/pnabfi91/image/upload/v1791380765/falhen/bts/bqpxfuekjfuqrbq1sqed.jpg",
             "visible": true
         },
         {
             "id": 6,
             "title": "Wedding Cinema Shoot \u2014 Sunset",
             "subtitle": "Romantic Golden Hour capture",
-            "image": "https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=800&q=80",
+            "image": "https://res.cloudinary.com/pnabfi91/image/upload/v1791380777/falhen/bts/hu9buzs1ccakow1eqsna.jpg",
             "visible": true
         }
     ],

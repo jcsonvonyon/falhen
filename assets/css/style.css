@@ -2447,7 +2447,8 @@ a.team-card {
 
 @media (max-width: 600px) {
   .discovery-features-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
   }
 }
 
@@ -3503,7 +3504,54 @@ textarea.form-control {
   .port-section-subtitle,
   .port-hero-subtitle,
   .section-description,
+  .discovery-main-subtitle,
   .discovery-form-subtitle {
+    display: none !important;
+  }
+
+  /* --- Discovery Call Mobile View --- */
+  .discovery-hero-box {
+    display: none !important;
+  }
+
+  .discovery-grid {
+    grid-template-columns: 1fr !important;
+    gap: 20px !important;
+  }
+
+  .discovery-features-grid {
+    display: grid !important;
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 10px !important;
+  }
+
+  .discovery-feature-card {
+    padding: 12px 10px !important;
+    border-radius: 12px !important;
+    box-sizing: border-box !important;
+  }
+
+  .discovery-feature-header {
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    margin-bottom: 0 !important;
+  }
+
+  .discovery-icon-box {
+    width: 28px !important;
+    height: 28px !important;
+    min-width: 28px !important;
+    font-size: 0.8rem !important;
+    border-radius: 6px !important;
+  }
+
+  .discovery-feature-title {
+    font-size: 0.82rem !important;
+    line-height: 1.25 !important;
+  }
+
+  .discovery-feature-desc {
     display: none !important;
   }
 
@@ -4119,59 +4167,13 @@ textarea.form-control {
     padding: 30px 20px;
   }
 
-  /* --- Mobile Footer & Fixed Floating Bottom Dock Widget --- */
-  .footer-grid {
-    display: grid !important;
-    grid-template-columns: repeat(3, 1fr) !important;
-    gap: 16px 12px !important;
-  }
-
-  .footer-brand {
-    grid-column: 1 / -1 !important;
-    margin-bottom: 24px !important;
-    text-align: left !important;
-  }
-
-  .footer-title {
-    font-size: 0.95rem !important;
-    font-weight: 700 !important;
-    color: #ffffff !important;
-    margin-bottom: 12px !important;
-  }
-
-  .footer-links li a {
-    font-size: 0.82rem !important;
-    color: #a1a1aa !important;
-    line-height: 1.8 !important;
-  }
-
+  /* --- Mobile Footer: Hidden on Mobile per User Request --- */
+  .footer,
+  .footer-top-accent-line,
+  .footer-container,
+  .footer-grid,
   .footer-bottom {
-    display: flex !important;
-    flex-direction: column !important;
-    align-items: center !important;
-    text-align: center !important;
-    padding-bottom: 85px !important;
-    margin-top: 30px !important;
-    border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
-    padding-top: 20px !important;
-    gap: 12px !important;
-  }
-
-  .footer-copy {
-    text-align: center !important;
-    width: 100% !important;
-    font-size: 0.78rem !important;
-    color: #71717a !important;
-    margin: 0 auto !important;
-  }
-
-  .footer-legal {
-    display: flex !important;
-    flex-wrap: wrap !important;
-    justify-content: center !important;
-    gap: 10px !important;
-    font-size: 0.78rem !important;
-    color: #71717a !important;
+    display: none !important;
   }
 
   /* Fixed Floating Mobile Dock Widget */
@@ -4293,8 +4295,8 @@ textarea.form-control {
   }
 
   .discovery-features-grid {
-    grid-template-columns: 1fr !important;
-    gap: 12px !important;
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 10px !important;
   }
 
   /* Single Detail Page Padding & Margins */
