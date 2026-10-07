@@ -18,7 +18,7 @@ $email = filter_var(trim($_POST['email'] ?? ''), FILTER_VALIDATE_EMAIL);
 $phone = sanitizeInput($_POST['phone'] ?? '');
 $serviceType = sanitizeInput($_POST['service_type'] ?? '');
 $budgetRange = sanitizeInput($_POST['budget_range'] ?? '');
-$projectDetails = sanitizeInput($_POST['project_details'] ?? '');
+$projectDetails = sanitizeInput($_POST['project_details'] ?? $_POST['project_desc'] ?? $_POST['about_project'] ?? '');
 
 if (empty($fullName)) {
     sendJSONResponse(false, 'Please enter your full name.');

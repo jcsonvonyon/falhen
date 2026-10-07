@@ -1039,34 +1039,37 @@ margin-bottom: 24px;
 .portfolio-filter-bar {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 22px;
   flex-wrap: wrap;
-  margin-bottom: 30px;
+  margin-bottom: 28px;
 }
 
 .filter-pill-btn {
-  background: rgba(18, 18, 22, 0.6);
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  color: #d4d4d8;
-  padding: 8px 10px;
-  border-radius: 50px;
-  font-size: 0.62rem;
-  font-weight: 500;
-  letter-spacing: 0px;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: #a1a1aa;
+  padding: 6px 0 8px 0;
+  border-radius: 0;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
   cursor: pointer;
   transition: all 0.25s ease;
+  outline: none;
 }
 
 .filter-pill-btn:hover {
-  border-color: rgba(220, 38, 38, 0.5);
   color: #ffffff;
 }
 
 .filter-pill-btn.active {
-  background: #dc2626;
-  border-color: #dc2626;
+  background: transparent;
+  border-color: transparent;
+  border-bottom: 2px solid #dc2626;
   color: #ffffff;
-  box-shadow: 0 0 15px rgba(220, 38, 38, 0.5);
+  box-shadow: none;
 }
 
 .featured-showcase-player {
@@ -1249,6 +1252,7 @@ margin-bottom: 24px;
 }
 
 .thumb-badge-now {
+  display: none;
   position: absolute;
   top: -8px;
   left: 12px;
@@ -1260,6 +1264,10 @@ margin-bottom: 24px;
   padding: 2px 8px;
   border-radius: 4px;
   box-shadow: 0 0 10px rgba(220, 38, 38, 0.8);
+}
+
+.thumb-card.active .thumb-badge-now {
+  display: block !important;
 }
 
 .thumb-img-wrapper {
@@ -2332,9 +2340,27 @@ a.team-card {
 }
 
 /* --- Let's Talk / Book a Discovery Call Section (Exact Replica) --- */
+.discovery-main-title {
+  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif !important;
+  font-size: 3rem;
+  font-weight: 800;
+  letter-spacing: -1px;
+  line-height: 1.15;
+  color: #ffffff;
+  margin-bottom: 12px;
+}
+
+.discovery-main-subtitle {
+  max-width: 680px;
+  margin: 0 auto;
+  color: #94a3b8;
+  font-size: 1.05rem;
+  line-height: 1.5;
+}
+
 .discovery-grid {
   display: grid;
-  grid-template-columns: 1.1fr 1fr;
+  grid-template-columns: 1.08fr 1fr;
   gap: 36px;
   align-items: start;
 }
@@ -2342,17 +2368,19 @@ a.team-card {
 @media (max-width: 1024px) {
   .discovery-grid {
     grid-template-columns: 1fr;
+    gap: 32px;
   }
 }
 
 .discovery-hero-box {
   position: relative;
   width: 100%;
-  height: 280px;
-  border-radius: 20px;
+  height: 290px;
+  border-radius: 18px;
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  margin-bottom: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  margin-bottom: 20px;
+  background: #09090b;
 }
 
 .discovery-hero-box img {
@@ -2364,57 +2392,57 @@ a.team-card {
 .discovery-hero-overlay {
   position: absolute;
   inset: 0;
-  background: linear-gradient(180deg, transparent 40%, rgba(9, 9, 11, 0.95) 100%);
+  background: linear-gradient(180deg, transparent 50%, rgba(9, 9, 11, 0.85) 100%);
   display: flex;
   align-items: flex-end;
-  padding: 20px;
+  padding: 18px 20px;
 }
 
 .discovery-available-pill {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  background: rgba(0, 0, 0, 0.75);
-  backdrop-filter: blur(8px);
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(10, 11, 16, 0.85);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   color: #ffffff;
-  font-size: 0.85rem;
-  font-weight: 700;
-  padding: 6px 16px;
-  border-radius: 50px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  padding: 6px 14px;
+  border-radius: 9999px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
 }
 
 .pulse-green-dot {
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: #10b981;
-  box-shadow: 0 0 10px #10b981;
+  background: #22c55e;
+  box-shadow: 0 0 10px #22c55e;
   animation: pulseGreen 2s infinite;
 }
 
 @keyframes pulseGreen {
   0% {
     transform: scale(0.95);
-    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7);
   }
 
   70% {
     transform: scale(1);
-    box-shadow: 0 0 0 10px rgba(16, 185, 129, 0);
+    box-shadow: 0 0 0 8px rgba(34, 197, 94, 0);
   }
 
   100% {
     transform: scale(0.95);
-    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0);
   }
 }
 
 .discovery-features-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 16px;
-  margin-bottom: 0;
+  gap: 14px;
 }
 
 @media (max-width: 600px) {
@@ -2424,108 +2452,79 @@ a.team-card {
 }
 
 .discovery-feature-card {
-  background: rgba(14, 14, 18, 0.95);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 16px;
-  padding: 20px;
-  transition: all 0.3s ease;
+  background: #0f1015;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 14px;
+  padding: 18px 20px;
+  transition: all 0.25s ease;
 }
 
 .discovery-feature-card:hover {
-  border-color: rgba(220, 38, 38, 0.5);
-  background: rgba(28, 8, 12, 0.95);
-  transform: translateY(-3px);
+  border-color: rgba(239, 68, 68, 0.3);
+  transform: translateY(-2px);
+}
+
+.discovery-feature-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
 }
 
 .discovery-icon-box {
-  width: 36px;
-  height: 36px;
-  background: rgba(35, 10, 15, 0.85);
-  border: 1px solid rgba(220, 38, 38, 0.3);
-  border-radius: 10px;
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.22);
+  border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #ff4d4d;
-  font-size: 0.95rem;
-  margin-bottom: 12px;
+  color: #ef4444;
+  font-size: 0.85rem;
 }
 
 .discovery-feature-title {
-  font-size: 0.95rem;
+  font-size: 0.92rem;
   font-weight: 700;
   color: #ffffff;
-  margin-bottom: 6px;
+  margin: 0;
+  letter-spacing: -0.2px;
 }
 
 .discovery-feature-desc {
-  font-size: 0.82rem;
-  color: var(--text-muted);
+  font-size: 0.8rem;
+  color: #94a3b8;
   line-height: 1.45;
-}
-
-.discovery-proof-bar {
-  background: rgba(14, 14, 18, 0.95);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 16px;
-  padding: 16px 20px;
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  flex-wrap: wrap;
-}
-
-.discovery-avatars-group {
-  display: flex;
-  align-items: center;
-}
-
-.discovery-avatars-group img {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  border: 2px solid #09090b;
-  margin-left: -8px;
-}
-
-.discovery-avatars-group img:first-child {
-  margin-left: 0;
-}
-
-.discovery-proof-text strong {
-  display: block;
-  font-size: 0.88rem;
-  color: #ffffff;
-}
-
-.discovery-proof-text small {
-  font-size: 0.75rem;
-  color: var(--text-muted);
+  margin: 0;
 }
 
 /* Discovery Form Card */
 .discovery-form-card {
-  background: rgba(14, 14, 18, 0.95);
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  border-radius: 20px;
-  padding: 36px 30px;
-  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.6);
+  background: #0f1015;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 18px;
+  padding: 32px 30px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
 }
 
 .discovery-form-header {
-  margin-bottom: 24px;
+  margin-bottom: 22px;
 }
 
 .discovery-form-title {
-  font-size: 1.4rem;
+  font-size: 1.45rem;
   font-weight: 700;
   color: #ffffff;
   margin-bottom: 4px;
+  letter-spacing: -0.3px;
 }
 
 .discovery-form-subtitle {
   font-size: 0.88rem;
-  color: var(--text-muted);
+  color: #94a3b8;
+  margin: 0;
 }
 
 .discovery-label {
@@ -2534,34 +2533,70 @@ a.team-card {
   font-weight: 700;
   color: #a1a1aa;
   margin-bottom: 6px;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
 }
 
 .discovery-input {
   width: 100%;
-  background: rgba(9, 9, 11, 0.9);
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: #16171d;
+  border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 10px;
   padding: 12px 14px;
   color: #ffffff;
-  font-size: 0.9rem;
+  font-size: 0.88rem;
   outline: none;
-  transition: border-color 0.25s ease;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+}
+
+.discovery-input::placeholder {
+  color: #52525b;
 }
 
 .discovery-input:focus {
-  border-color: #dc2626;
-  box-shadow: 0 0 10px rgba(220, 38, 38, 0.4);
+  border-color: #ef4444;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15);
+}
+
+.discovery-select-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.discovery-select {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  cursor: pointer;
+  padding-right: 38px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2394a3b8'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  background-size: 16px;
+}
+
+.discovery-select option {
+  background: #16171d;
+  color: #ffffff;
+  padding: 8px;
 }
 
 .discovery-textarea {
-  height: 100px;
+  height: 96px;
   resize: vertical;
+  margin-bottom: 4px;
+}
+
+.char-count-wrapper {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 4px;
 }
 
 .char-count {
   font-size: 0.72rem;
-  color: var(--text-muted);
+  color: #64748b;
 }
 
 .btn-discovery-submit {
@@ -2569,31 +2604,32 @@ a.team-card {
   background: #dc2626;
   border: none;
   color: #ffffff;
-  font-size: 1rem;
+  font-size: 0.98rem;
   font-weight: 700;
-  padding: 14px;
+  padding: 14px 20px;
   border-radius: 12px;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 10px;
-  margin-top: 20px;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 20px rgba(220, 38, 38, 0.4);
+  margin-top: 18px;
+  transition: all 0.25s ease;
+  box-shadow: 0 4px 18px rgba(220, 38, 38, 0.35);
 }
 
 .btn-discovery-submit:hover {
   background: #ef4444;
-  box-shadow: 0 6px 25px rgba(220, 38, 38, 0.6);
-  transform: translateY(-2px);
+  box-shadow: 0 6px 24px rgba(220, 38, 38, 0.5);
+  transform: translateY(-1px);
 }
 
 .discovery-form-footer-note {
   font-size: 0.78rem;
-  color: var(--text-muted);
+  color: #64748b;
   text-align: center;
   margin-top: 14px;
+  margin-bottom: 0;
 }
 
 /* --- Quote Request Form --- */
@@ -3624,7 +3660,7 @@ textarea.form-control {
     flex-wrap: nowrap !important;
     overflow-x: auto !important;
     scroll-behavior: smooth !important;
-    gap: 8px !important;
+    gap: 18px !important;
     padding-bottom: 6px !important;
     margin-bottom: 18px !important;
     -webkit-overflow-scrolling: touch !important;
@@ -3638,10 +3674,27 @@ textarea.form-control {
   .filter-pill-btn {
     white-space: nowrap !important;
     flex-shrink: 0 !important;
-    padding: 6px 14px !important;
+    background: transparent !important;
+    border: none !important;
+    border-bottom: 2px solid transparent !important;
+    color: #a1a1aa !important;
+    padding: 6px 0 8px 0 !important;
     font-size: 0.72rem !important;
     font-weight: 700 !important;
-    border-radius: 50px !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+  }
+
+  .filter-pill-btn:hover {
+    color: #ffffff !important;
+  }
+
+  .filter-pill-btn.active {
+    background: transparent !important;
+    border-color: transparent !important;
+    border-bottom: 2px solid #dc2626 !important;
+    color: #ffffff !important;
+    box-shadow: none !important;
   }
 
   .featured-showcase-player {
@@ -3737,10 +3790,15 @@ textarea.form-control {
   }
 
   .thumb-badge-now {
+    display: none !important;
     top: -6px !important;
     left: 8px !important;
     font-size: 0.6rem !important;
     padding: 1px 6px !important;
+  }
+
+  .thumb-card.active .thumb-badge-now {
+    display: block !important;
   }
 
   .thumb-time {

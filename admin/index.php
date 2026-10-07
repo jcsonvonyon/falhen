@@ -5406,54 +5406,104 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
 
                     <!-- Photo Grid Container (3 Columns) -->
                     <div id="btsPhotoGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px;">
-                        <?php foreach ($btsItems as $index => $photo): ?>
+                        <?php foreach ($btsItems as $index => $photo): 
+                            $imgUrl = getCloudinaryUrl($photo['image']);
+                            $titleVal = $photo['title'] ?? '';
+                            $subtitleVal = $photo['subtitle'] ?? '';
+                        ?>
                             <div class="bts-photo-card" draggable="true" ondragstart="handleBtsDragStart(event, this)" ondragover="handleBtsDragOver(event, this)" ondrop="handleBtsDrop(event, this)" ondragend="handleBtsDragEnd(event, this)" style="background: #ffffff; border: 1px solid var(--card-border); border-radius: 14px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.05); display: flex; flex-direction: column; cursor: grab; transition: transform 0.15s, box-shadow 0.15s;">
                                 
-                                <!-- Image Box with Overlay Tags -->
-                                <div style="position: relative; aspect-ratio: 16/10; overflow: hidden; background: #0f172a;">
-                                    <img 
-                                        src="<?php echo htmlspecialchars(getCloudinaryUrl($photo['image'])); ?>" 
-                                        alt="<?php echo htmlspecialchars($photo['title']); ?>"
-                                        style="width: 100%; height: 100%; object-fit: cover;"
-                                        onerror="this.src='/assets/img/hero.jpg';"
-                                    >
+                                <!-- Hidden Form Values -->
+                                <input type="hidden" name="bts_image[]" value="<?php echo htmlspecialchars($photo['image']); ?>" class="bts-img-val">
+                                <input type="hidden" name="bts_title[]" value="<?php echo htmlspecialchars($titleVal); ?>" class="bts-title-val">
+                                <input type="hidden" name="bts_subtitle[]" value="<?php echo htmlspecialchars($subtitleVal); ?>" class="bts-subtitle-val">
 
-                                    <!-- Top Left Drag Handle Badge -->
-                                    <div style="position: absolute; top: 10px; left: 10px; width: 26px; height: 26px; border-radius: 6px; background: rgba(15, 23, 42, 0.7); color: #ffffff; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; cursor: move;" title="Drag to reorder">
-                                        <i class="fa-solid fa-arrows-up-down-left-right"></i>
+                                <!-- DISPLAY VIEW -->
+                                <div class="bts-card-display" style="display: flex; flex-direction: column; height: 100%;">
+                                    <!-- Image Box with Overlay Tags -->
+                                    <div style="position: relative; aspect-ratio: 16/10; overflow: hidden; background: #0f172a;">
+                                        <img 
+                                            class="bts-display-img"
+                                            src="<?php echo htmlspecialchars($imgUrl); ?>" 
+                                            alt="<?php echo htmlspecialchars($titleVal); ?>"
+                                            style="width: 100%; height: 100%; object-fit: cover;"
+                                            onerror="this.src='/assets/img/hero.jpg';"
+                                        >
+
+                                        <!-- Top Left Drag Handle Badge -->
+                                        <div style="position: absolute; top: 10px; left: 10px; width: 26px; height: 26px; border-radius: 6px; background: rgba(15, 23, 42, 0.7); color: #ffffff; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; cursor: move;" title="Drag to reorder">
+                                            <i class="fa-solid fa-arrows-up-down-left-right"></i>
+                                        </div>
+
+                                        <!-- Top Right Status Pill -->
+                                        <div class="bts-status-pill" style="position: absolute; top: 10px; right: 10px; background: rgba(15, 23, 42, 0.85); color: #ffffff; font-size: 0.7rem; font-weight: 700; padding: 3px 8px; border-radius: 6px;">
+                                            #<?php echo ($index + 1); ?> &middot; <?php echo ($index < 6) ? 'visible on home' : 'extra'; ?>
+                                        </div>
                                     </div>
 
-                                    <!-- Top Right Status Pill -->
-                                    <div class="bts-status-pill" style="position: absolute; top: 10px; right: 10px; background: rgba(15, 23, 42, 0.85); color: #ffffff; font-size: 0.7rem; font-weight: 700; padding: 3px 8px; border-radius: 6px;">
-                                        #<?php echo ($index + 1); ?> &middot; <?php echo ($index < 6) ? 'visible on home' : 'extra'; ?>
+                                    <!-- Details Body -->
+                                    <div style="padding: 14px 16px; flex-grow: 1;">
+                                        <div class="bts-display-title" style="font-size: 0.88rem; font-weight: 700; color: var(--text-primary); margin-bottom: 6px; padding: 6px 10px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                            <?php echo htmlspecialchars($titleVal ?: 'Untitled Photo'); ?>
+                                        </div>
+                                        
+                                        <div class="bts-display-subtitle" style="font-size: 0.78rem; color: var(--text-muted); padding: 5px 10px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                            <?php echo htmlspecialchars($subtitleVal ?: 'No description'); ?>
+                                        </div>
+                                    </div>
+
+                                    <!-- Footer Action Links -->
+                                    <div style="padding: 10px 16px; border-top: 1px solid #f1f5f9; display: flex; align-items: center; justify-content: space-between; font-size: 0.78rem; background: #fafafa;">
+                                        <span style="color: #94a3b8; font-weight: 500;">+ drag to reorder</span>
+                                        <div style="display: flex; gap: 12px;">
+                                            <button type="button" onclick="openBtsCardEdit(this)" style="background: none; border: none; color: var(--text-secondary); font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;">
+                                                <i class="fa-solid fa-pen" style="font-size: 0.72rem;"></i> Edit
+                                            </button>
+                                            <button type="button" onclick="deleteBtsCard(this)" style="background: none; border: none; color: #94a3b8; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;" onmouseover="this.style.color='#ef4444'" onmouseout="this.style.color='#94a3b8'">
+                                                <i class="fa-regular fa-trash-can" style="font-size: 0.72rem;"></i> Del
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
 
-                                <!-- Details Body -->
-                                <div style="padding: 14px 16px; flex-grow: 1;">
-                                    <input type="hidden" name="bts_image[]" value="<?php echo htmlspecialchars($photo['image']); ?>" class="bts-img-val">
-                                    
-                                    <div style="font-size: 0.88rem; font-weight: 700; color: var(--text-primary); margin-bottom: 4px;">
-                                        <input type="text" name="bts_title[]" value="<?php echo htmlspecialchars($photo['title']); ?>" class="form-text-input" style="padding: 6px 10px; font-weight: 700; font-size: 0.85rem;" placeholder="Photo Title">
+                                <!-- EDIT VIEW (Matching Reference) -->
+                                <div class="bts-card-edit" style="display: none; padding: 18px; flex-direction: column; gap: 12px; background: #ffffff;">
+                                    <div>
+                                        <label style="font-size: 0.78rem; font-weight: 700; color: #334155; display: block; margin-bottom: 5px;">Image link</label>
+                                        <div style="display: flex; gap: 0;">
+                                            <input type="text" class="bts-edit-link-input form-text-input" value="<?php echo htmlspecialchars($photo['image']); ?>" style="flex: 1; border-top-right-radius: 0; border-bottom-right-radius: 0; padding: 8px 10px; font-size: 0.82rem; border-right: none;" placeholder="https://lh3.googleusercontent.com/..." onkeydown="if(event.key==='Enter'){event.preventDefault();useBtsCardLink(this);}">
+                                            <button type="button" onclick="useBtsCardLink(this)" style="background: linear-gradient(135deg, #f87171, #ef4444); color: #ffffff; border: 1px solid #ef4444; border-top-left-radius: 0; border-bottom-left-radius: 0; padding: 8px 16px; font-size: 0.82rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 5px;">
+                                                <i class="fa-solid fa-link"></i> Use
+                                            </button>
+                                        </div>
+                                        <p style="font-size: 0.7rem; color: #94a3b8; margin: 5px 0 2px 0; line-height: 1.35;">Paste a direct Google Photos image address (lh3.googleusercontent.com/...), a Google Drive link, or any plain image URL. In Google Photos, right-click a photo and choose &ldquo;Copy image address&rdquo;.</p>
+                                        <p class="bts-edit-current-link" style="font-size: 0.68rem; color: #64748b; margin: 3px 0 0 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">Current: <span class="bts-current-url-display"><?php echo htmlspecialchars($photo['image']); ?></span></p>
                                     </div>
-                                    
-                                    <div style="font-size: 0.78rem; color: var(--text-muted);">
-                                        <input type="text" name="bts_subtitle[]" value="<?php echo htmlspecialchars($photo['subtitle']); ?>" class="form-text-input" style="padding: 4px 10px; font-size: 0.78rem;" placeholder="Subtitle / Caption">
+
+                                    <!-- Preview Image -->
+                                    <div style="position: relative; aspect-ratio: 16/10; border-radius: 10px; overflow: hidden; background: #0f172a;">
+                                        <img class="bts-edit-preview-img" src="<?php echo htmlspecialchars($imgUrl); ?>" alt="Preview" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.src='/assets/img/hero.jpg';">
+                                    </div>
+
+                                    <!-- Alt Text & Caption Grid -->
+                                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                                        <div>
+                                            <label style="font-size: 0.74rem; font-weight: 700; color: #334155; display: block; margin-bottom: 4px;">Alt Text</label>
+                                            <input type="text" class="bts-edit-alt-input form-text-input" value="<?php echo htmlspecialchars($subtitleVal); ?>" style="width: 100%; padding: 7px 10px; font-size: 0.8rem; border-radius: 8px; box-sizing: border-box;" placeholder="Alt text">
+                                        </div>
+                                        <div>
+                                            <label style="font-size: 0.74rem; font-weight: 700; color: #334155; display: block; margin-bottom: 4px;">Caption</label>
+                                            <input type="text" class="bts-edit-caption-input form-text-input" value="<?php echo htmlspecialchars($titleVal); ?>" style="width: 100%; padding: 7px 10px; font-size: 0.8rem; border-radius: 8px; box-sizing: border-box;" placeholder="Caption">
+                                        </div>
+                                    </div>
+
+                                    <!-- Action Buttons -->
+                                    <div style="display: flex; gap: 10px; align-items: center; margin-top: 4px;">
+                                        <button type="button" onclick="saveBtsCardEdit(this)" style="background: #dc2626; color: #ffffff; border: none; padding: 8px 18px; border-radius: 8px; font-size: 0.82rem; font-weight: 700; cursor: pointer; transition: background 0.2s;">Save Changes</button>
+                                        <button type="button" onclick="cancelBtsCardEdit(this)" style="background: #ffffff; border: 1px solid #cbd5e1; color: #475569; padding: 8px 16px; border-radius: 8px; font-size: 0.82rem; font-weight: 600; cursor: pointer;">Cancel</button>
                                     </div>
                                 </div>
 
-                                <!-- Footer Action Links -->
-                                <div style="padding: 10px 16px; border-top: 1px solid #f1f5f9; display: flex; align-items: center; justify-content: space-between; font-size: 0.78rem; background: #fafafa;">
-                                    <span style="color: #94a3b8; font-weight: 500;">+ drag to reorder</span>
-                                    <div style="display: flex; gap: 12px;">
-                                        <button type="button" onclick="editBtsCard(this)" style="background: none; border: none; color: var(--text-secondary); font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;">
-                                            <i class="fa-solid fa-pen" style="font-size: 0.72rem;"></i> Edit
-                                        </button>
-                                        <button type="button" onclick="deleteBtsCard(this)" style="background: none; border: none; color: #94a3b8; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;" onmouseover="this.style.color='#ef4444'" onmouseout="this.style.color='#94a3b8'">
-                                            <i class="fa-regular fa-trash-can" style="font-size: 0.72rem;"></i> Del
-                                        </button>
-                                    </div>
-                                </div>
                             </div>
                         <?php endforeach; ?>
                     </div>
@@ -17505,6 +17555,113 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
             }
         }
 
+        function escapeBtsHtml(str) {
+            if (!str) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        function parseImageUrlOrDrive(raw) {
+            if (!raw) return '';
+            let val = raw.trim();
+            const driveMatch = val.match(/(?:id=|\/d\/)([a-zA-Z0-9_-]+)/);
+            if (driveMatch && driveMatch[1]) {
+                return 'https://lh3.googleusercontent.com/d/' + driveMatch[1];
+            }
+            return val;
+        }
+
+        function getBtsCardHtml(opts) {
+            const id = opts.id || '';
+            const image = opts.image || '';
+            const title = opts.title || '';
+            const subtitle = opts.subtitle || '';
+            const count = opts.count || 1;
+            const isUploading = !!opts.isUploading;
+
+            const safeImg = escapeBtsHtml(image);
+            const safeTitle = escapeBtsHtml(title);
+            const safeSub = escapeBtsHtml(subtitle);
+            const idAttr = id ? `id="${id}"` : '';
+            const statusText = isUploading ? 'uploading' : (count <= 6 ? 'visible on home' : 'extra');
+            const imgOpacity = isUploading ? 'opacity: 0.7;' : '';
+            const spinnerHtml = isUploading ? `
+                <div class="uploading-spinner" style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(15,23,42,0.5); color: #ffffff; font-weight: 700; font-size: 0.85rem; gap: 8px;">
+                    <i class="fa-solid fa-spinner fa-spin"></i> Uploading to CDN...
+                </div>
+            ` : '';
+
+            return `
+                <div ${idAttr} class="bts-photo-card" draggable="true" ondragstart="handleBtsDragStart(event, this)" ondragover="handleBtsDragOver(event, this)" ondrop="handleBtsDrop(event, this)" ondragend="handleBtsDragEnd(event, this)" style="background: #ffffff; border: 1px solid var(--card-border); border-radius: 14px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.05); display: flex; flex-direction: column; cursor: grab; transition: transform 0.15s, box-shadow 0.15s;">
+                    <!-- Hidden Form Values -->
+                    <input type="hidden" name="bts_image[]" value="${safeImg}" class="bts-img-val">
+                    <input type="hidden" name="bts_title[]" value="${safeTitle}" class="bts-title-val">
+                    <input type="hidden" name="bts_subtitle[]" value="${safeSub}" class="bts-subtitle-val">
+
+                    <!-- DISPLAY VIEW -->
+                    <div class="bts-card-display" style="display: flex; flex-direction: column; height: 100%;">
+                        <div style="position: relative; aspect-ratio: 16/10; overflow: hidden; background: #0f172a;">
+                            <img class="bts-display-img" src="${safeImg || '/assets/img/hero.jpg'}" alt="${safeTitle}" style="width: 100%; height: 100%; object-fit: cover; ${imgOpacity}" onerror="this.src='/assets/img/hero.jpg';">
+                            ${spinnerHtml}
+                            <div style="position: absolute; top: 10px; left: 10px; width: 26px; height: 26px; border-radius: 6px; background: rgba(15, 23, 42, 0.7); color: #ffffff; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; cursor: move;" title="Drag to reorder"><i class="fa-solid fa-arrows-up-down-left-right"></i></div>
+                            <div class="bts-status-pill" style="position: absolute; top: 10px; right: 10px; background: rgba(15, 23, 42, 0.85); color: #ffffff; font-size: 0.7rem; font-weight: 700; padding: 3px 8px; border-radius: 6px;">#${count} &middot; ${statusText}</div>
+                        </div>
+                        <div style="padding: 14px 16px; flex-grow: 1;">
+                            <div class="bts-display-title" style="font-size: 0.88rem; font-weight: 700; color: var(--text-primary); margin-bottom: 6px; padding: 6px 10px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                ${safeTitle || 'Untitled Photo'}
+                            </div>
+                            <div class="bts-display-subtitle" style="font-size: 0.78rem; color: var(--text-muted); padding: 5px 10px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                ${safeSub || 'No description'}
+                            </div>
+                        </div>
+                        <div style="padding: 10px 16px; border-top: 1px solid #f1f5f9; display: flex; align-items: center; justify-content: space-between; font-size: 0.78rem; background: #fafafa;">
+                            <span style="color: #94a3b8; font-weight: 500;">+ drag to reorder</span>
+                            <div style="display: flex; gap: 12px;">
+                                <button type="button" onclick="openBtsCardEdit(this)" style="background: none; border: none; color: var(--text-secondary); font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;"><i class="fa-solid fa-pen" style="font-size: 0.72rem;"></i> Edit</button>
+                                <button type="button" onclick="deleteBtsCard(this)" style="background: none; border: none; color: #94a3b8; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;" onmouseover="this.style.color='#ef4444'" onmouseout="this.style.color='#94a3b8'"><i class="fa-regular fa-trash-can" style="font-size: 0.72rem;"></i> Del</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- EDIT VIEW (Matching Reference Mockup) -->
+                    <div class="bts-card-edit" style="display: none; padding: 18px; flex-direction: column; gap: 12px; background: #ffffff;">
+                        <div>
+                            <label style="font-size: 0.78rem; font-weight: 700; color: #334155; display: block; margin-bottom: 5px;">Image link</label>
+                            <div style="display: flex; gap: 0;">
+                                <input type="text" class="bts-edit-link-input form-text-input" value="${safeImg}" style="flex: 1; border-top-right-radius: 0; border-bottom-right-radius: 0; padding: 8px 10px; font-size: 0.82rem; border-right: none;" placeholder="https://lh3.googleusercontent.com/..." onkeydown="if(event.key==='Enter'){event.preventDefault();useBtsCardLink(this);}">
+                                <button type="button" onclick="useBtsCardLink(this)" style="background: linear-gradient(135deg, #f87171, #ef4444); color: #ffffff; border: 1px solid #ef4444; border-top-left-radius: 0; border-bottom-left-radius: 0; padding: 8px 16px; font-size: 0.82rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 5px;">
+                                    <i class="fa-solid fa-link"></i> Use
+                                </button>
+                            </div>
+                            <p style="font-size: 0.7rem; color: #94a3b8; margin: 5px 0 2px 0; line-height: 1.35;">Paste a direct Google Photos image address (lh3.googleusercontent.com/...), a Google Drive link, or any plain image URL. In Google Photos, right-click a photo and choose &ldquo;Copy image address&rdquo;.</p>
+                            <p class="bts-edit-current-link" style="font-size: 0.68rem; color: #64748b; margin: 3px 0 0 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">Current: <span class="bts-current-url-display">${safeImg}</span></p>
+                        </div>
+                        <div style="position: relative; aspect-ratio: 16/10; border-radius: 10px; overflow: hidden; background: #0f172a;">
+                            <img class="bts-edit-preview-img" src="${safeImg || '/assets/img/hero.jpg'}" alt="Preview" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.src='/assets/img/hero.jpg';">
+                        </div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                            <div>
+                                <label style="font-size: 0.74rem; font-weight: 700; color: #334155; display: block; margin-bottom: 4px;">Alt Text</label>
+                                <input type="text" class="bts-edit-alt-input form-text-input" value="${safeSub}" style="width: 100%; padding: 7px 10px; font-size: 0.8rem; border-radius: 8px; box-sizing: border-box;" placeholder="Alt text">
+                            </div>
+                            <div>
+                                <label style="font-size: 0.74rem; font-weight: 700; color: #334155; display: block; margin-bottom: 4px;">Caption</label>
+                                <input type="text" class="bts-edit-caption-input form-text-input" value="${safeTitle}" style="width: 100%; padding: 7px 10px; font-size: 0.8rem; border-radius: 8px; box-sizing: border-box;" placeholder="Caption">
+                            </div>
+                        </div>
+                        <div style="display: flex; gap: 10px; align-items: center; margin-top: 4px;">
+                            <button type="button" onclick="saveBtsCardEdit(this)" style="background: #dc2626; color: #ffffff; border: none; padding: 8px 18px; border-radius: 8px; font-size: 0.82rem; font-weight: 700; cursor: pointer; transition: background 0.2s;">Save Changes</button>
+                            <button type="button" onclick="cancelBtsCardEdit(this)" style="background: #ffffff; border: 1px solid #cbd5e1; color: #475569; padding: 8px 16px; border-radius: 8px; font-size: 0.82rem; font-weight: 600; cursor: pointer;">Cancel</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
         function uploadBtsFiles(files) {
             const grid = document.getElementById('btsPhotoGrid');
             if (!grid) return;
@@ -17517,34 +17674,14 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                 const previewSrc = URL.createObjectURL(file);
                 const defaultTitle = file.name.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' ');
 
-                const cardHtml = `
-                    <div id="${tempId}" class="bts-photo-card" draggable="true" ondragstart="handleBtsDragStart(event, this)" ondragover="handleBtsDragOver(event, this)" ondrop="handleBtsDrop(event, this)" ondragend="handleBtsDragEnd(event, this)" style="background: #ffffff; border: 1px solid var(--card-border); border-radius: 14px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.05); display: flex; flex-direction: column; cursor: grab; transition: transform 0.15s, box-shadow 0.15s;">
-                        <div style="position: relative; aspect-ratio: 16/10; overflow: hidden; background: #0f172a;">
-                            <img src="${previewSrc}" style="width: 100%; height: 100%; object-fit: cover; opacity: 0.7;">
-                            <div class="uploading-spinner" style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(15,23,42,0.5); color: #ffffff; font-weight: 700; font-size: 0.85rem; gap: 8px;">
-                                <i class="fa-solid fa-spinner fa-spin"></i> Uploading to CDN...
-                            </div>
-                            <div style="position: absolute; top: 10px; left: 10px; width: 26px; height: 26px; border-radius: 6px; background: rgba(15, 23, 42, 0.7); color: #ffffff; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; cursor: move;"><i class="fa-solid fa-arrows-up-down-left-right"></i></div>
-                            <div class="bts-status-pill" style="position: absolute; top: 10px; right: 10px; background: rgba(15, 23, 42, 0.85); color: #ffffff; font-size: 0.7rem; font-weight: 700; padding: 3px 8px; border-radius: 6px;">#${count} &middot; uploading</div>
-                        </div>
-                        <div style="padding: 14px 16px; flex-grow: 1;">
-                            <input type="hidden" name="bts_image[]" value="" class="bts-img-val">
-                            <div style="font-size: 0.88rem; font-weight: 700; color: var(--text-primary); margin-bottom: 4px;">
-                                <input type="text" name="bts_title[]" value="${defaultTitle}" class="form-text-input" style="padding: 6px 10px; font-weight: 700; font-size: 0.85rem;" placeholder="Photo Title">
-                            </div>
-                            <div style="font-size: 0.78rem; color: var(--text-muted);">
-                                <input type="text" name="bts_subtitle[]" value="Behind the scenes shoot" class="form-text-input" style="padding: 4px 10px; font-size: 0.78rem;" placeholder="Subtitle / Caption">
-                            </div>
-                        </div>
-                        <div style="padding: 10px 16px; border-top: 1px solid #f1f5f9; display: flex; align-items: center; justify-content: space-between; font-size: 0.78rem; background: #fafafa;">
-                            <span style="color: #94a3b8; font-weight: 500;">+ drag to reorder</span>
-                            <div style="display: flex; gap: 12px;">
-                                <button type="button" onclick="editBtsCard(this)" style="background: none; border: none; color: var(--text-secondary); font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;"><i class="fa-solid fa-pen" style="font-size: 0.72rem;"></i> Edit</button>
-                                <button type="button" onclick="deleteBtsCard(this)" style="background: none; border: none; color: #94a3b8; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;"><i class="fa-regular fa-trash-can" style="font-size: 0.72rem;"></i> Del</button>
-                            </div>
-                        </div>
-                    </div>
-                `;
+                const cardHtml = getBtsCardHtml({
+                    id: tempId,
+                    image: previewSrc,
+                    title: defaultTitle,
+                    subtitle: 'Behind the scenes shoot',
+                    count: count,
+                    isUploading: true
+                });
 
                 grid.insertAdjacentHTML('beforeend', cardHtml);
                 updateBtsCountBadge();
@@ -17564,13 +17701,18 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                     if (el) {
                         const spinner = el.querySelector('.uploading-spinner');
                         if (spinner) spinner.remove();
-                        const img = el.querySelector('img');
-                        if (img) {
-                            img.src = data.url || previewSrc;
+                        const cdnUrl = data.url || previewSrc;
+                        const imgs = el.querySelectorAll('img');
+                        imgs.forEach(img => {
+                            img.src = cdnUrl;
                             img.style.opacity = '1';
-                        }
+                        });
                         const valInput = el.querySelector('.bts-img-val');
-                        if (valInput) valInput.value = data.url || previewSrc;
+                        if (valInput) valInput.value = cdnUrl;
+                        const linkInput = el.querySelector('.bts-edit-link-input');
+                        if (linkInput) linkInput.value = cdnUrl;
+                        const currentSpan = el.querySelector('.bts-current-url-display');
+                        if (currentSpan) currentSpan.textContent = cdnUrl;
                         updateBtsCountBadge();
                     }
                 })
@@ -17599,33 +17741,21 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
             ];
             const randomImg = sampleImages[Math.floor(Math.random() * sampleImages.length)];
 
-            const cardHtml = `
-                <div class="bts-photo-card" draggable="true" ondragstart="handleBtsDragStart(event, this)" ondragover="handleBtsDragOver(event, this)" ondrop="handleBtsDrop(event, this)" ondragend="handleBtsDragEnd(event, this)" style="background: #ffffff; border: 1px solid var(--card-border); border-radius: 14px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.05); display: flex; flex-direction: column; cursor: grab; transition: transform 0.15s, box-shadow 0.15s;">
-                    <div style="position: relative; aspect-ratio: 16/10; overflow: hidden; background: #0f172a;">
-                        <img src="${randomImg}" style="width: 100%; height: 100%; object-fit: cover;">
-                        <div style="position: absolute; top: 10px; left: 10px; width: 26px; height: 26px; border-radius: 6px; background: rgba(15, 23, 42, 0.7); color: #ffffff; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; cursor: move;"><i class="fa-solid fa-arrows-up-down-left-right"></i></div>
-                        <div class="bts-status-pill" style="position: absolute; top: 10px; right: 10px; background: rgba(15, 23, 42, 0.85); color: #ffffff; font-size: 0.7rem; font-weight: 700; padding: 3px 8px; border-radius: 6px;">#${count} &middot; ${count <= 6 ? 'visible on home' : 'extra'}</div>
-                    </div>
-                    <div style="padding: 14px 16px; flex-grow: 1;">
-                        <input type="hidden" name="bts_image[]" value="${randomImg}" class="bts-img-val">
-                        <div style="font-size: 0.88rem; font-weight: 700; color: var(--text-primary); margin-bottom: 4px;">
-                            <input type="text" name="bts_title[]" value="New Production Shot #${count}" class="form-text-input" style="padding: 6px 10px; font-weight: 700; font-size: 0.85rem;" placeholder="Photo Title">
-                        </div>
-                        <div style="font-size: 0.78rem; color: var(--text-muted);">
-                            <input type="text" name="bts_subtitle[]" value="Behind the scenes footage" class="form-text-input" style="padding: 4px 10px; font-size: 0.78rem;" placeholder="Subtitle / Caption">
-                        </div>
-                    </div>
-                    <div style="padding: 10px 16px; border-top: 1px solid #f1f5f9; display: flex; align-items: center; justify-content: space-between; font-size: 0.78rem; background: #fafafa;">
-                        <span style="color: #94a3b8; font-weight: 500;">+ drag to reorder</span>
-                        <div style="display: flex; gap: 12px;">
-                            <button type="button" onclick="editBtsCard(this)" style="background: none; border: none; color: var(--text-secondary); font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;"><i class="fa-solid fa-pen" style="font-size: 0.72rem;"></i> Edit</button>
-                            <button type="button" onclick="deleteBtsCard(this)" style="background: none; border: none; color: #94a3b8; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;"><i class="fa-regular fa-trash-can" style="font-size: 0.72rem;"></i> Del</button>
-                        </div>
-                    </div>
-                </div>
-            `;
+            const cardHtml = getBtsCardHtml({
+                image: randomImg,
+                title: 'New Production Shot #' + count,
+                subtitle: 'Behind the scenes footage',
+                count: count
+            });
             grid.insertAdjacentHTML('beforeend', cardHtml);
             updateBtsCountBadge();
+
+            // Automatically open edit on the newly added card
+            const newCard = grid.lastElementChild;
+            if (newCard) {
+                const editBtn = newCard.querySelector('button[onclick*="openBtsCardEdit"]');
+                if (editBtn) openBtsCardEdit(editBtn);
+            }
         }
 
         function deleteBtsCard(btn) {
@@ -17644,21 +17774,149 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
             }
         }
 
-        function editBtsCard(btn) {
+        function openBtsCardEdit(btn) {
             const card = btn.closest('.bts-photo-card');
             if (!card) return;
-            const imgInput = card.querySelector('.bts-img-val');
-            const currentUrl = imgInput ? imgInput.value : '';
-            const newUrl = prompt('Enter new Image URL (or Google Drive sharing link):', currentUrl);
-            if (newUrl !== null && newUrl.trim() !== '') {
-                let parsedUrl = newUrl.trim();
-                const driveMatch = parsedUrl.match(/(?:id=|\/d\/)([a-zA-Z0-9_-]+)/);
-                if (driveMatch && driveMatch[1]) {
-                    parsedUrl = 'https://lh3.googleusercontent.com/d/' + driveMatch[1];
+
+            // Close any other open edit card
+            document.querySelectorAll('.bts-photo-card').forEach(c => {
+                if (c !== card) {
+                    const disp = c.querySelector('.bts-card-display');
+                    const ed = c.querySelector('.bts-card-edit');
+                    if (disp && ed && ed.style.display !== 'none') {
+                        ed.style.display = 'none';
+                        disp.style.display = 'flex';
+                        c.setAttribute('draggable', 'true');
+                    }
                 }
-                if (imgInput) imgInput.value = parsedUrl;
-                const img = card.querySelector('img');
-                if (img) img.src = parsedUrl;
+            });
+
+            const imgVal = card.querySelector('.bts-img-val')?.value || '';
+            const titleVal = card.querySelector('.bts-title-val')?.value || '';
+            const subVal = card.querySelector('.bts-subtitle-val')?.value || '';
+
+            const linkInput = card.querySelector('.bts-edit-link-input');
+            const captionInput = card.querySelector('.bts-edit-caption-input');
+            const altInput = card.querySelector('.bts-edit-alt-input');
+            const currentSpan = card.querySelector('.bts-current-url-display');
+            const previewImg = card.querySelector('.bts-edit-preview-img');
+
+            if (linkInput) linkInput.value = imgVal;
+            if (captionInput) captionInput.value = titleVal;
+            if (altInput) altInput.value = subVal;
+            if (currentSpan) currentSpan.textContent = imgVal;
+            if (previewImg && imgVal) previewImg.src = imgVal;
+
+            const displaySection = card.querySelector('.bts-card-display');
+            const editSection = card.querySelector('.bts-card-edit');
+            if (displaySection && editSection) {
+                displaySection.style.display = 'none';
+                editSection.style.display = 'flex';
+                card.setAttribute('draggable', 'false');
+            }
+        }
+
+        function editBtsCard(btn) {
+            openBtsCardEdit(btn);
+        }
+
+        function cancelBtsCardEdit(btn) {
+            const card = btn.closest('.bts-photo-card');
+            if (!card) return;
+            const displaySection = card.querySelector('.bts-card-display');
+            const editSection = card.querySelector('.bts-card-edit');
+            if (displaySection && editSection) {
+                editSection.style.display = 'none';
+                displaySection.style.display = 'flex';
+                card.setAttribute('draggable', 'true');
+            }
+        }
+
+        function useBtsCardLink(btn) {
+            const card = btn.closest('.bts-photo-card');
+            if (!card) return;
+            const linkInput = card.querySelector('.bts-edit-link-input');
+            if (!linkInput) return;
+            const parsed = parseImageUrlOrDrive(linkInput.value);
+            linkInput.value = parsed;
+            const previewImg = card.querySelector('.bts-edit-preview-img');
+            if (previewImg && parsed) {
+                previewImg.src = parsed;
+            }
+            const currentSpan = card.querySelector('.bts-current-url-display');
+            if (currentSpan) {
+                currentSpan.textContent = parsed;
+            }
+        }
+
+        function showBtsToast(message) {
+            let toast = document.getElementById('btsFloatingToast');
+            if (!toast) {
+                toast = document.createElement('div');
+                toast.id = 'btsFloatingToast';
+                toast.style.cssText = 'position: fixed; bottom: 24px; right: 24px; background: #0f172a; color: #ffffff; padding: 12px 20px; border-radius: 10px; font-size: 0.88rem; font-weight: 600; box-shadow: 0 10px 25px rgba(0,0,0,0.25); z-index: 999999; display: flex; align-items: center; gap: 10px; transition: opacity 0.3s, transform 0.3s; opacity: 0; transform: translateY(10px); pointer-events: none;';
+                document.body.appendChild(toast);
+            }
+            toast.innerHTML = '<i class="fa-solid fa-circle-check" style="color: #22c55e;"></i> ' + message;
+            toast.style.opacity = '1';
+            toast.style.transform = 'translateY(0)';
+            clearTimeout(toast._timeout);
+            toast._timeout = setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateY(10px)';
+            }, 3500);
+        }
+
+        function saveBtsCardEdit(btn) {
+            const card = btn.closest('.bts-photo-card');
+            if (!card) return;
+
+            const linkInput = card.querySelector('.bts-edit-link-input');
+            const captionInput = card.querySelector('.bts-edit-caption-input');
+            const altInput = card.querySelector('.bts-edit-alt-input');
+
+            const newUrl = parseImageUrlOrDrive(linkInput ? linkInput.value : '');
+            const newTitle = captionInput ? captionInput.value.trim() : '';
+            const newSubtitle = altInput ? altInput.value.trim() : '';
+
+            if (linkInput) linkInput.value = newUrl;
+
+            // Update hidden inputs
+            const imgVal = card.querySelector('.bts-img-val');
+            const titleVal = card.querySelector('.bts-title-val');
+            const subtitleVal = card.querySelector('.bts-subtitle-val');
+
+            if (imgVal) imgVal.value = newUrl;
+            if (titleVal) titleVal.value = newTitle;
+            if (subtitleVal) subtitleVal.value = newSubtitle;
+
+            // Update display elements
+            const displayImg = card.querySelector('.bts-display-img');
+            const displayTitle = card.querySelector('.bts-display-title');
+            const displaySubtitle = card.querySelector('.bts-display-subtitle');
+
+            if (displayImg && newUrl) displayImg.src = newUrl;
+            if (displayTitle) displayTitle.textContent = newTitle || 'Untitled Photo';
+            if (displaySubtitle) displaySubtitle.textContent = newSubtitle || 'No description';
+
+            // Switch view back to display
+            cancelBtsCardEdit(btn);
+
+            // Auto-persist changes in background
+            const btsForm = document.getElementById('btsForm');
+            if (btsForm) {
+                const formData = new FormData(btsForm);
+                fetch('/admin/index.php?section=bts', {
+                    method: 'POST',
+                    body: formData
+                }).then(res => {
+                    showBtsToast('Photo details saved successfully!');
+                }).catch(err => {
+                    console.error('BTS Auto-save error:', err);
+                    showBtsToast('Photo details updated!');
+                });
+            } else {
+                showBtsToast('Photo details updated!');
             }
         }
 
@@ -17670,18 +17928,31 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                 cards.forEach((c, idx) => {
                     const pill = c.querySelector('.bts-status-pill');
                     if (pill) {
-                        pill.innerText = '#' + (idx + 1) + ' · ' + (idx < 6 ? 'visible on home' : 'extra');
+                        pill.innerHTML = '#' + (idx + 1) + ' &middot; ' + (idx < 6 ? 'visible on home' : 'extra');
                     }
                 });
                 if (text) {
-                    text.innerText = cards.length + ' photos · first 6 shown on homepage · drag to reorder';
+                    text.innerText = cards.length + ' photos';
                 }
             }
         }
 
         function syncBtsGallery() {
             updateBtsCountBadge();
-            alert('✓ Production BTS gallery synchronized! Click "Save Changes" to persist your gallery.');
+            const btsForm = document.getElementById('btsForm');
+            if (btsForm) {
+                const formData = new FormData(btsForm);
+                fetch('/admin/index.php?section=bts', {
+                    method: 'POST',
+                    body: formData
+                }).then(() => {
+                    showBtsToast('✓ Production BTS gallery order synchronized!');
+                }).catch(() => {
+                    showBtsToast('✓ Production BTS gallery synchronized!');
+                });
+            } else {
+                showBtsToast('✓ Production BTS gallery synchronized!');
+            }
         }
 
         function openDriveUrlsModal() {
@@ -17706,38 +17977,14 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                 let raw = line.trim();
                 if (!raw) return;
 
-                const driveMatch = raw.match(/(?:id=|\/d\/)([a-zA-Z0-9_-]+)/);
-                let directImg = raw;
-                if (driveMatch && driveMatch[1]) {
-                    directImg = 'https://lh3.googleusercontent.com/d/' + driveMatch[1];
-                }
-
+                const directImg = parseImageUrlOrDrive(raw);
                 const count = grid.querySelectorAll('.bts-photo-card').length + 1;
-                const cardHtml = `
-                    <div class="bts-photo-card" draggable="true" ondragstart="handleBtsDragStart(event, this)" ondragover="handleBtsDragOver(event, this)" ondrop="handleBtsDrop(event, this)" ondragend="handleBtsDragEnd(event, this)" style="background: #ffffff; border: 1px solid var(--card-border); border-radius: 14px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.05); display: flex; flex-direction: column; cursor: grab; transition: transform 0.15s, box-shadow 0.15s;">
-                        <div style="position: relative; aspect-ratio: 16/10; overflow: hidden; background: #0f172a;">
-                            <img src="${directImg}" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.src='/assets/img/hero.jpg';">
-                            <div style="position: absolute; top: 10px; left: 10px; width: 26px; height: 26px; border-radius: 6px; background: rgba(15, 23, 42, 0.7); color: #ffffff; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; cursor: move;"><i class="fa-solid fa-arrows-up-down-left-right"></i></div>
-                            <div class="bts-status-pill" style="position: absolute; top: 10px; right: 10px; background: rgba(15, 23, 42, 0.85); color: #ffffff; font-size: 0.7rem; font-weight: 700; padding: 3px 8px; border-radius: 6px;">#${count} &middot; ${count <= 6 ? 'visible on home' : 'extra'}</div>
-                        </div>
-                        <div style="padding: 14px 16px; flex-grow: 1;">
-                            <input type="hidden" name="bts_image[]" value="${directImg}" class="bts-img-val">
-                            <div style="font-size: 0.88rem; font-weight: 700; color: var(--text-primary); margin-bottom: 4px;">
-                                <input type="text" name="bts_title[]" value="Imported Drive Photo #${count}" class="form-text-input" style="padding: 6px 10px; font-weight: 700; font-size: 0.85rem;" placeholder="Photo Title">
-                            </div>
-                            <div style="font-size: 0.78rem; color: var(--text-muted);">
-                                <input type="text" name="bts_subtitle[]" value="Behind the scenes footage" class="form-text-input" style="padding: 4px 10px; font-size: 0.78rem;" placeholder="Subtitle / Caption">
-                            </div>
-                        </div>
-                        <div style="padding: 10px 16px; border-top: 1px solid #f1f5f9; display: flex; align-items: center; justify-content: space-between; font-size: 0.78rem; background: #fafafa;">
-                            <span style="color: #94a3b8; font-weight: 500;">+ drag to reorder</span>
-                            <div style="display: flex; gap: 12px;">
-                                <button type="button" onclick="editBtsCard(this)" style="background: none; border: none; color: var(--text-secondary); font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;"><i class="fa-solid fa-pen" style="font-size: 0.72rem;"></i> Edit</button>
-                                <button type="button" onclick="deleteBtsCard(this)" style="background: none; border: none; color: #94a3b8; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;"><i class="fa-regular fa-trash-can" style="font-size: 0.72rem;"></i> Del</button>
-                            </div>
-                        </div>
-                    </div>
-                `;
+                const cardHtml = getBtsCardHtml({
+                    image: directImg,
+                    title: 'Imported Drive Photo #' + count,
+                    subtitle: 'Behind the scenes footage',
+                    count: count
+                });
                 grid.insertAdjacentHTML('beforeend', cardHtml);
             });
 

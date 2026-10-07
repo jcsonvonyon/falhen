@@ -146,6 +146,8 @@ document.addEventListener('DOMContentLoaded', () => {
             formFeedback.style.color = '#4ade80';
             formFeedback.innerHTML = `<i class="fa-solid fa-circle-check"></i> ${result.message}`;
             inquiryForm.reset();
+            const charCount = document.getElementById('charCount');
+            if (charCount) charCount.textContent = '0/500';
           } else {
             formFeedback.className = 'badge';
             formFeedback.style.background = 'rgba(239, 68, 68, 0.15)';
@@ -166,6 +168,15 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       }
     });
+
+    // Character Counter
+    const projectDescInput = inquiryForm.querySelector('#projectDetails') || inquiryForm.querySelector('#projectDesc');
+    const charCountEl = document.getElementById('charCount');
+    if (projectDescInput && charCountEl) {
+      projectDescInput.addEventListener('input', () => {
+        charCountEl.textContent = `${projectDescInput.value.length}/500`;
+      });
+    }
   }
 
   // 6. Impact Counter Scroll Animation

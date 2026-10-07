@@ -227,8 +227,8 @@
             "title": "Live Streaming",
             "icon": "fa-solid fa-tower-broadcast",
             "short_description": "Seamless live streaming solutions for events, conferences, and broadcasts with professional-grade equipment and technical support.",
-            "detail_description": "We broadcast your live events to global audiences with multi-camera setups, real-time graphics, custom lower-thirds, and instant backup failovers.",
-            "image": "https://res.cloudinary.com/pnabfi91/image/upload/v1786584520/falhen/services/cibskhbuvi4owca9wyiq.jpg",
+            "detail_description": "Transform your corporate meetings, product launches, and keynote conferences into immersive digital experiences. Falhen production team provides end-to-end broadcast engineering\u2014from multi-angle cinema cameras and live switching to real-time viewer polling and instant master VOD recording. We handle the complex technical infrastructure so you can focus on connecting with your viewers anywhere in the world.",
+            "image": "https://res.cloudinary.com/pnabfi91/image/upload/v1791369247/falhen/services/hf1q9mvxywinx4x83spq.jpg",
             "card_features": [
                 "Multi-platform streaming",
                 "Real-time graphics & overlays",
@@ -242,30 +242,9 @@
                 "Audience Interaction Tools",
                 "24/7 Technical Monitoring",
                 "Stream Archive & VOD Delivery"
-            ]
-        },
-        {
-            "id": 4,
-            "slug": "animation-motion-graphics",
-            "title": "Animation & Motion Graphics",
-            "icon": "fa-solid fa-wand-magic-sparkles",
-            "short_description": "Creative animation and motion graphics services to enhance your brand storytelling with engaging visual elements.",
-            "detail_description": "Elevate complex ideas with custom 2D & 3D motion graphics, brand identity bumpers, UI/UX video walkthroughs, and explainer animations.",
-            "image": "https://res.cloudinary.com/pnabfi91/image/upload/v1786584683/falhen/services/uj4lxa9iq8at4vinsrqd.jpg",
-            "card_features": [
-                "2D & 3D animation",
-                "Motion graphics design",
-                "Logo animations",
-                "Explainer videos"
             ],
-            "detail_features": [
-                "2D Frame-by-Frame & Rigged",
-                "Cinema 4D & Blender 3D",
-                "After Effects Motion Graphics",
-                "Logo Stings & Brand Assets",
-                "Explainer & Infographic Video",
-                "Character & Mascot Animation"
-            ]
+            "focal_point_desktop": "center center",
+            "focal_point_mobile": "center center"
         },
         {
             "id": 6,
@@ -273,8 +252,8 @@
             "title": "Photography",
             "icon": "ri-camera-line",
             "short_description": "Professional photography services for corporate events, products, and promotional materials with creative direction.",
-            "detail_description": "Still images speak volumes. Our photographers specialise in capturing authentic brand moments \u2014 from high-stakes product launches and executive headshots to multi-day corporate conferences and lifestyle campaigns. Every shot is meticulously composed, lit, and retouched to exceed your expectations.",
-            "image": "https://res.cloudinary.com/pnabfi91/image/upload/v1786584832/falhen/services/xgspuyvkdgmvd6i8t7y0.jpg",
+            "detail_description": "Every photograph should command attention and convey authority. We work closely with corporate teams, event producers, and creative directors to document pivotal moments\u2014from fast-paced multi-day summits to polished product lines and lifestyle visuals. Every frame is intentionally composed, professionally lit on location or in-studio, and retouched to elevate your visual collateral across digital platforms and print media.",
+            "image": "https://res.cloudinary.com/pnabfi91/image/upload/v1791369403/falhen/services/asbk4gks6mneafbizhxc.jpg",
             "card_features": [
                 "Event photography",
                 "Product photography",
@@ -288,7 +267,9 @@
                 "Executive Headshots",
                 "Event & Conference Coverage",
                 "Advanced Retouching & Delivery"
-            ]
+            ],
+            "focal_point_desktop": "center center",
+            "focal_point_mobile": "center center"
         },
         {
             "id": 7,
@@ -297,7 +278,7 @@
             "icon": "ri-heart-3-line",
             "short_description": "Cinematic wedding films and full-service event coverage that preserve your most precious memories with extraordinary artistry.",
             "detail_description": "Every love story deserves a cinematic masterpiece. Our dedicated wedding and events team blends into your day, capturing every emotion, detail, and unscripted moment with discretion and artistry. From intimate ceremonies to grand destination weddings and corporate galas, we deliver films you'll treasure forever.",
-            "image": "https://res.cloudinary.com/pnabfi91/image/upload/v1786584918/falhen/services/aanux57e05g65v3hfe9w.jpg",
+            "image": "https://res.cloudinary.com/pnabfi91/image/upload/v1791369429/falhen/services/vipj4ysloixrwvujfays.jpg",
             "card_features": [
                 "Cinematic wedding films",
                 "Same-day highlight edits",
@@ -311,30 +292,9 @@
                 "Multi-Angle Ceremony Capture",
                 "Documentary-Style Coverage",
                 "Blu-Ray & Digital Delivery"
-            ]
-        },
-        {
-            "id": 8,
-            "slug": "wedding-events",
-            "title": "Wedding & Events",
-            "icon": "ri-heart-3-line",
-            "short_description": "Cinematic wedding films and full-service event coverage that preserve your most precious memories with extraordinary artistry.",
-            "detail_description": "Every love story deserves a cinematic masterpiece. Our dedicated wedding and events team blends into your day, capturing every emotion, detail, and unscripted moment with discretion and artistry. From intimate ceremonies to grand destination weddings and corporate galas, we deliver films you'll treasure forever.",
-            "image": "https://res.cloudinary.com/pnabfi91/image/upload/v1786585237/falhen/services/btwbhhl4v7ktws9axwki.jpg",
-            "card_features": [
-                "Cinematic wedding films",
-                "Same-day highlight edits",
-                "Multi-camera event coverage",
-                "Drone aerials & stabilised shots"
             ],
-            "detail_features": [
-                "Cinematic Storytelling Films",
-                "Same-Day Highlight Reels",
-                "Drone Aerial Coverage",
-                "Multi-Angle Ceremony Capture",
-                "Documentary-Style Coverage",
-                "Blu-Ray & Digital Delivery"
-            ]
+            "focal_point_desktop": "center center",
+            "focal_point_mobile": "center center"
         },
         {
             "id": 5,
@@ -343,7 +303,7 @@
             "icon": "ri-article-line",
             "short_description": "Strategic content planning and creation to maximise engagement across all digital platforms and social media channels.",
             "detail_description": "A beautiful video means nothing without the right strategy. We combine data analytics, audience research, and creative direction to build content calendars that grow your brand consistently. From platform-native short-form to long-form series, we plan, produce, and measure what resonates.",
-            "image": "https://res.cloudinary.com/pnabfi91/image/upload/v1786584766/falhen/services/vrtehd9al98vtxkdh6hh.jpg",
+            "image": "https://res.cloudinary.com/pnabfi91/image/upload/v1791369463/falhen/services/ra3adgvaiudrvbk9tgqk.jpg",
             "card_features": [
                 "Content planning & scheduling",
                 "Social media optimisation",
@@ -357,7 +317,9 @@
                 "SEO & Hashtag Strategy",
                 "Monthly Performance Reports",
                 "A/B Creative Testing"
-            ]
+            ],
+            "focal_point_desktop": "center center",
+            "focal_point_mobile": "center center"
         },
         {
             "id": 3,
@@ -365,8 +327,8 @@
             "title": "Post Production",
             "icon": "fa-solid fa-sliders",
             "short_description": "Comprehensive post-production services including editing, color grading, sound design, and visual effects to polish your content.",
-            "detail_description": "Transform raw footage into a cinematic masterpiece. Our DaVinci Resolve colorists, sound designers, and VFX artists bring high-end polish to every visual asset.",
-            "image": "https://res.cloudinary.com/pnabfi91/image/upload/v1786584616/falhen/services/zenpahes1m1rfr5w8grj.jpg",
+            "detail_description": "Great footage becomes great content in the edit suite. Our post team works in Premiere Pro, DaVinci Resolve, and After Effects to deliver broadcast-ready content with perfect pacing, professional color science, immersive audio, and seamless visual effects compositing \u2014 all delivered on your timeline.",
+            "image": "https://res.cloudinary.com/pnabfi91/image/upload/v1791369500/falhen/services/ey7ezm2nbuyegpeu5fmw.jpg",
             "card_features": [
                 "Professional video editing",
                 "Color correction & grading",
@@ -380,7 +342,9 @@
                 "VFX & Motion Compositing",
                 "Proxy & Remote Workflows",
                 "Secure File Delivery"
-            ]
+            ],
+            "focal_point_desktop": "center center",
+            "focal_point_mobile": "center center"
         }
     ],
     "testimonials_items": [

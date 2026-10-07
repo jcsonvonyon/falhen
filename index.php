@@ -262,7 +262,7 @@ $heroVideoUrl = 'https://www.youtube.com/embed/' . $heroYtId;
                     $itemThumb = !empty($item['thumbnail']) ? $item['thumbnail'] : getYouTubeThumbnailUrl($ytId);
                     $thumbImg = getCloudinaryUrl($itemThumb);
                     $videoEmbed = 'https://www.youtube.com/embed/' . $ytId;
-                    $isActive = !empty($item['is_hero_featured']) || ($idx === 0 && empty($heroItem['is_hero_featured']));
+                    $isActive = (!empty($heroItem['id']) && !empty($item['id'])) ? ($heroItem['id'] === $item['id']) : ($idx === 0);
                     ?>
                     <div class="thumb-card <?php echo $isActive ? 'active' : ''; ?>" 
                          data-index="<?php echo $idx; ?>" 
@@ -272,7 +272,9 @@ $heroVideoUrl = 'https://www.youtube.com/embed/' . $heroYtId;
                          data-title="<?php echo htmlspecialchars($item['project_name']); ?>" 
                          data-img="<?php echo htmlspecialchars($thumbImg); ?>" 
                          data-video="<?php echo htmlspecialchars($videoEmbed); ?>">
-                        <div class="thumb-badge-now">NOW</div>
+                        <?php if ($isActive): ?>
+                            <div class="thumb-badge-now">NOW</div>
+                        <?php endif; ?>
                         <div class="thumb-img-wrapper">
                             <img src="<?php echo htmlspecialchars($thumbImg); ?>" alt="<?php echo htmlspecialchars($item['project_name']); ?>" onerror="this.src='https://i.ytimg.com/vi/<?php echo htmlspecialchars($ytId); ?>/hqdefault.jpg';">
                             <span class="thumb-time"><?php echo htmlspecialchars($item['duration']); ?></span>
@@ -405,25 +407,25 @@ $btsItems = $settings['bts_items'] ?? [
     </div>
 </div>
 
-<!-- Book a Discovery Call Section (Replicated from falhen.com screenshots) -->
+<!-- Book a Discovery Call Section (Replicated from reference mockup) -->
 <section class="section" id="lets-talk" style="background: #09090b; border-top: 1px solid rgba(255, 255, 255, 0.08);">
     <div class="container">
         <!-- Section Header -->
         <div class="section-title-wrapper" style="text-align: center; margin-bottom: 50px;">
-            <h2 class="section-title" style="font-size: 2.75rem; font-weight: 700;">Book a <span style="color: #dc2626;">Discovery Call</span></h2>
-            <p class="section-subtitle" style="max-width: 620px; margin: 0 auto; color: var(--text-muted); font-size: 1.05rem;">30 minutes. No sales pitch. Just a candid conversation about your project.</p>
+            <h2 class="section-title discovery-main-title">Book a <span style="color: #ef4444;">Discovery Call</span></h2>
+            <p class="section-subtitle discovery-main-subtitle">30 minutes. No sales pitch. Just a candid conversation about your project.</p>
         </div>
 
         <!-- 2-Column Discovery Call Layout -->
         <div class="discovery-grid">
-            <!-- Left Side: Hero Image & Feature Cards & Proof -->
+            <!-- Left Side: Hero Image & Feature Cards -->
             <div class="discovery-left">
                 <!-- Top Hero Image Box with Available Badge -->
                 <div class="discovery-hero-box">
-                    <img src="https://images.unsplash.com/photo-1574717024653-61fd2cf4d44d?q=80&w=1000&auto=format&fit=crop" alt="Discovery Call Studio">
+                    <img src="/assets/img/discovery_call.jpg" alt="Book a Discovery Call - Falhen Media">
                     <div class="discovery-hero-overlay">
                         <span class="discovery-available-pill">
-                            <span class="pulse-green-dot"></span> Available — Book your slot now
+                            <span class="pulse-green-dot"></span> Available &mdash; Book your slot now
                         </span>
                     </div>
                 </div>
@@ -432,30 +434,38 @@ $btsItems = $settings['bts_items'] ?? [
                 <div class="discovery-features-grid">
                     <!-- Feature 1 -->
                     <div class="discovery-feature-card">
-                        <div class="discovery-icon-box"><i class="fa-solid fa-clock"></i></div>
-                        <h4 class="discovery-feature-title">30-Min Deep Dive</h4>
-                        <p class="discovery-feature-desc">No fluff — just a focused conversation about your project and goals.</p>
+                        <div class="discovery-feature-header">
+                            <div class="discovery-icon-box"><i class="fa-regular fa-clock"></i></div>
+                            <h4 class="discovery-feature-title">30-Min Deep Dive</h4>
+                        </div>
+                        <p class="discovery-feature-desc">No fluff &mdash; just a focused conversation about your project and goals.</p>
                     </div>
 
                     <!-- Feature 2 -->
                     <div class="discovery-feature-card">
-                        <div class="discovery-icon-box"><i class="fa-solid fa-lightbulb"></i></div>
-                        <h4 class="discovery-feature-title">Creative Direction</h4>
+                        <div class="discovery-feature-header">
+                            <div class="discovery-icon-box"><i class="fa-regular fa-lightbulb"></i></div>
+                            <h4 class="discovery-feature-title">Creative Direction</h4>
+                        </div>
                         <p class="discovery-feature-desc">We'll give you initial ideas and directional thoughts on the spot.</p>
                     </div>
 
                     <!-- Feature 3 -->
                     <div class="discovery-feature-card">
-                        <div class="discovery-icon-box"><i class="fa-solid fa-file-lines"></i></div>
-                        <h4 class="discovery-feature-title">Proposal in 48hrs</h4>
+                        <div class="discovery-feature-header">
+                            <div class="discovery-icon-box"><i class="fa-regular fa-file-lines"></i></div>
+                            <h4 class="discovery-feature-title">Proposal in 48hrs</h4>
+                        </div>
                         <p class="discovery-feature-desc">A full scope, timeline, and budget proposal delivered fast after the call.</p>
                     </div>
 
                     <!-- Feature 4 -->
                     <div class="discovery-feature-card">
-                        <div class="discovery-icon-box"><i class="fa-solid fa-lock"></i></div>
-                        <h4 class="discovery-feature-title">Zero Commitment</h4>
-                        <p class="discovery-feature-desc">No pressure, no contracts — just a conversation between creators.</p>
+                        <div class="discovery-feature-header">
+                            <div class="discovery-icon-box"><i class="fa-solid fa-lock"></i></div>
+                            <h4 class="discovery-feature-title">Zero Commitment</h4>
+                        </div>
+                        <p class="discovery-feature-desc">No pressure, no contracts &mdash; just a conversation between creators.</p>
                     </div>
                 </div>
 
@@ -477,41 +487,32 @@ $btsItems = $settings['bts_items'] ?? [
                             <input type="text" name="full_name" class="discovery-input" placeholder="Jane Smith" required>
                         </div>
                         <div class="form-group">
-                            <label class="discovery-label">COMPANY</label>
-                            <input type="text" name="company" class="discovery-input" placeholder="Your Brand">
+                            <label class="discovery-label">EMAIL ADDRESS *</label>
+                            <input type="email" name="email" class="discovery-input" placeholder="jane@yourbrand.com" required>
                         </div>
                     </div>
 
                     <div class="form-group">
-                        <label class="discovery-label">EMAIL ADDRESS *</label>
-                        <input type="email" name="email" class="discovery-input" placeholder="jane@yourbrand.com" required>
-                    </div>
-
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
-                        <div class="form-group">
-                            <label class="discovery-label">SERVICE</label>
-                            <select name="service_type" class="discovery-input">
-                                <option value="">Select...</option>
-                                <option value="Video Production">Video Production</option>
-                                <option value="Post Production">Post Production</option>
-                                <option value="Live Streaming">Live Streaming</option>
-                                <option value="Animation & Motion">Animation & Motion</option>
-                                <option value="Wedding & Event">Wedding & Event</option>
-                                <option value="Commercial Photography">Commercial Photography</option>
+                        <label class="discovery-label">SERVICE</label>
+                        <div class="discovery-select-wrapper">
+                            <select name="service_type" class="discovery-input discovery-select" required>
+                                <option value="" disabled selected>Select...</option>
+                                <option value="Commercial Video & Ad Campaign">Commercial Video &amp; Ad Campaign</option>
+                                <option value="Brand Story & Documentary">Brand Story &amp; Documentary</option>
+                                <option value="Music Video & Creative Cinema">Music Video &amp; Creative Cinema</option>
+                                <option value="Post-Production & Color Grading">Post-Production &amp; Color Grading</option>
+                                <option value="Event Cinema & Live Coverage">Event Cinema &amp; Live Coverage</option>
+                                <option value="Social Media Content Retainer">Social Media Content Retainer</option>
                             </select>
                         </div>
-                        <div class="form-group">
-                            <label class="discovery-label">PREFERRED DATE</label>
-                            <input type="date" name="preferred_date" class="discovery-input">
-                        </div>
                     </div>
 
-                    <div class="form-group">
-                        <div style="display: flex; justify-content: space-between; align-items: center;">
-                            <label class="discovery-label">ABOUT YOUR PROJECT</label>
+                    <div class="form-group" style="position: relative;">
+                        <label class="discovery-label">ABOUT YOUR PROJECT</label>
+                        <textarea name="project_details" id="projectDetails" class="discovery-input discovery-textarea" maxlength="500" placeholder="Brief description of your project..."></textarea>
+                        <div class="char-count-wrapper">
                             <span class="char-count" id="charCount">0/500</span>
                         </div>
-                        <textarea name="project_desc" id="projectDesc" class="discovery-input discovery-textarea" maxlength="500" placeholder="Brief description of your project..."></textarea>
                     </div>
 
                     <button type="submit" class="btn-discovery-submit" id="submitInquiryBtn">
