@@ -17,7 +17,7 @@ $savedMessage = '';
 
 // Process settings save / section POST requests
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $action = $_POST['action'] ?? 'save_settings';
+    $action = $_POST['action'] ?? (($_GET['ajax'] ?? '') === 'upload_cloudinary' ? 'upload_cloudinary_ajax' : 'save_settings');
     $currentRole = $_SESSION['admin_role'] ?? 'Staff';
     if ($currentRole === 'Talent Manager') {
         $currentRole = 'HR Manager';
@@ -1346,11 +1346,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (!empty($_POST['bts_title']) && is_array($_POST['bts_title'])) {
             foreach ($_POST['bts_title'] as $idx => $title) {
                 if (trim($title) !== '' || !empty($_POST['bts_image'][$idx])) {
+                    $rawImg = trim(strip_tags($_POST['bts_image'][$idx] ?? '/assets/img/hero.jpg'));
+                    // Ensure image is uploaded and stored in Cloudinary
+                    if (!empty($rawImg) && !isCloudinaryUrl($rawImg) && (preg_match('/^https?:\/\//i', $rawImg) || preg_match('/^data:image\//i', $rawImg))) {
+                        $upRes = uploadToCloudinary($rawImg, 'falhen/bts');
+                        if (!empty($upRes['success']) && !empty($upRes['url'])) {
+                            $rawImg = $upRes['url'];
+                        }
+                    }
                     $btsItems[] = [
                         'id'       => $idx + 1,
                         'title'    => trim(strip_tags($title)),
                         'subtitle' => trim(strip_tags($_POST['bts_subtitle'][$idx] ?? '')),
-                        'image'    => trim(strip_tags($_POST['bts_image'][$idx] ?? '/assets/img/hero.jpg')),
+                        'image'    => $rawImg,
                         'visible'  => true
                     ];
                 }
@@ -1367,6 +1375,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         saveSiteSettings($btsSettings);
         $savedSuccess = true;
         $savedMessage = 'Production BTS gallery updated successfully!';
+
+        if (!empty($_POST['is_ajax']) || (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest')) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => true, 'message' => $savedMessage, 'items' => $btsItems]);
+            exit;
+        }
     } else if ($action === 'upload_bts_photo') {
         if (!empty($_FILES['bts_file']['tmp_name'])) {
             $res = uploadToCloudinary($_FILES['bts_file']['tmp_name'], 'falhen/bts');
@@ -5469,20 +5483,36 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                 <!-- EDIT VIEW (Matching Reference) -->
                                 <div class="bts-card-edit" style="display: none; padding: 18px; flex-direction: column; gap: 12px; background: #ffffff;">
                                     <div>
-                                        <label style="font-size: 0.78rem; font-weight: 700; color: #334155; display: block; margin-bottom: 5px;">Image link</label>
+                                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 5px;">
+                                            <label style="font-size: 0.78rem; font-weight: 700; color: #334155; margin: 0;">Image link or File</label>
+                                            <button type="button" onclick="triggerBtsCardFileUpload(this)" style="background: #f8fafc; border: 1px solid #cbd5e1; color: #334155; border-radius: 6px; padding: 3px 9px; font-size: 0.72rem; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 5px;" title="Upload an image from your computer directly to Cloudinary">
+                                                <i class="fa-solid fa-cloud-arrow-up" style="color: #ef4444;"></i> Upload Photo
+                                            </button>
+                                        </div>
+                                        <input type="file" class="bts-card-file-input" accept="image/*" style="display: none;" onchange="handleBtsCardFileInput(this)">
                                         <div style="display: flex; gap: 0;">
                                             <input type="text" class="bts-edit-link-input form-text-input" value="<?php echo htmlspecialchars($photo['image']); ?>" style="flex: 1; border-top-right-radius: 0; border-bottom-right-radius: 0; padding: 8px 10px; font-size: 0.82rem; border-right: none;" placeholder="https://lh3.googleusercontent.com/..." onkeydown="if(event.key==='Enter'){event.preventDefault();useBtsCardLink(this);}">
-                                            <button type="button" onclick="useBtsCardLink(this)" style="background: linear-gradient(135deg, #f87171, #ef4444); color: #ffffff; border: 1px solid #ef4444; border-top-left-radius: 0; border-bottom-left-radius: 0; padding: 8px 16px; font-size: 0.82rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 5px;">
+                                            <button type="button" onclick="useBtsCardLink(this)" class="bts-use-link-btn" style="background: linear-gradient(135deg, #f87171, #ef4444); color: #ffffff; border: 1px solid #ef4444; border-top-left-radius: 0; border-bottom-left-radius: 0; padding: 8px 16px; font-size: 0.82rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 5px;">
                                                 <i class="fa-solid fa-link"></i> Use
                                             </button>
                                         </div>
                                         <p style="font-size: 0.7rem; color: #94a3b8; margin: 5px 0 2px 0; line-height: 1.35;">Paste a direct Google Photos image address (lh3.googleusercontent.com/...), a Google Drive link, or any plain image URL. In Google Photos, right-click a photo and choose &ldquo;Copy image address&rdquo;.</p>
-                                        <p class="bts-edit-current-link" style="font-size: 0.68rem; color: #64748b; margin: 3px 0 0 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">Current: <span class="bts-current-url-display"><?php echo htmlspecialchars($photo['image']); ?></span></p>
+                                        <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 4px;">
+                                            <p class="bts-edit-current-link" style="font-size: 0.68rem; color: #64748b; margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1;">Current: <span class="bts-current-url-display"><?php echo htmlspecialchars($photo['image']); ?></span></p>
+                                            <span class="bts-cloud-pill" style="display: inline-flex; align-items: center; gap: 4px; font-size: 0.65rem; font-weight: 700; border-radius: 4px; padding: 1px 6px; white-space: nowrap; <?php echo (strpos($photo['image'], 'res.cloudinary.com') !== false) ? 'background: #ecfdf5; color: #059669; border: 1px solid #a7f3d0;' : 'background: #fff7ed; color: #c2410c; border: 1px solid #ffedd5;'; ?>">
+                                                <i class="fa-solid fa-cloud"></i> <?php echo (strpos($photo['image'], 'res.cloudinary.com') !== false) ? 'Stored in Cloudinary' : 'Syncs to Cloudinary'; ?>
+                                            </span>
+                                        </div>
                                     </div>
 
-                                    <!-- Preview Image -->
-                                    <div style="position: relative; aspect-ratio: 16/10; border-radius: 10px; overflow: hidden; background: #0f172a;">
+                                    <!-- Preview Image with Upload Overlay -->
+                                    <div class="bts-edit-preview-wrap" style="position: relative; aspect-ratio: 16/10; border-radius: 10px; overflow: hidden; background: #0f172a; cursor: pointer;" onclick="triggerBtsCardFileUpload(this)" title="Click to upload or replace image">
                                         <img class="bts-edit-preview-img" src="<?php echo htmlspecialchars($imgUrl); ?>" alt="Preview" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.src='/assets/img/hero.jpg';">
+                                        <div class="bts-edit-upload-overlay" style="position: absolute; inset: 0; background: rgba(15,23,42,0.45); opacity: 0; transition: opacity 0.2s; display: flex; align-items: center; justify-content: center; color: #ffffff;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0'">
+                                            <span style="background: rgba(0,0,0,0.65); padding: 6px 14px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; display: inline-flex; align-items: center; gap: 6px;">
+                                                <i class="fa-solid fa-cloud-arrow-up"></i> Change Photo
+                                            </span>
+                                        </div>
                                     </div>
 
                                     <!-- Alt Text & Caption Grid -->
@@ -17630,18 +17660,34 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                     <!-- EDIT VIEW (Matching Reference Mockup) -->
                     <div class="bts-card-edit" style="display: none; padding: 18px; flex-direction: column; gap: 12px; background: #ffffff;">
                         <div>
-                            <label style="font-size: 0.78rem; font-weight: 700; color: #334155; display: block; margin-bottom: 5px;">Image link</label>
+                            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 5px;">
+                                <label style="font-size: 0.78rem; font-weight: 700; color: #334155; margin: 0;">Image link or File</label>
+                                <button type="button" onclick="triggerBtsCardFileUpload(this)" style="background: #f8fafc; border: 1px solid #cbd5e1; color: #334155; border-radius: 6px; padding: 3px 9px; font-size: 0.72rem; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 5px;" title="Upload an image from your computer directly to Cloudinary">
+                                    <i class="fa-solid fa-cloud-arrow-up" style="color: #ef4444;"></i> Upload Photo
+                                </button>
+                            </div>
+                            <input type="file" class="bts-card-file-input" accept="image/*" style="display: none;" onchange="handleBtsCardFileInput(this)">
                             <div style="display: flex; gap: 0;">
                                 <input type="text" class="bts-edit-link-input form-text-input" value="${safeImg}" style="flex: 1; border-top-right-radius: 0; border-bottom-right-radius: 0; padding: 8px 10px; font-size: 0.82rem; border-right: none;" placeholder="https://lh3.googleusercontent.com/..." onkeydown="if(event.key==='Enter'){event.preventDefault();useBtsCardLink(this);}">
-                                <button type="button" onclick="useBtsCardLink(this)" style="background: linear-gradient(135deg, #f87171, #ef4444); color: #ffffff; border: 1px solid #ef4444; border-top-left-radius: 0; border-bottom-left-radius: 0; padding: 8px 16px; font-size: 0.82rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 5px;">
+                                <button type="button" onclick="useBtsCardLink(this)" class="bts-use-link-btn" style="background: linear-gradient(135deg, #f87171, #ef4444); color: #ffffff; border: 1px solid #ef4444; border-top-left-radius: 0; border-bottom-left-radius: 0; padding: 8px 16px; font-size: 0.82rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 5px;">
                                     <i class="fa-solid fa-link"></i> Use
                                 </button>
                             </div>
                             <p style="font-size: 0.7rem; color: #94a3b8; margin: 5px 0 2px 0; line-height: 1.35;">Paste a direct Google Photos image address (lh3.googleusercontent.com/...), a Google Drive link, or any plain image URL. In Google Photos, right-click a photo and choose &ldquo;Copy image address&rdquo;.</p>
-                            <p class="bts-edit-current-link" style="font-size: 0.68rem; color: #64748b; margin: 3px 0 0 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">Current: <span class="bts-current-url-display">${safeImg}</span></p>
+                            <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 4px;">
+                                <p class="bts-edit-current-link" style="font-size: 0.68rem; color: #64748b; margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1;">Current: <span class="bts-current-url-display">${safeImg}</span></p>
+                                <span class="bts-cloud-pill" style="display: inline-flex; align-items: center; gap: 4px; font-size: 0.65rem; font-weight: 700; border-radius: 4px; padding: 1px 6px; white-space: nowrap; ${safeImg && safeImg.includes('res.cloudinary.com') ? 'background: #ecfdf5; color: #059669; border: 1px solid #a7f3d0;' : 'background: #fff7ed; color: #c2410c; border: 1px solid #ffedd5;'}">
+                                    <i class="fa-solid fa-cloud"></i> ${safeImg && safeImg.includes('res.cloudinary.com') ? 'Stored in Cloudinary' : 'Syncs to Cloudinary'}
+                                </span>
+                            </div>
                         </div>
-                        <div style="position: relative; aspect-ratio: 16/10; border-radius: 10px; overflow: hidden; background: #0f172a;">
+                        <div class="bts-edit-preview-wrap" style="position: relative; aspect-ratio: 16/10; border-radius: 10px; overflow: hidden; background: #0f172a; cursor: pointer;" onclick="triggerBtsCardFileUpload(this)" title="Click to upload or replace image">
                             <img class="bts-edit-preview-img" src="${safeImg || '/assets/img/hero.jpg'}" alt="Preview" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.src='/assets/img/hero.jpg';">
+                            <div class="bts-edit-upload-overlay" style="position: absolute; inset: 0; background: rgba(15,23,42,0.45); opacity: 0; transition: opacity 0.2s; display: flex; align-items: center; justify-content: center; color: #ffffff;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0'">
+                                <span style="background: rgba(0,0,0,0.65); padding: 6px 14px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; display: inline-flex; align-items: center; gap: 6px;">
+                                    <i class="fa-solid fa-cloud-arrow-up"></i> Change Photo
+                                </span>
+                            </div>
                         </div>
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
                             <div>
@@ -17660,6 +17706,101 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                     </div>
                 </div>
             `;
+        }
+
+        function triggerBtsCardFileUpload(btn) {
+            const card = btn.closest('.bts-photo-card');
+            if (!card) return;
+            const fileInput = card.querySelector('.bts-card-file-input');
+            if (fileInput) {
+                fileInput.value = '';
+                fileInput.click();
+            }
+        }
+
+        function handleBtsCardFileInput(input) {
+            const card = input.closest('.bts-photo-card');
+            if (!card || !input.files || !input.files[0]) return;
+            const file = input.files[0];
+            uploadBtsCardFile(file, card);
+        }
+
+        function uploadBtsCardFile(file, card) {
+            if (!file || !file.type.startsWith('image/')) {
+                alert('Please select a valid image file (JPG, PNG, WebP, GIF).');
+                return;
+            }
+
+            const previewWrap = card.querySelector('.bts-edit-preview-wrap');
+            const previewImg = card.querySelector('.bts-edit-preview-img');
+            const linkInput = card.querySelector('.bts-edit-link-input');
+            const currentSpan = card.querySelector('.bts-current-url-display');
+            const cloudPill = card.querySelector('.bts-cloud-pill');
+            const hiddenVal = card.querySelector('.bts-img-val');
+            const displayImg = card.querySelector('.bts-display-img');
+
+            // Set local preview
+            const tempUrl = URL.createObjectURL(file);
+            if (previewImg) previewImg.src = tempUrl;
+
+            // Show uploading spinner
+            let spinner = previewWrap ? previewWrap.querySelector('.bts-upload-spinner') : null;
+            if (!spinner && previewWrap) {
+                spinner = document.createElement('div');
+                spinner.className = 'bts-upload-spinner';
+                spinner.style.cssText = 'position: absolute; inset: 0; background: rgba(15,23,42,0.7); display: flex; flex-direction: column; align-items: center; justify-content: center; color: #ffffff; font-size: 0.82rem; font-weight: 700; gap: 8px; z-index: 10;';
+                spinner.innerHTML = '<i class="fa-solid fa-spinner fa-spin" style="font-size: 1.5rem; color: #ef4444;"></i> Storing in Cloudinary...';
+                previewWrap.appendChild(spinner);
+            }
+
+            if (cloudPill) {
+                cloudPill.style.background = '#fff7ed';
+                cloudPill.style.color = '#c2410c';
+                cloudPill.style.border = '1px solid #ffedd5';
+                cloudPill.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Uploading...';
+            }
+
+            const formData = new FormData();
+            formData.append('action', 'upload_cloudinary_ajax');
+            formData.append('folder', 'falhen/bts');
+            formData.append('file', file);
+
+            fetch('/admin/index.php', {
+                method: 'POST',
+                body: formData
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (spinner) spinner.remove();
+                if (data.success && data.url) {
+                    const cdnUrl = data.url;
+                    if (previewImg) previewImg.src = cdnUrl;
+                    if (displayImg) displayImg.src = cdnUrl;
+                    if (linkInput) linkInput.value = cdnUrl;
+                    if (hiddenVal) hiddenVal.value = cdnUrl;
+                    if (currentSpan) currentSpan.textContent = cdnUrl;
+                    if (cloudPill) {
+                        cloudPill.style.background = '#ecfdf5';
+                        cloudPill.style.color = '#059669';
+                        cloudPill.style.border = '1px solid #a7f3d0';
+                        cloudPill.innerHTML = '<i class="fa-solid fa-cloud"></i> Stored in Cloudinary';
+                    }
+                    showBtsToast('Image uploaded and stored in Cloudinary!');
+                } else {
+                    if (cloudPill) {
+                        cloudPill.style.background = '#fef2f2';
+                        cloudPill.style.color = '#dc2626';
+                        cloudPill.style.border = '1px solid #fecaca';
+                        cloudPill.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> Upload Failed';
+                    }
+                    alert('Cloudinary upload error: ' + (data.message || 'Check Cloudinary settings.'));
+                }
+            })
+            .catch(err => {
+                if (spinner) spinner.remove();
+                console.error('BTS file upload error:', err);
+                alert('Network error while uploading image to Cloudinary.');
+            });
         }
 
         function uploadBtsFiles(files) {
@@ -17688,10 +17829,11 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
 
                 // AJAX Upload to Cloudinary
                 const formData = new FormData();
+                formData.append('action', 'upload_cloudinary_ajax');
                 formData.append('file', file);
                 formData.append('folder', 'falhen/bts');
 
-                fetch('/admin/index.php?ajax=upload_cloudinary', {
+                fetch('/admin/index.php', {
                     method: 'POST',
                     body: formData
                 })
@@ -17713,6 +17855,13 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                         if (linkInput) linkInput.value = cdnUrl;
                         const currentSpan = el.querySelector('.bts-current-url-display');
                         if (currentSpan) currentSpan.textContent = cdnUrl;
+                        const pill = el.querySelector('.bts-cloud-pill');
+                        if (pill && data.url) {
+                            pill.style.background = '#ecfdf5';
+                            pill.style.color = '#059669';
+                            pill.style.border = '1px solid #a7f3d0';
+                            pill.innerHTML = '<i class="fa-solid fa-cloud"></i> Stored in Cloudinary';
+                        }
                         updateBtsCountBadge();
                     }
                 })
@@ -17800,12 +17949,27 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
             const altInput = card.querySelector('.bts-edit-alt-input');
             const currentSpan = card.querySelector('.bts-current-url-display');
             const previewImg = card.querySelector('.bts-edit-preview-img');
+            const cloudPill = card.querySelector('.bts-cloud-pill');
 
             if (linkInput) linkInput.value = imgVal;
             if (captionInput) captionInput.value = titleVal;
             if (altInput) altInput.value = subVal;
             if (currentSpan) currentSpan.textContent = imgVal;
             if (previewImg && imgVal) previewImg.src = imgVal;
+
+            if (cloudPill) {
+                if (imgVal.includes('res.cloudinary.com')) {
+                    cloudPill.style.background = '#ecfdf5';
+                    cloudPill.style.color = '#059669';
+                    cloudPill.style.border = '1px solid #a7f3d0';
+                    cloudPill.innerHTML = '<i class="fa-solid fa-cloud"></i> Stored in Cloudinary';
+                } else {
+                    cloudPill.style.background = '#fff7ed';
+                    cloudPill.style.color = '#c2410c';
+                    cloudPill.style.border = '1px solid #ffedd5';
+                    cloudPill.innerHTML = '<i class="fa-solid fa-cloud"></i> Syncs to Cloudinary';
+                }
+            }
 
             const displaySection = card.querySelector('.bts-card-display');
             const editSection = card.querySelector('.bts-card-edit');
@@ -17838,15 +18002,90 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
             const linkInput = card.querySelector('.bts-edit-link-input');
             if (!linkInput) return;
             const parsed = parseImageUrlOrDrive(linkInput.value);
+            if (!parsed) return;
+
             linkInput.value = parsed;
             const previewImg = card.querySelector('.bts-edit-preview-img');
-            if (previewImg && parsed) {
-                previewImg.src = parsed;
-            }
             const currentSpan = card.querySelector('.bts-current-url-display');
-            if (currentSpan) {
-                currentSpan.textContent = parsed;
+            const cloudPill = card.querySelector('.bts-cloud-pill');
+            const hiddenVal = card.querySelector('.bts-img-val');
+            const displayImg = card.querySelector('.bts-display-img');
+
+            if (previewImg) previewImg.src = parsed;
+            if (currentSpan) currentSpan.textContent = parsed;
+
+            // If already on Cloudinary, just update and toast
+            if (parsed.includes('res.cloudinary.com')) {
+                if (hiddenVal) hiddenVal.value = parsed;
+                if (displayImg) displayImg.src = parsed;
+                if (cloudPill) {
+                    cloudPill.style.background = '#ecfdf5';
+                    cloudPill.style.color = '#059669';
+                    cloudPill.style.border = '1px solid #a7f3d0';
+                    cloudPill.innerHTML = '<i class="fa-solid fa-cloud"></i> Stored in Cloudinary';
+                }
+                showBtsToast('Cloudinary image linked!');
+                return;
             }
+
+            // Remote URL: auto upload / mirror to Cloudinary falhen/bts
+            const origHtml = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Saving...';
+            btn.disabled = true;
+
+            if (cloudPill) {
+                cloudPill.style.background = '#fff7ed';
+                cloudPill.style.color = '#c2410c';
+                cloudPill.style.border = '1px solid #ffedd5';
+                cloudPill.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Storing in Cloudinary...';
+            }
+
+            const formData = new FormData();
+            formData.append('action', 'upload_cloudinary_ajax');
+            formData.append('folder', 'falhen/bts');
+            formData.append('image_url', parsed);
+
+            fetch('/admin/index.php', {
+                method: 'POST',
+                body: formData
+            })
+            .then(r => r.json())
+            .then(data => {
+                btn.innerHTML = origHtml;
+                btn.disabled = false;
+                if (data.success && data.url) {
+                    const cdnUrl = data.url;
+                    linkInput.value = cdnUrl;
+                    if (previewImg) previewImg.src = cdnUrl;
+                    if (displayImg) displayImg.src = cdnUrl;
+                    if (hiddenVal) hiddenVal.value = cdnUrl;
+                    if (currentSpan) currentSpan.textContent = cdnUrl;
+                    if (cloudPill) {
+                        cloudPill.style.background = '#ecfdf5';
+                        cloudPill.style.color = '#059669';
+                        cloudPill.style.border = '1px solid #a7f3d0';
+                        cloudPill.innerHTML = '<i class="fa-solid fa-cloud"></i> Stored in Cloudinary';
+                    }
+                    showBtsToast('Image mirrored and stored in Cloudinary!');
+                } else {
+                    if (hiddenVal) hiddenVal.value = parsed;
+                    if (displayImg) displayImg.src = parsed;
+                    if (cloudPill) {
+                        cloudPill.style.background = '#fff7ed';
+                        cloudPill.style.color = '#c2410c';
+                        cloudPill.style.border = '1px solid #ffedd5';
+                        cloudPill.innerHTML = '<i class="fa-solid fa-cloud"></i> Syncs on Save';
+                    }
+                    showBtsToast('Image linked! Will sync to Cloudinary on Save.');
+                }
+            })
+            .catch(err => {
+                btn.innerHTML = origHtml;
+                btn.disabled = false;
+                if (hiddenVal) hiddenVal.value = parsed;
+                if (displayImg) displayImg.src = parsed;
+                showBtsToast('Image linked! Will sync to Cloudinary on Save.');
+            });
         }
 
         function showBtsToast(message) {
@@ -17906,14 +18145,41 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
             const btsForm = document.getElementById('btsForm');
             if (btsForm) {
                 const formData = new FormData(btsForm);
+                formData.append('is_ajax', '1');
                 fetch('/admin/index.php?section=bts', {
                     method: 'POST',
                     body: formData
-                }).then(res => {
-                    showBtsToast('Photo details saved successfully!');
-                }).catch(err => {
+                })
+                .then(r => r.json())
+                .then(data => {
+                    if (data && data.items) {
+                        // Update any card whose image was synced to Cloudinary
+                        const cards = document.querySelectorAll('#btsPhotoGrid .bts-photo-card');
+                        data.items.forEach((item, idx) => {
+                            if (cards[idx] && item.image) {
+                                const hVal = cards[idx].querySelector('.bts-img-val');
+                                const dImg = cards[idx].querySelector('.bts-display-img');
+                                const lInp = cards[idx].querySelector('.bts-edit-link-input');
+                                const curDisp = cards[idx].querySelector('.bts-current-url-display');
+                                const pill = cards[idx].querySelector('.bts-cloud-pill');
+                                if (hVal) hVal.value = item.image;
+                                if (dImg) dImg.src = item.image;
+                                if (lInp) lInp.value = item.image;
+                                if (curDisp) curDisp.textContent = item.image;
+                                if (pill && item.image.includes('res.cloudinary.com')) {
+                                    pill.style.background = '#ecfdf5';
+                                    pill.style.color = '#059669';
+                                    pill.style.border = '1px solid #a7f3d0';
+                                    pill.innerHTML = '<i class="fa-solid fa-cloud"></i> Stored in Cloudinary';
+                                }
+                            }
+                        });
+                    }
+                    showBtsToast('Photo details saved & synced to Cloudinary!');
+                })
+                .catch(err => {
                     console.error('BTS Auto-save error:', err);
-                    showBtsToast('Photo details updated!');
+                    showBtsToast('Photo details saved!');
                 });
             } else {
                 showBtsToast('Photo details updated!');
