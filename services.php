@@ -103,17 +103,27 @@ if (!empty($dynamicServices)) {
         position: relative;
         width: 100%;
         height: 220px;
-        overflow: hidden;
+        overflow: visible;
+        z-index: 5;
     }
 
-    .pro-card-image-wrap img {
+    .pro-card-img-inner {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        border-top-left-radius: 22px;
+        border-top-right-radius: 22px;
+    }
+
+    .pro-card-img-inner img {
         width: 100%;
         height: 100%;
         object-fit: cover;
         transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
-    .pro-service-card:hover .pro-card-image-wrap img {
+    .pro-service-card:hover .pro-card-img-inner img {
         transform: scale(1.08);
     }
 
@@ -141,7 +151,7 @@ if (!empty($dynamicServices)) {
 
     .pro-card-icon-floating {
         position: absolute;
-        bottom: -20px;
+        bottom: -22px;
         left: 24px;
         width: 48px;
         height: 48px;
@@ -151,21 +161,24 @@ if (!empty($dynamicServices)) {
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 1.15rem;
-        box-shadow: 0 6px 20px rgba(220, 38, 38, 0.5);
-        z-index: 3;
-        transition: transform 0.35s ease;
+        font-size: 1.25rem;
+        box-shadow: 0 8px 24px rgba(220, 38, 38, 0.45);
+        z-index: 10;
+        transition: transform 0.35s ease, box-shadow 0.35s ease;
     }
 
     .pro-service-card:hover .pro-card-icon-floating {
         transform: scale(1.1);
+        box-shadow: 0 10px 28px rgba(220, 38, 38, 0.65);
     }
 
     .pro-card-body {
-        padding: 32px 24px 24px 24px;
+        padding: 34px 24px 24px 24px;
         display: flex;
         flex-direction: column;
         flex-grow: 1;
+        position: relative;
+        z-index: 2;
     }
 
     .pro-card-title {
@@ -254,9 +267,23 @@ if (!empty($dynamicServices)) {
         }
         .pro-card-image-wrap {
             height: 160px !important;
+            overflow: visible !important;
+        }
+        .pro-card-img-inner {
+            border-top-left-radius: 20px !important;
+            border-top-right-radius: 20px !important;
+        }
+        .pro-card-icon-floating {
+            bottom: -20px !important;
+            left: 20px !important;
+            width: 44px !important;
+            height: 44px !important;
+            font-size: 1.15rem !important;
+            border-radius: 12px !important;
+            box-shadow: 0 6px 20px rgba(220, 38, 38, 0.5) !important;
         }
         .pro-card-body {
-            padding: 24px 18px 18px 18px !important;
+            padding: 30px 18px 18px 18px !important;
         }
         .pro-card-title {
             font-size: 1.2rem !important;
@@ -288,9 +315,11 @@ if (!empty($dynamicServices)) {
             <?php foreach ($servicesList as $s): ?>
                 <div class="pro-service-card" onclick="window.location.href='/service-single.php?slug=<?php echo htmlspecialchars($s['slug']); ?>'">
                     <div class="pro-card-image-wrap">
-                        <img src="<?php echo htmlspecialchars($s['image']); ?>" alt="<?php echo htmlspecialchars($s['title']); ?>">
-                        <div class="pro-card-gradient-overlay"></div>
-                        <span class="pro-card-top-badge"><?php echo htmlspecialchars($s['badge']); ?></span>
+                        <div class="pro-card-img-inner">
+                            <img src="<?php echo htmlspecialchars($s['image']); ?>" alt="<?php echo htmlspecialchars($s['title']); ?>">
+                            <div class="pro-card-gradient-overlay"></div>
+                            <span class="pro-card-top-badge"><?php echo htmlspecialchars($s['badge']); ?></span>
+                        </div>
                         <div class="pro-card-icon-floating">
                             <i class="<?php echo htmlspecialchars($s['icon']); ?>"></i>
                         </div>
