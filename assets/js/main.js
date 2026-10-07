@@ -276,13 +276,20 @@ document.addEventListener('DOMContentLoaded', () => {
         // Smooth scroll active thumbnail card into view within the carousel wrapper
         const wrapper = document.querySelector('.showcase-thumbs-wrapper');
         if (wrapper && activeCard) {
-          const cardLeft = activeCard.offsetLeft;
-          const cardWidth = activeCard.offsetWidth;
-          const wrapperWidth = wrapper.offsetWidth;
-          wrapper.scrollTo({
-            left: cardLeft - (wrapperWidth / 2) + (cardWidth / 2),
-            behavior: 'smooth'
-          });
+          if (window.innerWidth <= 768) {
+            wrapper.scrollTo({
+              left: activeCard.offsetLeft,
+              behavior: 'smooth'
+            });
+          } else {
+            const cardLeft = activeCard.offsetLeft;
+            const cardWidth = activeCard.offsetWidth;
+            const wrapperWidth = wrapper.offsetWidth;
+            wrapper.scrollTo({
+              left: cardLeft - (wrapperWidth / 2) + (cardWidth / 2),
+              behavior: 'smooth'
+            });
+          }
         }
       }
     };
