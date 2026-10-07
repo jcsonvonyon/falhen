@@ -4172,7 +4172,13 @@ textarea.form-control {
   .footer-top-accent-line,
   .footer-container,
   .footer-grid,
-  .footer-bottom {
+  .footer-bottom,
+  .service-footer-bar,
+  .project-footer-bar,
+  .gallery-footer-section,
+  .terms-footer-bar,
+  .privacy-footer-bar,
+  .dpa-footer-bar {
     display: none !important;
   }
 

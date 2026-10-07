@@ -795,6 +795,9 @@ $otherServices = array_filter($servicesRepo, function($item) use ($service) {
             .service-content-overlay {
                 background: linear-gradient(180deg, #000000 0%, rgba(0, 0, 0, 0.88) 12%, rgba(0, 0, 0, 0.96) 100%) !important;
             }
+            .service-footer-bar {
+                display: none !important;
+            }
         }
 
         @media (max-width: 600px) {
@@ -817,13 +820,7 @@ $otherServices = array_filter($servicesRepo, function($item) use ($service) {
                 grid-template-columns: 1fr;
             }
             .service-footer-bar {
-                flex-direction: column;
-                gap: 16px;
-                align-items: flex-start;
-            }
-            .service-footer-links {
-                flex-wrap: wrap;
-                gap: 16px;
+                display: none !important;
             }
         }
     </style>
