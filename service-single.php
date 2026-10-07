@@ -51,43 +51,6 @@ $otherServices = array_filter($servicesRepo, function($item) use ($service) {
             margin: 0;
             padding: 0;
             line-height: 1.6;
-            position: relative;
-            min-height: 100vh;
-        }
-
-        /* Cinematic Full-Page Background Atmosphere */
-        .service-backdrop-wrapper {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            z-index: 0;
-            pointer-events: none;
-            overflow: hidden;
-        }
-
-        .service-backdrop-image {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-size: cover;
-            background-position: <?php echo htmlspecialchars($service['focal_point_desktop'] ?? 'center 20%'); ?>;
-            background-repeat: no-repeat;
-            opacity: 0.9;
-            transform: scale(1.02);
-            filter: brightness(0.95);
-        }
-
-        .service-backdrop-gradient {
-            position: absolute;
-            inset: 0;
-            background: 
-                radial-gradient(circle at 80% 25%, rgba(0, 0, 0, 0.05) 0%, rgba(3, 3, 5, 0.72) 55%, #030305 100%),
-                linear-gradient(90deg, rgba(0, 0, 0, 0.96) 0%, rgba(3, 3, 5, 0.82) 36%, rgba(3, 3, 5, 0.35) 72%, transparent 100%),
-                linear-gradient(180deg, rgba(3, 3, 5, 0.15) 0%, rgba(3, 3, 5, 0.5) 45%, rgba(3, 3, 5, 0.88) 75%, #000000 100%);
         }
 
         /* Nav Bar */
@@ -150,17 +113,34 @@ $otherServices = array_filter($servicesRepo, function($item) use ($service) {
             transform: translateY(-1px);
         }
 
-        /* Hero Header Stage */
+        /* Hero Header Stage - Has its own background image, scrolls with page, fades to black at its foot */
         .service-hero-header {
             position: relative;
-            z-index: 2;
-            padding: 48px 0 54px 0;
+            background-image: url('<?php echo htmlspecialchars($service['hero_image']); ?>');
+            background-size: cover;
+            background-position: <?php echo htmlspecialchars($service['focal_point_desktop'] ?? 'center 20%'); ?>;
+            background-repeat: no-repeat;
+            background-attachment: scroll;
+            padding: 50px 0 100px 0;
+            overflow: hidden;
+        }
+
+        .service-hero-overlay {
+            position: absolute;
+            inset: 0;
+            background: 
+                linear-gradient(90deg, rgba(0, 0, 0, 0.90) 0%, rgba(0, 0, 0, 0.60) 42%, rgba(0, 0, 0, 0.15) 75%, transparent 100%),
+                linear-gradient(180deg, rgba(0, 0, 0, 0.35) 0%, rgba(0, 0, 0, 0.05) 25%, rgba(0, 0, 0, 0.25) 55%, rgba(0, 0, 0, 0.85) 85%, #000000 100%);
+            z-index: 1;
+            pointer-events: none;
         }
 
         .service-hero-container {
             max-width: 1360px;
             margin: 0 auto;
             padding: 0 32px;
+            position: relative;
+            z-index: 2;
         }
 
         /* Breadcrumb */
@@ -229,11 +209,33 @@ $otherServices = array_filter($servicesRepo, function($item) use ($service) {
             font-weight: 400;
         }
 
+        /* Content Area - Has its own background image, scrolls with page (not fixed) */
+        .service-content-section {
+            position: relative;
+            background-image: url('<?php echo htmlspecialchars($service['hero_image']); ?>');
+            background-size: cover;
+            background-position: center 30%;
+            background-repeat: no-repeat;
+            background-attachment: scroll;
+            background-color: #000000;
+            overflow: hidden;
+        }
+
+        .service-content-overlay {
+            position: absolute;
+            inset: 0;
+            background: 
+                linear-gradient(180deg, #000000 0%, rgba(0, 0, 0, 0.84) 10%, rgba(0, 0, 0, 0.70) 40%, rgba(0, 0, 0, 0.88) 85%, #000000 100%),
+                linear-gradient(90deg, rgba(0, 0, 0, 0.96) 0%, rgba(0, 0, 0, 0.86) 45%, rgba(0, 0, 0, 0.35) 100%);
+            z-index: 1;
+            pointer-events: none;
+        }
+
         /* Container */
         .service-main-container {
             max-width: 1360px;
             margin: 0 auto;
-            padding: 10px 32px 80px 32px;
+            padding: 30px 32px 80px 32px;
             position: relative;
             z-index: 2;
         }
@@ -767,14 +769,17 @@ $otherServices = array_filter($servicesRepo, function($item) use ($service) {
                 letter-spacing: -1px;
             }
             .service-hero-header {
-                padding: 32px 0 40px 0;
-            }
-            .service-backdrop-image {
+                padding: 32px 0 50px 0;
                 background-position: <?php echo htmlspecialchars($service['focal_point_mobile'] ?? 'center center'); ?> !important;
-                opacity: 0.65;
             }
-            .service-backdrop-gradient {
-                background: linear-gradient(180deg, rgba(3, 3, 5, 0.85) 0%, rgba(3, 3, 5, 0.95) 50%, #000000 100%) !important;
+            .service-content-section {
+                background-position: <?php echo htmlspecialchars($service['focal_point_mobile'] ?? 'center center'); ?> !important;
+            }
+            .service-hero-overlay {
+                background: linear-gradient(180deg, rgba(0, 0, 0, 0.82) 0%, rgba(0, 0, 0, 0.92) 50%, #000000 100%) !important;
+            }
+            .service-content-overlay {
+                background: linear-gradient(180deg, #000000 0%, rgba(0, 0, 0, 0.88) 12%, rgba(0, 0, 0, 0.96) 100%) !important;
             }
         }
 
@@ -810,12 +815,6 @@ $otherServices = array_filter($servicesRepo, function($item) use ($service) {
 </head>
 <body>
 
-    <!-- Cinematic Full-Page Background Atmosphere -->
-    <div class="service-backdrop-wrapper">
-        <div class="service-backdrop-image" style="background-image: url('<?php echo htmlspecialchars($service['hero_image']); ?>');"></div>
-        <div class="service-backdrop-gradient"></div>
-    </div>
-
     <!-- Header Navigation Bar -->
     <header class="service-nav-bar">
         <div class="service-nav-container">
@@ -831,8 +830,9 @@ $otherServices = array_filter($servicesRepo, function($item) use ($service) {
         </div>
     </header>
 
-    <!-- Hero Header Stage -->
+    <!-- Hero Header Stage - Own background image, scrolls with page, fades to black at foot -->
     <section class="service-hero-header">
+        <div class="service-hero-overlay"></div>
         <div class="service-hero-container">
             <!-- Breadcrumb Navigation -->
             <nav class="service-breadcrumb">
@@ -856,14 +856,17 @@ $otherServices = array_filter($servicesRepo, function($item) use ($service) {
         </div>
     </section>
 
-    <main class="service-main-container">
+    <!-- Content Area - Own background image, scrolls with page (not fixed) -->
+    <section class="service-content-section">
+        <div class="service-content-overlay"></div>
+        <main class="service-main-container">
 
-        <!-- Main Content 2-Column Grid -->
-        <div class="service-content-grid">
-            <!-- Left Main Column -->
-            <div>
-                <!-- About Section -->
-                <h2 class="service-section-title">About This Service</h2>
+            <!-- Main Content 2-Column Grid -->
+            <div class="service-content-grid">
+                <!-- Left Main Column -->
+                <div>
+                    <!-- About Section -->
+                    <h2 class="service-section-title">About This Service</h2>
                 <p class="service-about-paragraph"><?php echo htmlspecialchars($service['about']); ?></p>
 
                 <!-- What's Included Section -->
@@ -995,6 +998,7 @@ $otherServices = array_filter($servicesRepo, function($item) use ($service) {
         </footer>
 
     </main>
+    </section>
 
     <!-- Fixed Mobile Floating Bottom Dock Navigation Widget -->
     <nav class="mobile-bottom-dock">
