@@ -313,7 +313,7 @@ if (!empty($dynamicServices)) {
 
         <div class="services-pro-grid">
             <?php foreach ($servicesList as $s): ?>
-                <div class="pro-service-card" onclick="window.location.href='/service-single.php?slug=<?php echo htmlspecialchars($s['slug']); ?>'">
+                <div class="pro-service-card" onclick="window.location.href='/services/<?php echo htmlspecialchars($s['slug']); ?>'">
                     <div class="pro-card-image-wrap">
                         <div class="pro-card-img-inner">
                             <img src="<?php echo htmlspecialchars($s['image']); ?>" alt="<?php echo htmlspecialchars($s['title']); ?>">

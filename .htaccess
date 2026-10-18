@@ -7,24 +7,28 @@
     # RewriteCond %{HTTPS} off
     # RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
 
-    # Serve existing files and directories directly
+    # 1. Redirect /index.php to root /
+    RewriteCond %{THE_REQUEST} ^[A-Z]{3,}\s/+index\.php[\s?] [NC]
+    RewriteRule ^(.*)index\.php$ /$1 [R=301,L]
+
+    # 2. 301 Redirect direct browser requests for .php files to clean URLs (exclude /api/)
+    RewriteCond %{THE_REQUEST} ^[A-Z]{3,}\s/+(.+?)\.php[\s?] [NC]
+    RewriteCond %{REQUEST_URI} !^/api/ [NC]
+    RewriteRule ^ %1 [R=301,L]
+
+    # 3. Custom route aliases
+    RewriteRule ^dashboard/?$ admin/login.php [L]
+    RewriteRule ^services/([^/]+)/?$ service-single.php?slug=$1 [QSA,L]
+
+    # 4. Serve existing physical files and directories directly (images, css, js, etc.)
     RewriteCond %{REQUEST_FILENAME} -f [OR]
     RewriteCond %{REQUEST_FILENAME} -d
     RewriteRule ^ - [L]
 
-    # Legal & Services URL rewriting
-    RewriteRule ^dashboard/?$ admin/login.php [L]
-    RewriteRule ^privacy/?$ privacy.php [L]
-    RewriteRule ^terms/?$ terms.php [L]
-    RewriteRule ^cookies/?$ cookies.php [L]
-    RewriteRule ^dpa/?$ dpa.php [L]
-    RewriteRule ^faq/?$ faq.php [L]
-    RewriteRule ^vendor-onboarding/?$ vendor-onboarding.php [L]
-    RewriteRule ^services/([^/]+)/?$ service-single.php?slug=$1 [QSA,L]
-
-    # Remove .php extension from URLs
+    # 5. Internally rewrite extensionless URLs to corresponding .php files
+    RewriteCond %{DOCUMENT_ROOT}/$1.php -f [OR]
     RewriteCond %{REQUEST_FILENAME}.php -f
-    RewriteRule ^([^/]+)/?$ $1.php [QSA,L]
+    RewriteRule ^([^/]+)/?$ $1.php [L,QSA]
 </IfModule>
 
 # Security Headers & Cache Settings

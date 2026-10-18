@@ -27,23 +27,23 @@
 
         <!-- Center: Horizontal Main Nav -->
         <nav class="footer-center-nav" aria-label="Footer Navigation">
-            <a href="/about.php">About</a>
-            <a href="/services.php">Services</a>
-            <a href="/portfolio.php">Portfolio</a>
-            <a href="/blog.php">Blog</a>
-            <a href="/contact.php">Contact</a>
+            <a href="/about">About</a>
+            <a href="/services">Services</a>
+            <a href="/portfolio">Portfolio</a>
+            <a href="/blog">Blog</a>
+            <a href="/contact">Contact</a>
         </nav>
 
         <!-- Right: Copyright & Legal / Admin Links -->
         <div class="footer-right-block">
             <div class="footer-copy-text">&copy; <?php echo date('Y'); ?> Falhen Media. All rights reserved.</div>
             <div class="footer-legal-links">
-                <a href="/privacy.php">Privacy</a>
-                <a href="/terms.php">Terms</a>
-                <a href="/cookies.php" data-open-cookies="true" class="cookie-settings-link">Cookies</a>
-                <a href="/dpa.php">DPA</a>
-                <a href="/contact.php">Unsubscribe</a>
-                <a href="/admin/login.php" class="dashboard-link">Dashboard</a>
+                <a href="/privacy">Privacy</a>
+                <a href="/terms">Terms</a>
+                <a href="/cookies" data-open-cookies="true" class="cookie-settings-link">Cookies</a>
+                <a href="/dpa">DPA</a>
+                <a href="/contact">Unsubscribe</a>
+                <a href="/dashboard" class="dashboard-link">Dashboard</a>
             </div>
         </div>
     </div>
@@ -55,23 +55,26 @@
 </button>
 
 <!-- Fixed Mobile Floating Bottom Dock Navigation Widget -->
+<?php
+$footerSlug = isset($currentSlug) ? $currentSlug : preg_replace('/\.php$/', '', basename($_SERVER['PHP_SELF']));
+?>
 <nav class="mobile-bottom-dock">
-    <a href="/" class="dock-item <?php echo ($currentPage == 'index.php' || $currentPage == '') ? 'active' : ''; ?>">
+    <a href="/" class="dock-item <?php echo ($footerSlug == 'index' || $footerSlug == '') ? 'active' : ''; ?>">
         <div class="dock-icon-box"><i class="fa-solid fa-house"></i></div>
         <span class="dock-label">HOME</span>
     </a>
     
-    <a href="/services.php" class="dock-item <?php echo ($currentPage == 'services.php') ? 'active' : ''; ?>">
+    <a href="/services" class="dock-item <?php echo ($footerSlug == 'services' || $footerSlug == 'service-single') ? 'active' : ''; ?>">
         <div class="dock-icon-box"><i class="fa-solid fa-briefcase"></i></div>
         <span class="dock-label">SERVICES</span>
     </a>
     
-    <a href="/portfolio.php" class="dock-item <?php echo ($currentPage == 'portfolio.php') ? 'active' : ''; ?>">
+    <a href="/portfolio" class="dock-item <?php echo ($footerSlug == 'portfolio' || str_starts_with($footerSlug, 'portfolio-')) ? 'active' : ''; ?>">
         <div class="dock-icon-box"><i class="fa-solid fa-film"></i></div>
         <span class="dock-label">WORK</span>
     </a>
     
-    <a href="/contact.php" class="dock-item <?php echo ($currentPage == 'contact.php') ? 'active' : ''; ?>">
+    <a href="/contact" class="dock-item <?php echo ($footerSlug == 'contact') ? 'active' : ''; ?>">
         <div class="dock-icon-box"><i class="fa-solid fa-envelope"></i></div>
         <span class="dock-label">CONTACT</span>
     </a>

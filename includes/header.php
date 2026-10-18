@@ -10,6 +10,7 @@ if (!headers_sent()) {
 }
 
 $currentPage = basename($_SERVER['PHP_SELF']);
+$currentSlug = preg_replace('/\.php$/', '', $currentPage);
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -64,10 +65,10 @@ $currentPage = basename($_SERVER['PHP_SELF']);
         <nav class="nav-center">
             <ul class="nav-menu">
                 <li class="nav-item">
-                    <a href="/" class="nav-link <?php echo ($currentPage == 'index.php' || $currentPage == '') ? 'active' : ''; ?>">
+                    <a href="/" class="nav-link <?php echo ($currentSlug == 'index' || $currentSlug == '') ? 'active' : ''; ?>">
                         <span class="mobile-nav-icon"><i class="fa-solid fa-house"></i></span>
                         <span class="nav-text">Home</span>
-                        <?php if ($currentPage == 'index.php' || $currentPage == ''): ?>
+                        <?php if ($currentSlug == 'index' || $currentSlug == ''): ?>
                             <span class="mobile-nav-badge"><i class="fa-solid fa-circle-check"></i></span>
                         <?php endif; ?>
                     </a>
@@ -75,11 +76,11 @@ $currentPage = basename($_SERVER['PHP_SELF']);
                 
                 <!-- Services Mega Dropdown -->
                 <li class="nav-item dropdown">
-                    <a href="/services.php" class="nav-link <?php echo ($currentPage == 'services.php') ? 'active' : ''; ?>">
+                    <a href="/services" class="nav-link <?php echo ($currentSlug == 'services' || $currentSlug == 'service-single') ? 'active' : ''; ?>">
                         <span class="mobile-nav-icon"><i class="fa-solid fa-briefcase"></i></span>
                         <span class="nav-text">Services</span>
                         <i class="fa-solid fa-chevron-down dropdown-arrow"></i>
-                        <?php if ($currentPage == 'services.php'): ?>
+                        <?php if ($currentSlug == 'services' || $currentSlug == 'service-single'): ?>
                             <span class="mobile-nav-badge"><i class="fa-solid fa-circle-check"></i></span>
                         <?php endif; ?>
                     </a>
@@ -87,49 +88,49 @@ $currentPage = basename($_SERVER['PHP_SELF']);
                     <!-- Mobile Services Accordion Sub-List -->
                     <ul class="mobile-sub-menu">
                         <li>
-                            <a href="/services.php" class="mobile-sub-link" style="font-weight: 700; color: #ef4444;">
+                            <a href="/services" class="mobile-sub-link" style="font-weight: 700; color: #ef4444;">
                                 <i class="fa-solid fa-list-check mobile-sub-icon" style="color: #ef4444;"></i>
                                 <span>All Services Overview</span>
                             </a>
                         </li>
                         <li>
-                            <a href="/services.php#video-production" class="mobile-sub-link">
+                            <a href="/services#video-production" class="mobile-sub-link">
                                 <i class="fa-solid fa-play mobile-sub-icon"></i>
                                 <span>Video Production</span>
                             </a>
                         </li>
                         <li>
-                            <a href="/services.php#live-streaming" class="mobile-sub-link">
+                            <a href="/services#live-streaming" class="mobile-sub-link">
                                 <i class="fa-solid fa-video mobile-sub-icon"></i>
                                 <span>Live Streaming</span>
                             </a>
                         </li>
                         <li>
-                            <a href="/services.php#post-production" class="mobile-sub-link">
+                            <a href="/services#post-production" class="mobile-sub-link">
                                 <i class="fa-solid fa-pen mobile-sub-icon"></i>
                                 <span>Post Production</span>
                             </a>
                         </li>
                         <li>
-                            <a href="/services.php#animation" class="mobile-sub-link">
+                            <a href="/services#animation" class="mobile-sub-link">
                                 <i class="fa-solid fa-star mobile-sub-icon"></i>
                                 <span>Animation & Motion Graphics</span>
                             </a>
                         </li>
                         <li>
-                            <a href="/services.php#content-strategy" class="mobile-sub-link">
+                            <a href="/services#content-strategy" class="mobile-sub-link">
                                 <i class="fa-solid fa-newspaper mobile-sub-icon"></i>
                                 <span>Content Strategy</span>
                             </a>
                         </li>
                         <li>
-                            <a href="/services.php#photography" class="mobile-sub-link">
+                            <a href="/services#photography" class="mobile-sub-link">
                                 <i class="fa-solid fa-camera mobile-sub-icon"></i>
                                 <span>Photography</span>
                             </a>
                         </li>
                         <li>
-                            <a href="/services.php#weddings" class="mobile-sub-link">
+                            <a href="/services#weddings" class="mobile-sub-link">
                                 <i class="fa-solid fa-heart mobile-sub-icon"></i>
                                 <span>Wedding & Events</span>
                             </a>
@@ -140,7 +141,7 @@ $currentPage = basename($_SERVER['PHP_SELF']);
                         <div class="mega-dropdown-grid">
                             <!-- Left Column -->
                             <div class="mega-dropdown-col">
-                                <a href="/services.php#video-production" class="mega-dropdown-item">
+                                <a href="/services#video-production" class="mega-dropdown-item">
                                     <div class="mega-icon-box"><i class="fa-solid fa-play"></i></div>
                                     <div class="mega-item-text">
                                         <div class="mega-item-title">Video Production</div>
@@ -148,7 +149,7 @@ $currentPage = basename($_SERVER['PHP_SELF']);
                                     </div>
                                 </a>
 
-                                <a href="/services.php#post-production" class="mega-dropdown-item">
+                                <a href="/services#post-production" class="mega-dropdown-item">
                                     <div class="mega-icon-box"><i class="fa-solid fa-pen"></i></div>
                                     <div class="mega-item-text">
                                         <div class="mega-item-title">Post Production</div>
@@ -156,7 +157,7 @@ $currentPage = basename($_SERVER['PHP_SELF']);
                                     </div>
                                 </a>
 
-                                <a href="/services.php#content-strategy" class="mega-dropdown-item">
+                                <a href="/services#content-strategy" class="mega-dropdown-item">
                                     <div class="mega-icon-box"><i class="fa-solid fa-newspaper"></i></div>
                                     <div class="mega-item-text">
                                         <div class="mega-item-title">Content Strategy</div>
@@ -164,7 +165,7 @@ $currentPage = basename($_SERVER['PHP_SELF']);
                                     </div>
                                 </a>
 
-                                <a href="/services.php#weddings" class="mega-dropdown-item">
+                                <a href="/services#weddings" class="mega-dropdown-item">
                                     <div class="mega-icon-box"><i class="fa-solid fa-heart"></i></div>
                                     <div class="mega-item-text">
                                         <div class="mega-item-title">Wedding & Events</div>
@@ -175,7 +176,7 @@ $currentPage = basename($_SERVER['PHP_SELF']);
 
                             <!-- Right Column -->
                             <div class="mega-dropdown-col">
-                                <a href="/services.php#live-streaming" class="mega-dropdown-item">
+                                <a href="/services#live-streaming" class="mega-dropdown-item">
                                     <div class="mega-icon-box"><i class="fa-solid fa-video"></i></div>
                                     <div class="mega-item-text">
                                         <div class="mega-item-title">Live Streaming</div>
@@ -183,7 +184,7 @@ $currentPage = basename($_SERVER['PHP_SELF']);
                                     </div>
                                 </a>
 
-                                <a href="/services.php#animation" class="mega-dropdown-item">
+                                <a href="/services#animation" class="mega-dropdown-item">
                                     <div class="mega-icon-box"><i class="fa-solid fa-star"></i></div>
                                     <div class="mega-item-text">
                                         <div class="mega-item-title">Animation & Motion Graphics</div>
@@ -191,7 +192,7 @@ $currentPage = basename($_SERVER['PHP_SELF']);
                                     </div>
                                 </a>
 
-                                <a href="/services.php#photography" class="mega-dropdown-item">
+                                <a href="/services#photography" class="mega-dropdown-item">
                                     <div class="mega-icon-box"><i class="fa-solid fa-camera"></i></div>
                                     <div class="mega-item-text">
                                         <div class="mega-item-title">Photography</div>
@@ -204,43 +205,43 @@ $currentPage = basename($_SERVER['PHP_SELF']);
                         <!-- Mega Dropdown Footer -->
                         <div class="mega-dropdown-footer">
                             <span class="mega-footer-count">7 services available</span>
-                            <a href="/services.php" class="mega-footer-link">View all services <i class="fa-solid fa-arrow-right"></i></a>
+                            <a href="/services" class="mega-footer-link">View all services <i class="fa-solid fa-arrow-right"></i></a>
                         </div>
                     </div>
                 </li>
                 
                 <li class="nav-item">
-                    <a href="/portfolio.php" class="nav-link <?php echo ($currentPage == 'portfolio.php') ? 'active' : ''; ?>">
+                    <a href="/portfolio" class="nav-link <?php echo ($currentSlug == 'portfolio' || str_starts_with($currentSlug, 'portfolio-')) ? 'active' : ''; ?>">
                         <span class="mobile-nav-icon"><i class="fa-solid fa-images"></i></span>
                         <span class="nav-text">Portfolio</span>
-                        <?php if ($currentPage == 'portfolio.php'): ?>
+                        <?php if ($currentSlug == 'portfolio' || str_starts_with($currentSlug, 'portfolio-')): ?>
                             <span class="mobile-nav-badge"><i class="fa-solid fa-circle-check"></i></span>
                         <?php endif; ?>
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a href="/blog.php" class="nav-link <?php echo ($currentPage == 'blog.php') ? 'active' : ''; ?>">
+                    <a href="/blog" class="nav-link <?php echo ($currentSlug == 'blog' || $currentSlug == 'blog-single') ? 'active' : ''; ?>">
                         <span class="mobile-nav-icon"><i class="fa-solid fa-newspaper"></i></span>
                         <span class="nav-text">Blog</span>
-                        <?php if ($currentPage == 'blog.php'): ?>
+                        <?php if ($currentSlug == 'blog' || $currentSlug == 'blog-single'): ?>
                             <span class="mobile-nav-badge"><i class="fa-solid fa-circle-check"></i></span>
                         <?php endif; ?>
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a href="/about.php" class="nav-link <?php echo ($currentPage == 'about.php') ? 'active' : ''; ?>">
+                    <a href="/about" class="nav-link <?php echo ($currentSlug == 'about') ? 'active' : ''; ?>">
                         <span class="mobile-nav-icon"><i class="fa-solid fa-user"></i></span>
                         <span class="nav-text">About</span>
-                        <?php if ($currentPage == 'about.php'): ?>
+                        <?php if ($currentSlug == 'about'): ?>
                             <span class="mobile-nav-badge"><i class="fa-solid fa-circle-check"></i></span>
                         <?php endif; ?>
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a href="/contact.php" class="nav-link <?php echo ($currentPage == 'contact.php') ? 'active' : ''; ?>">
+                    <a href="/contact" class="nav-link <?php echo ($currentSlug == 'contact') ? 'active' : ''; ?>">
                         <span class="mobile-nav-icon"><i class="fa-solid fa-envelope"></i></span>
                         <span class="nav-text">Contact</span>
-                        <?php if ($currentPage == 'contact.php'): ?>
+                        <?php if ($currentSlug == 'contact'): ?>
                             <span class="mobile-nav-badge"><i class="fa-solid fa-circle-check"></i></span>
                         <?php endif; ?>
                     </a>
@@ -249,7 +250,7 @@ $currentPage = basename($_SERVER['PHP_SELF']);
 
             <!-- Mobile Drawer Bottom CTA -->
             <div class="mobile-menu-cta">
-                <a href="/contact.php" class="btn btn-mobile-cta">
+                <a href="/contact" class="btn btn-mobile-cta">
                     <i class="fa-solid fa-envelope"></i> Contact Us
                 </a>
             </div>
@@ -257,7 +258,7 @@ $currentPage = basename($_SERVER['PHP_SELF']);
         
         <!-- Header Right CTA Button -->
         <div class="nav-right">
-            <a href="/contact.php" class="btn btn-contact-nav">
+            <a href="/contact" class="btn btn-contact-nav">
                 <i class="fa-solid fa-envelope"></i> Contact Us
             </a>
         </div>

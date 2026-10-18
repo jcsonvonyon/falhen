@@ -830,13 +830,13 @@ $otherServices = array_filter($servicesRepo, function($item) use ($service) {
     <!-- Header Navigation Bar -->
     <header class="service-nav-bar">
         <div class="service-nav-container">
-            <a href="/services.php" class="service-back-link">
+            <a href="/services" class="service-back-link">
                 <i class="fa-solid fa-arrow-left"></i> Back
             </a>
             <a href="/" class="service-logo-center">
                 <img src="/assets/img/icons/logo.png" alt="Falhen Logo">
             </a>
-            <a href="/contact.php" class="btn-service-contact">
+            <a href="/contact" class="btn-service-contact">
                 <i class="fa-solid fa-envelope"></i> Contact Us
             </a>
         </div>
@@ -917,10 +917,10 @@ $otherServices = array_filter($servicesRepo, function($item) use ($service) {
                         </div>
                         <h3 class="ready-card-title">Ready to get started?</h3>
                         <p class="ready-card-desc">Tell us about your project and we'll put together a tailored proposal within 24 hours.</p>
-                        <a href="/contact.php" class="btn-action-primary">
+                        <a href="/contact" class="btn-action-primary">
                             <i class="fa-regular fa-envelope"></i> Contact Us
                         </a>
-                        <a href="/services.php" class="btn-action-secondary">
+                        <a href="/services" class="btn-action-secondary">
                             View All Services
                         </a>
                     </div>
@@ -1005,11 +1005,11 @@ $otherServices = array_filter($servicesRepo, function($item) use ($service) {
             <div>© 2026 Falhen Media. All rights reserved.</div>
             <div class="service-footer-links">
                 <a href="/">Home</a>
-                <a href="/about.php">About</a>
-                <a href="/services.php">Services</a>
-                <a href="/portfolio.php">Portfolio</a>
-                <a href="/careers.php">Careers</a>
-                <a href="/contact.php">Contact</a>
+                <a href="/about">About</a>
+                <a href="/services">Services</a>
+                <a href="/portfolio">Portfolio</a>
+                <a href="/careers">Careers</a>
+                <a href="/contact">Contact</a>
             </div>
         </footer>
 
@@ -1022,15 +1022,15 @@ $otherServices = array_filter($servicesRepo, function($item) use ($service) {
             <div class="dock-icon-box"><i class="fa-solid fa-house"></i></div>
             <span class="dock-label">HOME</span>
         </a>
-        <a href="/services.php" class="dock-item active">
+        <a href="/services" class="dock-item active">
             <div class="dock-icon-box"><i class="fa-solid fa-briefcase"></i></div>
             <span class="dock-label">SERVICES</span>
         </a>
-        <a href="/portfolio.php" class="dock-item">
+        <a href="/portfolio" class="dock-item">
             <div class="dock-icon-box"><i class="fa-solid fa-film"></i></div>
             <span class="dock-label">WORK</span>
         </a>
-        <a href="/contact.php" class="dock-item">
+        <a href="/contact" class="dock-item">
             <div class="dock-icon-box"><i class="fa-solid fa-envelope"></i></div>
             <span class="dock-label">CONTACT</span>
         </a>

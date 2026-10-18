@@ -931,7 +931,7 @@ foreach ($rawMembers as $m) {
         <div class="about-nav-container">
             <a href="/" class="about-back-link"><i class="fa-solid fa-arrow-left"></i> Back to Home</a>
             <a href="/"><img src="/assets/img/icons/logo.png" alt="Falhen Logo" style="height: 38px;"></a>
-            <a href="/contact.php" class="btn-contact-top">Contact Us</a>
+            <a href="/contact" class="btn-contact-top">Contact Us</a>
         </div>
     </nav>
 
@@ -954,9 +954,9 @@ foreach ($rawMembers as $m) {
                     <p class="who-we-are-p">Our commitment to excellence, innovation, and client satisfaction has earned us recognition in the industry and the trust of brands worldwide.</p>
 
                     <div class="action-btns-row">
-                        <a href="/contact.php" class="btn-work-red">Work With Us</a>
-                        <a href="/portfolio.php" class="btn-dark-glass">View Portfolio</a>
-                        <a href="/team.php" class="btn-dark-glass">View Team</a>
+                        <a href="/contact" class="btn-work-red">Work With Us</a>
+                        <a href="/portfolio" class="btn-dark-glass">View Portfolio</a>
+                        <a href="/team" class="btn-dark-glass">View Team</a>
                     </div>
                 </div>
 
@@ -1120,9 +1120,9 @@ foreach ($rawMembers as $m) {
                 <div>© 2026 Falhen Media. All rights reserved.</div>
                 <div class="about-footer-links">
                     <a href="/">Home</a>
-                    <a href="/portfolio.php">Portfolio</a>
-                    <a href="/portfolio.php">Blog</a>
-                    <a href="/contact.php">Contact</a>
+                    <a href="/portfolio">Portfolio</a>
+                    <a href="/blog">Blog</a>
+                    <a href="/contact">Contact</a>
                 </div>
             </div>
         </div>
@@ -1144,6 +1144,7 @@ foreach ($rawMembers as $m) {
             alert('Thank you! Your message has been sent successfully. We will get back to you within 24 hours.');
             e.target.reset();
             if (aboutCharCounter) aboutCharCounter.textContent = '0/500';
+        }
     </script>
 
     <!-- Fixed Mobile Floating Bottom Dock Navigation Widget -->
@@ -1152,15 +1153,15 @@ foreach ($rawMembers as $m) {
             <div class="dock-icon-box"><i class="fa-solid fa-house"></i></div>
             <span class="dock-label">HOME</span>
         </a>
-        <a href="/services.php" class="dock-item">
+        <a href="/services" class="dock-item">
             <div class="dock-icon-box"><i class="fa-solid fa-briefcase"></i></div>
             <span class="dock-label">SERVICES</span>
         </a>
-        <a href="/portfolio.php" class="dock-item">
+        <a href="/portfolio" class="dock-item">
             <div class="dock-icon-box"><i class="fa-solid fa-film"></i></div>
             <span class="dock-label">WORK</span>
         </a>
-        <a href="/contact.php" class="dock-item">
+        <a href="/contact" class="dock-item">
             <div class="dock-icon-box"><i class="fa-solid fa-envelope"></i></div>
             <span class="dock-label">CONTACT</span>
         </a>
