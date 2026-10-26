@@ -3099,7 +3099,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'wrap_time'           => trim($_POST['wrap_time'] ?? '06:00 PM'),
             'location'            => trim($_POST['location'] ?? 'Falhen Soundstage, Lagos'),
             'role'                => trim($_POST['role'] ?? 'Lead Videographer'),
-            'day_rate'            => trim($_POST['day_rate'] ?? '₦150,000 / day'),
+            'day_rate'            => trim($_POST['day_rate'] ?? ''),
             'status'              => trim($_POST['status'] ?? 'assigned'),
             'assigned_to_ref'     => $vendor['reference_code'] ?? $assignedRef,
             'assigned_to_email'   => $vendor['email'] ?? '',
@@ -16291,7 +16291,6 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                             <th style="padding: 14px 20px;">Shoot / Gig</th>
                                             <th style="padding: 14px 20px;">Date &amp; Call Time</th>
                                             <th style="padding: 14px 20px;">Assigned Talent</th>
-                                            <th style="padding: 14px 20px;">Day Rate</th>
                                             <th style="padding: 14px 14px;">Status</th>
                                             <th style="padding: 14px 20px;">Call Sheet &amp; Deliverables</th>
                                             <th style="padding: 14px 20px; text-align: right;">Actions</th>
@@ -16366,9 +16365,6 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                                         + Assign Talent
                                                     </button>
                                                 <?php endif; ?>
-                                            </td>
-                                            <td style="padding: 14px 20px; font-weight: 700; color: #0f172a; white-space: nowrap;">
-                                                <?php echo htmlspecialchars($gRate); ?>
                                             </td>
                                             <td style="padding: 14px 14px;">
                                                 <form method="POST" action="/admin/index.php?section=vendors" style="display: inline-block;">
@@ -16830,18 +16826,14 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                 <input type="text" name="location" id="editGigLocation" required placeholder="e.g. Studio A - 6 Olorunfunmi Street, Pedro, Gbagada, Lagos" style="width: 100%; padding: 9px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.88rem;">
                             </div>
 
-                            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 14px;">
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px;">
                                 <div>
                                     <label style="display: block; font-size: 0.8rem; font-weight: 700; color: #334155; margin-bottom: 5px;">Required Role *</label>
-                                    <input type="text" name="role" id="editGigRole" required value="Lead Videographer & Director of Photography" placeholder="e.g. Lead Videographer" style="width: 100%; padding: 9px 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.88rem;">
-                                </div>
-                                <div>
-                                    <label style="display: block; font-size: 0.8rem; font-weight: 700; color: #334155; margin-bottom: 5px;">Day Rate / Fee *</label>
-                                    <input type="text" name="day_rate" id="editGigRate" value="₦180,000 / day" placeholder="e.g. ₦180,000 / day" style="width: 100%; padding: 9px 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.88rem;">
+                                    <input type="text" name="role" id="editGigRole" required value="Lead Videographer & Director of Photography" placeholder="e.g. Lead Videographer" style="width: 100%; padding: 9px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.88rem;">
                                 </div>
                                 <div>
                                     <label style="display: block; font-size: 0.8rem; font-weight: 700; color: #334155; margin-bottom: 5px;">Status *</label>
-                                    <select name="status" id="editGigStatus" style="width: 100%; padding: 9px 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.88rem; background: #ffffff;">
+                                    <select name="status" id="editGigStatus" style="width: 100%; padding: 9px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.88rem; background: #ffffff;">
                                         <option value="assigned">Assigned</option>
                                         <option value="confirmed">Confirmed by Talent</option>
                                         <option value="done">Done / Wrapped</option>
@@ -17134,7 +17126,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                     document.getElementById('editGigWrapTime').value = '06:00 PM';
                     document.getElementById('editGigLocation').value = 'Studio A - 6 Olorunfunmi Street, Pedro, Gbagada, Lagos';
                     document.getElementById('editGigRole').value = 'Lead Videographer & Director of Photography';
-                    document.getElementById('editGigRate').value = '₦180,000 / day';
+                    if (document.getElementById('editGigRate')) document.getElementById('editGigRate').value = '';
                     document.getElementById('editGigStatus').value = 'assigned';
                     document.getElementById('editGigDirector').value = 'Oluwatosin Ligali (Executive Producer)';
                     document.getElementById('editGigDirectorPhone').value = '08027487449';
@@ -17165,7 +17157,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                     document.getElementById('editGigWrapTime').value = g.wrap_time || '06:00 PM';
                     document.getElementById('editGigLocation').value = g.location || '';
                     document.getElementById('editGigRole').value = g.role || '';
-                    document.getElementById('editGigRate').value = g.day_rate || '';
+                    if (document.getElementById('editGigRate')) document.getElementById('editGigRate').value = g.day_rate || '';
                     document.getElementById('editGigStatus').value = g.status || 'assigned';
                     document.getElementById('editGigDirector').value = g.director || '';
                     document.getElementById('editGigDirectorPhone').value = g.director_phone || '';
