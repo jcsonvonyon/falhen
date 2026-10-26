@@ -3111,7 +3111,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'notes'               => trim($_POST['notes'] ?? '')
         ];
 
-        // Preserve existing call sheet URLs if not replaced
+        // Preserve existing call sheet URLs & schedule CSV if not replaced
         $existingGig = getVendorGigById($gigId);
         if ($existingGig) {
             $gigData['call_sheet_name'] = $existingGig['call_sheet_name'] ?? ('CallSheet_' . $gigId . '.pdf');
@@ -3119,11 +3119,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $gigData['uploaded_call_sheet'] = $existingGig['uploaded_call_sheet'] ?? '';
             $gigData['uploaded_call_sheet_name'] = $existingGig['uploaded_call_sheet_name'] ?? '';
             $gigData['uploaded_call_sheet_at'] = $existingGig['uploaded_call_sheet_at'] ?? '';
+            $gigData['schedule_csv_url'] = $existingGig['schedule_csv_url'] ?? '';
+            $gigData['schedule_csv_name'] = $existingGig['schedule_csv_name'] ?? '';
+            $gigData['schedule_items'] = $existingGig['schedule_items'] ?? [];
         } else {
             $gigData['call_sheet_name'] = 'CallSheet_' . $gigId . '.pdf';
             $gigData['call_sheet_url'] = '/download_call_sheet.php?gig_id=' . urlencode($gigId);
             $gigData['uploaded_call_sheet'] = '';
             $gigData['uploaded_call_sheet_name'] = '';
+            $gigData['schedule_csv_url'] = '';
+            $gigData['schedule_csv_name'] = '';
+            $gigData['schedule_items'] = [];
         }
 
         // Handle Call Sheet File Upload if provided
@@ -3140,6 +3146,49 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 if (move_uploaded_file($f['tmp_name'], $targetDir . $safeName)) {
                     $gigData['call_sheet_url'] = '/uploads/callsheets/' . $safeName;
                     $gigData['call_sheet_name'] = $f['name'];
+                }
+            }
+        }
+
+        // Handle Production Schedule CSV Upload if provided
+        if (!empty($_FILES['schedule_csv_file']['name']) && $_FILES['schedule_csv_file']['error'] === UPLOAD_ERR_OK) {
+            $fCsv = $_FILES['schedule_csv_file'];
+            $csvExt = strtolower(pathinfo($fCsv['name'], PATHINFO_EXTENSION));
+            if ($csvExt === 'csv' || str_contains($fCsv['type'] ?? '', 'csv') || str_contains($fCsv['type'] ?? '', 'text/plain')) {
+                $targetCsvDir = __DIR__ . '/../uploads/schedules/';
+                if (!is_dir($targetCsvDir)) {
+                    @mkdir($targetCsvDir, 0777, true);
+                }
+                $safeCsvName = 'Schedule_' . preg_replace('/[^a-zA-Z0-9_\.-]/', '_', $gigId) . '_' . time() . '.csv';
+                if (move_uploaded_file($fCsv['tmp_name'], $targetCsvDir . $safeCsvName)) {
+                    $gigData['schedule_csv_url'] = '/uploads/schedules/' . $safeCsvName;
+                    $gigData['schedule_csv_name'] = $fCsv['name'];
+
+                    // Parse CSV rows into structured schedule items
+                    $parsedItems = [];
+                    if (($handle = fopen($targetCsvDir . $safeCsvName, 'r')) !== false) {
+                        $rowIndex = 0;
+                        while (($data = fgetcsv($handle, 2000, ',')) !== false) {
+                            $rowIndex++;
+                            if ($rowIndex === 1) {
+                                $firstCol = strtolower(trim($data[0] ?? ''));
+                                if ($firstCol === 'time' || str_contains($firstCol, 'time')) {
+                                    continue;
+                                }
+                            }
+                            if (empty(array_filter($data))) continue;
+                            $parsedItems[] = [
+                                'time'        => trim($data[0] ?? ''),
+                                'scene'       => trim($data[1] ?? ''),
+                                'description' => trim($data[2] ?? ''),
+                                'personnel'   => trim($data[3] ?? '')
+                            ];
+                        }
+                        fclose($handle);
+                    }
+                    if (!empty($parsedItems)) {
+                        $gigData['schedule_items'] = $parsedItems;
+                    }
                 }
             }
         }
@@ -16857,9 +16906,25 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                 <input type="text" name="deliverables_status" id="editGigDeliverables" value="Pending Shoot Execution" placeholder="e.g. Footage Transferred &amp; Verified" style="width: 100%; padding: 9px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.88rem;">
                             </div>
 
-                            <div style="margin-bottom: 14px;">
-                                <label style="display: block; font-size: 0.8rem; font-weight: 700; color: #334155; margin-bottom: 5px;">Call Sheet Document (.pdf / .docx) <span style="font-weight: 400; color: #64748b;">(Optional &mdash; auto-generated if blank)</span></label>
-                                <input type="file" name="call_sheet_file" accept=".pdf,.doc,.docx,.jpg,.png" style="width: 100%; padding: 8px; border: 1px dashed #cbd5e1; border-radius: 8px; font-size: 0.84rem; background: #f8fafc;">
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px;">
+                                <div>
+                                    <label style="display: block; font-size: 0.8rem; font-weight: 700; color: #334155; margin-bottom: 5px;">Call Sheet Document (.pdf / .docx) <span style="font-weight: 400; color: #64748b;">(Optional)</span></label>
+                                    <input type="file" name="call_sheet_file" accept=".pdf,.doc,.docx,.jpg,.png" style="width: 100%; padding: 8px; border: 1px dashed #cbd5e1; border-radius: 8px; font-size: 0.84rem; background: #f8fafc;">
+                                </div>
+                                <div>
+                                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                                        <label style="font-size: 0.8rem; font-weight: 700; color: #334155;">
+                                            Schedule Breakdown (.csv)
+                                        </label>
+                                        <a href="data:text/csv;charset=utf-8,Time%2CSegment%20%2F%20Scene%2CDescription%20%26%20Setup%2CKey%20Personnel%0A09%3A30%20AM%2CCrew%20Call%20%26%20Equipment%20Load-in%2C%22Lighting%20rig%20setup%2C%20gimbal%20balance%2C%20wireless%20video%20link%20calibration.%22%2CCamera%20Crew%20%26%20Gaffer%0A10%3A00%20AM%2CScene%201%20%26%20Principal%20Photography%2C%22Hero%20motion%20tracking%2C%20high-speed%2060fps%20editorial%20passes.%22%2CAll%20Crew%0A01%3A30%20PM%2CCatering%20%26%20Lunch%20Break%20(45%20Mins)%2C%22Hot%20lunch%20served%20at%20studio%20commissary%20%E2%80%A2%20battery%20recharge.%22%2CAll%20Production%0A05%3A30%20PM%2CShoot%20Wrap%20%26%20Media%20Handover%2C%22Dual-card%20DIT%20data%20verification%2C%20call%20sheet%20sign-off.%22%2CAll%20Crew%20%26%20Producer" download="production_schedule_template.csv" style="font-size: 0.72rem; color: #2563eb; text-decoration: none; font-weight: 700; display: inline-flex; align-items: center; gap: 3px;" title="Download sample CSV template">
+                                            <i class="fa-solid fa-download"></i> Sample CSV
+                                        </a>
+                                    </div>
+                                    <input type="file" name="schedule_csv_file" id="editGigScheduleCsv" accept=".csv,text/csv" style="width: 100%; padding: 8px; border: 1px dashed #cbd5e1; border-radius: 8px; font-size: 0.84rem; background: #f8fafc;">
+                                    <div id="currentScheduleCsvNote" style="display: none; font-size: 0.74rem; color: #15803d; font-weight: 600; margin-top: 4px;">
+                                        <i class="fa-solid fa-circle-check"></i> Current: <span id="currentScheduleCsvName"></span>
+                                    </div>
+                                </div>
                             </div>
 
                             <div style="margin-bottom: 20px;">
@@ -17126,6 +17191,8 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                     document.getElementById('editGigDirectorPhone').value = '08027487449';
                     document.getElementById('editGigDeliverables').value = 'Pending Shoot Execution';
                     if (document.getElementById('editGigPayment')) document.getElementById('editGigPayment').value = '';
+                    if (document.getElementById('editGigScheduleCsv')) document.getElementById('editGigScheduleCsv').value = '';
+                    if (document.getElementById('currentScheduleCsvNote')) document.getElementById('currentScheduleCsvNote').style.display = 'none';
                     document.getElementById('editGigNotes').value = '';
 
                     var modal = document.getElementById('gigEditModal');
@@ -17157,6 +17224,17 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                     document.getElementById('editGigDirectorPhone').value = g.director_phone || '';
                     document.getElementById('editGigDeliverables').value = g.deliverables_status || 'Pending Shoot Execution';
                     if (document.getElementById('editGigPayment')) document.getElementById('editGigPayment').value = g.payment_status || '';
+                    if (document.getElementById('editGigScheduleCsv')) document.getElementById('editGigScheduleCsv').value = '';
+                    var scNote = document.getElementById('currentScheduleCsvNote');
+                    var scName = document.getElementById('currentScheduleCsvName');
+                    if (scNote && scName) {
+                        if (g.schedule_csv_name || g.schedule_csv_url) {
+                            scName.textContent = g.schedule_csv_name || 'Uploaded Schedule CSV';
+                            scNote.style.display = 'block';
+                        } else {
+                            scNote.style.display = 'none';
+                        }
+                    }
                     document.getElementById('editGigNotes').value = g.notes || '';
 
                     var modal = document.getElementById('gigEditModal');

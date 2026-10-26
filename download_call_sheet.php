@@ -487,20 +487,58 @@ $refCode = $vendor['reference_code'] ?? ($gig['assigned_to_ref'] ?? 'FAL-VND-CRE
                         <span class="val" style="font-family: monospace; font-size: 0.95rem;"><?php echo htmlspecialchars($callTime); ?> (On-Set)</span>
                     </div>
                     <div class="cs-row">
-                        <span class="lbl">Agreed Rate / Compensation</span>
-                        <span class="val"><?php echo htmlspecialchars($gig['day_rate'] ?? 'Per SOW'); ?></span>
-                    </div>
-                    <div class="cs-row">
                         <span class="lbl">Executive Producer / Director</span>
                         <span class="val"><?php echo htmlspecialchars($director); ?> &bull; <?php echo htmlspecialchars($directorPhone); ?></span>
                     </div>
                 </div>
             </div>
 
+            <?php
+            // Load or parse production schedule
+            $scheduleItems = $gig['schedule_items'] ?? [];
+            if (empty($scheduleItems) && !empty($gig['schedule_csv_url'])) {
+                $csvLocalPath = __DIR__ . $gig['schedule_csv_url'];
+                if (file_exists($csvLocalPath) && ($hCsv = fopen($csvLocalPath, 'r')) !== false) {
+                    $rCount = 0;
+                    while (($rData = fgetcsv($hCsv, 2000, ',')) !== false) {
+                        $rCount++;
+                        if ($rCount === 1 && str_contains(strtolower(trim($rData[0] ?? '')), 'time')) {
+                            continue;
+                        }
+                        if (empty(array_filter($rData))) continue;
+                        $scheduleItems[] = [
+                            'time'        => trim($rData[0] ?? ''),
+                            'scene'       => trim($rData[1] ?? ''),
+                            'description' => trim($rData[2] ?? ''),
+                            'personnel'   => trim($rData[3] ?? '')
+                        ];
+                    }
+                    fclose($hCsv);
+                }
+            }
+
+            // Default sequence breakdown if no CSV uploaded
+            if (empty($scheduleItems)) {
+                $scheduleItems = [
+                    ['time' => $callTime, 'scene' => 'Crew Call & Equipment Load-in', 'description' => 'Lighting rig setup, gimbal balance, wireless video link calibration.', 'personnel' => 'Camera Crew & Gaffer'],
+                    ['time' => '09:15 AM', 'scene' => 'Wardrobe & Lighting Check', 'description' => 'Talent staging, color temperature white balance, sound check.', 'personnel' => 'Director, Talent & Audio'],
+                    ['time' => '10:00 AM', 'scene' => 'Scene 1 & Principal Photography', 'description' => 'Hero motion tracking, high-speed 60fps editorial passes.', 'personnel' => 'All Crew'],
+                    ['time' => '01:30 PM', 'scene' => 'Catering & Lunch Break (45 Mins)', 'description' => 'Hot lunch served at studio commissary • battery recharge.', 'personnel' => 'All Production'],
+                    ['time' => '02:30 PM', 'scene' => 'Scene 2 & Commercial BTS', 'description' => 'Close-up product details, dynamic moving shots, b-roll.', 'personnel' => 'Camera & BTS Ops'],
+                    ['time' => $wrapTime, 'scene' => 'Shoot Wrap & Media Handover', 'description' => 'Dual-card DIT data verification, call sheet sign-off.', 'personnel' => 'All Crew & Producer'],
+                ];
+            }
+            ?>
+
             <!-- Timeline / Shooting Schedule -->
             <div class="cs-section">
-                <div class="cs-section-title">
-                    <i class="fa-solid fa-clock"></i> Production Schedule &amp; Sequence Breakdown
+                <div class="cs-section-title" style="display: flex; justify-content: space-between; align-items: center;">
+                    <div><i class="fa-solid fa-clock"></i> Production Schedule &amp; Sequence Breakdown</div>
+                    <?php if (!empty($gig['schedule_csv_url'])): ?>
+                        <a href="<?php echo htmlspecialchars($gig['schedule_csv_url']); ?>" download style="font-size: 0.72rem; color: #2563eb; text-decoration: none; font-weight: 700; text-transform: none; display: inline-flex; align-items: center; gap: 4px;">
+                            <i class="fa-solid fa-file-csv"></i> <?php echo htmlspecialchars($gig['schedule_csv_name'] ?? 'Download CSV'); ?>
+                        </a>
+                    <?php endif; ?>
                 </div>
                 <table class="cs-table">
                     <thead>
@@ -512,42 +550,24 @@ $refCode = $vendor['reference_code'] ?? ($gig['assigned_to_ref'] ?? 'FAL-VND-CRE
                         </tr>
                     </thead>
                     <tbody>
-                        <tr>
-                            <td style="font-family: monospace; font-weight: 700;"><?php echo htmlspecialchars($callTime); ?></td>
-                            <td>Crew Call &amp; Equipment Load-in</td>
-                            <td>Lighting rig setup, gimbal balance, wireless video link calibration.</td>
-                            <td>Camera Crew &amp; Gaffer</td>
-                        </tr>
-                        <tr>
-                            <td style="font-family: monospace; font-weight: 700;">09:15 AM</td>
-                            <td>Wardrobe &amp; Lighting Check</td>
-                            <td>Talent staging, color temperature white balance, sound check.</td>
-                            <td>Director, Talent &amp; Audio</td>
-                        </tr>
-                        <tr>
-                            <td style="font-family: monospace; font-weight: 700;">10:00 AM</td>
-                            <td>Scene 1 &amp; Principal Photography</td>
-                            <td>Hero motion tracking, high-speed 60fps editorial passes.</td>
-                            <td>All Crew</td>
-                        </tr>
-                        <tr>
-                            <td style="font-family: monospace; font-weight: 700;">01:30 PM</td>
-                            <td>Catering &amp; Lunch Break (45 Mins)</td>
-                            <td>Hot lunch served at studio commissary &bull; battery recharge.</td>
-                            <td>All Production</td>
-                        </tr>
-                        <tr>
-                            <td style="font-family: monospace; font-weight: 700;">02:30 PM</td>
-                            <td>Scene 2 &amp; Commercial BTS</td>
-                            <td>Close-up product details, dynamic moving shots, b-roll.</td>
-                            <td>Camera &amp; BTS Ops</td>
-                        </tr>
-                        <tr>
-                            <td style="font-family: monospace; font-weight: 700; color: #dc2626;"><?php echo htmlspecialchars($wrapTime); ?></td>
-                            <td>Shoot Wrap &amp; Media Handover</td>
-                            <td>Dual-card DIT data verification, call sheet sign-off.</td>
-                            <td>All Crew &amp; Producer</td>
-                        </tr>
+                        <?php foreach ($scheduleItems as $sIdx => $sItem): 
+                            $isLast = ($sIdx === count($scheduleItems) - 1);
+                        ?>
+                            <tr>
+                                <td style="font-family: monospace; font-weight: 700; <?php echo $isLast ? 'color: #dc2626;' : ''; ?>">
+                                    <?php echo htmlspecialchars($sItem['time'] ?? ''); ?>
+                                </td>
+                                <td style="font-weight: 600; color: #0f172a;">
+                                    <?php echo htmlspecialchars($sItem['scene'] ?? ''); ?>
+                                </td>
+                                <td style="color: #475569;">
+                                    <?php echo htmlspecialchars($sItem['description'] ?? ''); ?>
+                                </td>
+                                <td style="font-weight: 500; color: #334155;">
+                                    <?php echo htmlspecialchars($sItem['personnel'] ?? ''); ?>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
                     </tbody>
                 </table>
             </div>
