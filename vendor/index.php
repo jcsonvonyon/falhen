@@ -2294,9 +2294,11 @@ $displayBreadcrumb = $sectionTitles[$activeSection] ?? 'Dashboard';
                                             <div style="font-size: 0.84rem; font-weight: 700; color: #0f172a;">
                                                 <i class="fa-solid fa-cloud-arrow-up" style="color: #2563eb;"></i> <?php echo htmlspecialchars($gig['deliverables_status'] ?? 'Delivered'); ?>
                                             </div>
-                                            <div style="font-size: 0.74rem; color: #15803d; font-weight: 600;">
-                                                <?php echo htmlspecialchars($gig['payment_status'] ?? 'Processed via Stripe Direct Deposit'); ?>
-                                            </div>
+                                            <?php if (!empty($gig['payment_status'])): ?>
+                                                <div style="font-size: 0.74rem; color: #15803d; font-weight: 600;">
+                                                    <?php echo htmlspecialchars($gig['payment_status']); ?>
+                                                </div>
+                                            <?php endif; ?>
                                         </td>
                                         <td data-label="Call Sheet">
                                             <a href="/download_call_sheet.php?gig_id=<?php echo urlencode($gig['id']); ?>" target="_blank" class="btn-header-action" style="font-size: 0.78rem; padding: 6px 10px;">

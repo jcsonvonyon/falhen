@@ -3107,7 +3107,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'director'            => trim($_POST['director'] ?? 'Oluwatosin Ligali (Executive Producer)'),
             'director_phone'      => trim($_POST['director_phone'] ?? '08027487449'),
             'deliverables_status' => trim($_POST['deliverables_status'] ?? 'Pending Shoot Execution'),
-            'payment_status'      => trim($_POST['payment_status'] ?? 'Pending'),
+            'payment_status'      => trim($_POST['payment_status'] ?? ''),
             'notes'               => trim($_POST['notes'] ?? '')
         ];
 
@@ -16852,15 +16852,9 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                 </div>
                             </div>
 
-                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px;">
-                                <div>
-                                    <label style="display: block; font-size: 0.8rem; font-weight: 700; color: #334155; margin-bottom: 5px;">Deliverables Status</label>
-                                    <input type="text" name="deliverables_status" id="editGigDeliverables" value="Pending Shoot Execution" placeholder="e.g. Footage Transferred &amp; Verified" style="width: 100%; padding: 9px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.88rem;">
-                                </div>
-                                <div>
-                                    <label style="display: block; font-size: 0.8rem; font-weight: 700; color: #334155; margin-bottom: 5px;">Payment / Payout Status</label>
-                                    <input type="text" name="payment_status" id="editGigPayment" value="Pending" placeholder="e.g. Disbursed via Stripe / Bank" style="width: 100%; padding: 9px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.88rem;">
-                                </div>
+                            <div style="margin-bottom: 14px;">
+                                <label style="display: block; font-size: 0.8rem; font-weight: 700; color: #334155; margin-bottom: 5px;">Deliverables Status</label>
+                                <input type="text" name="deliverables_status" id="editGigDeliverables" value="Pending Shoot Execution" placeholder="e.g. Footage Transferred &amp; Verified" style="width: 100%; padding: 9px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.88rem;">
                             </div>
 
                             <div style="margin-bottom: 14px;">
@@ -17131,7 +17125,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                     document.getElementById('editGigDirector').value = 'Oluwatosin Ligali (Executive Producer)';
                     document.getElementById('editGigDirectorPhone').value = '08027487449';
                     document.getElementById('editGigDeliverables').value = 'Pending Shoot Execution';
-                    document.getElementById('editGigPayment').value = 'Pending';
+                    if (document.getElementById('editGigPayment')) document.getElementById('editGigPayment').value = '';
                     document.getElementById('editGigNotes').value = '';
 
                     var modal = document.getElementById('gigEditModal');
@@ -17162,7 +17156,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                     document.getElementById('editGigDirector').value = g.director || '';
                     document.getElementById('editGigDirectorPhone').value = g.director_phone || '';
                     document.getElementById('editGigDeliverables').value = g.deliverables_status || 'Pending Shoot Execution';
-                    document.getElementById('editGigPayment').value = g.payment_status || 'Pending';
+                    if (document.getElementById('editGigPayment')) document.getElementById('editGigPayment').value = g.payment_status || '';
                     document.getElementById('editGigNotes').value = g.notes || '';
 
                     var modal = document.getElementById('gigEditModal');
