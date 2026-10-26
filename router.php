@@ -10,7 +10,7 @@ if ($uri === '/index.php') {
 }
 
 // Redirect direct .php requests to clean extensionless URLs (e.g. /contact.php -> /contact)
-if (preg_match('#^/(.+)\.php$#', $uri, $matches) && !str_starts_with($uri, '/api/')) {
+if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'GET' && preg_match('#^/(.+)\.php$#', $uri, $matches) && !str_starts_with($uri, '/api/')) {
     $cleanPath = '/' . $matches[1];
     $queryString = !empty($_SERVER['QUERY_STRING']) ? '?' . $_SERVER['QUERY_STRING'] : '';
     header("Location: " . $cleanPath . $queryString, true, 301);
@@ -23,7 +23,7 @@ if ($uri !== '/' && file_exists($filePath) && !is_dir($filePath)) {
 }
 
 // 2. Custom route aliases
-if ($uri === '/dashboard' || $uri === '/dashboard/') {
+if ($uri === '/dashboard' || $uri === '/dashboard/' || $uri === '/admin/login' || $uri === '/admin/login/') {
     require __DIR__ . '/admin/login.php';
     return;
 }

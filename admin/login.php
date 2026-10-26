@@ -11,7 +11,7 @@ require_once __DIR__ . '/../includes/smtp_mailer.php';
 // Handle logout action
 if (isset($_GET['action']) && $_GET['action'] === 'logout') {
     clearAdminSession();
-    header('Location: /admin/login.php?logged_out=1');
+    header('Location: /dashboard?logged_out=1');
     exit;
 }
 
@@ -1046,7 +1046,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <h1 class="section-title">Staff Sign In</h1>
                     <p class="section-subtitle">Access the admin dashboard</p>
 
-                    <form method="POST" action="/admin/login.php?view=staff" style="width: 100%;">
+                    <form method="POST" action="?view=staff" style="width: 100%;">
                         <input type="hidden" name="action" value="login">
                         <input type="hidden" name="portal_type" value="staff">
                         <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrfToken); ?>">
@@ -1129,7 +1129,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <h1 class="section-title" style="font-size: 1.4rem;">Reset Password</h1>
                     <p class="section-subtitle">Enter your staff email address for recovery instructions.</p>
 
-                    <form method="POST" action="/admin/login.php?view=forgot" style="width: 100%;">
+                    <form method="POST" action="?view=forgot" style="width: 100%;">
                         <input type="hidden" name="action" value="forgot_password">
                         <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrfToken); ?>">
 
@@ -1153,7 +1153,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <h1 class="section-title" style="font-size: 1.4rem;">Set Up Your Account</h1>
                     <p class="section-subtitle">Enter your details and invitation code to activate portal access.</p>
 
-                    <form method="POST" action="/admin/login.php?view=setup" style="width: 100%;">
+                    <form method="POST" action="?view=setup" style="width: 100%;">
                         <input type="hidden" name="action" value="setup_account">
                         <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrfToken); ?>">
 
@@ -1187,7 +1187,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <h1 class="section-title" style="font-size: 1.4rem;">Client Gallery Portal</h1>
                     <p class="section-subtitle">Enter your client email address to receive your gallery access link.</p>
 
-                    <form method="POST" action="/admin/login.php?view=client" style="width: 100%;">
+                    <form method="POST" action="?view=client" style="width: 100%;">
                         <input type="hidden" name="action" value="login">
                         <input type="hidden" name="portal_type" value="client">
                         <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrfToken); ?>">
@@ -1218,7 +1218,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <h1 class="section-title">Vendor Portal</h1>
                     <p class="section-subtitle">Sign in to your contractor dashboard</p>
 
-                    <form method="POST" action="/admin/login.php?view=vendor" style="width: 100%;">
+                    <form method="POST" action="?view=vendor" style="width: 100%;">
                         <input type="hidden" name="action" value="login">
                         <input type="hidden" name="portal_type" value="vendor">
                         <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrfToken); ?>">
@@ -1297,7 +1297,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <?php endif; ?>
                     </div>
 
-                    <form method="POST" action="/admin/login.php?view=activation" style="width: 100%;">
+                    <form method="POST" action="?view=activation" style="width: 100%;">
                         <input type="hidden" name="action" value="verify_activation_code">
                         <input type="hidden" name="activation_user" value="<?php echo htmlspecialchars($pendingActivationUser ?? ''); ?>">
                         <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrfToken); ?>">
@@ -1312,7 +1312,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         </button>
                     </form>
 
-                    <form method="POST" action="/admin/login.php?view=activation" style="width: 100%; margin-top: 14px;">
+                    <form method="POST" action="?view=activation" style="width: 100%; margin-top: 14px;">
                         <input type="hidden" name="action" value="resend_activation_code">
                         <input type="hidden" name="activation_user" value="<?php echo htmlspecialchars($pendingActivationUser ?? ''); ?>">
                         <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrfToken); ?>">
