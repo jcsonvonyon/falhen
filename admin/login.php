@@ -26,6 +26,9 @@ $success = '';
 if (isset($_GET['logged_out'])) {
     $success = 'You have successfully signed out.';
 }
+if (isset($_GET['pwd_set'])) {
+    $success = 'Password created successfully! Please sign in with your credentials.';
+}
 
 // Default view is 'choice' landing screen when clicking dashboard from website
 $view = $_GET['view'] ?? 'choice'; 
@@ -35,28 +38,19 @@ if (isset($_GET['action']) && $_GET['action'] === 'activate') {
 
 $pendingActivationUser = sanitizeInput($_GET['user'] ?? $_GET['activation_user'] ?? $_GET['email'] ?? '');
 $pendingCode = sanitizeInput($_GET['code'] ?? $_GET['activation_code'] ?? '');
+$verifiedEmail = $_SESSION['verified_activation_user'] ?? $pendingActivationUser;
 
 if (($view === 'activation' || (isset($_GET['action']) && $_GET['action'] === 'activate')) && !empty($pendingActivationUser) && !empty($pendingCode)) {
     if (activateStaffAccountWithCode($pendingActivationUser, $pendingCode)) {
-        $staffAccounts = getStaffAccountsRepo();
-        foreach ($staffAccounts as $st) {
-            $uName = strtolower($st['username'] ?? '');
-            $uEmail = strtolower($st['email'] ?? '');
-            if (strtolower($pendingActivationUser) === $uName || strtolower($pendingActivationUser) === $uEmail) {
-                $_SESSION['admin_logged_in'] = true;
-                $_SESSION['admin_user_id']   = $st['id'];
-                $_SESSION['admin_username']  = $st['username'];
-                $_SESSION['admin_email']     = $st['email'];
-                $_SESSION['admin_role']      = $st['role'] ?? 'Staff';
-                $_SESSION['admin_avatar']    = $st['avatar'] ?? '';
-                $_SESSION['admin_full_name'] = $st['full_name'] ?? $st['username'];
-                $_SESSION['admin_alt_email'] = $st['alt_email'] ?? ($st['alternative_email'] ?? '');
-                $_SESSION['must_change_password'] = true;
-
-                header('Location: /admin/index.php?section=my_profile&force_password_change=1');
-                exit;
-            }
-        }
+        // Activation code verified successfully!
+        // Instead of auto-logging into dashboard, require user to set their password first
+        $view = 'set_password';
+        $verifiedEmail = $pendingActivationUser;
+        $_SESSION['verified_activation_user'] = $pendingActivationUser;
+        $success = 'Account code verified! Please create your password below to complete setup.';
+    } else {
+        $error = 'Invalid or expired activation code. Please enter the 6-digit code or request a new code.';
+        $view = 'activation';
     }
 }
 
@@ -195,19 +189,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             // If user entered their 6-digit activation code in the password field:
                             if (!$passValid && ($matchesAccountCode || ($is6DigitCode && ($stStatus === 'pending_activation' || $actStatus === 'pending' || empty($st['password_hash']))))) {
                                 activateStaffAccountWithCode($st['email'], trim($password));
-
-                                $_SESSION['admin_logged_in'] = true;
-                                $_SESSION['admin_user_id']   = $st['id'];
-                                $_SESSION['admin_username']  = $st['username'];
-                                $_SESSION['admin_email']     = $st['email'];
-                                $_SESSION['admin_role']      = $st['role'] ?? 'Staff';
-                                $_SESSION['admin_avatar']    = $st['avatar'] ?? '';
-                                $_SESSION['admin_full_name'] = $st['full_name'] ?? $st['username'];
-                                $_SESSION['admin_alt_email'] = $st['alt_email'] ?? ($st['alternative_email'] ?? '');
-                                $_SESSION['must_change_password'] = true;
-
-                                header('Location: /admin/index.php?section=my_profile&force_password_change=1');
-                                exit;
+                                $view = 'set_password';
+                                $verifiedEmail = $st['email'];
+                                $_SESSION['verified_activation_user'] = $st['email'];
+                                $success = 'Activation code accepted! Please set your new password below.';
+                                break;
                             }
 
                             if ($passValid) {
@@ -310,24 +296,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $setupEmail = sanitizeInput($_POST['setup_email'] ?? '');
         if ($setupEmail && $inviteCode) {
             if (activateStaffAccountWithCode($setupEmail, $inviteCode)) {
-                $staffAccounts = getStaffAccountsRepo();
-                foreach ($staffAccounts as $st) {
-                    $uName = strtolower($st['username'] ?? '');
-                    $uEmail = strtolower($st['email'] ?? '');
-                    if (strtolower($setupEmail) === $uName || strtolower($setupEmail) === $uEmail) {
-                        $_SESSION['admin_logged_in'] = true;
-                        $_SESSION['admin_user_id']   = $st['id'];
-                        $_SESSION['admin_username']  = $st['username'];
-                        $_SESSION['admin_email']     = $st['email'];
-                        $_SESSION['admin_role']      = $st['role'] ?? 'Staff';
-                        $_SESSION['admin_avatar']    = $st['avatar'] ?? '';
-                        $_SESSION['admin_full_name'] = $st['full_name'] ?? $st['username'];
-                        $_SESSION['must_change_password'] = true;
-
-                        header('Location: /admin/index.php?section=my_profile&force_password_change=1');
-                        exit;
-                    }
-                }
+                $view = 'set_password';
+                $verifiedEmail = $setupEmail;
+                $_SESSION['verified_activation_user'] = $setupEmail;
+                $success = 'Account code verified! Please set your new password below to complete setup.';
             } else {
                 $error = 'Invalid email address or 6-digit activation code. Please verify details.';
                 $view = 'setup';
@@ -342,26 +314,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         if (!empty($activationUser) && !empty($submittedCode)) {
             if (activateStaffAccountWithCode($activationUser, $submittedCode)) {
-                // Account successfully activated! Log staff member in & force password creation
-                $staffAccounts = getStaffAccountsRepo();
-                foreach ($staffAccounts as $st) {
-                    $uName = strtolower($st['username'] ?? '');
-                    $uEmail = strtolower($st['email'] ?? '');
-                    if (strtolower($activationUser) === $uName || strtolower($activationUser) === $uEmail) {
-                        $_SESSION['admin_logged_in'] = true;
-                        $_SESSION['admin_user_id']   = $st['id'];
-                        $_SESSION['admin_username']  = $st['username'];
-                        $_SESSION['admin_email']     = $st['email'];
-                        $_SESSION['admin_role']      = $st['role'] ?? 'Staff';
-                        $_SESSION['admin_avatar']    = $st['avatar'] ?? '';
-                        $_SESSION['admin_full_name'] = $st['full_name'] ?? $st['username'];
-                        $_SESSION['admin_alt_email'] = $st['alt_email'] ?? ($st['alternative_email'] ?? '');
-                        $_SESSION['must_change_password'] = true;
-
-                        header('Location: /admin/index.php?section=my_profile&force_password_change=1');
-                        exit;
-                    }
-                }
+                $view = 'set_password';
+                $verifiedEmail = $activationUser;
+                $_SESSION['verified_activation_user'] = $activationUser;
+                $success = 'Account activation verified! Please create your password below.';
             } else {
                 $error = 'Invalid 6-digit activation code. Please check your alternative email or try again.';
                 $view = 'activation';
@@ -371,6 +327,57 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $error = 'Please enter the 6-digit activation code.';
             $view = 'activation';
             $pendingActivationUser = $activationUser;
+        }
+    } else if ($postAction === 'set_account_password') {
+        $setUser = sanitizeInput($_POST['set_user'] ?? $_POST['email'] ?? ($_SESSION['verified_activation_user'] ?? ''));
+        $newPassword = $_POST['new_password'] ?? '';
+        $confirmPassword = $_POST['confirm_password'] ?? '';
+
+        if (empty($setUser)) {
+            $error = 'Session expired or invalid user. Please verify your activation code again.';
+            $view = 'activation';
+        } else if (strlen($newPassword) < 6) {
+            $error = 'Password must be at least 6 characters in length.';
+            $view = 'set_password';
+            $verifiedEmail = $setUser;
+        } else if ($newPassword !== $confirmPassword) {
+            $error = 'Passwords do not match. Please re-enter.';
+            $view = 'set_password';
+            $verifiedEmail = $setUser;
+        } else {
+            $newHash = password_hash($newPassword, PASSWORD_DEFAULT);
+            $pwdData = [
+                'password_hash' => $newHash,
+                'status' => 'active',
+                'activation_status' => 'activated',
+                'activation_code' => ''
+            ];
+
+            saveStaffAccountByUsername($setUser, $pwdData);
+
+            $uLower = strtolower($setUser);
+            if ($uLower === 'admin' || $uLower === 'admin@falhen.com' || strpos($uLower, 'henry') !== false) {
+                saveAdminUserProfile(['password_hash' => $newHash]);
+                saveStaffAccountByUsername('admin', $pwdData);
+                saveStaffAccountByUsername('admin@falhen.com', $pwdData);
+            }
+
+            $pdo = getDBConnection();
+            if ($pdo) {
+                try {
+                    $stmt = $pdo->prepare("UPDATE `admin_users` SET `password_hash` = ? WHERE `username` = ? OR `email` = ?");
+                    $stmt->execute([$newHash, $setUser, $setUser]);
+                    if ($uLower === 'admin' || $uLower === 'admin@falhen.com') {
+                        $stmt = $pdo->prepare("UPDATE `admin_users` SET `password_hash` = ? WHERE `username` = 'admin' OR `email` = 'admin@falhen.com'");
+                        $stmt->execute([$newHash]);
+                    }
+                } catch (Exception $e) {}
+            }
+
+            unset($_SESSION['verified_activation_user']);
+            $success = 'Password successfully created! You may now sign in with your credentials.';
+            $view = 'staff';
+            $_POST['email'] = $setUser;
         }
     } else if ($postAction === 'resend_activation_code') {
         $activationUser = sanitizeInput($_POST['activation_user'] ?? $_POST['email'] ?? '');
@@ -1322,6 +1329,79 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     </form>
                 </div>
 
+                <!-- VIEW 7: CREATE / SET ACCOUNT PASSWORD FORM -->
+                <div id="set_passwordView" class="view-section <?php echo ($view === 'set_password') ? 'active' : ''; ?>">
+                    <a href="#" onclick="switchView('staff'); return false;" class="back-link-left">
+                        <i class="fa-solid fa-arrow-left"></i> Back to Sign In
+                    </a>
+
+                    <div class="shield-icon-box" style="background: rgba(16, 185, 129, 0.15); border-color: rgba(16, 185, 129, 0.35); color: #10b981;">
+                        <i class="fa-solid fa-key"></i>
+                    </div>
+
+                    <h1 class="section-title">Create Password</h1>
+                    <p class="section-subtitle">Set a secure password to complete your account setup</p>
+
+                    <div style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.25); border-radius: 10px; padding: 10px 14px; margin-bottom: 20px; font-size: 0.88rem; color: #6ee7b7; text-align: center; display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; box-sizing: border-box;">
+                        <i class="fa-solid fa-circle-check" style="color: #10b981;"></i>
+                        <span>Verified Account: <strong style="color: #ffffff;"><?php echo htmlspecialchars($verifiedEmail ?? ($pendingActivationUser ?? 'Your Account')); ?></strong></span>
+                    </div>
+
+                    <form method="POST" action="?view=set_password" style="width: 100%;">
+                        <input type="hidden" name="action" value="set_account_password">
+                        <input type="hidden" name="set_user" value="<?php echo htmlspecialchars($verifiedEmail ?? ($pendingActivationUser ?? '')); ?>">
+                        <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrfToken); ?>">
+
+                        <!-- New Password -->
+                        <div class="form-group">
+                            <label for="new_account_password" class="form-label">New Password</label>
+                            <div class="input-relative">
+                                <input 
+                                    type="password" 
+                                    id="new_account_password" 
+                                    name="new_password" 
+                                    class="form-input" 
+                                    placeholder="At least 6 characters"
+                                    minlength="6"
+                                    required 
+                                    autocomplete="new-password"
+                                >
+                                <button type="button" class="toggle-password-btn" onclick="togglePassVisibility('new_account_password', 'toggleNewPassIcon')" title="Toggle password visibility">
+                                    <i class="fa-regular fa-eye" id="toggleNewPassIcon"></i>
+                                </button>
+                            </div>
+                            <div class="helper-text">
+                                <i class="fa-solid fa-lock"></i> Minimum 6 characters (letters and numbers recommended)
+                            </div>
+                        </div>
+
+                        <!-- Confirm Password -->
+                        <div class="form-group">
+                            <label for="confirm_account_password" class="form-label">Confirm Password</label>
+                            <div class="input-relative">
+                                <input 
+                                    type="password" 
+                                    id="confirm_account_password" 
+                                    name="confirm_password" 
+                                    class="form-input" 
+                                    placeholder="Re-type new password"
+                                    minlength="6"
+                                    required 
+                                    autocomplete="new-password"
+                                >
+                                <button type="button" class="toggle-password-btn" onclick="togglePassVisibility('confirm_account_password', 'toggleConfirmPassIcon')" title="Toggle password visibility">
+                                    <i class="fa-regular fa-eye" id="toggleConfirmPassIcon"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Submit Button -->
+                        <button type="submit" class="btn-submit" style="margin-top: 10px; background: #10b981; border-color: #10b981;">
+                            <i class="fa-solid fa-circle-check" style="margin-right: 6px;"></i> Set Password &amp; Sign In
+                        </button>
+                    </form>
+                </div>
+
             </div>
         </div>
 
@@ -1333,23 +1413,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </div>
 
     <script>
-        // Password Visibility Toggle
+        // Helper to toggle password visibility
+        function togglePassVisibility(inputId, iconId) {
+            const input = document.getElementById(inputId);
+            const icon = document.getElementById(iconId);
+            if (!input || !icon) return;
+            const isPass = input.getAttribute('type') === 'password';
+            input.setAttribute('type', isPass ? 'text' : 'password');
+            if (isPass) {
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            } else {
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }
+        }
+
+        // Password Visibility Toggle for main login
         const toggleBtn = document.getElementById('togglePasswordBtn');
         const passwordInput = document.getElementById('password');
         const toggleIcon = document.getElementById('togglePasswordIcon');
 
         if (toggleBtn && passwordInput && toggleIcon) {
             toggleBtn.addEventListener('click', function () {
-                const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
-                passwordInput.setAttribute('type', type);
-                
-                if (type === 'text') {
-                    toggleIcon.classList.remove('fa-eye');
-                    toggleIcon.classList.add('fa-eye-slash');
-                } else {
-                    toggleIcon.classList.remove('fa-eye-slash');
-                    toggleIcon.classList.add('fa-eye');
-                }
+                togglePassVisibility('password', 'togglePasswordIcon');
             });
         }
 

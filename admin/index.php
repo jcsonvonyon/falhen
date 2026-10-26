@@ -106,6 +106,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     $currentEmail = $_SESSION['admin_email'] ?? '';
     $currentUsername = $_SESSION['admin_username'] ?? '';
+    $currentRole = $_SESSION['admin_role'] ?? 'Staff';
+    $username = $currentUsername;
+    $userEmail = $currentEmail;
+    $userRole = $currentRole;
 
     $targetSection = $actionSectionMap[$action] ?? ($_GET['section'] ?? 'hero');
     if ($action !== 'upload_cloudinary_ajax' && !hasSectionAccess($targetSection, $currentRole, $currentEmail, $currentUsername)) {
@@ -2452,6 +2456,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         header('Location: index.php?section=my_profile&saved=1');
         exit;
     } else if ($action === 'change_profile_password') {
+        $username = $_SESSION['admin_username'] ?? ($currentUsername ?? '');
+        $userEmail = $_SESSION['admin_email'] ?? ($currentEmail ?? '');
+        $userRole = $_SESSION['admin_role'] ?? ($currentRole ?? 'Staff');
         $currentPassword = $_POST['current_password'] ?? '';
         $newPassword = $_POST['new_password'] ?? '';
         $confirmPassword = $_POST['confirm_password'] ?? '';
@@ -2460,18 +2467,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $isFirstTime = !empty($_SESSION['must_change_password']) || isset($_GET['force_password_change']);
 
         if ($isFirstTime) {
-            if (empty($phone) || empty($address)) {
-                header('Location: index.php?section=my_profile&pwd_error=missing_phone_location&force_password_change=1');
-                exit;
-            }
-        }
-
-        if ($isFirstTime) {
             $existingAdmin = getAdminUserProfile();
             $targetUser = $existingAdmin['username'] ?? ($username ?: 'admin');
             $currentHash = $existingAdmin['password_hash'] ?? '';
         } else {
-            $isTargetAdmin = (strtolower($username) === 'admin' || strtolower($username) === 'oluwatosin.ligali' || strtolower($userEmail) === 'mail@falhenmedia.com' || strtolower($userEmail) === 'oluwatosin.ligali@falhenmedia.com' || isAdminUser($userRole, $userEmail, $username));
+            $isTargetAdmin = (strtolower($username) === 'admin' || strtolower($username) === 'henry.falonipe' || strtolower($userEmail) === 'admin@falhen.com' || strtolower($userEmail) === 'mail@falhenmedia.com' || isAdminUser($userRole, $userEmail, $username));
             if ($isTargetAdmin) {
                 $profile = getAdminUserProfile();
                 $currentHash = $profile['password_hash'] ?? '';
@@ -2504,7 +2504,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         $newHash = password_hash($newPassword, PASSWORD_DEFAULT);
-        $isTargetAdmin = (strtolower($username) === 'admin' || strtolower($username) === 'oluwatosin.ligali' || strtolower($userEmail) === 'mail@falhenmedia.com' || strtolower($userEmail) === 'oluwatosin.ligali@falhenmedia.com' || isAdminUser($userRole, $userEmail, $username));
+        $isTargetAdmin = (strtolower($username) === 'admin' || strtolower($username) === 'henry.falonipe' || strtolower($userEmail) === 'admin@falhen.com' || strtolower($userEmail) === 'mail@falhenmedia.com' || isAdminUser($userRole, $userEmail, $username));
 
         $pwdDataUpdate = ['password_hash' => $newHash];
         if (!empty($phone)) $pwdDataUpdate['phone'] = $phone;
@@ -2518,17 +2518,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             saveStaffAccountByUsername($userEmail, $pwdDataUpdate);
         }
 
-        if (strtolower($username) === 'admin' || strtolower($username) === 'henry.falonipe' || strtolower($userEmail) === 'admin@falhen.com') {
+        if ($isTargetAdmin) {
             saveAdminUserProfile($pwdDataUpdate);
             saveStaffAccountByUsername('admin', $pwdDataUpdate);
-        } else {
-            saveStaffAccountByUsername($username, $pwdDataUpdate);
+            saveStaffAccountByUsername('admin@falhen.com', $pwdDataUpdate);
         }
 
         if ($pdo) {
             try {
                 $stmt = $pdo->prepare("UPDATE `admin_users` SET `password_hash` = ? WHERE `username` = ? OR `email` = ?");
                 $stmt->execute([$newHash, $username, $userEmail]);
+                if ($isTargetAdmin) {
+                    $stmt = $pdo->prepare("UPDATE `admin_users` SET `password_hash` = ? WHERE `username` = 'admin' OR `email` = 'admin@falhen.com'");
+                    $stmt->execute([$newHash]);
+                }
             } catch (Exception $e) {}
         }
 

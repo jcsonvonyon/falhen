@@ -1175,7 +1175,9 @@
             "raenest_id": "RAE-HFAL-01",
             "lemfi_tag": "@henryfalhen",
             "taptap_account": "01012345678",
-            "deductions": 200
+            "deductions": 200,
+            "activation_status": "activated",
+            "activated_at": "2026-10-26 18:39:51"
         },
         {
             "id": 2,
