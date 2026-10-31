@@ -4,6 +4,20 @@
  * Falhen Media
  */
 
+// Cloudflare Edge IP Restoration & Origin IP Exposure Protection
+if (!headers_sent()) {
+    @header_remove('X-Powered-By');
+}
+if (!empty($_SERVER['HTTP_CF_CONNECTING_IP']) && filter_var($_SERVER['HTTP_CF_CONNECTING_IP'], FILTER_VALIDATE_IP)) {
+    $_SERVER['REMOTE_ADDR'] = $_SERVER['HTTP_CF_CONNECTING_IP'];
+}
+$rawHostHeader = preg_replace('/:\d+$/', '', $_SERVER['HTTP_HOST'] ?? '');
+if (!empty($rawHostHeader) && filter_var($rawHostHeader, FILTER_VALIDATE_IP) && !in_array($rawHostHeader, ['127.0.0.1', '::1'], true)) {
+    // Prevent direct access via exposed origin IP address; force traffic through Cloudflare proxy
+    header('Location: https://www.falhen.com' . ($_SERVER['REQUEST_URI'] ?? '/'), true, 301);
+    exit;
+}
+
 if (session_status() === PHP_SESSION_NONE) {
     if (!headers_sent()) {
         $isSecure = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (($_SERVER['SERVER_PORT'] ?? 80) == 443);

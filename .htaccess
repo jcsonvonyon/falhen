@@ -7,6 +7,13 @@
     # RewriteCond %{HTTPS} off
     # RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
 
+    # 0. Block direct IP access (Force all traffic through Cloudflare proxied domains)
+    RewriteCond %{HTTP_HOST} ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+(?::[0-9]+)?$
+    RewriteRule ^ https://www.falhen.com%{REQUEST_URI} [R=301,L]
+
+    # Block public web access to sensitive markdown/config files that could expose infrastructure details
+    RewriteRule ^(?:SSH_CONFIG|CPANEL_MIGRATION_GUIDE)\.md$ - [F,L,NC]
+
     # 1. Redirect /index.php to root /
     RewriteCond %{THE_REQUEST} ^[A-Z]{3,}\s/+index\.php[\s?] [NC]
     RewriteRule ^(.*)index\.php$ /$1 [R=301,L]
@@ -40,9 +47,12 @@
     RewriteRule ^(.+?)/?$ $1.php [L,QSA]
 </IfModule>
 
-# Security Headers & Cache Settings
+# Security Headers & Cloudflare Origin Protection Settings
 <IfModule mod_headers.c>
     Header set X-Content-Type-Options "nosniff"
     Header set X-Frame-Options "SAMEORIGIN"
     Header set X-XSS-Protection "1; mode=block"
+    Header set Referrer-Policy "strict-origin-when-cross-origin"
+    Header unset X-Powered-By
+    Header unset Server
 </IfModule>
