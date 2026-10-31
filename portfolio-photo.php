@@ -1804,7 +1804,13 @@ $totalPhotoCount = count($clientPhotos);
 
                 <div class="cdm-form-group">
                     <label class="cdm-label" for="cdm_phone">Phone Number *</label>
-                    <input type="tel" id="cdm_phone" class="cdm-input" placeholder="+1 (555) 000-0000">
+                    <input type="tel" id="cdm_phone" class="cdm-input" placeholder="+1 (555) 000-0000" required>
+                </div>
+
+                <div class="cdm-form-group" id="cdmOtpGroup" style="display:none; margin-top: 14px;">
+                    <label class="cdm-label" for="cdm_otp_code">6-Digit Security Verification Code *</label>
+                    <input type="text" id="cdm_otp_code" class="cdm-input" placeholder="Enter 6-digit OTP code" maxlength="6" inputmode="numeric" style="letter-spacing: 6px; font-weight: 800; text-align: center; font-size: 1.15rem;">
+                    <small id="cdmOtpHint" style="display:block; margin-top:6px; color:#6ee7b7; font-size:0.78rem;"></small>
                 </div>
 
                 <p class="cdm-privacy-note">
@@ -2002,10 +2008,15 @@ $totalPhotoCount = count($clientPhotos);
             document.body.style.overflow = '';
         }
 
+        let otpStepActive = false;
+
         async function submitClientVerification() {
             const name = document.getElementById('cdm_name').value.trim();
             const email = document.getElementById('cdm_email').value.trim();
             const phone = document.getElementById('cdm_phone').value.trim();
+            const otpGroup = document.getElementById('cdmOtpGroup');
+            const otpInput = document.getElementById('cdm_otp_code');
+            const otpHint = document.getElementById('cdmOtpHint');
             const errBox = document.getElementById('cdm_error');
             const submitBtn = document.getElementById('btnCdmSubmit');
 
@@ -2019,42 +2030,84 @@ $totalPhotoCount = count($clientPhotos);
                 errBox.textContent = 'Please enter a valid email address.';
                 return;
             }
+            if (!phone || phone.replace(/[^0-9+]/g, '').length < 7) {
+                errBox.style.display = 'block';
+                errBox.textContent = 'Please enter a valid phone number.';
+                return;
+            }
 
             errBox.style.display = 'none';
             submitBtn.disabled = true;
-            submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Verifying Client...';
 
             try {
-                const fd = new FormData();
-                fd.append('action', 'verify_client_download');
-                fd.append('name', name);
-                fd.append('email', email);
-                fd.append('phone', phone);
-                fd.append('album_id', <?php echo (int)($currentAlbum['id'] ?? 0); ?>);
-                fd.append('album_title', shootTitle);
+                if (!otpStepActive) {
+                    submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Sending 6-Digit Code...';
+                    const fd = new FormData();
+                    fd.append('action', 'request_code');
+                    fd.append('name', name);
+                    fd.append('email', email);
+                    fd.append('phone', phone);
+                    fd.append('album_id', <?php echo (int)($currentAlbum['id'] ?? 0); ?>);
+                    fd.append('album_title', shootTitle);
 
-                const resp = await fetch('/api/verify-download.php', { method: 'POST', body: fd });
-                const res = await resp.json();
+                    const resp = await fetch('/api/verify-download.php', { method: 'POST', body: fd });
+                    const res = await resp.json();
 
-                if (res.success) {
-                    isClientVerified = true;
-                    closeClientDownloadModal();
-                    showToast('Client verified! Starting download...');
-                    if (typeof pendingDownload === 'function') {
-                        pendingDownload();
-                        pendingDownload = null;
+                    if (res.success) {
+                        otpStepActive = true;
+                        otpGroup.style.display = 'block';
+                        otpHint.innerHTML = res.message + (res.dev_otp_hint ? ` (Passcode: <strong>${res.dev_otp_hint}</strong>)` : '');
+                        if (res.dev_otp_hint) otpInput.value = res.dev_otp_hint;
+                        submitBtn.innerHTML = '<i class="fa-solid fa-unlock-keyhole"></i> Verify Code & Start Download';
+                        otpInput.focus();
+                    } else {
+                        errBox.style.display = 'block';
+                        errBox.innerHTML = (res.message || 'Access Restricted: You must be a registered client to download gallery assets.');
+                        submitBtn.innerHTML = '<i class="fa-solid fa-download"></i> Start Download';
                     }
                 } else {
-                    errBox.style.display = 'block';
-                    errBox.innerHTML = (res.message || 'Access Restricted: You must be a registered client to download gallery assets.') + 
-                        '<br><span style="display:inline-block; margin-top:6px;"><a href="/contact.php" target="_blank">Contact Falhen Media to register as a client</a></span>';
+                    const code = otpInput.value.trim();
+                    if (!code || code.length !== 6) {
+                        errBox.style.display = 'block';
+                        errBox.textContent = 'Please enter the 6-digit verification code.';
+                        submitBtn.disabled = false;
+                        return;
+                    }
+                    submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Verifying Passcode...';
+                    const fd = new FormData();
+                    fd.append('action', 'verify_code');
+                    fd.append('name', name);
+                    fd.append('email', email);
+                    fd.append('phone', phone);
+                    fd.append('code', code);
+                    fd.append('album_id', <?php echo (int)($currentAlbum['id'] ?? 0); ?>);
+                    fd.append('album_title', shootTitle);
+
+                    const resp = await fetch('/api/verify-download.php', { method: 'POST', body: fd });
+                    const res = await resp.json();
+
+                    if (res.success) {
+                        isClientVerified = true;
+                        otpStepActive = false;
+                        otpGroup.style.display = 'none';
+                        closeClientDownloadModal();
+                        showToast('Client verified! Starting download...');
+                        if (typeof pendingDownload === 'function') {
+                            pendingDownload();
+                            pendingDownload = null;
+                        }
+                    } else {
+                        errBox.style.display = 'block';
+                        errBox.textContent = res.message || 'Invalid verification code.';
+                        submitBtn.innerHTML = '<i class="fa-solid fa-unlock-keyhole"></i> Verify Code & Start Download';
+                    }
                 }
             } catch (err) {
                 errBox.style.display = 'block';
                 errBox.textContent = 'Connection error. Please try again.';
+                submitBtn.innerHTML = '<i class="fa-solid fa-download"></i> Start Download';
             } finally {
                 submitBtn.disabled = false;
-                submitBtn.innerHTML = '<i class="fa-solid fa-download"></i> Start Download';
             }
         }
 

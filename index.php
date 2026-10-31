@@ -1,4 +1,11 @@
 <?php
+// Subdomain Routing: Serve Client Gallery Portal when accessed via client.falhen.com
+$incomingHost = strtolower(preg_replace('/:\d+$/', '', $_SERVER['HTTP_HOST'] ?? ''));
+if ($incomingHost === 'client.falhen.com' || str_starts_with($incomingHost, 'client.')) {
+    require __DIR__ . '/client-portal.php';
+    exit;
+}
+
 $pageTitle = "Falhen Video Production | Visual Storytelling";
 require_once __DIR__ . '/config/db.php';
 require_once __DIR__ . '/includes/functions.php';

@@ -72,8 +72,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($portalType === 'client') {
             $clientEmail = sanitizeInput($_POST['client_email'] ?? '');
             if ($clientEmail && filter_var($clientEmail, FILTER_VALIDATE_EMAIL)) {
-                $success = 'Client gallery access key for ' . htmlspecialchars($clientEmail) . ' has been generated. Please check your inbox.';
-                $view = 'client';
+                $_SESSION['portal_lookup_email'] = strtolower($clientEmail);
+                header('Location: /client-portal.php?client_email=' . urlencode(strtolower($clientEmail)));
+                exit;
             } else {
                 $error = 'Please enter a valid client email address.';
                 $view = 'client';
@@ -1208,6 +1209,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             Access Private Gallery
                         </button>
                     </form>
+
+                    <div class="form-divider-line"></div>
+                    <div class="account-setup-container">
+                        <p class="setup-prompt-text">Or browse directly on the Client Portal subdomain:</p>
+                        <a href="/client-portal.php" class="setup-action-link" style="color: #ef4444;">
+                            <i class="fa-solid fa-table-cells-large"></i> Launch Client Portal (client.falhen.com)
+                        </a>
+                    </div>
                 </div>
 
                 <!-- VIEW 6: VENDOR PORTAL SIGN IN FORM -->

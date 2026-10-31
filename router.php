@@ -22,7 +22,18 @@ if ($uri !== '/' && file_exists($filePath) && !is_dir($filePath)) {
     return false;
 }
 
+// 1b. Host-based routing for client.falhen.com subdomain
+$hostHeader = strtolower(preg_replace('/:\d+$/', '', $_SERVER['HTTP_HOST'] ?? ''));
+if (($hostHeader === 'client.falhen.com' || str_starts_with($hostHeader, 'client.')) && ($uri === '/' || $uri === '/gallery' || $uri === '/gallery/')) {
+    require __DIR__ . '/client-portal.php';
+    return;
+}
+
 // 2. Custom route aliases
+if ($uri === '/client-portal' || $uri === '/client-portal/') {
+    require __DIR__ . '/client-portal.php';
+    return;
+}
 if ($uri === '/dashboard' || $uri === '/dashboard/' || $uri === '/admin/login' || $uri === '/admin/login/') {
     require __DIR__ . '/admin/login.php';
     return;

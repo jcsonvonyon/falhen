@@ -19,7 +19,11 @@
     RewriteCond %{REQUEST_URI} !^/vendor/ [NC]
     RewriteRule ^ %1 [R=301,L]
 
-    # 3. Custom route aliases
+    # 3. Host-based routing for client.falhen.com subdomain & custom route aliases
+    RewriteCond %{HTTP_HOST} ^client\.falhen\.com(?::\d+)?$ [NC]
+    RewriteRule ^(?:gallery/?)?$ client-portal.php [QSA,L]
+
+    RewriteRule ^client-portal/?$ client-portal.php [QSA,L]
     RewriteRule ^dashboard/?$ admin/login.php [QSA,L]
     RewriteRule ^admin/login/?$ admin/login.php [QSA,L]
     RewriteRule ^admin/?$ admin/index.php [QSA,L]

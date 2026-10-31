@@ -123,3 +123,92 @@ function uploadToCloudinary($fileOrUrl, $folder = 'falhen') {
         'message' => $data['error']['message'] ?? 'Cloudinary upload failed.'
     ];
 }
+
+/**
+ * Sync a Google Drive image URL to Cloudinary (with local map cache) so clients
+ * receive lightweight, CDN-optimized previews and downloads.
+ */
+function syncDrivePhotoToCloudinary($photoUrl, $albumId = 0, $autoUpload = false) {
+    if (empty($photoUrl)) {
+        return '/assets/img/portfolio/portfolio_halima.png';
+    }
+
+    if (isCloudinaryUrl($photoUrl)) {
+        return getCloudinaryUrl($photoUrl, 'f_auto,q_auto');
+    }
+
+    // Check persistent sync map
+    $mapFile = __DIR__ . '/../config/cloudinary_sync_map.json';
+    $syncMap = file_exists($mapFile) ? @json_decode(file_get_contents($mapFile), true) : [];
+    if (!is_array($syncMap)) {
+        $syncMap = [];
+    }
+
+    $hashKey = md5($photoUrl);
+    if (!empty($syncMap[$hashKey]['cloudinary_url'])) {
+        return getCloudinaryUrl($syncMap[$hashKey]['cloudinary_url'], 'f_auto,q_auto');
+    }
+
+    // Optional on-demand upload when triggered from admin sync or background sync
+    if ($autoUpload && preg_match('/^https?:\/\//i', $photoUrl)) {
+        $folder = 'falhen/client_galleries/album_' . (int)$albumId;
+        $uploaded = uploadToCloudinary($photoUrl, $folder);
+        if (!empty($uploaded['success']) && !empty($uploaded['url'])) {
+            $syncMap[$hashKey] = [
+                'source_url'     => $photoUrl,
+                'cloudinary_url' => $uploaded['url'],
+                'public_id'      => $uploaded['public_id'] ?? '',
+                'album_id'       => (int)$albumId,
+                'synced_at'      => date('c')
+            ];
+            @file_put_contents($mapFile, json_encode($syncMap, JSON_PRETTY_PRINT));
+            return getCloudinaryUrl($uploaded['url'], 'f_auto,q_auto');
+        }
+    }
+
+    // If Google Drive lh3 thumbnail link, optimize width for lightweight delivery
+    if (strpos($photoUrl, 'lh3.googleusercontent.com/d/') !== false) {
+        return preg_replace('/=w\d+$/', '=w1200', $photoUrl);
+    }
+
+    return $photoUrl;
+}
+
+/**
+ * Build structured lightweight gallery photo items (masonry preview, full-view HD, download URL)
+ */
+function buildClientGalleryPhotoItems(array $rawPhotos, $albumId = 0) {
+    $items = [];
+    foreach (array_values($rawPhotos) as $idx => $rawUrl) {
+        $syncedUrl = syncDrivePhotoToCloudinary($rawUrl, $albumId, false);
+        $masonryUrl = isCloudinaryUrl($syncedUrl)
+            ? getCloudinaryUrl($syncedUrl, 'f_auto,q_auto:eco,w_800,c_limit')
+            : (strpos($syncedUrl, 'lh3.googleusercontent.com/d/') !== false
+                ? preg_replace('/=w\d+$/', '=w800', $syncedUrl)
+                : $syncedUrl);
+
+        $fullViewUrl = isCloudinaryUrl($syncedUrl)
+            ? getCloudinaryUrl($syncedUrl, 'f_auto,q_auto:good,w_1920,c_limit')
+            : (strpos($syncedUrl, 'lh3.googleusercontent.com/d/') !== false
+                ? preg_replace('/=w\d+$/', '=w1920', $syncedUrl)
+                : $syncedUrl);
+
+        // Assign deterministic natural aspect ratio for editorial Masonry variety
+        $ratios = ['3 / 4', '4 / 5', '1 / 1', '4 / 3', '2 / 3', '5 / 4'];
+        $aspectRatio = $ratios[$idx % count($ratios)];
+
+        $items[] = [
+            'index'        => $idx,
+            'number'       => $idx + 1,
+            'raw_url'      => $rawUrl,
+            'masonry_url'  => $masonryUrl,
+            'full_url'     => $fullViewUrl,
+            'download_url' => "/api/download-album.php?album_id=" . (int)$albumId . "&photo_index=" . $idx,
+            'aspect_ratio' => $aspectRatio,
+            'is_cloudinary'=> isCloudinaryUrl($syncedUrl),
+            'is_gdrive'    => (strpos($rawUrl, 'googleusercontent.com') !== false || strpos($rawUrl, 'drive.google.com') !== false)
+        ];
+    }
+    return $items;
+}
+

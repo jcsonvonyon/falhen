@@ -1812,6 +1812,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $it['project_date'] = $year;
                 $it['video_url'] = $videoUrl;
                 $it['gdrive_url'] = $gdriveUrl;
+                if (!empty($gdriveUrl)) {
+                    $syncedPhotos = getGoogleDriveFolderPhotos($gdriveUrl);
+                    if (!empty($syncedPhotos)) {
+                        $it['gallery_photos'] = $syncedPhotos;
+                        $it['photosCount'] = count($syncedPhotos);
+                    }
+                }
                 $it['desc'] = $desc;
                 $it['services'] = $services;
                 $it['keywords'] = $services;
@@ -7491,9 +7498,55 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                     oninput="handleGDriveUrlChange(this.value)"
                                 >
                                 <span style="font-size: 0.76rem; color: #64748b; margin-top: 4px; display: block;">
-                                    Photo album or project gallery images can come from this Google Drive link.
+                                    Photo album or project gallery images can come from this Google Drive link and sync to <strong>client.falhen.com</strong> via Cloudinary lightweight delivery.
                                 </span>
                             </div>
+
+                            <?php
+                            $isSuperAdminViewer = (
+                                strtolower(trim($_SESSION['admin_role'] ?? '')) === 'super admin' ||
+                                strtolower(trim($_SESSION['admin_email'] ?? '')) === 'admin@falhen.com'
+                            );
+                            if ($isSuperAdminViewer):
+                            ?>
+                            <!-- R5: Super Admin Only — Backend Flow Verification Suite -->
+                            <div id="superAdminFlowTestCard" style="margin-top: 18px; padding: 16px 18px; border-radius: 12px; background: #0f172a; border: 1px solid #334155; color: #f8fafc;">
+                                <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
+                                    <div>
+                                        <div style="font-size: 0.85rem; font-weight: 700; color: #f87171; display: flex; align-items: center; gap: 8px;">
+                                            <i class="fa-solid fa-user-astronaut"></i> Super Admin Only · client.falhen.com Backend Flow Tester
+                                        </div>
+                                        <div style="font-size: 0.76rem; color: #94a3b8; margin-top: 3px;">
+                                            Validates Subdomain Routing, Responsive Masonry/Full View, 6-Digit OTP Gate &amp; Cloudinary ZIP Sync.
+                                        </div>
+                                    </div>
+                                    <button type="button" onclick="runSuperAdminFlowTest()" id="btnRunSuperAdminFlowTest" style="background: #dc2626; color: #fff; border: none; padding: 8px 14px; border-radius: 8px; font-size: 0.78rem; font-weight: 700; cursor: pointer;">
+                                        <i class="fa-solid fa-vial-circle-check"></i> Run Backend Flow Test
+                                    </button>
+                                </div>
+                                <pre id="superAdminFlowTestOutput" style="display: none; margin-top: 12px; padding: 10px 12px; background: #020617; border: 1px solid #1e293b; border-radius: 8px; color: #34d399; font-size: 0.74rem; max-height: 220px; overflow: auto;"></pre>
+                            </div>
+                            <script>
+                            async function runSuperAdminFlowTest() {
+                                const btn = document.getElementById('btnRunSuperAdminFlowTest');
+                                const out = document.getElementById('superAdminFlowTestOutput');
+                                btn.disabled = true;
+                                btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Testing R1–R5...';
+                                out.style.display = 'block';
+                                out.textContent = 'Running Super Admin backend diagnostics...';
+                                try {
+                                    const r = await fetch('/api/admin-flow-test.php');
+                                    const data = await r.json();
+                                    out.textContent = JSON.stringify(data, null, 2);
+                                } catch (e) {
+                                    out.textContent = 'Error running flow test: ' + e.message;
+                                } finally {
+                                    btn.disabled = false;
+                                    btn.innerHTML = '<i class="fa-solid fa-vial-circle-check"></i> Run Backend Flow Test';
+                                }
+                            }
+                            </script>
+                            <?php endif; ?>
 
                             <!-- YouTube URL Input (For Video Reels) -->
                             <div id="portfolio_video_url_wrapper" style="margin-top: 18px; display: <?php echo $currentMediaType === 'video' ? 'block' : 'none'; ?>;">
