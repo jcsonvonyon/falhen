@@ -8838,29 +8838,13 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                 $pwdError = $_GET['pwd_error'] ?? '';
             ?>
                 <!-- Header Bar -->
-                <div class="section-header-bar" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; margin-bottom: 24px;">
+                <div class="section-header-bar" style="align-items: center; margin-bottom: 24px;">
                     <div>
                         <h1 class="section-header-title" style="font-size: 1.75rem; font-weight: 700; color: #0f172a; margin-bottom: 4px;">My Profile &amp; Account Settings</h1>
                         <p class="section-header-desc" style="font-size: 0.88rem; color: #64748b; margin: 0;">
                             Manage your staff profile credentials, Cloudinary avatar, and account security preferences.
                         </p>
                     </div>
-                    <?php if (isSuperAdminUser()): ?>
-                        <div style="display: flex; align-items: center; gap: 10px; background: #f8fafc; border: 1px solid #e2e8f0; padding: 6px 14px; border-radius: 12px;">
-                            <span style="font-size: 0.78rem; font-weight: 600; color: #64748b;">Active Persona:</span>
-                            <?php if (strtolower($username) === 'admin'): ?>
-                                <span style="font-size: 0.84rem; font-weight: 700; color: #0f172a;">Henry Falonipe</span>
-                                <a href="/admin/index.php?switch_to_staff=oluwatosin.ligali" style="background: #dc2626; color: #ffffff; padding: 6px 14px; border-radius: 8px; font-size: 0.8rem; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 2px 6px rgba(220, 38, 38, 0.2);">
-                                    <i class="fa-solid fa-arrow-right-arrow-left"></i> Switch to Oluwatosin Ligali
-                                </a>
-                            <?php else: ?>
-                                <span style="font-size: 0.84rem; font-weight: 700; color: #0f172a;"><?php echo htmlspecialchars($userFullName ?? $username); ?></span>
-                                <a href="/admin/index.php?switch_to_staff=admin" style="background: #0f172a; color: #ffffff; padding: 6px 14px; border-radius: 8px; font-size: 0.8rem; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">
-                                    <i class="fa-solid fa-arrow-right-arrow-left"></i> Switch to Henry Falonipe
-                                </a>
-                            <?php endif; ?>
-                        </div>
-                    <?php endif; ?>
                 </div>
 
                 <!-- Alert Banners -->
