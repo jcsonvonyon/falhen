@@ -16173,22 +16173,31 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                     </div>
 
                     <!-- ROSTER TABLE -->
-                    <div class="dashboard-card" style="padding: 0; overflow: hidden; border: 1px solid #e2e8f0; border-radius: 16px; background: #ffffff;">
+                    <div class="dashboard-card" style="padding: 0; overflow: hidden; border: 1px solid #e2e8f0; border-radius: 16px; background: #ffffff; box-shadow: 0 1px 4px rgba(0,0,0,0.03);">
                         <div style="padding: 18px 24px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; background: #ffffff;">
-                            <div style="display: flex; align-items: center; gap: 10px;">
-                                <h2 style="font-size: 1.05rem; font-weight: 700; color: #0f172a; margin: 0;">Talent &amp; Contractor Directory</h2>
-                                <span style="background: #f1f5f9; color: #475569; font-size: 0.78rem; font-weight: 700; padding: 2px 8px; border-radius: 6px;"><?php echo count($filteredVendors); ?> Records</span>
-                            <div style="display: flex; gap: 8px; align-items: center;">
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                <div style="width: 36px; height: 36px; border-radius: 10px; background: rgba(225, 29, 72, 0.1); color: #e11d48; display: flex; align-items: center; justify-content: center; font-size: 1rem;">
+                                    <i class="fa-solid fa-users"></i>
+                                </div>
+                                <div>
+                                    <h2 style="font-size: 1.05rem; font-weight: 800; color: #0f172a; margin: 0; letter-spacing: -0.3px;">Talent &amp; Contractor Directory</h2>
+                                    <div style="font-size: 0.76rem; color: #64748b; margin-top: 2px;">Active contractor profiles, MSA/NDA agreements &amp; contact records</div>
+                                </div>
+                                <span style="background: #f1f5f9; color: #475569; font-size: 0.74rem; font-weight: 700; padding: 3px 10px; border-radius: 20px; border: 1px solid #e2e8f0;">
+                                    <?php echo count($filteredVendors); ?> Records
+                                </span>
+                            </div>
+                            <div style="display: flex; gap: 10px; align-items: center;">
                                 <?php if ($totalVendors > 0): ?>
                                     <form method="POST" action="/admin/index.php?section=vendors" onsubmit="return confirm('Are you sure you want to delete ALL vendor and talent records? This action cannot be undone.');" style="display: inline-block; margin: 0;">
                                         <input type="hidden" name="action" value="clear_all_vendors">
-                                        <button type="submit" style="font-size: 0.82rem; font-weight: 700; background: #fff1f2; color: #e11d48; border: 1px solid #fecdd3; padding: 6px 14px; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
-                                            <i class="fa-solid fa-trash-can"></i> Delete All Talent
+                                        <button type="submit" style="font-size: 0.8rem; font-weight: 700; background: #ffffff; color: #b91c1c; border: 1px solid #fecdd3; padding: 7px 13px; border-radius: 8px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; transition: all 0.15s ease;" onmouseover="this.style.background='#fff1f2'" onmouseout="this.style.background='#ffffff'">
+                                            <i class="fa-solid fa-trash-can" style="font-size: 0.75rem;"></i> Clear Roster
                                         </button>
                                     </form>
                                 <?php endif; ?>
-                                <button type="button" onclick="openNewVendorModal()" style="font-size: 0.82rem; font-weight: 700; background: #fff1f2; color: #e11d48; border: 1px solid #fecdd3; padding: 6px 12px; border-radius: 6px; cursor: pointer;">
-                                    <i class="fa-solid fa-plus"></i> Onboard New Talent
+                                <button type="button" onclick="openNewVendorModal()" style="font-size: 0.82rem; font-weight: 700; background: #e11d48; color: #ffffff; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; display: inline-flex; align-items: center; gap: 7px; box-shadow: 0 2px 6px rgba(225, 29, 72, 0.25); transition: all 0.15s ease;" onmouseover="this.style.background='#be123c'" onmouseout="this.style.background='#e11d48'">
+                                    <i class="fa-solid fa-user-plus"></i> Onboard New Talent
                                 </button>
                             </div>
                         </div>
@@ -16244,23 +16253,34 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                             $vndJson = htmlspecialchars(json_encode($vnd), ENT_QUOTES, 'UTF-8');
                                         ?>
                                         <tr style="border-bottom: 1px solid #f1f5f9; transition: background 0.15s ease;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
-                                            <td style="padding: 14px 20px;">
-                                                <div style="font-weight: 700; color: #0f172a; font-size: 0.92rem; display: flex; align-items: center; gap: 6px;">
-                                                    <?php echo htmlspecialchars($vName); ?>
-                                                    <?php if (!empty($vnd['id_document_url'])): ?>
-                                                        <i class="fa-solid fa-file-circle-check" style="color: #10b981; font-size: 0.8rem;" title="ID Document Verified"></i>
-                                                    <?php endif; ?>
-                                                </div>
-                                                <div style="display: flex; align-items: center; gap: 6px; margin-top: 3px; font-size: 0.78rem; color: #64748b; flex-wrap: wrap;">
-                                                    <span style="font-family: monospace; font-size: 0.74rem; font-weight: 700; color: #475569; background: #f1f5f9; padding: 1px 6px; border-radius: 4px; border: 1px solid #e2e8f0; white-space: nowrap;">
-                                                        <?php echo htmlspecialchars($vRef); ?>
-                                                    </span>
-                                                    <span>&bull;</span>
-                                                    <span><?php echo htmlspecialchars($vEmail); ?></span>
-                                                    <?php if (!empty($vPhone)): ?>
-                                                        <span>&bull;</span>
-                                                        <span><?php echo htmlspecialchars($vPhone); ?></span>
-                                                    <?php endif; ?>
+                                            <td style="padding: 16px 20px;">
+                                                <div style="display: flex; align-items: center; gap: 12px;">
+                                                    <div style="width: 38px; height: 38px; border-radius: 50%; background: linear-gradient(135deg, #0f172a, #334155); color: #ffffff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.85rem; flex-shrink: 0; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                                                        <?php 
+                                                        $nameParts = explode(' ', trim($vName));
+                                                        $initials = strtoupper(substr($nameParts[0] ?? 'V', 0, 1) . substr($nameParts[1] ?? '', 0, 1));
+                                                        echo htmlspecialchars($initials);
+                                                        ?>
+                                                    </div>
+                                                    <div>
+                                                        <div style="font-weight: 700; color: #0f172a; font-size: 0.94rem; display: flex; align-items: center; gap: 6px;">
+                                                            <?php echo htmlspecialchars($vName); ?>
+                                                            <?php if (!empty($vnd['id_document_url'])): ?>
+                                                                <i class="fa-solid fa-file-circle-check" style="color: #10b981; font-size: 0.8rem;" title="ID Document Verified"></i>
+                                                            <?php endif; ?>
+                                                        </div>
+                                                        <div style="display: flex; align-items: center; gap: 6px; margin-top: 3px; font-size: 0.78rem; color: #64748b; flex-wrap: wrap;">
+                                                            <span style="font-family: monospace; font-size: 0.74rem; font-weight: 700; color: #475569; background: #f1f5f9; padding: 2px 7px; border-radius: 4px; border: 1px solid #e2e8f0; white-space: nowrap;">
+                                                                <?php echo htmlspecialchars($vRef); ?>
+                                                            </span>
+                                                            <span>&bull;</span>
+                                                            <span><?php echo htmlspecialchars($vEmail); ?></span>
+                                                            <?php if (!empty($vPhone)): ?>
+                                                                <span>&bull;</span>
+                                                                <span><?php echo htmlspecialchars($vPhone); ?></span>
+                                                            <?php endif; ?>
+                                                        </div>
+                                                    </div>
                                                 </div>
                                             </td>
                                             <td style="padding: 14px 20px;">
@@ -16378,21 +16398,30 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                     </div>
 
                     <!-- GIGS TABLE -->
-                    <div class="dashboard-card" style="padding: 0; overflow: hidden; border: 1px solid #e2e8f0; border-radius: 16px; background: #ffffff;">
-                        <div style="padding: 18px 24px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center;">
-                            <div style="display: flex; align-items: center; gap: 10px;">
-                                <h2 style="font-size: 1.05rem; font-weight: 700; color: #0f172a; margin: 0;">Production Shoots &amp; Studio Call Sheets</h2>
-                                <span style="background: #f1f5f9; color: #475569; font-size: 0.78rem; font-weight: 700; padding: 2px 8px; border-radius: 6px;"><?php echo count($filteredGigs); ?> Shoots</span>
-                            <div style="display: flex; gap: 8px; align-items: center;">
+                    <div class="dashboard-card" style="padding: 0; overflow: hidden; border: 1px solid #e2e8f0; border-radius: 16px; background: #ffffff; box-shadow: 0 1px 4px rgba(0,0,0,0.03);">
+                        <div style="padding: 18px 24px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; background: #ffffff;">
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                <div style="width: 36px; height: 36px; border-radius: 10px; background: rgba(220, 38, 38, 0.1); color: #dc2626; display: flex; align-items: center; justify-content: center; font-size: 1rem;">
+                                    <i class="fa-solid fa-clapperboard"></i>
+                                </div>
+                                <div>
+                                    <h2 style="font-size: 1.05rem; font-weight: 800; color: #0f172a; margin: 0; letter-spacing: -0.3px;">Production Shoots &amp; Studio Call Sheets</h2>
+                                    <div style="font-size: 0.76rem; color: #64748b; margin-top: 2px;">Crew scheduling, call times, location logistics &amp; signed wrap reports</div>
+                                </div>
+                                <span style="background: #f1f5f9; color: #475569; font-size: 0.74rem; font-weight: 700; padding: 3px 10px; border-radius: 20px; border: 1px solid #e2e8f0;">
+                                    <?php echo count($filteredGigs); ?> Shoots
+                                </span>
+                            </div>
+                            <div style="display: flex; gap: 10px; align-items: center;">
                                 <?php if ($totalGigs > 0): ?>
                                     <form method="POST" action="/admin/index.php?section=vendors" onsubmit="return confirm('Are you sure you want to delete ALL production gigs and call sheets? This action cannot be undone.');" style="display: inline-block; margin: 0;">
                                         <input type="hidden" name="action" value="clear_all_vendor_gigs">
-                                        <button type="submit" style="font-size: 0.82rem; font-weight: 700; background: #fff1f2; color: #e11d48; border: 1px solid #fecdd3; padding: 6px 14px; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
-                                            <i class="fa-solid fa-trash-can"></i> Delete All Gigs
+                                        <button type="submit" style="font-size: 0.8rem; font-weight: 700; background: #ffffff; color: #b91c1c; border: 1px solid #fecdd3; padding: 7px 13px; border-radius: 8px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; transition: all 0.15s ease;" onmouseover="this.style.background='#fff1f2'" onmouseout="this.style.background='#ffffff'">
+                                            <i class="fa-solid fa-trash-can" style="font-size: 0.75rem;"></i> Clear Gigs
                                         </button>
                                     </form>
                                 <?php endif; ?>
-                                <button type="button" onclick="openNewGigModal()" style="font-size: 0.82rem; font-weight: 700; background: #dc2626; color: #ffffff; border: none; padding: 6px 14px; border-radius: 6px; cursor: pointer;">
+                                <button type="button" onclick="openNewGigModal()" style="font-size: 0.82rem; font-weight: 700; background: #dc2626; color: #ffffff; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; display: inline-flex; align-items: center; gap: 7px; box-shadow: 0 2px 6px rgba(220, 38, 38, 0.25); transition: all 0.15s ease;" onmouseover="this.style.background='#b91c1c'" onmouseout="this.style.background='#dc2626'">
                                     <i class="fa-solid fa-plus"></i> New Production Gig
                                 </button>
                             </div>
