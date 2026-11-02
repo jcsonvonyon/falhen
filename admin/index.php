@@ -2511,7 +2511,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             saveStaffAccountByUsername($userCheckEmail, $sigPayload);
         }
 
-        $isTargetAdmin = (strtolower($targetUser) === 'admin' || strtolower($targetUser) === 'henry.falonipe' || isSuperAdminUser());
+        $isTargetAdmin = (strtolower($targetUser) === 'admin' || strtolower($targetUser) === 'henry.falonipe' || strtolower($userCheckEmail) === 'admin@falhen.com');
         if ($isTargetAdmin) {
             saveAdminUserProfile($sigPayload);
         }
@@ -3393,7 +3393,33 @@ if ($userRole === 'Talent Manager') {
     $_SESSION['admin_role'] = 'HR Manager';
 }
 
-$isSuperAdmin = (strtolower($username) === 'admin' || strtolower($username) === 'oluwatosin.ligali' || strtolower($userEmail) === 'mail@falhenmedia.com' || strtolower($userEmail) === 'admin@falhen.com');
+$isSuperAdmin = (strtolower($username) === 'admin' || strtolower($username) === 'oluwatosin.ligali' || strtolower($userEmail) === 'mail@falhenmedia.com' || strtolower($userEmail) === 'admin@falhen.com' || strtolower($userRole) === 'super admin');
+
+// Allow super admin users to switch active profile session smoothly
+if (!empty($_GET['switch_to_staff']) && ($isSuperAdmin || isSuperAdminUser())) {
+    $targetSw = trim(strip_tags($_GET['switch_to_staff']));
+    if (strtolower($targetSw) === 'admin') {
+        $admProf = getAdminUserProfile();
+        $_SESSION['admin_username'] = 'admin';
+        $_SESSION['admin_email'] = $admProf['email'] ?? 'admin@falhen.com';
+        $_SESSION['admin_full_name'] = $admProf['full_name'] ?? 'Henry Falonipe';
+        $_SESSION['admin_role'] = $admProf['role'] ?? 'Super Admin';
+        $_SESSION['admin_designation'] = $admProf['designation'] ?? 'Creative Director & Founder';
+        $_SESSION['admin_avatar'] = $admProf['avatar'] ?? '';
+    } else {
+        $swStaff = getStaffAccountByUsername($targetSw);
+        if ($swStaff) {
+            $_SESSION['admin_username'] = $swStaff['username'] ?? $targetSw;
+            $_SESSION['admin_email'] = $swStaff['email'] ?? '';
+            $_SESSION['admin_full_name'] = $swStaff['full_name'] ?? $targetSw;
+            $_SESSION['admin_role'] = $swStaff['role'] ?? 'Staff';
+            $_SESSION['admin_designation'] = $swStaff['designation'] ?? ($swStaff['role'] ?? 'Staff');
+            $_SESSION['admin_avatar'] = $swStaff['avatar'] ?? '';
+        }
+    }
+    header('Location: /admin/index.php?section=my_profile');
+    exit;
+}
 
     $currentStaffAcc = getStaffAccountByUsername($username);
     if (!$currentStaffAcc && !empty($userEmail)) {
@@ -8812,13 +8838,29 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                 $pwdError = $_GET['pwd_error'] ?? '';
             ?>
                 <!-- Header Bar -->
-                <div class="section-header-bar" style="align-items: center; margin-bottom: 24px;">
+                <div class="section-header-bar" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; margin-bottom: 24px;">
                     <div>
                         <h1 class="section-header-title" style="font-size: 1.75rem; font-weight: 700; color: #0f172a; margin-bottom: 4px;">My Profile &amp; Account Settings</h1>
                         <p class="section-header-desc" style="font-size: 0.88rem; color: #64748b; margin: 0;">
                             Manage your staff profile credentials, Cloudinary avatar, and account security preferences.
                         </p>
                     </div>
+                    <?php if (isSuperAdminUser()): ?>
+                        <div style="display: flex; align-items: center; gap: 10px; background: #f8fafc; border: 1px solid #e2e8f0; padding: 6px 14px; border-radius: 12px;">
+                            <span style="font-size: 0.78rem; font-weight: 600; color: #64748b;">Active Persona:</span>
+                            <?php if (strtolower($username) === 'admin'): ?>
+                                <span style="font-size: 0.84rem; font-weight: 700; color: #0f172a;">Henry Falonipe</span>
+                                <a href="/admin/index.php?switch_to_staff=oluwatosin.ligali" style="background: #dc2626; color: #ffffff; padding: 6px 14px; border-radius: 8px; font-size: 0.8rem; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 2px 6px rgba(220, 38, 38, 0.2);">
+                                    <i class="fa-solid fa-arrow-right-arrow-left"></i> Switch to Oluwatosin Ligali
+                                </a>
+                            <?php else: ?>
+                                <span style="font-size: 0.84rem; font-weight: 700; color: #0f172a;"><?php echo htmlspecialchars($userFullName ?? $username); ?></span>
+                                <a href="/admin/index.php?switch_to_staff=admin" style="background: #0f172a; color: #ffffff; padding: 6px 14px; border-radius: 8px; font-size: 0.8rem; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">
+                                    <i class="fa-solid fa-arrow-right-arrow-left"></i> Switch to Henry Falonipe
+                                </a>
+                            <?php endif; ?>
+                        </div>
+                    <?php endif; ?>
                 </div>
 
                 <!-- Alert Banners -->
