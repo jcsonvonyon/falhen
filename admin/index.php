@@ -3058,6 +3058,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         header('Location: /admin/index.php?section=vendors&tab=' . urlencode($_POST['redirect_tab'] ?? 'directory') . '&saved=1');
         exit;
+    } else if ($action === 'resend_vendor_onboarding_email') {
+        $vendorId = trim($_POST['vendor_id'] ?? '');
+        $allVendors = getVendorsList();
+        $targetVendor = null;
+        foreach ($allVendors as $v) {
+            if ((string)($v['id'] ?? '') === (string)$vendorId || (string)($v['reference_code'] ?? '') === (string)$vendorId) {
+                $targetVendor = $v;
+                break;
+            }
+        }
+        if ($targetVendor && !empty($targetVendor['email'])) {
+            $vEmail = $targetVendor['email'];
+            $vName = $targetVendor['full_name'] ?? 'Vendor';
+            $vRole = $targetVendor['role_label'] ?? 'Vendor';
+            $vRef = $targetVendor['reference_code'] ?? '';
+            $vDl = 'https://falhen.com/download_vendor_agreement.php?ref=' . urlencode($vRef);
+            $sent = sendVendorOnboardingConfirmationEmail($vEmail, $vName, $vRole, $vRef, $vDl);
+            if ($sent) {
+                $_SESSION['saved_message'] = "Onboarding confirmation email sent successfully to {$vEmail} ({$vName})!";
+            } else {
+                $_SESSION['saved_error'] = "Failed to send onboarding email to {$vEmail}. Please check mail server logs.";
+            }
+        } else {
+            $_SESSION['saved_error'] = "Vendor or email address not found.";
+        }
+        header('Location: /admin/index.php?section=vendors&tab=' . urlencode($_POST['redirect_tab'] ?? 'directory') . '&saved=1');
+        exit;
     } else if ($action === 'clear_all_vendors') {
         clearAllVendors();
         $_SESSION['saved_message'] = 'All talent and vendor records have been deleted successfully.';
@@ -16287,6 +16314,15 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                                     <button type="button" onclick="openQuickAssignModal('<?php echo htmlspecialchars($vRef); ?>', '<?php echo htmlspecialchars(addslashes($vName)); ?>')" title="Assign Production Gig" style="padding: 6px 10px; background: #fff1f2; color: #dc2626; border: 1px solid #fecdd3; border-radius: 6px; font-size: 0.8rem; font-weight: 700; cursor: pointer;">
                                                         <i class="fa-solid fa-clapperboard"></i>
                                                     </button>
+                                                    <!-- Resend Onboarding Email -->
+                                                    <form method="POST" action="/admin/index.php?section=vendors" style="display: inline-block;" onsubmit="return confirm('Send onboarding confirmation email to <?php echo htmlspecialchars(addslashes($vEmail)); ?>?');">
+                                                        <input type="hidden" name="action" value="resend_vendor_onboarding_email">
+                                                        <input type="hidden" name="vendor_id" value="<?php echo htmlspecialchars($vId, ENT_QUOTES); ?>">
+                                                        <input type="hidden" name="redirect_tab" value="directory">
+                                                        <button type="submit" title="Resend Onboarding Confirmation Email" style="padding: 6px 10px; background: #ecfdf5; color: #059669; border: 1px solid #a7f3d0; border-radius: 6px; font-size: 0.8rem; font-weight: 700; cursor: pointer;">
+                                                            <i class="fa-solid fa-paper-plane"></i>
+                                                        </button>
+                                                    </form>
                                                     <!-- Agreement PDF Link -->
                                                     <a href="/download_vendor_agreement.php?ref=<?php echo urlencode($vRef); ?>" target="_blank" title="Download Signed Agreement PDF" style="padding: 6px 10px; background: #0f172a; color: #ffffff; border-radius: 6px; text-decoration: none; font-size: 0.8rem; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;">
                                                         <i class="fa-solid fa-file-pdf"></i>

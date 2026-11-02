@@ -532,3 +532,99 @@ function sendSalaryPayoutNotificationEmail($toEmail, $recipientName, $payPeriod,
         return false;
     }
 }
+
+/**
+ * Dispatch Vendor / Contractor Onboarding Confirmation Email via SMTP / Resend
+ */
+function sendVendorOnboardingConfirmationEmail($toEmail, $recipientName, $roleLabel, $refCode, $downloadUrl = '') {
+    if (empty($toEmail)) return false;
+
+    $mailer = new FalhenSMTPMailer();
+    $subject = "Welcome to Falhen Media — Onboarding Recorded (Ref: {$refCode})";
+
+    if (empty($downloadUrl)) {
+        $downloadUrl = "https://falhen.com/download_vendor_agreement.php?ref=" . urlencode($refCode);
+    } elseif (strpos($downloadUrl, 'http') !== 0) {
+        $downloadUrl = 'https://falhen.com' . (strpos($downloadUrl, '/') === 0 ? '' : '/') . $downloadUrl;
+    }
+
+    $portalUrl = "https://falhen.com/admin/login.php?view=vendor";
+
+    $html = '
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="UTF-8">
+        <style>
+            body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: #080b11; color: #f8fafc; margin: 0; padding: 40px 20px; }
+            .email-card { max-width: 540px; margin: 0 auto; background-color: #111723; border: 1px solid #1e293b; border-radius: 16px; padding: 36px 32px; text-align: center; }
+            .brand-logo { margin-bottom: 24px; }
+            h2 { color: #ffffff; font-size: 22px; font-weight: 700; margin-top: 0; margin-bottom: 12px; }
+            p { color: #94a3b8; font-size: 15px; line-height: 1.6; margin: 0 0 16px 0; }
+            .ref-box { background-color: #0d121d; border: 2px solid #10b981; color: #ffffff; font-size: 26px; font-weight: 700; letter-spacing: 4px; padding: 16px 24px; border-radius: 14px; margin: 20px 0; box-shadow: 0 4px 20px rgba(16, 185, 129, 0.2); font-family: monospace; }
+            .details-table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 14px; text-align: left; }
+            .details-table td { padding: 10px 14px; border-bottom: 1px solid #1e293b; color: #cbd5e1; }
+            .details-table td strong { color: #ffffff; }
+            .btn-primary { background-color: #dc2626; color: #ffffff !important; text-decoration: none; padding: 14px 28px; border-radius: 10px; font-weight: 700; font-size: 14px; display: inline-block; box-shadow: 0 4px 16px rgba(220, 38, 38, 0.35); margin: 6px; }
+            .btn-secondary { background-color: #0f172a; color: #10b981 !important; border: 1px solid #10b981; text-decoration: none; padding: 13px 26px; border-radius: 10px; font-weight: 700; font-size: 14px; display: inline-block; margin: 6px; }
+            .notice-box { background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.25); border-radius: 10px; padding: 14px; font-size: 13px; color: #a7f3d0; margin-top: 24px; text-align: left; line-height: 1.5; }
+            .footer { font-size: 12px; color: #64748b; margin-top: 32px; border-top: 1px solid #1e293b; padding-top: 16px; }
+        </style>
+    </head>
+    <body>
+        <div class="email-card">
+            <div class="brand-logo">
+                <img src="https://falhen.com/assets/img/icons/logo.png" alt="Falhen Media" style="height: 38px;">
+            </div>
+            <h2>Onboarding Complete!</h2>
+            <p>Hello <strong>' . htmlspecialchars($recipientName ?: 'Team Member') . '</strong>,</p>
+            <p>Welcome to the Falhen Media team! Your contractor/talent profile, workplace policy acceptance, and signed legal agreements (Master Services Agreement &amp; Non-Disclosure Agreement) have been officially registered.</p>
+            
+            <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: #10b981; letter-spacing: 1px; margin-top: 16px;">Your Official Reference Code</div>
+            <div class="ref-box">' . htmlspecialchars($refCode) . '</div>
+
+            <table class="details-table">
+                <tr>
+                    <td>Vendor / Talent Name:</td>
+                    <td style="text-align: right;"><strong>' . htmlspecialchars($recipientName) . '</strong></td>
+                </tr>
+                <tr>
+                    <td>Engagement Role:</td>
+                    <td style="text-align: right;"><strong>' . htmlspecialchars($roleLabel) . '</strong></td>
+                </tr>
+                <tr>
+                    <td>Status:</td>
+                    <td style="text-align: right;"><strong style="color: #10b981;">&bull; Verified &amp; Active</strong></td>
+                </tr>
+            </table>
+
+            <div style="margin: 24px 0 16px 0;">
+                <a href="' . htmlspecialchars($downloadUrl) . '" class="btn-primary">
+                    📄 Download Signed Agreement (PDF) &rarr;
+                </a>
+                <br>
+                <a href="' . htmlspecialchars($portalUrl) . '" class="btn-secondary">
+                    🔐 Sign In to Vendor Portal
+                </a>
+            </div>
+
+            <div class="notice-box">
+                <strong>💡 Portal Sign-In Information:</strong><br>
+                You can access the Vendor Portal anytime at <a href="' . htmlspecialchars($portalUrl) . '" style="color: #34d399; font-weight: 700;">falhen.com/admin/login.php?view=vendor</a> using your email address and your Reference Code (<strong>' . htmlspecialchars($refCode) . '</strong>) to view upcoming shoot schedules, call sheets, and engagement updates.
+            </div>
+
+            <div class="footer">
+                &copy; ' . date('Y') . ' Falhen Media Ltd. All rights reserved.
+            </div>
+        </div>
+    </body>
+    </html>';
+
+    try {
+        return $mailer->sendMail($toEmail, $subject, $html, $recipientName);
+    } catch (Exception $e) {
+        error_log("Failed to send Vendor Onboarding Confirmation email: " . $e->getMessage());
+        return false;
+    }
+}
+

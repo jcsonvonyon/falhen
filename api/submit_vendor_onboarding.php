@@ -4,6 +4,7 @@
  * Falhen Media
  */
 require_once __DIR__ . '/../includes/functions.php';
+require_once __DIR__ . '/../includes/smtp_mailer.php';
 
 header('Content-Type: application/json; charset=utf-8');
 
@@ -149,7 +150,15 @@ $vendorData = [
 $saved = saveVendorRecord($vendorData);
 
 $refCode = $saved['reference_code'] ?? '';
+$roleLabel = $saved['role_label'] ?? 'Vendor';
 $downloadUrl = '/download_vendor_agreement.php?ref=' . urlencode($refCode);
+
+// Dispatch Vendor Onboarding Confirmation Email via Resend / SMTP
+try {
+    sendVendorOnboardingConfirmationEmail($email, $fullName, $roleLabel, $refCode, $downloadUrl);
+} catch (Exception $e) {
+    error_log("Failed to dispatch vendor onboarding email to {$email}: " . $e->getMessage());
+}
 
 sendJSONResponse(true, 'Vendor onboarding submitted successfully! Welcome to the Falhen Media team.', [
     'reference_code' => $refCode,
