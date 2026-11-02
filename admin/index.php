@@ -16940,7 +16940,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
 
                             <div style="margin-bottom: 14px;">
                                 <label style="display: block; font-size: 0.8rem; font-weight: 700; color: #334155; margin-bottom: 5px;">Shoot / Production Title *</label>
-                                <input type="text" name="title" id="editGigTitle" required placeholder="e.g. Lagos Fashion Showcase - Runway & Editorial Shoot" style="width: 100%; padding: 9px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.88rem;">
+                                <input type="text" name="title" id="editGigTitle" required style="width: 100%; padding: 9px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.88rem;">
                             </div>
 
                             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px;">
@@ -16978,7 +16978,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
 
                             <div style="margin-bottom: 14px;">
                                 <label style="display: block; font-size: 0.8rem; font-weight: 700; color: #334155; margin-bottom: 5px;">Production Location *</label>
-                                <input type="text" name="location" id="editGigLocation" required placeholder="e.g. Studio A - 6 Olorunfunmi Street, Pedro, Gbagada, Lagos" style="width: 100%; padding: 9px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.88rem;">
+                                <input type="text" name="location" id="editGigLocation" required style="width: 100%; padding: 9px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.88rem;">
                             </div>
 
                             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px;">
@@ -17289,7 +17289,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                     document.getElementById('editGigDate').value = new Date().toISOString().split('T')[0];
                     document.getElementById('editGigCallTime').value = '08:00 AM';
                     document.getElementById('editGigWrapTime').value = '06:00 PM';
-                    document.getElementById('editGigLocation').value = 'Studio A - 6 Olorunfunmi Street, Pedro, Gbagada, Lagos';
+                    document.getElementById('editGigLocation').value = '';
                     document.getElementById('editGigRole').value = 'Lead Videographer & Director of Photography';
                     if (document.getElementById('editGigRate')) document.getElementById('editGigRate').value = '';
                     document.getElementById('editGigStatus').value = 'assigned';
