@@ -4583,9 +4583,8 @@ function getVendorsList() {
     if ($pdo) {
         try {
             $stmt = $pdo->query("SELECT * FROM `vendors` WHERE `deleted_at` IS NULL ORDER BY `id` DESC");
-            $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
-            if (!empty($rows)) {
-                return $rows;
+            if ($stmt !== false) {
+                return $stmt->fetchAll(PDO::FETCH_ASSOC);
             }
         } catch (Exception $e) {
             error_log("Failed to fetch vendors from DB: " . $e->getMessage());
@@ -4784,6 +4783,28 @@ function deleteVendorRecord($idOrRef) {
 
     $actor = $_SESSION['admin_username'] ?? 'Admin';
     logDatabaseAudit($actor, 'vendor_deleted', 'vendor', (string)$idOrRef, "Vendor #{$idOrRef} deleted.");
+    return true;
+}
+
+/**
+ * Clear All Vendor / Talent Records
+ */
+function clearAllVendors() {
+    $pdo = getDBConnection();
+    if ($pdo) {
+        try {
+            $pdo->exec("UPDATE `vendors` SET `deleted_at` = NOW() WHERE `deleted_at` IS NULL");
+        } catch (Exception $e) {
+            error_log("Failed to soft-delete all vendors in DB: " . $e->getMessage());
+        }
+    }
+
+    $settings = getSiteSettings();
+    $settings['vendors'] = [];
+    saveSiteSettings($settings);
+
+    $actor = $_SESSION['admin_username'] ?? 'Admin';
+    logDatabaseAudit($actor, 'vendors_cleared_all', 'vendor', 'all', "All vendors / talent cleared.");
     return true;
 }
 

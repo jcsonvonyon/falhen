@@ -60,6 +60,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'delete_brand_item'          => 'brands',
         'save_vendor'                => 'vendors',
         'delete_vendor'              => 'vendors',
+        'clear_all_vendors'          => 'vendors',
+        'clear_all_vendor_gigs'      => 'vendors',
         'save_onboarding_item'       => 'onboarding',
         'delete_onboarding_item'     => 'onboarding',
         'save_staff_account'         => 'staff_accounts',
@@ -3055,6 +3057,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $_SESSION['saved_message'] = 'Vendor record deleted successfully.';
         }
         header('Location: /admin/index.php?section=vendors&tab=' . urlencode($_POST['redirect_tab'] ?? 'directory') . '&saved=1');
+        exit;
+    } else if ($action === 'clear_all_vendors') {
+        clearAllVendors();
+        $_SESSION['saved_message'] = 'All talent and vendor records have been deleted successfully.';
+        header('Location: /admin/index.php?section=vendors&tab=directory&saved=1');
         exit;
     } else if ($action === 'update_vendor_status') {
         $vendorId = trim($_POST['vendor_id'] ?? '');
@@ -16189,10 +16196,19 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                             <div style="display: flex; align-items: center; gap: 10px;">
                                 <h2 style="font-size: 1.05rem; font-weight: 700; color: #0f172a; margin: 0;">Talent &amp; Contractor Directory</h2>
                                 <span style="background: #f1f5f9; color: #475569; font-size: 0.78rem; font-weight: 700; padding: 2px 8px; border-radius: 6px;"><?php echo count($filteredVendors); ?> Records</span>
+                            <div style="display: flex; gap: 8px; align-items: center;">
+                                <?php if ($totalVendors > 0): ?>
+                                    <form method="POST" action="/admin/index.php?section=vendors" onsubmit="return confirm('Are you sure you want to delete ALL vendor and talent records? This action cannot be undone.');" style="display: inline-block; margin: 0;">
+                                        <input type="hidden" name="action" value="clear_all_vendors">
+                                        <button type="submit" style="font-size: 0.82rem; font-weight: 700; background: #fff1f2; color: #e11d48; border: 1px solid #fecdd3; padding: 6px 14px; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+                                            <i class="fa-solid fa-trash-can"></i> Delete All Talent
+                                        </button>
+                                    </form>
+                                <?php endif; ?>
+                                <button type="button" onclick="openNewVendorModal()" style="font-size: 0.82rem; font-weight: 700; background: #fff1f2; color: #e11d48; border: 1px solid #fecdd3; padding: 6px 12px; border-radius: 6px; cursor: pointer;">
+                                    <i class="fa-solid fa-plus"></i> Onboard New Talent
+                                </button>
                             </div>
-                            <button type="button" onclick="openNewVendorModal()" style="font-size: 0.82rem; font-weight: 700; background: #fff1f2; color: #e11d48; border: 1px solid #fecdd3; padding: 6px 12px; border-radius: 6px; cursor: pointer;">
-                                <i class="fa-solid fa-plus"></i> Onboard New Talent
-                            </button>
                         </div>
 
                         <?php if (empty($filteredVendors)): ?>
