@@ -1,6 +1,6 @@
 <?php
 /**
- * Socket-based SMTP Mailer Class & Helper
+ * Resend & Socket-based SMTP Mailer Class & Helpers
  * Falhen Media
  */
 
@@ -12,91 +12,293 @@ class FalhenSMTPMailer {
     private $user;
     private $pass;
     private $secure;
+    private $fromEmail;
+    private $fromName;
+    private $apiKey;
+    private $driver;
 
     public function __construct() {
-        $this->host = SMTP_HOST;
-        $this->port = SMTP_PORT;
-        $this->user = SMTP_USER;
-        $this->pass = SMTP_PASS;
-        $this->secure = SMTP_SECURE;
+        $this->host      = SMTP_HOST;
+        $this->port      = (int)SMTP_PORT;
+        $this->user      = SMTP_USER;
+        $this->pass      = SMTP_PASS;
+        $this->secure    = strtolower(SMTP_SECURE);
+        $this->fromEmail = SMTP_FROM_EMAIL;
+        $this->fromName  = SMTP_FROM_NAME;
+        $this->apiKey    = RESEND_API_KEY;
+        $this->driver    = defined('MAIL_DRIVER') ? MAIL_DRIVER : 'resend';
     }
 
     /**
-     * Send HTML email using socket SMTP connection with automatic PHP mail() fallback
+     * Send HTML email using Resend API / Socket SMTP with automatic fallback
+     *
+     * @param string $to Recipient email address
+     * @param string $subject Email subject
+     * @param string $htmlBody HTML content
+     * @param string $toName Optional recipient display name
+     * @return bool True if mail was accepted by provider, false otherwise
      */
     public function sendMail($to, $subject, $htmlBody, $toName = '') {
-        $smtpSuccess = false;
-
-        try {
-            $prefix = ($this->secure === 'ssl') ? 'ssl://' : '';
-            $hostWithPrefix = $prefix . $this->host;
-
-            $context = stream_context_create([
-                'ssl' => [
-                    'verify_peer' => false,
-                    'verify_peer_name' => false,
-                    'allow_self_signed' => true
-                ]
-            ]);
-
-            $socket = @stream_socket_client($hostWithPrefix . ':' . $this->port, $errno, $errstr, 6, STREAM_CLIENT_CONNECT, $context);
-
-            if ($socket) {
-                $this->getResponse($socket);
-                $this->sendCommand($socket, "EHLO " . gethostname());
-                
-                if ($this->secure === 'tls') {
-                    $this->sendCommand($socket, "STARTTLS");
-                    @stream_socket_enable_crypto($socket, true, STREAM_CRYPTO_METHOD_TLS_CLIENT);
-                    $this->sendCommand($socket, "EHLO " . gethostname());
-                }
-
-                // Authenticate
-                $this->sendCommand($socket, "AUTH LOGIN");
-                $this->sendCommand($socket, base64_encode($this->user));
-                $authRes = $this->sendCommand($socket, base64_encode($this->pass));
-
-                // Mail transaction
-                $this->sendCommand($socket, "MAIL FROM: <" . $this->user . ">");
-                $this->sendCommand($socket, "RCPT TO: <" . $to . ">");
-                $this->sendCommand($socket, "DATA");
-
-                // Headers & Content
-                $headers  = "MIME-Version: 1.0\r\n";
-                $headers .= "Content-Type: text/html; charset=UTF-8\r\n";
-                $headers .= "From: " . SMTP_FROM_NAME . " <" . $this->user . ">\r\n";
-                $headers .= "To: " . ($toName ? "$toName <$to>" : $to) . "\r\n";
-                $headers .= "Subject: " . $subject . "\r\n";
-                $headers .= "Date: " . date("r") . "\r\n";
-                $headers .= "X-Mailer: FalhenMediaSMTP/1.0\r\n";
-
-                $content = $headers . "\r\n" . $htmlBody . "\r\n.\r\n";
-                fwrite($socket, $content);
-                $dataRes = $this->getResponse($socket);
-
-                $this->sendCommand($socket, "QUIT");
-                fclose($socket);
-
-                if (strpos($dataRes, '250') !== false || strpos($authRes, '235') !== false) {
-                    $smtpSuccess = true;
-                }
-            }
-        } catch (Exception $e) {
-            error_log("Socket SMTP failed: " . $e->getMessage());
+        $to = trim($to);
+        if (empty($to) || !filter_var($to, FILTER_VALIDATE_EMAIL)) {
+            error_log("FalhenSMTPMailer: Invalid recipient email address: '{$to}'");
+            return false;
         }
 
-        if ($smtpSuccess) {
+        // 1. If Resend Driver and API Key available, attempt Resend REST API (fastest & most reliable)
+        if ($this->driver === 'resend' && !empty($this->apiKey)) {
+            try {
+                if ($this->sendViaResendApi($to, $subject, $htmlBody, $toName)) {
+                    return true;
+                }
+            } catch (Exception $e) {
+                error_log("FalhenSMTPMailer Resend API Error: " . $e->getMessage());
+            }
+        }
+
+        // 2. Attempt Socket-based SMTP (Resend SMTP or custom host)
+        try {
+            if ($this->sendViaSocketSmtp($to, $subject, $htmlBody, $toName)) {
+                return true;
+            }
+        } catch (Exception $e) {
+            error_log("FalhenSMTPMailer Socket SMTP Error: " . $e->getMessage());
+        }
+
+        // 3. Fallback to PHP native mail() with full HTML & From headers
+        return $this->sendViaNativeMail($to, $subject, $htmlBody, $toName);
+    }
+
+    /**
+     * Send email via Resend official REST API (https://api.resend.com/emails)
+     */
+    public function sendViaResendApi($to, $subject, $htmlBody, $toName = '') {
+        $apiKey = $this->apiKey;
+        if (empty($apiKey)) {
+            return false;
+        }
+
+        $fromAddress = !empty($this->fromName) 
+            ? "{$this->fromName} <{$this->fromEmail}>" 
+            : $this->fromEmail;
+
+        $toRecipient = !empty($toName) ? "{$toName} <{$to}>" : $to;
+
+        $payload = [
+            'from'    => $fromAddress,
+            'to'      => [$toRecipient],
+            'subject' => $subject,
+            'html'    => $htmlBody,
+            'headers' => [
+                'X-Entity-Ref-ID' => uniqid('falhen_', true)
+            ]
+        ];
+
+        $jsonPayload = json_encode($payload);
+
+        // Prefer cURL for performance and SSL management
+        if (function_exists('curl_init')) {
+            $ch = curl_init('https://api.resend.com/emails');
+            curl_setopt_array($ch, [
+                CURLOPT_POST           => true,
+                CURLOPT_POSTFIELDS     => $jsonPayload,
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_HTTPHEADER     => [
+                    'Authorization: Bearer ' . $apiKey,
+                    'Content-Type: application/json',
+                    'Content-Length: ' . strlen($jsonPayload),
+                    'User-Agent: Falhen-Media-Resend/2.0'
+                ],
+                CURLOPT_TIMEOUT        => 12,
+                CURLOPT_SSL_VERIFYPEER => false,
+                CURLOPT_SSL_VERIFYHOST => false
+            ]);
+
+            $rawResponse = curl_exec($ch);
+            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            $curlErr = curl_error($ch);
+            curl_close($ch);
+
+            if ($curlErr) {
+                error_log("FalhenSMTPMailer cURL Error to Resend API: " . $curlErr);
+                return false;
+            }
+
+            if ($httpCode >= 200 && $httpCode < 300) {
+                return true;
+            }
+
+            error_log("FalhenSMTPMailer Resend API HTTP {$httpCode}: " . $rawResponse);
+            return false;
+        }
+
+        // Stream context fallback if cURL is disabled
+        $opts = [
+            'http' => [
+                'method'        => 'POST',
+                'header'        => "Authorization: Bearer {$apiKey}\r\n" .
+                                   "Content-Type: application/json\r\n" .
+                                   "Content-Length: " . strlen($jsonPayload) . "\r\n" .
+                                   "User-Agent: Falhen-Media-Resend/2.0\r\n",
+                'content'       => $jsonPayload,
+                'timeout'       => 12,
+                'ignore_errors' => true
+            ],
+            'ssl' => [
+                'verify_peer'      => false,
+                'verify_peer_name' => false
+            ]
+        ];
+
+        $context = stream_context_create($opts);
+        $result = @file_get_contents('https://api.resend.com/emails', false, $context);
+        $statusLine = $http_response_header[0] ?? '';
+
+        if (preg_match('#HTTP/\S+\s+2\d\d#', $statusLine)) {
             return true;
         }
 
-        // Fallback to PHP native mail() with full HTML & From headers
+        error_log("FalhenSMTPMailer file_get_contents Resend API Error: {$statusLine} - {$result}");
+        return false;
+    }
+
+    /**
+     * Send email via direct Socket SMTP connection (Resend SMTP: smtp.resend.com)
+     */
+    public function sendViaSocketSmtp($to, $subject, $htmlBody, $toName = '') {
+        if (empty($this->host) || empty($this->port)) {
+            return false;
+        }
+
+        $context = stream_context_create([
+            'ssl' => [
+                'verify_peer'       => false,
+                'verify_peer_name'  => false,
+                'allow_self_signed' => true
+            ]
+        ]);
+
+        $isTls = ($this->secure === 'tls' || $this->port === 587);
+        $hostPrefix = $isTls ? 'tcp://' : 'ssl://';
+        $fullHost = $hostPrefix . $this->host . ':' . $this->port;
+
+        $socket = @stream_socket_client($fullHost, $errno, $errstr, 8, STREAM_CLIENT_CONNECT, $context);
+        if (!$socket) {
+            error_log("FalhenSMTPMailer Socket connection failed to {$fullHost}: {$errstr} ({$errno})");
+            return false;
+        }
+
+        stream_set_timeout($socket, 10);
+
+        // 1. Initial Greeting
+        $greeting = $this->getResponse($socket);
+        if (strpos($greeting, '220') === false) {
+            fclose($socket);
+            throw new Exception("Unexpected SMTP banner: " . trim($greeting));
+        }
+
+        // 2. EHLO
+        $ehloHost = gethostname() ?: 'falhen.com';
+        $this->sendCommand($socket, "EHLO " . $ehloHost);
+
+        // 3. STARTTLS if TLS mode
+        if ($isTls) {
+            $starttlsRes = $this->sendCommand($socket, "STARTTLS");
+            if (strpos($starttlsRes, '220') === false) {
+                fclose($socket);
+                throw new Exception("STARTTLS failed: " . trim($starttlsRes));
+            }
+            $crypto = @stream_socket_enable_crypto($socket, true, STREAM_CRYPTO_METHOD_TLS_CLIENT);
+            if (!$crypto) {
+                fclose($socket);
+                throw new Exception("TLS negotiation failed with {$this->host}");
+            }
+            $this->sendCommand($socket, "EHLO " . $ehloHost);
+        }
+
+        // 4. AUTH LOGIN (Username = 'resend', Password = Resend API Key)
+        if (!empty($this->user) && !empty($this->pass)) {
+            $authInit = $this->sendCommand($socket, "AUTH LOGIN");
+            if (strpos($authInit, '334') === false) {
+                fclose($socket);
+                throw new Exception("AUTH LOGIN rejected: " . trim($authInit));
+            }
+
+            $this->sendCommand($socket, base64_encode($this->user));
+            $authRes = $this->sendCommand($socket, base64_encode($this->pass));
+            if (strpos($authRes, '235') === false) {
+                fclose($socket);
+                throw new Exception("SMTP Authentication failed: " . trim($authRes));
+            }
+        }
+
+        // 5. Envelope Sender (Must be an email address, e.g. noreply@falhen.com, NOT 'resend')
+        $envelopeSender = !empty($this->fromEmail) ? $this->fromEmail : 'noreply@falhen.com';
+        $mailFromRes = $this->sendCommand($socket, "MAIL FROM: <" . $envelopeSender . ">");
+        if (strpos($mailFromRes, '250') === false) {
+            fclose($socket);
+            throw new Exception("MAIL FROM rejected: " . trim($mailFromRes));
+        }
+
+        // 6. Recipient
+        $rcptRes = $this->sendCommand($socket, "RCPT TO: <" . $to . ">");
+        if (strpos($rcptRes, '250') === false && strpos($rcptRes, '251') === false) {
+            fclose($socket);
+            throw new Exception("RCPT TO rejected: " . trim($rcptRes));
+        }
+
+        // 7. DATA Command
+        $dataRes = $this->sendCommand($socket, "DATA");
+        if (strpos($dataRes, '354') === false) {
+            fclose($socket);
+            throw new Exception("DATA command rejected: " . trim($dataRes));
+        }
+
+        // 8. Headers & Body Payload
+        $fromHeader = !empty($this->fromName) 
+            ? "{$this->fromName} <{$this->fromEmail}>" 
+            : $this->fromEmail;
+        $toHeader = !empty($toName) ? "{$toName} <{$to}>" : $to;
+
+        $headers  = "MIME-Version: 1.0\r\n";
+        $headers .= "Content-Type: text/html; charset=UTF-8\r\n";
+        $headers .= "From: {$fromHeader}\r\n";
+        $headers .= "Reply-To: {$this->fromEmail}\r\n";
+        $headers .= "To: {$toHeader}\r\n";
+        $headers .= "Subject: {$subject}\r\n";
+        $headers .= "Date: " . date("r") . "\r\n";
+        $headers .= "X-Mailer: FalhenMedia-Resend/2.0\r\n";
+
+        $content = $headers . "\r\n" . $htmlBody . "\r\n.\r\n";
+        fwrite($socket, $content);
+        $deliveryRes = $this->getResponse($socket);
+
+        $this->sendCommand($socket, "QUIT");
+        fclose($socket);
+
+        if (strpos($deliveryRes, '250') !== false) {
+            return true;
+        }
+
+        throw new Exception("SMTP DATA delivery failed: " . trim($deliveryRes));
+    }
+
+    /**
+     * Fallback to native PHP mail() function
+     */
+    private function sendViaNativeMail($to, $subject, $htmlBody, $toName = '') {
+        $fromHeader = !empty($this->fromName) 
+            ? "{$this->fromName} <{$this->fromEmail}>" 
+            : $this->fromEmail;
+
         $nativeHeaders  = "MIME-Version: 1.0\r\n";
         $nativeHeaders .= "Content-Type: text/html; charset=UTF-8\r\n";
-        $nativeHeaders .= "From: " . SMTP_FROM_NAME . " <" . $this->user . ">\r\n";
-        $nativeHeaders .= "Reply-To: " . $this->user . "\r\n";
+        $nativeHeaders .= "From: {$fromHeader}\r\n";
+        $nativeHeaders .= "Reply-To: {$this->fromEmail}\r\n";
         $nativeHeaders .= "X-Mailer: PHP/" . phpversion() . "\r\n";
 
-        return @mail($to, $subject, $htmlBody, $nativeHeaders, "-f" . $this->user);
+        $extraParam = !empty($this->fromEmail) ? "-f" . $this->fromEmail : '';
+        return @mail($to, $subject, $htmlBody, $nativeHeaders, $extraParam);
     }
 
     private function sendCommand($socket, $cmd) {
@@ -112,10 +314,44 @@ class FalhenSMTPMailer {
         }
         return $response;
     }
+
+    /**
+     * Diagnostic helper to test the mail configuration
+     */
+    public function testConnection($testRecipient = null) {
+        $results = [
+            'driver'     => $this->driver,
+            'host'       => $this->host,
+            'port'       => $this->port,
+            'secure'     => $this->secure,
+            'user'       => $this->user,
+            'has_api_key'=> !empty($this->apiKey),
+            'from'       => "{$this->fromName} <{$this->fromEmail}>",
+            'api_test'   => null,
+            'smtp_test'  => null,
+            'overall'    => false
+        ];
+
+        if (!empty($testRecipient)) {
+            $subject = "Falhen Media — Resend SMTP Connection Test";
+            $html = "<h3>Resend Mail Test Successful</h3><p>This is a test notification dispatched from Falhen Media on " . date('Y-m-d H:i:s') . ".</p>";
+            $results['overall'] = $this->sendMail($testRecipient, $subject, $html, "Test Recipient");
+        }
+
+        return $results;
+    }
 }
 
 /**
- * Send 6-digit Verification Code Email via SMTP
+ * Helper: General Email Dispatcher
+ */
+function sendFalhenEmail($toEmail, $subject, $htmlBody, $recipientName = '') {
+    $mailer = new FalhenSMTPMailer();
+    return $mailer->sendMail($toEmail, $subject, $htmlBody, $recipientName);
+}
+
+/**
+ * Send 6-digit Verification Code Email via SMTP / Resend
  */
 function sendVerificationCodeEmail($toEmail, $code, $recipientName = '') {
     $mailer = new FalhenSMTPMailer();
@@ -153,13 +389,13 @@ function sendVerificationCodeEmail($toEmail, $code, $recipientName = '') {
     try {
         return $mailer->sendMail($toEmail, $subject, $html, $recipientName);
     } catch (Exception $e) {
-        error_log("Failed to send SMTP email: " . $e->getMessage());
+        error_log("Failed to send Verification SMTP/Resend email: " . $e->getMessage());
         return false;
     }
 }
 
 /**
- * Send 6-digit Staff Account Activation Code Email via SMTP
+ * Send 6-digit Staff Account Activation Code Email via SMTP / Resend
  */
 function sendStaffActivationEmail($toEmail, $code, $recipientName = '', $staffEmail = '') {
     if (empty($toEmail)) return false;
@@ -221,7 +457,7 @@ function sendStaffActivationEmail($toEmail, $code, $recipientName = '', $staffEm
     try {
         return $mailer->sendMail($toEmail, $subject, $html, $recipientName);
     } catch (Exception $e) {
-        error_log("Failed to send Staff Activation SMTP email: " . $e->getMessage());
+        error_log("Failed to send Staff Activation SMTP/Resend email: " . $e->getMessage());
         return false;
     }
 }
@@ -292,7 +528,7 @@ function sendSalaryPayoutNotificationEmail($toEmail, $recipientName, $payPeriod,
     try {
         return $mailer->sendMail($toEmail, $subject, $html, $recipientName);
     } catch (Exception $e) {
-        error_log("Failed to send Salary Payout SMTP email: " . $e->getMessage());
+        error_log("Failed to send Salary Payout SMTP/Resend email: " . $e->getMessage());
         return false;
     }
 }
