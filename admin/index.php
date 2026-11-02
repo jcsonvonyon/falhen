@@ -3342,6 +3342,11 @@ if ($rawSection === null) {
     $activeSection = $rawSection;
 }
 
+if ($activeSection === 'mail') {
+    header('Location: /admin/index.php?section=dashboard');
+    exit;
+}
+
 // Check Initial Password Setup Gatekeeper for Activated Accounts
 $mustChangePassword = !empty($_SESSION['must_change_password']) || isset($_GET['force_password_change']);
 if ($mustChangePassword) {
@@ -4713,7 +4718,6 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                     'video_gallery' => 'Video Gallery',
                     'inquiries' => 'Inquiries & Quotes',
                     'dashboard' => 'Dashboard',
-                    'mail' => 'Staff Mail',
                     'comms' => 'Team Comms',
                     'assets' => 'Brand Assets'
                 ];
@@ -4721,7 +4725,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                 ?>
                 <div class="breadcrumb-text">Admin &rsaquo; <strong><?php echo htmlspecialchars($displayBreadcrumb); ?></strong></div>
 
-                <!-- 4 PRIMARY TOPBAR MENU ITEMS FOR STAFF PORTAL -->
+                <!-- 3 PRIMARY TOPBAR MENU ITEMS FOR STAFF PORTAL -->
                 <?php 
                 $homeSections = ['dashboard', 'onboarding', 'directory', 'announcements', 'attendance', 'leaves', 'payslips', 'home', 'hero'];
                 $isHomeActive = in_array($activeSection, $homeSections, true);
@@ -4730,10 +4734,6 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                     <a href="/admin/index.php?section=<?php echo (isAdminUser($userRole, $userEmail, $username) && !isTalentManager($userRole)) ? 'hero' : 'dashboard'; ?>" class="topbar-nav-link" style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; font-size: 0.84rem; font-weight: 700; text-decoration: none; border-radius: 7px; transition: all 0.15s ease; <?php echo $isHomeActive ? 'background: #ffffff; color: #dc2626; box-shadow: 0 1px 3px rgba(0,0,0,0.08);' : 'color: #475569;'; ?>">
                         <i class="fa-solid fa-house" style="font-size: 0.8rem; <?php echo $isHomeActive ? 'color: #dc2626;' : 'color: #64748b;'; ?>"></i>
                         <span>Home</span>
-                    </a>
-                    <a href="/admin/index.php?section=mail" class="topbar-nav-link" style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; font-size: 0.84rem; font-weight: 700; text-decoration: none; border-radius: 7px; transition: all 0.15s ease; <?php echo ($activeSection === 'mail') ? 'background: #ffffff; color: #dc2626; box-shadow: 0 1px 3px rgba(0,0,0,0.08);' : 'color: #475569;'; ?>">
-                        <i class="fa-solid fa-envelope" style="font-size: 0.8rem; <?php echo ($activeSection === 'mail') ? 'color: #dc2626;' : 'color: #64748b;'; ?>"></i>
-                        <span>Mail</span>
                     </a>
                     <a href="/admin/index.php?section=comms" class="topbar-nav-link" style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; font-size: 0.84rem; font-weight: 700; text-decoration: none; border-radius: 7px; transition: all 0.15s ease; <?php echo ($activeSection === 'comms') ? 'background: #ffffff; color: #dc2626; box-shadow: 0 1px 3px rgba(0,0,0,0.08);' : 'color: #475569;'; ?>">
                         <i class="fa-solid fa-comments" style="font-size: 0.8rem; <?php echo ($activeSection === 'comms') ? 'color: #dc2626;' : 'color: #64748b;'; ?>"></i>
@@ -14072,51 +14072,6 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                             <?php endif; ?>
                         </tbody>
                     </table>
-                </div>
-
-            <?php elseif ($activeSection === 'mail'): ?>
-                <!-- SECTION: MAIL -->
-                <div class="section-header-bar">
-                    <div>
-                        <h1 class="section-header-title">Staff Mail & Communications Inbox</h1>
-                        <p class="section-header-desc">Manage internal staff emails, project notifications, and client inquiries.</p>
-                    </div>
-                    <button type="button" class="btn-save-primary" onclick="alert('Compose new email window opened!')">
-                        <i class="fa-solid fa-pen-to-square"></i> Compose Mail
-                    </button>
-                </div>
-
-                <div class="dashboard-card">
-                    <div class="card-header-row">
-                        <div class="card-icon-badge"><i class="fa-solid fa-envelope-open-text"></i></div>
-                        <div class="card-title-text">Recent Mail & Messages</div>
-                    </div>
-                    <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 14px;">
-                        <div style="padding: 16px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
-                            <div style="display: flex; align-items: center; gap: 14px;">
-                                <div style="width: 42px; height: 42px; border-radius: 50%; background: rgba(220, 38, 38, 0.1); color: #dc2626; display: flex; align-items: center; justify-content: center; font-weight: 700;">
-                                    <i class="fa-solid fa-film"></i>
-                                </div>
-                                <div>
-                                    <div style="font-weight: 700; color: #0f172a; font-size: 0.94rem;">Production Scheduling &bull; Q3 Film Shoot</div>
-                                    <div style="font-size: 0.82rem; color: #64748b;">From: Henry Falonipe &mdash; Call sheet for Lagos commercial shoot confirmed for Monday.</div>
-                                </div>
-                            </div>
-                            <span style="font-size: 0.76rem; color: #94a3b8; font-weight: 600;">10:15 AM</span>
-                        </div>
-                        <div style="padding: 16px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
-                            <div style="display: flex; align-items: center; gap: 14px;">
-                                <div style="width: 42px; height: 42px; border-radius: 50%; background: rgba(2, 132, 199, 0.1); color: #0284c7; display: flex; align-items: center; justify-content: center; font-weight: 700;">
-                                    <i class="fa-solid fa-users-gear"></i>
-                                </div>
-                                <div>
-                                    <div style="font-weight: 700; color: #0f172a; font-size: 0.94rem;">HR Portal &bull; Monthly Benefits & Health Stipend</div>
-                                    <div style="font-size: 0.82rem; color: #64748b;">From: Resource & HR &mdash; August reimbursement claims are now processing.</div>
-                                </div>
-                            </div>
-                            <span style="font-size: 0.76rem; color: #94a3b8; font-weight: 600;">Yesterday</span>
-                        </div>
-                    </div>
                 </div>
 
             <?php elseif ($activeSection === 'comms'): ?>
