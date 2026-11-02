@@ -4846,6 +4846,75 @@ function updateVendorStatus($idOrRef, $newStatus) {
 }
 
 /**
+ * Get Authorized Counter-Signer for Company Agreements & Legal Documents
+ */
+function getAuthorizedCounterSigner() {
+    $settings = getSiteSettings();
+    if (!empty($settings['authorized_counter_signer']) && is_array($settings['authorized_counter_signer'])) {
+        return $settings['authorized_counter_signer'];
+    }
+
+    // Check staff accounts for a designated counter-signer
+    if (function_exists('getStaffAccountsRepo')) {
+        $staffList = getStaffAccountsRepo();
+        foreach ($staffList as $staff) {
+            if (!empty($staff['is_authorized_counter_signer']) && !empty($staff['signature_data'])) {
+                return [
+                    'full_name'      => $staff['full_name'] ?? 'Oluwatosin Ligali',
+                    'designation'    => $staff['counter_signer_title'] ?? ($staff['designation'] ?? 'Executive Producer'),
+                    'signature_data' => $staff['signature_data'] ?? '',
+                    'signature_type' => $staff['signature_type'] ?? 'draw',
+                    'username'       => $staff['username'] ?? '',
+                    'updated_at'     => $staff['signature_updated_at'] ?? date('Y-m-d H:i:s')
+                ];
+            }
+        }
+    }
+
+    // Check admin profile
+    if (function_exists('getAdminUserProfile')) {
+        $admin = getAdminUserProfile();
+        if (!empty($admin['signature_data'])) {
+            return [
+                'full_name'      => $admin['full_name'] ?? 'Oluwatosin Ligali',
+                'designation'    => $admin['counter_signer_title'] ?? ($admin['designation'] ?? 'Executive Producer'),
+                'signature_data' => $admin['signature_data'] ?? '',
+                'signature_type' => $admin['signature_type'] ?? 'draw',
+                'username'       => $admin['username'] ?? 'admin',
+                'updated_at'     => $admin['signature_updated_at'] ?? date('Y-m-d H:i:s')
+            ];
+        }
+    }
+
+    // Default fallback to company executive producer
+    return [
+        'full_name'      => 'Oluwatosin Ligali',
+        'designation'    => 'Executive Producer',
+        'signature_data' => '',
+        'signature_type' => 'typed',
+        'username'       => 'oluwatosin.ligali',
+        'updated_at'     => date('Y-m-d H:i:s')
+    ];
+}
+
+/**
+ * Save Authorized Counter-Signer to Site Settings
+ */
+function saveAuthorizedCounterSigner(array $signerData) {
+    $settings = getSiteSettings();
+    $settings['authorized_counter_signer'] = [
+        'full_name'      => trim($signerData['full_name'] ?? 'Oluwatosin Ligali'),
+        'designation'    => trim($signerData['designation'] ?? 'Executive Producer'),
+        'signature_data' => trim($signerData['signature_data'] ?? ''),
+        'signature_type' => trim($signerData['signature_type'] ?? 'draw'),
+        'username'       => trim($signerData['username'] ?? ''),
+        'updated_at'     => date('Y-m-d H:i:s')
+    ];
+    saveSiteSettings($settings);
+    return $settings['authorized_counter_signer'];
+}
+
+/**
  * Get Vendor by Email Address
  */
 function getVendorByEmail($email) {

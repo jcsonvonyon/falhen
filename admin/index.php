@@ -68,6 +68,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'delete_staff_account'       => 'staff_accounts',
         'toggle_staff_status'        => 'staff_accounts',
         'save_profile_details'       => 'my_profile',
+        'save_counter_signature'     => 'my_profile',
         'change_profile_password'    => 'my_profile',
         'update_profile'             => 'my_profile',
         'change_password'            => 'my_profile',
@@ -2463,6 +2464,71 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         header('Location: index.php?section=my_profile&saved=1');
+        exit;
+    } else if ($action === 'save_counter_signature') {
+        $targetUser = trim(strip_tags($_POST['username'] ?? $username));
+        $signerName = trim(strip_tags($_POST['counter_signer_name'] ?? ''));
+        $signerTitle = trim(strip_tags($_POST['counter_signer_title'] ?? ''));
+        $signatureType = trim(strip_tags($_POST['signature_type'] ?? 'draw'));
+        $signatureData = trim($_POST['signature_data'] ?? '');
+        $isPrimary = !empty($_POST['is_primary_counter_signer']);
+        $removeSignature = !empty($_POST['remove_signature']);
+
+        // Staff profile or admin
+        $staffObj = getStaffAccountByUsername($targetUser);
+        $userCheckRole = $staffObj['role'] ?? ($userRole ?? 'Staff');
+        $userCheckEmail = $staffObj['email'] ?? ($userEmail ?? '');
+
+        // Verify permission: user must have vendor access or be super admin
+        if (!hasSectionAccess('vendors', $userCheckRole, $userCheckEmail, $targetUser) && !isSuperAdminUser()) {
+            header('Location: index.php?section=my_profile&denied=1');
+            exit;
+        }
+
+        if ($removeSignature) {
+            $signatureData = '';
+            $isPrimary = false;
+        } else {
+            // Upload to Cloudinary if it's a data:image base64 string
+            if (!empty($signatureData) && preg_match('/^data:image\//i', $signatureData)) {
+                $cRes = uploadToCloudinary($signatureData, 'falhen/signatures');
+                if (!empty($cRes['success']) && !empty($cRes['url'])) {
+                    $signatureData = $cRes['url'];
+                }
+            }
+        }
+
+        $sigPayload = [
+            'signature_data'               => $signatureData,
+            'signature_type'               => $signatureType,
+            'counter_signer_title'         => $signerTitle ?: 'Executive Producer',
+            'is_authorized_counter_signer' => $isPrimary ? 1 : 0,
+            'signature_updated_at'         => date('Y-m-d H:i:s')
+        ];
+
+        saveStaffAccountByUsername($targetUser, $sigPayload);
+        if (!empty($userCheckEmail)) {
+            saveStaffAccountByUsername($userCheckEmail, $sigPayload);
+        }
+
+        $isTargetAdmin = (strtolower($targetUser) === 'admin' || strtolower($targetUser) === 'henry.falonipe' || isSuperAdminUser());
+        if ($isTargetAdmin) {
+            saveAdminUserProfile($sigPayload);
+        }
+
+        // Save as active authorized counter-signer if designated primary, or if no signature is set yet
+        $currentAuth = getAuthorizedCounterSigner();
+        if ($isPrimary || empty($currentAuth['signature_data'])) {
+            saveAuthorizedCounterSigner([
+                'full_name'      => $signerName ?: ($staffObj['full_name'] ?? 'Oluwatosin Ligali'),
+                'designation'    => $signerTitle ?: 'Executive Producer',
+                'signature_data' => $signatureData,
+                'signature_type' => $signatureType,
+                'username'       => $targetUser
+            ]);
+        }
+
+        header('Location: index.php?section=my_profile&sig_saved=1');
         exit;
     } else if ($action === 'change_profile_password') {
         $username = $_SESSION['admin_username'] ?? ($currentUsername ?? '');
@@ -8782,6 +8848,13 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                     </div>
                 <?php endif; ?>
 
+                <?php if (isset($_GET['sig_saved'])): ?>
+                    <div style="background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; padding: 14px 20px; border-radius: 12px; font-weight: 700; font-size: 0.92rem; margin-bottom: 24px; display: flex; align-items: center; gap: 10px; box-shadow: 0 2px 6px rgba(0,0,0,0.02);">
+                        <i class="fa-solid fa-file-signature" style="color: #22c55e; font-size: 1.15rem;"></i>
+                        Official Digital Signature saved successfully! Your signature is registered and will automatically be stamped on all vendor agreements, NDA contracts, and call sheets.
+                    </div>
+                <?php endif; ?>
+
                 <?php if (!empty($pwdError)): ?>
                     <div style="background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; padding: 14px 20px; border-radius: 12px; font-weight: 700; font-size: 0.92rem; margin-bottom: 24px; display: flex; align-items: center; gap: 10px;">
                         <i class="fa-solid fa-triangle-exclamation" style="color: #ef4444; font-size: 1.1rem;"></i>
@@ -8934,6 +9007,212 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                         </form>
                     </div>
 
+                    <!-- CARD 1.5: OFFICIAL DIGITAL SIGNATURE & COUNTER-SIGNING (FOR USERS WITH VENDOR ACCESS) -->
+                    <?php 
+                    $canSignAgreements = hasSectionAccess('vendors', $profileData['role'] ?? $userRole, $profileData['email'] ?? $userEmail, $profileData['username'] ?? $username) || isSuperAdminUser();
+                    if ($canSignAgreements):
+                        $activeCompanySigner = getAuthorizedCounterSigner();
+                        $targetUsernameClean = strtolower(trim($profileData['username'] ?? $username));
+                        $activeSignerUserClean = strtolower(trim($activeCompanySigner['username'] ?? ''));
+                        $activeSignerNameClean = strtolower(trim($activeCompanySigner['full_name'] ?? ''));
+                        $profileNameClean = strtolower(trim($profileData['full_name'] ?? ''));
+
+                        $isThisUserActiveSigner = (
+                            !empty($profileData['is_authorized_counter_signer']) || 
+                            (!empty($activeSignerUserClean) && $activeSignerUserClean === $targetUsernameClean) ||
+                            (!empty($activeSignerNameClean) && $activeSignerNameClean === $profileNameClean)
+                        );
+
+                        $userSigData = !empty($profileData['signature_data']) ? $profileData['signature_data'] : ($isThisUserActiveSigner ? ($activeCompanySigner['signature_data'] ?? '') : '');
+                        $userSigType = !empty($profileData['signature_type']) ? $profileData['signature_type'] : ($isThisUserActiveSigner ? ($activeCompanySigner['signature_type'] ?? 'draw') : 'draw');
+                        $userSigTitle = !empty($profileData['counter_signer_title']) ? $profileData['counter_signer_title'] : ($isThisUserActiveSigner ? ($activeCompanySigner['designation'] ?? ($profileData['designation'] ?? 'Executive Producer')) : ($profileData['designation'] ?? 'Executive Producer'));
+                        $signerDisplayName = $profileData['full_name'] ?? ($activeCompanySigner['full_name'] ?? 'Oluwatosin Ligali');
+                    ?>
+                    <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&display=swap" rel="stylesheet">
+                    <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 32px; box-shadow: 0 4px 12px rgba(0,0,0,0.03);">
+                        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid #f1f5f9;">
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                <div style="width: 42px; height: 42px; border-radius: 10px; background: rgba(16, 185, 129, 0.1); color: #059669; display: flex; align-items: center; justify-content: center; font-size: 1.15rem;">
+                                    <i class="fa-solid fa-file-signature"></i>
+                                </div>
+                                <div>
+                                    <h2 style="font-size: 1.25rem; font-weight: 700; color: #0f172a; margin: 0;">Official Digital Signature &amp; Document Counter-Signing</h2>
+                                    <p style="font-size: 0.84rem; color: #64748b; margin: 2px 0 0 0;">Authorized signature inserted into vendor contracts, non-disclosure agreements (NDAs), and call sheets</p>
+                                </div>
+                            </div>
+                            <div>
+                                <?php if ($isThisUserActiveSigner): ?>
+                                    <span style="background: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; padding: 6px 14px; border-radius: 9999px; font-size: 0.82rem; font-weight: 700; display: inline-flex; align-items: center; gap: 6px;">
+                                        <i class="fa-solid fa-circle-check"></i> Active Primary Counter-Signer
+                                    </span>
+                                <?php else: ?>
+                                    <span style="background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; padding: 6px 14px; border-radius: 9999px; font-size: 0.82rem; font-weight: 600; display: inline-flex; align-items: center; gap: 6px;">
+                                        <i class="fa-solid fa-shield-halved"></i> Authorized Vendor Officer
+                                    </span>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+
+                        <form action="index.php?section=my_profile" method="POST" id="signatureManagementForm">
+                            <input type="hidden" name="action" value="save_counter_signature">
+                            <input type="hidden" name="username" value="<?php echo htmlspecialchars($profileData['username'] ?? ''); ?>">
+                            <input type="hidden" name="signature_type" id="hidden_signature_type" value="<?php echo htmlspecialchars($userSigType); ?>">
+                            <input type="hidden" name="signature_data" id="hidden_signature_data" value="<?php echo htmlspecialchars($userSigData); ?>">
+                            <input type="hidden" name="remove_signature" id="hidden_remove_signature" value="0">
+
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 28px;">
+                                <!-- LEFT COLUMN: SIGNATURE CONFIGURATION & INPUT -->
+                                <div>
+                                    <div class="form-grid-two">
+                                        <div class="form-field">
+                                            <label class="form-label-title">Official Signer Full Name <span style="color: #ef4444;">*</span></label>
+                                            <input type="text" id="signer_full_name_input" name="counter_signer_name" required class="form-text-input" value="<?php echo htmlspecialchars($signerDisplayName); ?>" placeholder="e.g. Oluwatosin Ligali" oninput="updateLiveSignaturePreview()">
+                                            <span style="font-size: 0.74rem; color: #64748b; margin-top: 3px; display: block;">Name that appears on contract counter-signature blocks.</span>
+                                        </div>
+
+                                        <div class="form-field">
+                                            <label class="form-label-title">Official Signer Designation / Title <span style="color: #ef4444;">*</span></label>
+                                            <input type="text" id="signer_title_input" name="counter_signer_title" required class="form-text-input" value="<?php echo htmlspecialchars($userSigTitle); ?>" placeholder="e.g. Executive Producer" oninput="updateLiveSignaturePreview()">
+                                            <span style="font-size: 0.74rem; color: #64748b; margin-top: 3px; display: block;">Corporate title (e.g. Executive Producer, Head of Production).</span>
+                                        </div>
+                                    </div>
+
+                                    <!-- SIGNATURE INPUT TABS -->
+                                    <div style="margin-top: 20px;">
+                                        <label class="form-label-title" style="margin-bottom: 8px; display: block;">Signature Input Method</label>
+                                        <div style="display: flex; gap: 8px; margin-bottom: 14px; background: #f1f5f9; padding: 4px; border-radius: 10px; border: 1px solid #e2e8f0;">
+                                            <button type="button" class="sig-tab-btn" id="tab_btn_draw" onclick="switchSigTab('draw')" style="flex: 1; padding: 8px 12px; font-size: 0.82rem; font-weight: <?php echo ($userSigType === 'draw' || empty($userSigType)) ? '700' : '600'; ?>; border-radius: 8px; border: none; cursor: pointer; transition: all 0.15s; background: <?php echo ($userSigType === 'draw' || empty($userSigType)) ? '#ffffff' : 'transparent'; ?>; color: <?php echo ($userSigType === 'draw' || empty($userSigType)) ? '#0f172a' : '#64748b'; ?>; box-shadow: <?php echo ($userSigType === 'draw' || empty($userSigType)) ? '0 1px 3px rgba(0,0,0,0.1)' : 'none'; ?>;">
+                                                <i class="fa-solid fa-pen-nib"></i> Draw Signature
+                                            </button>
+                                            <button type="button" class="sig-tab-btn" id="tab_btn_upload" onclick="switchSigTab('upload')" style="flex: 1; padding: 8px 12px; font-size: 0.82rem; font-weight: <?php echo ($userSigType === 'upload') ? '700' : '600'; ?>; border-radius: 8px; border: none; cursor: pointer; transition: all 0.15s; background: <?php echo ($userSigType === 'upload') ? '#ffffff' : 'transparent'; ?>; color: <?php echo ($userSigType === 'upload') ? '#0f172a' : '#64748b'; ?>; box-shadow: <?php echo ($userSigType === 'upload') ? '0 1px 3px rgba(0,0,0,0.1)' : 'none'; ?>;">
+                                                <i class="fa-solid fa-cloud-arrow-up"></i> Upload PNG
+                                            </button>
+                                            <button type="button" class="sig-tab-btn" id="tab_btn_typed" onclick="switchSigTab('typed')" style="flex: 1; padding: 8px 12px; font-size: 0.82rem; font-weight: <?php echo ($userSigType === 'typed') ? '700' : '600'; ?>; border-radius: 8px; border: none; cursor: pointer; transition: all 0.15s; background: <?php echo ($userSigType === 'typed') ? '#ffffff' : 'transparent'; ?>; color: <?php echo ($userSigType === 'typed') ? '#0f172a' : '#64748b'; ?>; box-shadow: <?php echo ($userSigType === 'typed') ? '0 1px 3px rgba(0,0,0,0.1)' : 'none'; ?>;">
+                                                <i class="fa-solid fa-font"></i> Type Cursive
+                                            </button>
+                                        </div>
+
+                                        <!-- TAB 1: DRAW CANVAS -->
+                                        <div id="sig_panel_draw" style="display: <?php echo ($userSigType === 'draw' || empty($userSigType)) ? 'block' : 'none'; ?>;">
+                                            <div style="position: relative; background: #ffffff; border: 2px dashed #cbd5e1; border-radius: 12px; overflow: hidden; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);">
+                                                <canvas id="admin_sig_canvas" width="560" height="150" style="display: block; width: 100%; height: 150px; cursor: crosshair; touch-action: none; background: #ffffff;"></canvas>
+                                                <div id="canvas_watermark_text" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: #cbd5e1; font-size: 0.92rem; font-weight: 600; pointer-events: none; user-select: none;">
+                                                    <i class="fa-solid fa-pen-fancy"></i> Sign inside this box using mouse or finger
+                                                </div>
+                                            </div>
+                                            <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 8px;">
+                                                <span style="font-size: 0.76rem; color: #64748b;">Draw a smooth, clear signature using your mouse or touchscreen.</span>
+                                                <button type="button" onclick="clearAdminCanvas()" style="background: none; border: 1px solid #cbd5e1; color: #64748b; font-size: 0.78rem; font-weight: 600; padding: 4px 12px; border-radius: 6px; cursor: pointer; transition: background 0.15s;">
+                                                    <i class="fa-solid fa-rotate-left"></i> Clear Pad
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        <!-- TAB 2: UPLOAD IMAGE -->
+                                        <div id="sig_panel_upload" style="display: <?php echo ($userSigType === 'upload') ? 'block' : 'none'; ?>;">
+                                            <div style="background: #f8fafc; border: 2px dashed #cbd5e1; border-radius: 12px; padding: 24px; text-align: center;">
+                                                <div style="width: 48px; height: 48px; border-radius: 50%; background: #e2e8f0; color: #475569; display: flex; align-items: center; justify-content: center; margin: 0 auto 12px auto; font-size: 1.25rem;">
+                                                    <i class="fa-solid fa-file-arrow-up"></i>
+                                                </div>
+                                                <p style="margin: 0 0 6px 0; font-weight: 700; color: #0f172a; font-size: 0.92rem;">Upload Transparent Signature PNG</p>
+                                                <p style="margin: 0 0 14px 0; font-size: 0.8rem; color: #64748b;">Recommended transparent PNG format for crisp contract stamping.</p>
+                                                <label class="btn-save-primary" style="background-color: #0f172a; cursor: pointer; display: inline-flex; font-size: 0.82rem; padding: 8px 18px;">
+                                                    <i class="fa-solid fa-folder-open"></i> Choose Image File
+                                                    <input type="file" id="sig_upload_input" accept="image/png,image/jpeg,image/webp" style="display: none;" onchange="handleSigImageUpload(this)">
+                                                </label>
+                                            </div>
+                                        </div>
+
+                                        <!-- TAB 3: TYPE CURSIVE -->
+                                        <div id="sig_panel_typed" style="display: <?php echo ($userSigType === 'typed') ? 'block' : 'none'; ?>;">
+                                            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px;">
+                                                <label class="form-label-title">Type Exact Signature Text</label>
+                                                <input type="text" id="typed_sig_text_input" class="form-text-input" value="<?php echo htmlspecialchars($signerDisplayName); ?>" placeholder="Type your full signature name" oninput="handleTypedSigChange(this.value)">
+                                                <div style="margin-top: 14px; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 12px 18px; text-align: center;">
+                                                    <span style="font-size: 0.72rem; color: #64748b; text-transform: uppercase; font-weight: 700; display: block; margin-bottom: 4px;">Dynamic Cursive Font Style</span>
+                                                    <div id="typed_sig_font_preview" style="font-family: 'Dancing Script', cursive; font-size: 2.2rem; color: #0f172a; line-height: 1.2;">
+                                                        <?php echo htmlspecialchars($signerDisplayName); ?>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- PRIMARY COUNTER-SIGNER TOGGLE -->
+                                    <div style="margin-top: 20px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px 18px;">
+                                        <label style="display: flex; align-items: flex-start; gap: 12px; cursor: pointer; user-select: none;">
+                                            <input type="checkbox" name="is_primary_counter_signer" value="1" <?php echo ($isThisUserActiveSigner || empty($activeCompanySigner['signature_data'])) ? 'checked' : ''; ?> style="width: 18px; height: 18px; accent-color: #10b981; margin-top: 2px;">
+                                            <div>
+                                                <strong style="color: #0f172a; font-size: 0.88rem; display: block;">Set as Primary Active Company Counter-Signer</strong>
+                                                <span style="font-size: 0.78rem; color: #64748b; display: block; margin-top: 2px;">
+                                                    When enabled, all newly downloaded vendor agreements, contractor agreements, and call sheets will automatically be stamped with this signature on behalf of Falhen Media Ltd.
+                                                </span>
+                                            </div>
+                                        </label>
+                                    </div>
+
+                                    <!-- SUBMIT BUTTONS -->
+                                    <div style="margin-top: 24px; display: flex; align-items: center; gap: 14px; flex-wrap: wrap;">
+                                        <button type="button" onclick="submitSignatureForm()" class="btn-save-primary" style="background-color: #059669; padding: 12px 28px; font-weight: 700;">
+                                            <i class="fa-solid fa-stamp"></i> Save &amp; Register Digital Signature
+                                        </button>
+                                        <?php if (!empty($userSigData)): ?>
+                                            <button type="button" onclick="removeSignatureData()" style="background: none; border: 1px solid #fca5a5; color: #dc2626; padding: 11px 18px; border-radius: 8px; font-size: 0.84rem; font-weight: 600; cursor: pointer; transition: all 0.15s;">
+                                                <i class="fa-solid fa-trash-can"></i> Remove Signature
+                                            </button>
+                                        <?php endif; ?>
+                                    </div>
+                                </div>
+
+                                <!-- RIGHT COLUMN: LIVE CONTRACT AGREEMENT PREVIEW BOX -->
+                                <div>
+                                    <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 14px; padding: 22px; position: sticky; top: 24px; box-shadow: 0 4px 10px rgba(0,0,0,0.02);">
+                                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; padding-bottom: 10px; border-bottom: 1px solid #e2e8f0;">
+                                            <span style="font-size: 0.74rem; font-weight: 800; color: #475569; text-transform: uppercase; letter-spacing: 0.5px;">Live Agreement Contract Preview</span>
+                                            <span style="font-size: 0.72rem; color: #16a34a; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;">
+                                                <i class="fa-solid fa-circle-check"></i> Standard Format
+                                            </span>
+                                        </div>
+
+                                        <!-- Exact Falhen Media Ltd Signature Card Box as on download_vendor_agreement.php -->
+                                        <div style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 12px; padding: 20px; box-shadow: 0 2px 6px rgba(0,0,0,0.02);">
+                                            <div style="font-size: 0.78rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px;">
+                                                FOR: FALHEN MEDIA LTD
+                                            </div>
+
+                                            <div id="live_sig_preview_container" style="min-height: 52px; display: flex; align-items: center;">
+                                                <?php if (!empty($userSigData) && (strpos($userSigData, 'data:image') === 0 || strpos($userSigData, 'http') === 0 || strpos($userSigData, '/') === 0)): ?>
+                                                    <img id="live_sig_preview_img" src="<?php echo htmlspecialchars($userSigData); ?>" alt="Signature Preview" style="max-height: 48px; max-width: 220px; object-fit: contain;">
+                                                <?php else: ?>
+                                                    <div id="live_sig_preview_text" style="font-family: 'Dancing Script', cursive; font-size: 2.2rem; color: #0f172a; line-height: 1.2;">
+                                                        <?php echo htmlspecialchars($signerDisplayName); ?>
+                                                    </div>
+                                                <?php endif; ?>
+                                            </div>
+
+                                            <div style="border-bottom: 1px solid #94a3b8; margin: 10px 0 8px 0;"></div>
+                                            <div id="live_sig_preview_name" style="font-weight: 700; font-size: 0.88rem; color: #0f172a;">
+                                                <?php echo htmlspecialchars($signerDisplayName); ?>
+                                            </div>
+                                            <div id="live_sig_preview_subtext" style="font-size: 0.78rem; color: #64748b; margin-top: 2px;">
+                                                <?php echo htmlspecialchars($userSigTitle); ?> &bull; Falhen Media Ltd
+                                            </div>
+                                            <div style="display: inline-flex; align-items: center; gap: 6px; color: #15803d; font-size: 0.78rem; font-weight: 700; margin-top: 8px;">
+                                                <i class="fa-solid fa-circle-check"></i> Authorized Counter-Signature
+                                            </div>
+                                        </div>
+
+                                        <p style="font-size: 0.76rem; color: #64748b; margin: 16px 0 0 0; line-height: 1.5;">
+                                            <i class="fa-solid fa-circle-info" style="color: #3b82f6;"></i>
+                                            This preview reflects the legal counter-signature box stamped at the bottom of the official <strong>Vendor Engagement Agreement</strong> and production documents.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                    <?php endif; ?>
+
                     <!-- CARD 2: SECURITY & PASSWORD CHANGE -->
                     <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 32px; box-shadow: 0 4px 12px rgba(0,0,0,0.03);">
                         <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid #f1f5f9;">
@@ -9070,6 +9349,231 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                             icon.className = 'fa-regular fa-eye';
                         }
                     }
+
+                    // --- DIGITAL SIGNATURE & COUNTER-SIGNING JS ---
+                    let adminSigCanvas = null;
+                    let adminSigCtx = null;
+                    let isSigDrawing = false;
+                    let hasDrawnOnCanvas = false;
+
+                    function initAdminSigCanvas() {
+                        adminSigCanvas = document.getElementById('admin_sig_canvas');
+                        if (!adminSigCanvas) return;
+
+                        adminSigCtx = adminSigCanvas.getContext('2d');
+                        adminSigCtx.strokeStyle = '#0f172a';
+                        adminSigCtx.lineWidth = 2.5;
+                        adminSigCtx.lineCap = 'round';
+                        adminSigCtx.lineJoin = 'round';
+
+                        function getCanvasCoords(e) {
+                            const rect = adminSigCanvas.getBoundingClientRect();
+                            const scaleX = adminSigCanvas.width / rect.width;
+                            const scaleY = adminSigCanvas.height / rect.height;
+                            let clientX = e.clientX;
+                            let clientY = e.clientY;
+                            if (e.touches && e.touches.length > 0) {
+                                clientX = e.touches[0].clientX;
+                                clientY = e.touches[0].clientY;
+                            }
+                            return {
+                                x: (clientX - rect.left) * scaleX,
+                                y: (clientY - rect.top) * scaleY
+                            };
+                        }
+
+                        function startDrawing(e) {
+                            isSigDrawing = true;
+                            hasDrawnOnCanvas = true;
+                            const watermark = document.getElementById('canvas_watermark_text');
+                            if (watermark) watermark.style.display = 'none';
+
+                            const pos = getCanvasCoords(e);
+                            adminSigCtx.beginPath();
+                            adminSigCtx.moveTo(pos.x, pos.y);
+                            e.preventDefault();
+                        }
+
+                        function drawMove(e) {
+                            if (!isSigDrawing) return;
+                            const pos = getCanvasCoords(e);
+                            adminSigCtx.lineTo(pos.x, pos.y);
+                            adminSigCtx.stroke();
+                            e.preventDefault();
+                        }
+
+                        function stopDrawing() {
+                            if (isSigDrawing) {
+                                isSigDrawing = false;
+                                syncCanvasToHiddenInputAndPreview();
+                            }
+                        }
+
+                        // Mouse Events
+                        adminSigCanvas.addEventListener('mousedown', startDrawing);
+                        adminSigCanvas.addEventListener('mousemove', drawMove);
+                        window.addEventListener('mouseup', stopDrawing);
+
+                        // Touch Events
+                        adminSigCanvas.addEventListener('touchstart', startDrawing, { passive: false });
+                        adminSigCanvas.addEventListener('touchmove', drawMove, { passive: false });
+                        window.addEventListener('touchend', stopDrawing);
+                    }
+
+                    function syncCanvasToHiddenInputAndPreview() {
+                        if (!adminSigCanvas || !hasDrawnOnCanvas) return;
+                        const dataUrl = adminSigCanvas.toDataURL('image/png');
+                        document.getElementById('hidden_signature_data').value = dataUrl;
+                        document.getElementById('hidden_signature_type').value = 'draw';
+
+                        const previewContainer = document.getElementById('live_sig_preview_container');
+                        if (previewContainer) {
+                            previewContainer.innerHTML = '<img id="live_sig_preview_img" src="' + dataUrl + '" alt="Signature Preview" style="max-height: 48px; max-width: 220px; object-fit: contain;">';
+                        }
+                    }
+
+                    function clearAdminCanvas() {
+                        if (!adminSigCanvas || !adminSigCtx) return;
+                        adminSigCtx.clearRect(0, 0, adminSigCanvas.width, adminSigCanvas.height);
+                        hasDrawnOnCanvas = false;
+                        const watermark = document.getElementById('canvas_watermark_text');
+                        if (watermark) watermark.style.display = 'block';
+
+                        const currentType = document.getElementById('hidden_signature_type').value;
+                        if (currentType === 'draw') {
+                            document.getElementById('hidden_signature_data').value = '';
+                            const signerName = document.getElementById('signer_full_name_input').value || 'Authorized Signer';
+                            const previewContainer = document.getElementById('live_sig_preview_container');
+                            if (previewContainer) {
+                                previewContainer.innerHTML = '<div style="font-family: \'Dancing Script\', cursive; font-size: 2.2rem; color: #94a3b8; line-height: 1.2;">' + escapeHtml(signerName) + '</div>';
+                            }
+                        }
+                    }
+
+                    function switchSigTab(tab) {
+                        document.getElementById('hidden_signature_type').value = tab;
+
+                        const tabs = ['draw', 'upload', 'typed'];
+                        tabs.forEach(t => {
+                            const btn = document.getElementById('tab_btn_' + t);
+                            const panel = document.getElementById('sig_panel_' + t);
+                            if (btn && panel) {
+                                if (t === tab) {
+                                    btn.style.background = '#ffffff';
+                                    btn.style.color = '#0f172a';
+                                    btn.style.fontWeight = '700';
+                                    btn.style.boxShadow = '0 1px 3px rgba(0,0,0,0.1)';
+                                    panel.style.display = 'block';
+                                } else {
+                                    btn.style.background = 'transparent';
+                                    btn.style.color = '#64748b';
+                                    btn.style.fontWeight = '600';
+                                    btn.style.boxShadow = 'none';
+                                    panel.style.display = 'none';
+                                }
+                            }
+                        });
+
+                        if (tab === 'typed') {
+                            const val = document.getElementById('typed_sig_text_input').value || document.getElementById('signer_full_name_input').value;
+                            handleTypedSigChange(val);
+                        } else if (tab === 'draw') {
+                            if (hasDrawnOnCanvas) {
+                                syncCanvasToHiddenInputAndPreview();
+                            }
+                        }
+                    }
+
+                    function handleSigImageUpload(input) {
+                        if (!input.files || !input.files[0]) return;
+                        const file = input.files[0];
+                        const reader = new FileReader();
+                        reader.onload = function(e) {
+                            const dataUrl = e.target.result;
+                            document.getElementById('hidden_signature_data').value = dataUrl;
+                            document.getElementById('hidden_signature_type').value = 'upload';
+
+                            const previewContainer = document.getElementById('live_sig_preview_container');
+                            if (previewContainer) {
+                                previewContainer.innerHTML = '<img id="live_sig_preview_img" src="' + dataUrl + '" alt="Signature Preview" style="max-height: 48px; max-width: 220px; object-fit: contain;">';
+                            }
+                        };
+                        reader.readAsDataURL(file);
+                    }
+
+                    function handleTypedSigChange(val) {
+                        const fontPreview = document.getElementById('typed_sig_font_preview');
+                        if (fontPreview) fontPreview.textContent = val || 'Your Signature';
+
+                        document.getElementById('hidden_signature_data').value = val;
+                        document.getElementById('hidden_signature_type').value = 'typed';
+
+                        const previewContainer = document.getElementById('live_sig_preview_container');
+                        if (previewContainer) {
+                            previewContainer.innerHTML = '<div style="font-family: \'Dancing Script\', cursive; font-size: 2.2rem; color: #0f172a; line-height: 1.2;">' + escapeHtml(val || 'Your Signature') + '</div>';
+                        }
+                    }
+
+                    function updateLiveSignaturePreview() {
+                        const name = document.getElementById('signer_full_name_input').value.trim();
+                        const title = document.getElementById('signer_title_input').value.trim();
+
+                        const previewName = document.getElementById('live_sig_preview_name');
+                        if (previewName) previewName.textContent = name || 'Authorized Signer';
+
+                        const previewTitle = document.getElementById('live_sig_preview_subtext');
+                        if (previewTitle) {
+                            previewTitle.innerHTML = escapeHtml(title || 'Executive Producer') + ' &bull; Falhen Media Ltd';
+                        }
+
+                        // If typed mode is currently active, sync the typed text as well
+                        const currentType = document.getElementById('hidden_signature_type').value;
+                        if (currentType === 'typed') {
+                            const typedInput = document.getElementById('typed_sig_text_input');
+                            if (typedInput && (!typedInput.value || typedInput.value === 'Oluwatosin Ligali')) {
+                                typedInput.value = name;
+                                handleTypedSigChange(name);
+                            }
+                        }
+                    }
+
+                    function submitSignatureForm() {
+                        const form = document.getElementById('signatureManagementForm');
+                        const type = document.getElementById('hidden_signature_type').value;
+                        const data = document.getElementById('hidden_signature_data').value.trim();
+                        const name = document.getElementById('signer_full_name_input').value.trim();
+
+                        if (!name) {
+                            alert('Please enter the Official Signer Full Name.');
+                            document.getElementById('signer_full_name_input').focus();
+                            return;
+                        }
+
+                        if (type === 'draw' && hasDrawnOnCanvas) {
+                            syncCanvasToHiddenInputAndPreview();
+                        } else if (type === 'typed' && !data) {
+                            document.getElementById('hidden_signature_data').value = name;
+                        }
+
+                        form.submit();
+                    }
+
+                    function removeSignatureData() {
+                        if (confirm('Are you sure you want to remove your digital signature? It will no longer appear on generated vendor documents.')) {
+                            document.getElementById('hidden_remove_signature').value = '1';
+                            document.getElementById('signatureManagementForm').submit();
+                        }
+                    }
+
+                    function escapeHtml(text) {
+                        const div = document.createElement('div');
+                        div.textContent = text;
+                        return div.innerHTML;
+                    }
+
+                    document.addEventListener('DOMContentLoaded', function() {
+                        initAdminSigCanvas();
+                    });
                 </script>
 
             <!-- SECTION: STAFF ACCOUNTS MANAGEMENT -->

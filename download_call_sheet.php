@@ -588,14 +588,27 @@ $refCode = $vendor['reference_code'] ?? ($gig['assigned_to_ref'] ?? 'FAL-VND-CRE
             <!-- Sign-Off Line for Call Sheet Verification -->
             <div class="cs-signoff">
                 <div>
+                    <div style="min-height: 42px;"></div>
                     <div class="cs-sign-line"></div>
                     <div class="cs-sign-desc">Assigned Contractor Signature / Date</div>
                     <div style="font-size: 0.82rem; font-weight: 700; color: #0f172a; margin-top: 3px;"><?php echo htmlspecialchars($contractorName); ?></div>
                 </div>
                 <div>
+                    <?php 
+                    $authSigner = function_exists('getAuthorizedCounterSigner') ? getAuthorizedCounterSigner() : null;
+                    $supSigData = $authSigner['signature_data'] ?? '';
+                    $supName = !empty($director) && $director !== 'Falhen Media Production' ? $director : ($authSigner['full_name'] ?? 'Production Supervisor');
+                    ?>
+                    <div style="min-height: 42px; display: flex; align-items: flex-end; justify-content: center; margin-bottom: 4px;">
+                        <?php if (!empty($supSigData) && (strpos($supSigData, 'data:image') === 0 || strpos($supSigData, 'http') === 0 || strpos($supSigData, '/') === 0)): ?>
+                            <img src="<?php echo htmlspecialchars($supSigData); ?>" alt="Supervisor Signature" style="max-height: 42px; max-width: 180px; object-fit: contain;">
+                        <?php elseif (!empty($authSigner['full_name'])): ?>
+                            <span style="font-family: 'Dancing Script', cursive; font-size: 1.5rem; color: #0f172a;"><?php echo htmlspecialchars($supName); ?></span>
+                        <?php endif; ?>
+                    </div>
                     <div class="cs-sign-line"></div>
                     <div class="cs-sign-desc">Falhen Production Supervisor Signature</div>
-                    <div style="font-size: 0.82rem; font-weight: 700; color: #0f172a; margin-top: 3px;"><?php echo htmlspecialchars($director); ?></div>
+                    <div style="font-size: 0.82rem; font-weight: 700; color: #0f172a; margin-top: 3px;"><?php echo htmlspecialchars($supName); ?></div>
                 </div>
             </div>
 

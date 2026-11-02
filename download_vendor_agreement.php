@@ -318,10 +318,23 @@ $status = ucfirst($vendor['status'] ?? 'Active');
         <div class="signature-card">
             <div class="sig-col">
                 <div class="sig-title">For: Falhen Media Ltd</div>
-                <div class="sig-script">Oluwatosin Ligali</div>
+                <?php 
+                $counterSigner = getAuthorizedCounterSigner();
+                $csName = $counterSigner['full_name'] ?? 'Oluwatosin Ligali';
+                $csTitle = $counterSigner['designation'] ?? 'Executive Producer';
+                $csSigData = $counterSigner['signature_data'] ?? '';
+                $csSigType = $counterSigner['signature_type'] ?? 'typed';
+                ?>
+                <?php if (!empty($csSigData) && (strpos($csSigData, 'data:image') === 0 || strpos($csSigData, 'http') === 0 || strpos($csSigData, '/') === 0)): ?>
+                    <div style="min-height: 48px; display: flex; align-items: center;">
+                        <img src="<?php echo htmlspecialchars($csSigData); ?>" alt="Authorized Counter-Signature" style="max-height: 48px; max-width: 220px; object-fit: contain;">
+                    </div>
+                <?php else: ?>
+                    <div class="sig-script"><?php echo htmlspecialchars($csName); ?></div>
+                <?php endif; ?>
                 <div class="sig-line"></div>
-                <div style="font-weight: 700; font-size: 0.88rem;">Oluwatosin Ligali</div>
-                <div class="sig-subtext">Executive Producer &bull; Falhen Media Ltd</div>
+                <div style="font-weight: 700; font-size: 0.88rem;"><?php echo htmlspecialchars($csName); ?></div>
+                <div class="sig-subtext"><?php echo htmlspecialchars($csTitle); ?> &bull; Falhen Media Ltd</div>
                 <div class="verification-badge">
                     <i class="fa-solid fa-circle-check"></i> Authorized Counter-Signature
                 </div>
