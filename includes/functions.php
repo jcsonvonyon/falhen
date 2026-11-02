@@ -5027,110 +5027,21 @@ function setVendorPassword($idOrRef, $newPassword) {
  */
 function getVendorGigsRepository() {
     $settings = getSiteSettings();
-    if (!empty($settings['vendor_gigs']) && is_array($settings['vendor_gigs'])) {
+    if (array_key_exists('vendor_gigs', $settings) && is_array($settings['vendor_gigs'])) {
         return $settings['vendor_gigs'];
     }
 
-    // Default Seed Gigs for Studio Operations
-    $defaultGigs = [
-        [
-            'id'                  => 'GIG-2026-091',
-            'title'               => 'Lagos Fashion Showcase - Runway & Editorial Shoot',
-            'client'              => 'Vogue West Africa / Falhen Media',
-            'shoot_date'          => date('Y-m-d', strtotime('+3 days')),
-            'end_date'            => date('Y-m-d', strtotime('+3 days')),
-            'call_time'           => '08:00 AM',
-            'wrap_time'           => '06:00 PM',
-            'location'            => 'Studio A - 6 Olorunfunmi Street, Pedro, Gbagada, Lagos',
-            'role'                => 'Lead Videographer & Director of Photography',
-            'day_rate'            => '₦180,000 / day',
-            'status'              => 'assigned', // assigned, confirmed, done
-            'assigned_to_ref'     => '',
-            'assigned_to_email'   => '',
-            'call_sheet_name'     => 'CallSheet_LagosFashionShowcase_Sep2026.pdf',
-            'call_sheet_url'      => '/download_call_sheet.php?gig_id=GIG-2026-091',
-            'uploaded_call_sheet' => '',
-            'uploaded_call_sheet_name' => '',
-            'deliverables_status' => 'Pending Shoot Execution',
-            'notes'               => 'Arrive 30 mins early for gimbal calibration and wireless monitor setup. 4K 60fps 10-bit color profile.',
-            'director'            => 'Oluwatosin Ligali (Executive Producer)',
-            'director_phone'      => '08027487449'
-        ],
-        [
-            'id'                  => 'GIG-2026-092',
-            'title'               => 'Mercedes-Benz Brand Commercial BTS & Social Teasers',
-            'client'              => 'Henad Innovations / Luxury Brand Series',
-            'shoot_date'          => date('Y-m-d', strtotime('+8 days')),
-            'end_date'            => date('Y-m-d', strtotime('+8 days')),
-            'call_time'           => '09:30 AM',
-            'wrap_time'           => '05:30 PM',
-            'location'            => 'Falhen Soundstage & Outdoor Track, Lekki Phase 1, Lagos',
-            'role'                => 'B-Camera Operator & BTS Videographer',
-            'day_rate'            => '₦140,000 / day',
-            'status'              => 'confirmed',
-            'assigned_to_ref'     => '',
-            'assigned_to_email'   => '',
-            'call_sheet_name'     => 'CallSheet_MercedesCommercial_BTS.pdf',
-            'call_sheet_url'      => '/download_call_sheet.php?gig_id=GIG-2026-092',
-            'uploaded_call_sheet' => '',
-            'uploaded_call_sheet_name' => '',
-            'deliverables_status' => 'Call Sheet Confirmed by Vendor',
-            'notes'               => 'Prime prime lenses (35mm / 50mm). Capture slow motion hero shots and candid director interactions.',
-            'director'            => 'Henry Falonipe (Creative Director)',
-            'director_phone'      => '08027487449'
-        ],
-        [
-            'id'                  => 'GIG-2026-085',
-            'title'               => 'Urban Beats Live Studio Session & Music Video',
-            'client'              => 'Pulse Media / Afrobeats Series',
-            'shoot_date'          => date('Y-m-d', strtotime('-5 days')),
-            'end_date'            => date('Y-m-d', strtotime('-5 days')),
-            'call_time'           => '10:00 AM',
-            'wrap_time'           => '08:00 PM',
-            'location'            => 'Studio B Sound Stage, Falhen Production Center, Gbagada',
-            'role'                => 'Lead Cinematographer',
-            'day_rate'            => '₦200,000 / day',
-            'status'              => 'done',
-            'assigned_to_ref'     => '',
-            'assigned_to_email'   => '',
-            'call_sheet_name'     => 'CallSheet_UrbanBeats_StudioB.pdf',
-            'call_sheet_url'      => '/download_call_sheet.php?gig_id=GIG-2026-085',
-            'uploaded_call_sheet' => '/uploads/callsheets/UrbanBeats_SignedCallSheet.pdf',
-            'uploaded_call_sheet_name' => 'UrbanBeats_SignedCallSheet.pdf',
-            'deliverables_status' => 'Footage Transferred & Verified (100%)',
-            'payment_status'      => 'Disbursed via Stripe Direct Deposit',
-            'notes'               => 'Multi-camera studio session with synchronized timecode audio.',
-            'director'            => 'Oluwatosin Ligali (Producer)',
-            'director_phone'      => '08027487449'
-        ],
-        [
-            'id'                  => 'GIG-2026-082',
-            'title'               => 'Corporate Leadership Documentary & Executive Portraits',
-            'client'              => 'Zenith Capital Group',
-            'shoot_date'          => date('Y-m-d', strtotime('-14 days')),
-            'end_date'            => date('Y-m-d', strtotime('-14 days')),
-            'call_time'           => '07:30 AM',
-            'wrap_time'           => '04:00 PM',
-            'location'            => 'Zenith Headquarters, Victoria Island, Lagos',
-            'role'                => 'Director of Photography',
-            'day_rate'            => '₦220,000 / day',
-            'status'              => 'done',
-            'assigned_to_ref'     => '',
-            'assigned_to_email'   => '',
-            'call_sheet_name'     => 'CallSheet_ZenithLeadership_Doc.pdf',
-            'call_sheet_url'      => '/download_call_sheet.php?gig_id=GIG-2026-082',
-            'uploaded_call_sheet' => '/uploads/callsheets/Zenith_SignedCallSheet_Wrapped.pdf',
-            'uploaded_call_sheet_name' => 'Zenith_SignedCallSheet_Wrapped.pdf',
-            'deliverables_status' => 'Color Graded & Archived',
-            'payment_status'      => 'Disbursed via Stripe Direct Deposit',
-            'notes'               => 'Soft 3-point interview lighting setup. Clean audio lavs.',
-            'director'            => 'Kingsley Falonipe (Operations Specialist)',
-            'director_phone'      => '08027487449'
-        ]
-    ];
+    return [];
+}
 
-    saveSiteSettings(['vendor_gigs' => $defaultGigs]);
-    return $defaultGigs;
+/**
+ * Clear All Production Gigs from Repository
+ */
+function clearAllVendorGigs() {
+    saveSiteSettings(['vendor_gigs' => []]);
+    $actor = $_SESSION['admin_username'] ?? 'Admin';
+    logDatabaseAudit($actor, 'vendor_gigs_cleared_all', 'vendor_gig', 'all', "All production gigs cleared.");
+    return true;
 }
 
 /**

@@ -3256,6 +3256,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         header('Location: /admin/index.php?section=vendors&tab=gigs&saved=1');
         exit;
+    } else if ($action === 'clear_all_vendor_gigs') {
+        clearAllVendorGigs();
+        $_SESSION['saved_message'] = 'All production gigs and call sheets have been deleted successfully.';
+        header('Location: /admin/index.php?section=vendors&tab=gigs&saved=1');
+        exit;
     }
 }
 
@@ -16371,10 +16376,19 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                             <div style="display: flex; align-items: center; gap: 10px;">
                                 <h2 style="font-size: 1.05rem; font-weight: 700; color: #0f172a; margin: 0;">Production Shoots &amp; Studio Call Sheets</h2>
                                 <span style="background: #f1f5f9; color: #475569; font-size: 0.78rem; font-weight: 700; padding: 2px 8px; border-radius: 6px;"><?php echo count($filteredGigs); ?> Shoots</span>
+                            <div style="display: flex; gap: 8px; align-items: center;">
+                                <?php if ($totalGigs > 0): ?>
+                                    <form method="POST" action="/admin/index.php?section=vendors" onsubmit="return confirm('Are you sure you want to delete ALL production gigs and call sheets? This action cannot be undone.');" style="display: inline-block; margin: 0;">
+                                        <input type="hidden" name="action" value="clear_all_vendor_gigs">
+                                        <button type="submit" style="font-size: 0.82rem; font-weight: 700; background: #fff1f2; color: #e11d48; border: 1px solid #fecdd3; padding: 6px 14px; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+                                            <i class="fa-solid fa-trash-can"></i> Delete All Gigs
+                                        </button>
+                                    </form>
+                                <?php endif; ?>
+                                <button type="button" onclick="openNewGigModal()" style="font-size: 0.82rem; font-weight: 700; background: #dc2626; color: #ffffff; border: none; padding: 6px 14px; border-radius: 6px; cursor: pointer;">
+                                    <i class="fa-solid fa-plus"></i> New Production Gig
+                                </button>
                             </div>
-                            <button type="button" onclick="openNewGigModal()" style="font-size: 0.82rem; font-weight: 700; background: #dc2626; color: #ffffff; border: none; padding: 6px 14px; border-radius: 6px; cursor: pointer;">
-                                <i class="fa-solid fa-plus"></i> New Production Gig
-                            </button>
                         </div>
 
                         <?php if (empty($filteredGigs)): ?>
