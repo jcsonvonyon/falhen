@@ -2445,8 +2445,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             saveStaffAccountByUsername('admin', $profileDataSave);
         }
 
-        // Always sync active session variables for the logged in user
-        if (strtolower($username) === strtolower($targetUser) || strtolower($userEmail) === strtolower($email) || $isTargetAdmin) {
+        // Always sync active session variables ONLY for the logged in user
+        if (strtolower($username) === strtolower($targetUser) || (!empty($userEmail) && strtolower($userEmail) === strtolower($email))) {
             $_SESSION['admin_full_name'] = $fullName;
             if (!empty($avatar)) {
                 $_SESSION['admin_avatar'] = $avatar;
@@ -3394,32 +3394,6 @@ if ($userRole === 'Talent Manager') {
 }
 
 $isSuperAdmin = (strtolower($username) === 'admin' || strtolower($username) === 'oluwatosin.ligali' || strtolower($userEmail) === 'mail@falhenmedia.com' || strtolower($userEmail) === 'admin@falhen.com' || strtolower($userRole) === 'super admin');
-
-// Allow super admin users to switch active profile session smoothly
-if (!empty($_GET['switch_to_staff']) && ($isSuperAdmin || isSuperAdminUser())) {
-    $targetSw = trim(strip_tags($_GET['switch_to_staff']));
-    if (strtolower($targetSw) === 'admin') {
-        $admProf = getAdminUserProfile();
-        $_SESSION['admin_username'] = 'admin';
-        $_SESSION['admin_email'] = $admProf['email'] ?? 'admin@falhen.com';
-        $_SESSION['admin_full_name'] = $admProf['full_name'] ?? 'Henry Falonipe';
-        $_SESSION['admin_role'] = $admProf['role'] ?? 'Super Admin';
-        $_SESSION['admin_designation'] = $admProf['designation'] ?? 'Creative Director & Founder';
-        $_SESSION['admin_avatar'] = $admProf['avatar'] ?? '';
-    } else {
-        $swStaff = getStaffAccountByUsername($targetSw);
-        if ($swStaff) {
-            $_SESSION['admin_username'] = $swStaff['username'] ?? $targetSw;
-            $_SESSION['admin_email'] = $swStaff['email'] ?? '';
-            $_SESSION['admin_full_name'] = $swStaff['full_name'] ?? $targetSw;
-            $_SESSION['admin_role'] = $swStaff['role'] ?? 'Staff';
-            $_SESSION['admin_designation'] = $swStaff['designation'] ?? ($swStaff['role'] ?? 'Staff');
-            $_SESSION['admin_avatar'] = $swStaff['avatar'] ?? '';
-        }
-    }
-    header('Location: /admin/index.php?section=my_profile');
-    exit;
-}
 
     $currentStaffAcc = getStaffAccountByUsername($username);
     if (!$currentStaffAcc && !empty($userEmail)) {
@@ -8813,7 +8787,8 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
 
             <!-- SECTION: MY PROFILE & ACCOUNT SETTINGS -->
             <?php elseif ($activeSection === 'profile' || $activeSection === 'my_profile'): 
-                $targetProfileUser = trim($_GET['username'] ?? $_GET['target_user'] ?? $username);
+                // Enforce strict account isolation: 'my_profile' ALWAYS targets the authenticated logged-in session user
+                $targetProfileUser = ($activeSection === 'my_profile') ? $username : trim($_GET['username'] ?? $_GET['target_user'] ?? $username);
                 $staffObj = getStaffAccountByUsername($targetProfileUser);
                 if (!$staffObj && !empty($username)) {
                     $staffObj = getStaffAccountByUsername($username);

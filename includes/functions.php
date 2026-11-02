@@ -1411,13 +1411,17 @@ function saveAdminUserProfile($data) {
 
     saveSiteSettings($settings);
 
-    // Sync session variables
-    $_SESSION['admin_username']    = $updated['username'];
-    $_SESSION['admin_email']       = $updated['email'];
-    $_SESSION['admin_role']        = $updated['role'];
-    $_SESSION['admin_designation'] = $updated['designation'] ?? ($updated['role'] ?? '');
-    $_SESSION['admin_avatar']    = $updated['avatar'];
-    $_SESSION['admin_full_name'] = $updated['full_name'];
+    // Sync session variables ONLY if the currently active session belongs to this admin account
+    $activeSessionUser = strtolower(trim($_SESSION['admin_username'] ?? ''));
+    $activeSessionEmail = strtolower(trim($_SESSION['admin_email'] ?? ''));
+    if ($activeSessionUser === 'admin' || $activeSessionUser === 'henry.falonipe' || $activeSessionEmail === 'admin@falhen.com' || $activeSessionUser === strtolower($updated['username'] ?? '')) {
+        $_SESSION['admin_username']    = $updated['username'];
+        $_SESSION['admin_email']       = $updated['email'];
+        $_SESSION['admin_role']        = $updated['role'];
+        $_SESSION['admin_designation'] = $updated['designation'] ?? ($updated['role'] ?? '');
+        $_SESSION['admin_avatar']      = $updated['avatar'];
+        $_SESSION['admin_full_name']   = $updated['full_name'];
+    }
 
     return $updated;
 }
