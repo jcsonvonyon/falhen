@@ -78,13 +78,17 @@ $currentAlbumId = (int)($currentAlbum['id'] ?? 1);
 $albumSlug = $currentAlbum['slug'] ?? generateSlug($currentAlbum['title'] ?? 'gallery');
 $coverImage = getCloudinaryUrl($currentAlbum['image'] ?? $currentAlbum['cover'] ?? '/assets/img/portfolio/portfolio_halima.png');
 
-$seoTitle = !empty($currentAlbum['seo_title']) ? $currentAlbum['seo_title'] : ($currentAlbum['title'] ?? 'Client Gallery') . " — Client Portal | Falhen Media";
-$seoDesc = !empty($currentAlbum['seo_desc']) ? $currentAlbum['seo_desc'] : "Explore the exclusive " . ($currentAlbum['category'] ?? 'photography') . " gallery for " . ($currentAlbum['client'] ?? 'clients') . ". Curated and delivered in high-resolution by Falhen Media.";
-$seoKeywords = !empty($currentAlbum['seo_keywords']) ? $currentAlbum['seo_keywords'] : (($currentAlbum['category'] ?? 'Photography') . ", client gallery, high resolution, download, falhen media");
-
-$pageTitle = $isClientsView
-    ? "Client Galleries & Deliveries — Falhen Media"
-    : htmlspecialchars($seoTitle);
+if ($isClientsView) {
+    $seoTitle = "Client Galleries & Deliveries — Falhen Media";
+    $seoDesc = "Access, review proofs, and download high-resolution photography deliveries for Falhen Media clients.";
+    $seoKeywords = "client galleries, photography delivery, client portal, falhen media, weddings, portraits, commercial, corporate";
+    $pageTitle = $seoTitle;
+} else {
+    $seoTitle = !empty($currentAlbum['seo_title']) ? $currentAlbum['seo_title'] : ($currentAlbum['title'] ?? 'Client Gallery') . " — Client Portal | Falhen Media";
+    $seoDesc = !empty($currentAlbum['seo_desc']) ? $currentAlbum['seo_desc'] : "Explore the exclusive " . ($currentAlbum['category'] ?? 'photography') . " gallery for " . ($currentAlbum['client'] ?? 'clients') . ". Curated and delivered in high-resolution by Falhen Media.";
+    $seoKeywords = !empty($currentAlbum['seo_keywords']) ? $currentAlbum['seo_keywords'] : (($currentAlbum['category'] ?? 'Photography') . ", client gallery, high resolution, download, falhen media");
+    $pageTitle = htmlspecialchars($seoTitle);
+}
 
 // Client Authentication & Verification State (Folder-Scoped)
 $isClientVerified = !empty($_SESSION['verified_albums'][$currentAlbumId]) || (!empty($_SESSION['client_download_verified']) && (int)($_SESSION['last_verified_album_id'] ?? 0) === $currentAlbumId);
@@ -150,15 +154,15 @@ foreach ($albumsRepo as $alb) {
 <head>
     <?php if (function_exists('renderGoogleAnalyticsTag')) renderGoogleAnalyticsTag(); ?>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title><?php echo $pageTitle; ?></title>
     <meta name="description" content="<?php echo htmlspecialchars($seoDesc); ?>">
     <meta name="keywords" content="<?php echo htmlspecialchars($seoKeywords); ?>">
-    <link rel="canonical" href="https://client.falhen.com/album/<?php echo htmlspecialchars($albumSlug); ?>">
+    <link rel="canonical" href="<?php echo $isClientsView ? 'https://client.falhen.com/' : 'https://client.falhen.com/album/' . htmlspecialchars($albumSlug); ?>">
     
     <!-- Open Graph / Facebook -->
-    <meta property="og:type" content="article">
-    <meta property="og:url" content="https://client.falhen.com/album/<?php echo htmlspecialchars($albumSlug); ?>">
+    <meta property="og:type" content="<?php echo $isClientsView ? 'website' : 'article'; ?>">
+    <meta property="og:url" content="<?php echo $isClientsView ? 'https://client.falhen.com/' : 'https://client.falhen.com/album/' . htmlspecialchars($albumSlug); ?>">
     <meta property="og:title" content="<?php echo htmlspecialchars($seoTitle); ?>">
     <meta property="og:description" content="<?php echo htmlspecialchars($seoDesc); ?>">
     <meta property="og:image" content="<?php echo htmlspecialchars($coverImage); ?>">
