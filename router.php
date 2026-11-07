@@ -22,14 +22,35 @@ if ($uri !== '/' && file_exists($filePath) && !is_dir($filePath)) {
     return false;
 }
 
-// 1b. Host-based routing for client.falhen.com subdomain
+// 1b. Host-based routing for client.falhen.com subdomain & clean SEO album paths
 $hostHeader = strtolower(preg_replace('/:\d+$/', '', $_SERVER['HTTP_HOST'] ?? ''));
-if (($hostHeader === 'client.falhen.com' || str_starts_with($hostHeader, 'client.')) && ($uri === '/' || $uri === '/gallery' || $uri === '/gallery/')) {
-    require __DIR__ . '/client-portal.php';
-    return;
+if ($hostHeader === 'client.falhen.com' || str_starts_with($hostHeader, 'client.')) {
+    if (preg_match('#^/(?:album|gallery)/([^/]+)/?$#', $uri, $matches)) {
+        $_GET['slug'] = $matches[1];
+        require __DIR__ . '/client-portal.php';
+        return;
+    }
+    if (preg_match('#^/clients/([^/]+)/([^/]+)/?$#', $uri, $matches)) {
+        $_GET['category'] = $matches[1];
+        $_GET['slug'] = $matches[2];
+        require __DIR__ . '/client-portal.php';
+        return;
+    }
+    if ($uri === '/' || $uri === '/gallery' || $uri === '/gallery/' || $uri === '/clients' || $uri === '/clients/') {
+        if ($uri === '/clients' || $uri === '/clients/') {
+            $_GET['view'] = 'clients';
+        }
+        require __DIR__ . '/client-portal.php';
+        return;
+    }
 }
 
 // 2. Custom route aliases
+if (preg_match('#^/album/([^/]+)/?$#', $uri, $matches)) {
+    $_GET['slug'] = $matches[1];
+    require __DIR__ . '/client-portal.php';
+    return;
+}
 if ($uri === '/client-portal' || $uri === '/client-portal/') {
     require __DIR__ . '/client-portal.php';
     return;

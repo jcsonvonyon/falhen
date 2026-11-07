@@ -43,7 +43,7 @@ function getCloudinaryUrl($pathOrUrl, $transform = 'f_auto,q_auto') {
 /**
  * Upload local file or remote URL directly to Cloudinary account using API Signature
  */
-function uploadToCloudinary($fileOrUrl, $folder = 'falhen') {
+function uploadToCloudinary($fileOrUrl, $folder = 'falhen', $customPublicId = null) {
     $cloudName = CLOUDINARY_CLOUD_NAME;
     $apiKey = CLOUDINARY_API_KEY;
     $apiSecret = CLOUDINARY_API_SECRET;
@@ -66,6 +66,9 @@ function uploadToCloudinary($fileOrUrl, $folder = 'falhen') {
         'folder' => $folder,
         'timestamp' => $timestamp
     ];
+    if (!empty($customPublicId)) {
+        $paramsToSign['public_id'] = $customPublicId;
+    }
     ksort($paramsToSign);
 
     $stringToSign = "";
@@ -83,6 +86,9 @@ function uploadToCloudinary($fileOrUrl, $folder = 'falhen') {
         'folder' => $folder,
         'signature' => $signature
     ];
+    if (!empty($customPublicId)) {
+        $postFields['public_id'] = $customPublicId;
+    }
 
     if (preg_match('/^https?:\/\//i', $fileOrUrl) || preg_match('/^data:image\//i', $fileOrUrl)) {
         $postFields['file'] = $fileOrUrl;
@@ -210,5 +216,93 @@ function buildClientGalleryPhotoItems(array $rawPhotos, $albumId = 0) {
         ];
     }
     return $items;
+}
+
+/**
+ * Synchronize a single photo asset to Cloudinary using an SEO-friendly public_id
+ */
+function syncSinglePhotoToCloudinary($photoUrlOrFile, $slug = 'general', $index = 1) {
+    $cleanSlug = preg_replace('/[^a-z0-9_-]/i', '-', strtolower(trim((string)$slug))) ?: 'gallery';
+    $folder = 'falhen/client-galleries/' . $cleanSlug;
+    $publicId = $cleanSlug . '-' . str_pad((string)$index, 2, '0', STR_PAD_LEFT);
+    
+    // Check persistent map cache
+    $mapFile = __DIR__ . '/../config/cloudinary_sync_map.json';
+    $syncMap = file_exists($mapFile) ? @json_decode(file_get_contents($mapFile), true) : [];
+    if (!is_array($syncMap)) {
+        $syncMap = [];
+    }
+    
+    $hashKey = md5((string)$photoUrlOrFile);
+    if (!empty($syncMap[$hashKey]['cloudinary_url'])) {
+        return [
+            'success'        => true,
+            'url'            => $syncMap[$hashKey]['cloudinary_url'],
+            'public_id'      => $syncMap[$hashKey]['public_id'] ?? $publicId,
+            'cached'         => true
+        ];
+    }
+    
+    // If it's a Google Drive link, ensure direct download stream
+    $targetSource = $photoUrlOrFile;
+    if (strpos((string)$photoUrlOrFile, 'lh3.googleusercontent.com/d/') !== false) {
+        $targetSource = preg_replace('/=w\d+$/', '=w2400', (string)$photoUrlOrFile);
+    }
+    
+    $res = uploadToCloudinary($targetSource, $folder, $publicId);
+    if (!empty($res['success']) && !empty($res['url'])) {
+        $syncMap[$hashKey] = [
+            'source_url'     => $photoUrlOrFile,
+            'cloudinary_url' => $res['url'],
+            'public_id'      => $res['public_id'] ?? $publicId,
+            'slug'           => $cleanSlug,
+            'synced_at'      => date('c')
+        ];
+        @file_put_contents($mapFile, json_encode($syncMap, JSON_PRETTY_PRINT));
+        return [
+            'success'        => true,
+            'url'            => $res['url'],
+            'public_id'      => $res['public_id'] ?? $publicId,
+            'cached'         => false
+        ];
+    }
+    
+    return $res;
+}
+
+/**
+ * Synchronize a full Google Drive folder to Cloudinary with SEO paths
+ */
+function syncGoogleDriveFolderToCloudinary($gdriveUrl, $slug = 'general', $limit = 50) {
+    if (!function_exists('getGoogleDriveFolderPhotos')) {
+        require_once __DIR__ . '/../config/gdrive.php';
+    }
+    
+    $rawPhotos = getGoogleDriveFolderPhotos($gdriveUrl);
+    if (empty($rawPhotos)) {
+        return [
+            'success' => false,
+            'message' => 'No photos found in Google Drive folder or folder is not public.'
+        ];
+    }
+    
+    $synced = [];
+    $photosSlice = array_slice($rawPhotos, 0, $limit);
+    
+    foreach ($photosSlice as $i => $rawUrl) {
+        $res = syncSinglePhotoToCloudinary($rawUrl, $slug, $i + 1);
+        if (!empty($res['success']) && !empty($res['url'])) {
+            $synced[] = $res['url'];
+        } else {
+            $synced[] = $rawUrl; // fallback to original
+        }
+    }
+    
+    return [
+        'success'      => true,
+        'total_found'  => count($rawPhotos),
+        'synced_count' => count($synced),
+        'photos'       => $synced
+    ];
 }
 

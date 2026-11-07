@@ -37,11 +37,30 @@ if (!empty($requestedClientEmail) && filter_var($requestedClientEmail, FILTER_VA
 // Check if client requested directory view
 $isClientsView = (isset($_GET['view']) && $_GET['view'] === 'clients') || isset($_GET['clients']);
 
-// Determine active album
+// Determine active album by slug or ID
+$requestedSlug = trim($_GET['slug'] ?? '');
+if (empty($requestedSlug)) {
+    $uriPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH);
+    if (preg_match('#^/(?:album|gallery)/([^/]+)/?$#i', $uriPath, $m)) {
+        $requestedSlug = $m[1];
+    } elseif (preg_match('#^/clients/[^/]+/([^/]+)/?$#i', $uriPath, $m)) {
+        $requestedSlug = $m[1];
+    }
+}
+
 $albumId = isset($_GET['id']) ? (int)$_GET['id'] : (isset($_GET['album_id']) ? (int)$_GET['album_id'] : (int)key($albumsRepo));
 $currentAlbum = reset($albumsRepo);
 
-if (isset($albumsRepo[$albumId])) {
+if (!empty($requestedSlug)) {
+    foreach ($albumsRepo as $aId => $mIt) {
+        if (($mIt['slug'] ?? '') === $requestedSlug || generateSlug($mIt['title'] ?? '') === $requestedSlug) {
+            $currentAlbum = $mIt;
+            $albumId = (int)$aId;
+            $isClientsView = false;
+            break;
+        }
+    }
+} elseif (isset($albumsRepo[$albumId])) {
     $currentAlbum = $albumsRepo[$albumId];
 } else {
     foreach ($masterPortfolioItems as $mIt) {
@@ -53,10 +72,16 @@ if (isset($albumsRepo[$albumId])) {
 }
 
 $currentAlbumId = (int)($currentAlbum['id'] ?? 1);
+$albumSlug = $currentAlbum['slug'] ?? generateSlug($currentAlbum['title'] ?? 'gallery');
 $coverImage = getCloudinaryUrl($currentAlbum['image'] ?? $currentAlbum['cover'] ?? '/assets/img/portfolio/portfolio_halima.png');
+
+$seoTitle = !empty($currentAlbum['seo_title']) ? $currentAlbum['seo_title'] : ($currentAlbum['title'] ?? 'Client Gallery') . " — Client Portal | Falhen Media";
+$seoDesc = !empty($currentAlbum['seo_desc']) ? $currentAlbum['seo_desc'] : "Explore the exclusive " . ($currentAlbum['category'] ?? 'photography') . " gallery for " . ($currentAlbum['client'] ?? 'clients') . ". Curated and delivered in high-resolution by Falhen Media.";
+$seoKeywords = !empty($currentAlbum['seo_keywords']) ? $currentAlbum['seo_keywords'] : (($currentAlbum['category'] ?? 'Photography') . ", client gallery, high resolution, download, falhen media");
+
 $pageTitle = $isClientsView
-    ? "Client Galleries — Falhen Media"
-    : htmlspecialchars($currentAlbum['title'] ?? 'Client Gallery') . " — Client Portal | Falhen Media";
+    ? "Client Galleries & Deliveries — Falhen Media"
+    : htmlspecialchars($seoTitle);
 
 // Client Authentication & Verification State
 $isClientVerified = !empty($_SESSION['client_download_verified']) && !empty($_SESSION['registered_client_email']);
@@ -125,6 +150,23 @@ foreach ($albumsRepo as $alb) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo $pageTitle; ?></title>
+    <meta name="description" content="<?php echo htmlspecialchars($seoDesc); ?>">
+    <meta name="keywords" content="<?php echo htmlspecialchars($seoKeywords); ?>">
+    <link rel="canonical" href="https://client.falhen.com/album/<?php echo htmlspecialchars($albumSlug); ?>">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://client.falhen.com/album/<?php echo htmlspecialchars($albumSlug); ?>">
+    <meta property="og:title" content="<?php echo htmlspecialchars($seoTitle); ?>">
+    <meta property="og:description" content="<?php echo htmlspecialchars($seoDesc); ?>">
+    <meta property="og:image" content="<?php echo htmlspecialchars($coverImage); ?>">
+    
+    <!-- Twitter Cards -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="<?php echo htmlspecialchars($seoTitle); ?>">
+    <meta name="twitter:description" content="<?php echo htmlspecialchars($seoDesc); ?>">
+    <meta name="twitter:image" content="<?php echo htmlspecialchars($coverImage); ?>">
+
     <link rel="icon" type="image/png" href="/assets/img/icons/favicon.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>

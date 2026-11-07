@@ -52,6 +52,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'delete_blog_post'           => 'blog',
         'save_portfolio_item'        => 'portfolio',
         'delete_portfolio_item'      => 'portfolio',
+        'save_client_gallery'        => 'client_galleries',
+        'delete_client_gallery'      => 'client_galleries',
         'save_career_item'           => 'careers',
         'delete_career_item'         => 'careers',
         'update_application_status'  => 'careers',
@@ -1880,6 +1882,149 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         saveSiteSettings(['portfolio_items' => $newItems]);
         $redirectType = trim(strip_tags($_POST['type_filter'] ?? $_GET['type'] ?? 'all'));
         header('Location: index.php?section=portfolio&type=' . urlencode($redirectType) . '&deleted=1');
+        exit;
+    } else if ($action === 'save_client_gallery') {
+        $pId = (int)($_POST['id'] ?? 0);
+        $title = trim(strip_tags($_POST['title'] ?? ''));
+        $client = trim(strip_tags($_POST['client'] ?? ''));
+        $clientEmail = strtolower(trim(strip_tags($_POST['client_email'] ?? '')));
+        $clientPhone = trim(strip_tags($_POST['client_phone'] ?? ''));
+        $category = trim(strip_tags($_POST['category'] ?? 'Portrait'));
+        $location = trim(strip_tags($_POST['location'] ?? ''));
+        $year = trim(strip_tags($_POST['year'] ?? date('Y')));
+        $desc = trim($_POST['desc'] ?? '');
+        $gdriveUrl = trim(strip_tags($_POST['gdrive_url'] ?? ''));
+        $slug = generateSlug(!empty($_POST['slug']) ? $_POST['slug'] : $title);
+        $seoTitle = trim(strip_tags($_POST['seo_title'] ?? ''));
+        $seoDesc = trim(strip_tags($_POST['seo_desc'] ?? ''));
+        $seoKeywords = trim(strip_tags($_POST['seo_keywords'] ?? ''));
+        $featured = !empty($_POST['featured']);
+
+        if (empty($seoTitle) || empty($seoDesc)) {
+            $autoSeo = generateClientGallerySeo($title, $category, $client, $desc);
+            if (empty($seoTitle)) $seoTitle = $autoSeo['seo_title'];
+            if (empty($seoDesc)) $seoDesc = $autoSeo['seo_desc'];
+            if (empty($seoKeywords)) $seoKeywords = $autoSeo['seo_keywords'];
+        }
+
+        $image = trim(strip_tags($_POST['existing_image'] ?? ''));
+        if (!empty($_FILES['cover_file']['tmp_name'])) {
+            $uploadRes = uploadToCloudinary($_FILES['cover_file']['tmp_name'], 'falhen/client-galleries/' . $slug, $slug . '-cover');
+            if (!empty($uploadRes['success'])) {
+                $image = $uploadRes['url'];
+            }
+        }
+
+        // Photos payload (passed from synced Cloudinary array or parsed from Drive)
+        $galleryPhotosRaw = $_POST['gallery_photos_json'] ?? '';
+        $galleryPhotos = [];
+        if (!empty($galleryPhotosRaw)) {
+            $decoded = @json_decode($galleryPhotosRaw, true);
+            if (is_array($decoded)) {
+                $galleryPhotos = $decoded;
+            }
+        }
+        
+        // If photos array was empty but GDrive URL is provided, fetch via Google API
+        if (empty($galleryPhotos) && !empty($gdriveUrl)) {
+            $drivePhotos = getGoogleDriveFolderPhotos($gdriveUrl);
+            if (!empty($drivePhotos)) {
+                $galleryPhotos = $drivePhotos;
+            }
+        }
+
+        if (empty($image) && !empty($galleryPhotos)) {
+            $image = reset($galleryPhotos);
+        }
+
+        $items = getPortfolioRepo();
+        $found = false;
+
+        foreach ($items as &$it) {
+            if ($pId > 0 && (int)($it['id'] ?? 0) === $pId) {
+                $it['title'] = $title;
+                $it['client'] = $client;
+                $it['client_email'] = $clientEmail;
+                $it['client_phone'] = $clientPhone;
+                $it['category'] = $category;
+                $it['location'] = $location;
+                $it['year'] = $year;
+                $it['project_date'] = $year;
+                $it['desc'] = $desc;
+                $it['gdrive_url'] = $gdriveUrl;
+                $it['slug'] = $slug;
+                $it['seo_title'] = $seoTitle;
+                $it['seo_desc'] = $seoDesc;
+                $it['seo_keywords'] = $seoKeywords;
+                $it['featured'] = $featured;
+                $it['media_type'] = 'photo';
+                $it['is_client_gallery'] = true;
+                if (!empty($image)) $it['image'] = $image;
+                if (!empty($galleryPhotos)) {
+                    $it['gallery_photos'] = $galleryPhotos;
+                    $it['photosCount'] = count($galleryPhotos);
+                }
+                $found = true;
+                break;
+            }
+        }
+        unset($it);
+
+        if (!$found) {
+            $maxId = 0;
+            foreach ($items as $it) {
+                if ((int)($it['id'] ?? 0) > $maxId) {
+                    $maxId = (int)$it['id'];
+                }
+            }
+            $newId = $maxId + 1;
+            $items[] = [
+                'id'                 => $newId,
+                'title'              => $title,
+                'client'             => $client,
+                'client_email'       => $clientEmail,
+                'client_phone'       => $clientPhone,
+                'category'           => $category,
+                'location'           => $location,
+                'year'               => $year,
+                'project_date'       => $year,
+                'desc'               => $desc,
+                'gdrive_url'         => $gdriveUrl,
+                'slug'               => $slug,
+                'seo_title'          => $seoTitle,
+                'seo_desc'           => $seoDesc,
+                'seo_keywords'       => $seoKeywords,
+                'featured'           => $featured,
+                'media_type'         => 'photo',
+                'is_client_gallery'  => true,
+                'image'              => !empty($image) ? $image : '/assets/img/portfolio/portfolio_halima.png',
+                'gallery_photos'     => $galleryPhotos,
+                'photosCount'        => count($galleryPhotos) ?: 25
+            ];
+        }
+
+        saveSiteSettings(['portfolio_items' => $items]);
+
+        // Register client email in authorized list for OTP gate
+        if (!empty($clientEmail) && filter_var($clientEmail, FILTER_VALIDATE_EMAIL)) {
+            $settings = getSiteSettings();
+            $clients = $settings['registered_clients'] ?? [];
+            if (!in_array($clientEmail, $clients, true)) {
+                $clients[] = $clientEmail;
+                saveSiteSettings(['registered_clients' => array_values(array_unique($clients))]);
+            }
+        }
+
+        header('Location: index.php?section=client_galleries&saved=1');
+        exit;
+    } else if ($action === 'delete_client_gallery') {
+        $pId = (int)($_POST['id'] ?? 0);
+        $items = getPortfolioRepo();
+        $newItems = array_values(array_filter($items, function($it) use ($pId) {
+            return (int)($it['id'] ?? 0) !== $pId;
+        }));
+        saveSiteSettings(['portfolio_items' => $newItems]);
+        header('Location: index.php?section=client_galleries&deleted=1');
         exit;
     } else if ($action === 'save_team_member') {
         $tId = (int)($_POST['id'] ?? 0);
@@ -8248,6 +8393,640 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                     }
                 });
                 </script>
+
+            <!-- SECTION: CLIENT GALLERIES MANAGEMENT (client.falhen.com) -->
+            <?php elseif ($activeSection === 'client_galleries'): 
+                $allPortfolio = getPortfolioRepo();
+                $clientGalleries = array_values(array_filter($allPortfolio, function($item) {
+                    return ($item['media_type'] ?? 'photo') === 'photo';
+                }));
+                
+                $editingGalleryId = isset($_GET['edit_id']) ? (int)$_GET['edit_id'] : null;
+                $subAction = $_GET['sub_action'] ?? '';
+                $searchQuery = trim($_GET['q'] ?? '');
+                $catFilter = $_GET['cat'] ?? 'all';
+                
+                $editingGallery = null;
+                if ($editingGalleryId !== null) {
+                    foreach ($clientGalleries as $cg) {
+                        if ((int)($cg['id'] ?? 0) === $editingGalleryId) {
+                            $editingGallery = $cg;
+                            break;
+                        }
+                    }
+                }
+
+                // Filter items
+                $filteredGalleries = array_filter($clientGalleries, function($cg) use ($searchQuery, $catFilter) {
+                    if ($catFilter !== 'all' && strtolower($cg['category'] ?? '') !== strtolower($catFilter)) {
+                        return false;
+                    }
+                    if (!empty($searchQuery)) {
+                        $q = strtolower($searchQuery);
+                        $tMatch = strpos(strtolower($cg['title'] ?? ''), $q) !== false;
+                        $cMatch = strpos(strtolower($cg['client'] ?? ''), $q) !== false;
+                        $eMatch = strpos(strtolower($cg['client_email'] ?? ''), $q) !== false;
+                        if (!$tMatch && !$cMatch && !$eMatch) {
+                            return false;
+                        }
+                    }
+                    return true;
+                });
+
+                $totalPhotosSynced = 0;
+                $driveConnectedCount = 0;
+                foreach ($clientGalleries as $cg) {
+                    $totalPhotosSynced += (int)($cg['photosCount'] ?? count($cg['gallery_photos'] ?? []));
+                    if (!empty($cg['gdrive_url'])) $driveConnectedCount++;
+                }
+            ?>
+                <?php if (isset($_GET['saved'])): ?>
+                    <div style="background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; padding: 12px 18px; border-radius: 12px; margin-bottom: 20px; font-size: 0.9rem; font-weight: 600; display: flex; align-items: center; gap: 8px;">
+                        <i class="fa-solid fa-circle-check" style="font-size: 1.1rem; color: #22c55e;"></i> Client gallery saved &amp; synchronized live to client.falhen.com!
+                    </div>
+                <?php endif; ?>
+                <?php if (isset($_GET['deleted'])): ?>
+                    <div style="background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; padding: 12px 18px; border-radius: 12px; margin-bottom: 20px; font-size: 0.9rem; font-weight: 600; display: flex; align-items: center; gap: 8px;">
+                        <i class="fa-solid fa-trash-can" style="font-size: 1.1rem; color: #ef4444;"></i> Client gallery deleted successfully.
+                    </div>
+                <?php endif; ?>
+
+                <!-- Header Bar -->
+                <div class="section-header-bar" style="align-items: center; margin-bottom: 24px;">
+                    <div>
+                        <h1 class="section-header-title" style="font-size: 1.75rem; font-weight: 700; color: #0f172a; margin-bottom: 4px; display: flex; align-items: center; gap: 10px;">
+                            <i class="fa-solid fa-user-gear" style="color: #dc2626;"></i> Client Galleries Manager
+                        </h1>
+                        <p class="section-header-desc" style="font-size: 0.88rem; color: #64748b; margin: 0; display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+                            <span><strong style="color: #0f172a;"><?php echo count($clientGalleries); ?> Galleries</strong></span>
+                            <span>&bull;</span>
+                            <span><?php echo $totalPhotosSynced; ?> Photos Synced</span>
+                            <span>&bull;</span>
+                            <span><?php echo $driveConnectedCount; ?> Connected to Google Drive</span>
+                            <span>&bull;</span>
+                            <a href="https://client.falhen.com" target="_blank" style="color: #dc2626; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">
+                                <i class="fa-solid fa-arrow-up-right-from-square" style="font-size: 0.78rem;"></i> Open client.falhen.com
+                            </a>
+                        </p>
+                    </div>
+                    <?php if ($subAction !== 'add' && $editingGalleryId === null): ?>
+                        <a href="index.php?section=client_galleries&sub_action=add" class="btn-save-primary" style="text-decoration: none; padding: 10px 22px; background-color: #dc2626; display: inline-flex; align-items: center; gap: 8px;">
+                            <i class="fa-solid fa-plus"></i> Add Client Gallery
+                        </a>
+                    <?php endif; ?>
+                </div>
+
+                <?php if ($subAction === 'add' || $editingGalleryId !== null): 
+                    $curSlug = $editingGallery['slug'] ?? generateSlug($editingGallery['title'] ?? '');
+                    $curSeoTitle = $editingGallery['seo_title'] ?? (($editingGallery['title'] ?? '') . ' | Falhen Media');
+                    $curSeoDesc = $editingGallery['seo_desc'] ?? '';
+                    $curPhotos = $editingGallery['gallery_photos'] ?? [];
+                ?>
+                    <!-- EDIT / ADD CLIENT GALLERY FORM VIEW -->
+                    <div class="dashboard-card" style="margin-bottom: 32px; background: #ffffff; border-radius: 16px; border: 1px solid #e2e8f0; padding: 28px;">
+                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid #f1f5f9;">
+                            <h3 style="font-size: 1.25rem; font-weight: 700; color: #0f172a; margin: 0; display: flex; align-items: center; gap: 10px;">
+                                <i class="fa-solid fa-pen-to-square" style="color: #dc2626;"></i>
+                                <?php echo ($editingGalleryId !== null) ? 'Edit Client Gallery: ' . htmlspecialchars($editingGallery['title'] ?? '') : 'Add New Client Gallery &amp; Delivery'; ?>
+                            </h3>
+                            <a href="index.php?section=client_galleries" style="color: #64748b; font-size: 0.86rem; text-decoration: none; font-weight: 600;">
+                                <i class="fa-solid fa-xmark"></i> Close Form
+                            </a>
+                        </div>
+
+                        <form action="index.php?section=client_galleries" method="POST" enctype="multipart/form-data" id="clientGalleryForm">
+                            <input type="hidden" name="action" value="save_client_gallery">
+                            <?php if ($editingGalleryId !== null): ?>
+                                <input type="hidden" name="id" value="<?php echo $editingGalleryId; ?>">
+                            <?php endif; ?>
+                            <input type="hidden" name="gallery_photos_json" id="gallery_photos_json" value="<?php echo htmlspecialchars(json_encode($curPhotos)); ?>">
+
+                            <!-- 2-Column Responsive Layout -->
+                            <div style="display: grid; grid-template-columns: 1.15fr 0.85fr; gap: 28px;">
+                                
+                                <!-- LEFT COLUMN: CORE CLIENT & SHOOT DETAILS -->
+                                <div style="display: flex; flex-direction: column; gap: 18px;">
+                                    <div>
+                                        <label class="form-label-title" style="font-weight: 700;">Gallery Title <span style="color: #ef4444;">*</span></label>
+                                        <input type="text" name="title" id="cg_title_input" class="form-text-input" value="<?php echo htmlspecialchars($editingGallery['title'] ?? ''); ?>" placeholder="e.g. King David - Grad Shoot" required oninput="handleTitleInputChange(this.value)">
+                                    </div>
+
+                                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+                                        <div>
+                                            <label class="form-label-title" style="font-weight: 700;">Client Full Name <span style="color: #ef4444;">*</span></label>
+                                            <input type="text" name="client" id="cg_client_input" class="form-text-input" value="<?php echo htmlspecialchars($editingGallery['client'] ?? ''); ?>" placeholder="e.g. King David" required oninput="handleClientInputChange(this.value)">
+                                        </div>
+                                        <div>
+                                            <label class="form-label-title" style="font-weight: 700;">Category <span style="color: #ef4444;">*</span></label>
+                                            <select name="category" id="cg_category_select" class="form-text-input" required onchange="handleCategoryChange(this.value)">
+                                                <?php 
+                                                $curCat = $editingGallery['category'] ?? 'Portrait';
+                                                $categories = ['Portrait', 'Wedding', 'Birthday', 'Events', 'Commercials', 'Corporate', 'Documentary', 'Music Video'];
+                                                if (!in_array($curCat, $categories) && !empty($curCat)) $categories[] = $curCat;
+                                                foreach ($categories as $catOpt): ?>
+                                                    <option value="<?php echo htmlspecialchars($catOpt); ?>" <?php echo (strtolower($curCat) === strtolower($catOpt)) ? 'selected' : ''; ?>>
+                                                        <?php echo htmlspecialchars($catOpt); ?>
+                                                    </option>
+                                                <?php endforeach; ?>
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <!-- Authorized Client Contact (Binds to 6-Digit OTP Gate) -->
+                                    <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px;">
+                                        <div style="font-size: 0.85rem; font-weight: 700; color: #0f172a; margin-bottom: 4px; display: flex; align-items: center; gap: 6px;">
+                                            <i class="fa-solid fa-shield-halved" style="color: #dc2626;"></i> Client Security &amp; OTP Access Gate
+                                        </div>
+                                        <p style="font-size: 0.78rem; color: #64748b; margin-bottom: 12px;">
+                                            The client email entered below is strictly authorized to request and verify 6-digit OTP codes to download this gallery.
+                                        </p>
+                                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                                            <div>
+                                                <label class="form-label-title" style="font-size: 0.78rem;">Client Email *</label>
+                                                <input type="email" name="client_email" class="form-text-input" value="<?php echo htmlspecialchars($editingGallery['client_email'] ?? ''); ?>" placeholder="client@falhen.com">
+                                            </div>
+                                            <div>
+                                                <label class="form-label-title" style="font-size: 0.78rem;">Client Phone</label>
+                                                <input type="tel" name="client_phone" class="form-text-input" value="<?php echo htmlspecialchars($editingGallery['client_phone'] ?? ''); ?>" placeholder="+1 (555) 000-0000">
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+                                        <div>
+                                            <label class="form-label-title">Shoot Year / Date</label>
+                                            <input type="text" name="year" class="form-text-input" value="<?php echo htmlspecialchars($editingGallery['year'] ?? date('Y')); ?>" placeholder="2026">
+                                        </div>
+                                        <div>
+                                            <label class="form-label-title">Location / City</label>
+                                            <input type="text" name="location" class="form-text-input" value="<?php echo htmlspecialchars($editingGallery['location'] ?? 'Lagos'); ?>" placeholder="Lagos, Chicago">
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <label class="form-label-title">Gallery Backstory / Description</label>
+                                        <textarea name="desc" id="cg_desc_input" class="form-text-input" rows="3" placeholder="Enter notes or client backstory..."><?php echo htmlspecialchars($editingGallery['desc'] ?? ''); ?></textarea>
+                                    </div>
+
+                                    <!-- Featured Checkbox -->
+                                    <div style="display: flex; align-items: center; gap: 10px;">
+                                        <input type="checkbox" name="featured" id="cg_featured_checkbox" value="1" <?php echo !empty($editingGallery['featured']) ? 'checked' : ''; ?> style="width: 18px; height: 18px; accent-color: #dc2626;">
+                                        <label for="cg_featured_checkbox" style="font-size: 0.88rem; font-weight: 600; color: #0f172a;">
+                                            Feature on client.falhen.com homepage showcase
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <!-- RIGHT COLUMN: GOOGLE DRIVE, CLOUDINARY SYNC & SEO -->
+                                <div style="display: flex; flex-direction: column; gap: 20px;">
+                                    
+                                    <!-- 1. SEO & Canonical URL Architecture Card -->
+                                    <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px;">
+                                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+                                            <div style="font-size: 0.86rem; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 6px;">
+                                                <i class="fa-solid fa-magnifying-glass" style="color: #2563eb;"></i> SEO Path &amp; Search Optimization
+                                            </div>
+                                            <button type="button" onclick="autoGenerateSeoFromTitle()" style="background: #eff6ff; border: 1px solid #bfdbfe; color: #1d4ed8; font-size: 0.74rem; font-weight: 700; border-radius: 6px; padding: 4px 8px; cursor: pointer;">
+                                                Auto-Generate SEO
+                                            </button>
+                                        </div>
+
+                                        <div style="margin-bottom: 12px;">
+                                            <label class="form-label-title" style="font-size: 0.78rem;">URL Path / Slug *</label>
+                                            <div style="display: flex; align-items: center; gap: 6px;">
+                                                <span style="font-size: 0.78rem; color: #64748b; font-family: monospace;">client.falhen.com/album/</span>
+                                                <input type="text" name="slug" id="cg_slug_input" class="form-text-input" style="font-family: monospace; font-size: 0.82rem;" value="<?php echo htmlspecialchars($curSlug); ?>" placeholder="king-david-grad-shoot" required oninput="updateSeoPreview()">
+                                            </div>
+                                        </div>
+
+                                        <div style="margin-bottom: 12px;">
+                                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                                <label class="form-label-title" style="font-size: 0.78rem;">SEO Title Tag (50-60 chars)</label>
+                                                <span id="seo_title_count" style="font-size: 0.72rem; color: #64748b;">0/60</span>
+                                            </div>
+                                            <input type="text" name="seo_title" id="cg_seo_title_input" class="form-text-input" value="<?php echo htmlspecialchars($curSeoTitle); ?>" placeholder="Title Tag for Google" oninput="updateSeoPreview()">
+                                        </div>
+
+                                        <div style="margin-bottom: 12px;">
+                                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                                <label class="form-label-title" style="font-size: 0.78rem;">Meta Description (150-160 chars)</label>
+                                                <span id="seo_desc_count" style="font-size: 0.72rem; color: #64748b;">0/160</span>
+                                            </div>
+                                            <textarea name="seo_desc" id="cg_seo_desc_input" class="form-text-input" rows="2" style="font-size: 0.8rem;" placeholder="Search engine snippet description..." oninput="updateSeoPreview()"><?php echo htmlspecialchars($curSeoDesc); ?></textarea>
+                                        </div>
+
+                                        <!-- Google SERP Live Snippet Preview -->
+                                        <div style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 12px; margin-top: 10px;">
+                                            <div style="font-size: 0.7rem; color: #202124; margin-bottom: 2px;">client.falhen.com &rsaquo; album &rsaquo; <span id="serp_slug_preview" style="color:#5f6368;"><?php echo htmlspecialchars($curSlug); ?></span></div>
+                                            <div id="serp_title_preview" style="color: #1a0dab; font-size: 0.95rem; font-weight: 500; text-decoration: none; line-height: 1.25; margin-bottom: 4px;"><?php echo htmlspecialchars($curSeoTitle); ?></div>
+                                            <div id="serp_desc_preview" style="color: #4d5156; font-size: 0.78rem; line-height: 1.4;"><?php echo htmlspecialchars($curSeoDesc ?: 'Explore your private photography gallery delivered in high-resolution by Falhen Media.'); ?></div>
+                                        </div>
+                                    </div>
+
+                                    <!-- 2. Google Drive API & Cloudinary Sync Console -->
+                                    <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px;">
+                                        <div style="font-size: 0.88rem; font-weight: 700; color: #0f172a; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+                                            <i class="fa-brands fa-google-drive" style="color: #4285F4;"></i>
+                                            Google Drive &amp; Cloudinary CDN Sync
+                                        </div>
+
+                                        <div style="margin-bottom: 12px;">
+                                            <label class="form-label-title" style="font-size: 0.78rem;">Google Drive Folder / Share Link</label>
+                                            <div style="display: flex; gap: 8px;">
+                                                <input type="text" name="gdrive_url" id="cg_gdrive_url_input" class="form-text-input" value="<?php echo htmlspecialchars($editingGallery['gdrive_url'] ?? ''); ?>" placeholder="https://drive.google.com/drive/folders/..." style="font-size: 0.82rem;">
+                                                <button type="button" onclick="previewGoogleDriveFolder()" id="btn_fetch_gdrive" style="background: #0f172a; color: #fff; border: none; border-radius: 8px; padding: 0 14px; font-size: 0.8rem; font-weight: 700; cursor: pointer; white-space: nowrap;">
+                                                    <i class="fa-solid fa-cloud-arrow-down"></i> Fetch Photos
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        <!-- Sync Action & Progress Bar -->
+                                        <div id="sync_progress_card" style="display: none; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; margin-bottom: 14px;">
+                                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; font-size: 0.8rem; font-weight: 600;">
+                                                <span id="sync_status_label">Syncing to Cloudinary CDN...</span>
+                                                <span id="sync_percent_label" style="color: #dc2626;">0%</span>
+                                            </div>
+                                            <div style="width: 100%; height: 8px; background: #e2e8f0; border-radius: 4px; overflow: hidden;">
+                                                <div id="sync_progress_bar" style="width: 0%; height: 100%; background: #dc2626; transition: width 0.25s ease;"></div>
+                                            </div>
+                                        </div>
+
+                                        <div style="display: flex; gap: 8px; margin-bottom: 14px;">
+                                            <button type="button" onclick="startCloudinarySync()" id="btn_start_sync" style="flex: 1; background: #dc2626; color: #fff; border: none; border-radius: 8px; padding: 10px 14px; font-size: 0.84rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px;">
+                                                <i class="fa-solid fa-bolt"></i> Sync All to Cloudinary CDN
+                                            </button>
+                                        </div>
+
+                                        <!-- Thumbnails Grid -->
+                                        <div style="font-size: 0.78rem; font-weight: 700; color: #64748b; margin-bottom: 8px; display: flex; justify-content: space-between;">
+                                            <span>GALLERY ASSETS (<span id="photo_count_label"><?php echo count($curPhotos); ?></span>)</span>
+                                            <span style="font-weight: 400; color: #94a3b8;">Click photo to set as cover</span>
+                                        </div>
+                                        <div id="photos_preview_container" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; max-height: 240px; overflow-y: auto; padding: 4px; background: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0;">
+                                            <?php foreach ($curPhotos as $pIdx => $pUrl): ?>
+                                                <div class="cg-thumb-cell <?php echo ($pUrl === ($editingGallery['image'] ?? '')) ? 'is-cover' : ''; ?>" onclick="setAsCoverImage('<?php echo htmlspecialchars($pUrl); ?>', this)" style="aspect-ratio: 1; border-radius: 6px; overflow: hidden; position: relative; cursor: pointer; border: 2px solid transparent;">
+                                                    <img src="<?php echo htmlspecialchars($pUrl); ?>" style="width: 100%; height: 100%; object-fit: cover;" loading="lazy">
+                                                </div>
+                                            <?php endforeach; ?>
+                                        </div>
+
+                                        <!-- Cover Image Hidden Input -->
+                                        <input type="hidden" name="existing_image" id="cg_existing_image" value="<?php echo htmlspecialchars($editingGallery['image'] ?? ''); ?>">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Form Actions -->
+                            <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 28px; padding-top: 20px; border-top: 1px solid #f1f5f9;">
+                                <a href="index.php?section=client_galleries" class="btn-live-site" style="text-decoration: none; padding: 11px 24px; background: #f1f5f9; color: #475569; border-radius: 8px; font-weight: 600; font-size: 0.92rem; border: 1px solid #e2e8f0;">
+                                    Cancel
+                                </a>
+                                <button type="submit" class="btn-save-primary" style="padding: 11px 32px; background-color: #dc2626; border-radius: 8px; font-weight: 700; font-size: 0.92rem; border: none; cursor: pointer;">
+                                    <i class="fa-solid fa-cloud-arrow-up"></i> Save &amp; Publish Gallery
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <script>
+                    let currentPhotosList = <?php echo json_encode($curPhotos); ?> || [];
+
+                    function handleTitleInputChange(val) {
+                        const slugInp = document.getElementById('cg_slug_input');
+                        if (slugInp && (!slugInp.dataset.manualEdit || slugInp.value.trim() === '')) {
+                            slugInp.value = val.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').substring(0, 60);
+                        }
+                        updateSeoPreview();
+                    }
+
+                    function handleClientInputChange(val) {
+                        updateSeoPreview();
+                    }
+
+                    function handleCategoryChange(val) {
+                        updateSeoPreview();
+                    }
+
+                    function updateSeoPreview() {
+                        const title = document.getElementById('cg_title_input').value.trim();
+                        const slug = document.getElementById('cg_slug_input').value.trim();
+                        const seoTitleInp = document.getElementById('cg_seo_title_input');
+                        const seoDescInp = document.getElementById('cg_seo_desc_input');
+
+                        if (!seoTitleInp.dataset.manualEdit && title) {
+                            seoTitleInp.value = (title + ' | Falhen Media').substring(0, 60);
+                        }
+
+                        document.getElementById('serp_slug_preview').textContent = slug || 'gallery';
+                        document.getElementById('serp_title_preview').textContent = seoTitleInp.value || 'Client Gallery | Falhen Media';
+                        document.getElementById('serp_desc_preview').textContent = seoDescInp.value || 'Explore your private photography gallery delivered in high-resolution by Falhen Media.';
+
+                        document.getElementById('seo_title_count').textContent = `${seoTitleInp.value.length}/60`;
+                        document.getElementById('seo_desc_count').textContent = `${seoDescInp.value.length}/160`;
+                    }
+
+                    async function autoGenerateSeoFromTitle() {
+                        const title = document.getElementById('cg_title_input').value.trim();
+                        const category = document.getElementById('cg_category_select').value;
+                        const client = document.getElementById('cg_client_input').value.trim();
+                        const desc = document.getElementById('cg_desc_input').value.trim();
+
+                        if (!title) {
+                            alert('Please enter a Gallery Title first.');
+                            return;
+                        }
+
+                        try {
+                            const fd = new FormData();
+                            fd.append('action', 'generate_seo');
+                            fd.append('title', title);
+                            fd.append('category', category);
+                            fd.append('client', client);
+                            fd.append('desc', desc);
+
+                            const resp = await fetch('/api/admin-client-gallery.php', { method: 'POST', body: fd });
+                            const data = await resp.json();
+                            if (data.success && data.seo) {
+                                document.getElementById('cg_slug_input').value = data.seo.slug;
+                                document.getElementById('cg_seo_title_input').value = data.seo.seo_title;
+                                document.getElementById('cg_seo_desc_input').value = data.seo.seo_desc;
+                                updateSeoPreview();
+                            }
+                        } catch (e) {
+                            console.error('SEO generation error:', e);
+                        }
+                    }
+
+                    async function previewGoogleDriveFolder() {
+                        const gdriveUrl = document.getElementById('cg_gdrive_url_input').value.trim();
+                        const btn = document.getElementById('btn_fetch_gdrive');
+                        if (!gdriveUrl) {
+                            alert('Please paste a Google Drive folder link.');
+                            return;
+                        }
+
+                        btn.disabled = true;
+                        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Fetching...';
+
+                        try {
+                            const fd = new FormData();
+                            fd.append('action', 'preview_gdrive');
+                            fd.append('gdrive_url', gdriveUrl);
+
+                            const resp = await fetch('/api/admin-client-gallery.php', { method: 'POST', body: fd });
+                            const data = await resp.json();
+
+                            if (data.success && data.photos) {
+                                currentPhotosList = data.photos;
+                                document.getElementById('gallery_photos_json').value = JSON.stringify(currentPhotosList);
+                                document.getElementById('photo_count_label').textContent = currentPhotosList.length;
+                                renderPhotosGrid(currentPhotosList);
+                                alert(`Successfully fetched ${data.total} photos from Google Drive! Click "Sync All to Cloudinary CDN" to synchronize them.`);
+                            } else {
+                                alert(data.message || 'Could not fetch photos from this folder.');
+                            }
+                        } catch (e) {
+                            alert('Network error while connecting to Google Drive API.');
+                        } finally {
+                            btn.disabled = false;
+                            btn.innerHTML = '<i class="fa-solid fa-cloud-arrow-down"></i> Fetch Photos';
+                        }
+                    }
+
+                    async function startCloudinarySync() {
+                        if (!currentPhotosList || currentPhotosList.length === 0) {
+                            alert('Please fetch photos from Google Drive first or upload files.');
+                            return;
+                        }
+
+                        const slug = document.getElementById('cg_slug_input').value.trim() || 'gallery';
+                        const btn = document.getElementById('btn_start_sync');
+                        const progressCard = document.getElementById('sync_progress_card');
+                        const progressBar = document.getElementById('sync_progress_bar');
+                        const percentLabel = document.getElementById('sync_percent_label');
+                        const statusLabel = document.getElementById('sync_status_label');
+
+                        btn.disabled = true;
+                        progressCard.style.display = 'block';
+
+                        const chunkSize = 4;
+                        let syncedCount = 0;
+                        const total = currentPhotosList.length;
+                        const updatedPhotos = [];
+
+                        for (let i = 0; i < total; i += chunkSize) {
+                            const chunk = currentPhotosList.slice(i, i + chunkSize);
+                            statusLabel.textContent = `Syncing photos ${i + 1}–${Math.min(i + chunkSize, total)} of ${total}...`;
+
+                            try {
+                                const fd = new FormData();
+                                fd.append('action', 'sync_chunk');
+                                fd.append('slug', slug);
+                                fd.append('start_index', i + 1);
+                                chunk.forEach(url => fd.append('photos[]', url));
+
+                                const resp = await fetch('/api/admin-client-gallery.php', { method: 'POST', body: fd });
+                                const res = await resp.json();
+
+                                if (res.success && res.results) {
+                                    res.results.forEach(r => {
+                                        updatedPhotos.push(r.synced_url || r.original_url);
+                                    });
+                                } else {
+                                    chunk.forEach(u => updatedPhotos.push(u));
+                                }
+                            } catch (e) {
+                                chunk.forEach(u => updatedPhotos.push(u));
+                            }
+
+                            syncedCount += chunk.length;
+                            const pct = Math.min(100, Math.round((syncedCount / total) * 100));
+                            progressBar.style.width = pct + '%';
+                            percentLabel.textContent = pct + '%';
+                        }
+
+                        currentPhotosList = updatedPhotos;
+                        document.getElementById('gallery_photos_json').value = JSON.stringify(currentPhotosList);
+                        renderPhotosGrid(currentPhotosList);
+                        statusLabel.textContent = `All ${total} photos synchronized to Cloudinary CDN!`;
+                        btn.disabled = false;
+                        btn.innerHTML = '<i class="fa-solid fa-circle-check"></i> Cloudinary Sync Complete';
+                    }
+
+                    function renderPhotosGrid(photos) {
+                        const container = document.getElementById('photos_preview_container');
+                        const coverInp = document.getElementById('cg_existing_image');
+                        container.innerHTML = '';
+
+                        photos.forEach((url, idx) => {
+                            const cell = document.createElement('div');
+                            cell.className = 'cg-thumb-cell' + (coverInp.value === url || (idx === 0 && !coverInp.value) ? ' is-cover' : '');
+                            cell.style.aspectRatio = '1';
+                            cell.style.borderRadius = '6px';
+                            cell.style.overflow = 'hidden';
+                            cell.style.position = 'relative';
+                            cell.style.cursor = 'pointer';
+                            cell.style.border = '2px solid transparent';
+                            cell.onclick = () => setAsCoverImage(url, cell);
+
+                            const img = document.createElement('img');
+                            img.src = url;
+                            img.style.width = '100%';
+                            img.style.height = '100%';
+                            img.style.objectFit = 'cover';
+                            cell.appendChild(img);
+                            container.appendChild(cell);
+
+                            if (idx === 0 && !coverInp.value) {
+                                coverInp.value = url;
+                            }
+                        });
+                    }
+
+                    function setAsCoverImage(url, el) {
+                        document.getElementById('cg_existing_image').value = url;
+                        document.querySelectorAll('.cg-thumb-cell').forEach(c => c.classList.remove('is-cover'));
+                        el.classList.add('is-cover');
+                    }
+
+                    document.addEventListener('DOMContentLoaded', updateSeoPreview);
+                    </script>
+                    <style>
+                    .cg-thumb-cell.is-cover {
+                        border-color: #dc2626 !important;
+                        box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.4);
+                    }
+                    </style>
+
+                <?php else: ?>
+                    <!-- CLIENT GALLERIES LIST VIEW -->
+                    <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 16px 20px; margin-bottom: 24px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px;">
+                        <div style="display: flex; gap: 8px; align-items: center;">
+                            <span style="font-size: 0.82rem; font-weight: 700; color: #64748b; text-transform: uppercase;">CATEGORY:</span>
+                            <a href="index.php?section=client_galleries&cat=all&q=<?php echo urlencode($searchQuery); ?>" style="padding: 6px 14px; border-radius: 8px; font-size: 0.82rem; font-weight: 700; text-decoration: none; <?php echo $catFilter === 'all' ? 'background: #0f172a; color: #fff;' : 'background: #f1f5f9; color: #475569;'; ?>">
+                                All
+                            </a>
+                            <a href="index.php?section=client_galleries&cat=portrait&q=<?php echo urlencode($searchQuery); ?>" style="padding: 6px 14px; border-radius: 8px; font-size: 0.82rem; font-weight: 700; text-decoration: none; <?php echo strtolower($catFilter) === 'portrait' ? 'background: #0f172a; color: #fff;' : 'background: #f1f5f9; color: #475569;'; ?>">
+                                Portrait
+                            </a>
+                            <a href="index.php?section=client_galleries&cat=wedding&q=<?php echo urlencode($searchQuery); ?>" style="padding: 6px 14px; border-radius: 8px; font-size: 0.82rem; font-weight: 700; text-decoration: none; <?php echo strtolower($catFilter) === 'wedding' ? 'background: #0f172a; color: #fff;' : 'background: #f1f5f9; color: #475569;'; ?>">
+                                Wedding
+                            </a>
+                        </div>
+
+                        <form action="index.php" method="GET" style="display: flex; gap: 8px; margin: 0;">
+                            <input type="hidden" name="section" value="client_galleries">
+                            <input type="hidden" name="cat" value="<?php echo htmlspecialchars($catFilter); ?>">
+                            <input type="text" name="q" class="form-text-input" value="<?php echo htmlspecialchars($searchQuery); ?>" placeholder="Search by client, title..." style="padding: 7px 12px; font-size: 0.84rem; width: 220px;">
+                            <button type="submit" style="background: #0f172a; color: #ffffff; border: none; border-radius: 8px; padding: 7px 14px; font-size: 0.82rem; font-weight: 700; cursor: pointer;">
+                                Filter
+                            </button>
+                        </form>
+                    </div>
+
+                    <?php if (empty($filteredGalleries)): ?>
+                        <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 48px 20px; text-align: center;">
+                            <i class="fa-regular fa-folder-open" style="font-size: 2.5rem; color: #94a3b8; margin-bottom: 12px;"></i>
+                            <h4 style="font-size: 1.1rem; font-weight: 700; color: #0f172a; margin-bottom: 6px;">No Client Galleries Found</h4>
+                            <p style="font-size: 0.88rem; color: #64748b; margin-bottom: 18px;">Create your first client gallery delivery for client.falhen.com</p>
+                            <a href="index.php?section=client_galleries&sub_action=add" class="btn-save-primary" style="text-decoration: none; padding: 8px 18px; background-color: #dc2626; font-size: 0.85rem;">
+                                + Add Client Gallery
+                            </a>
+                        </div>
+                    <?php else: ?>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 24px;">
+                            <?php foreach ($filteredGalleries as $cg): 
+                                $cgSlug = $cg['slug'] ?? generateSlug($cg['title'] ?? '');
+                                $cgPhotosCount = (int)($cg['photosCount'] ?? count($cg['gallery_photos'] ?? []));
+                                $cgCover = getCloudinaryUrl($cg['image'] ?? $cg['cover'] ?? '/assets/img/portfolio/portfolio_halima.png');
+                                $cgHasDrive = !empty($cg['gdrive_url']);
+                            ?>
+                                <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; transition: transform 0.2s, box-shadow 0.2s;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 10px 24px rgba(0,0,0,0.06)';" onmouseout="this.style.transform='none'; this.style.boxShadow='none';">
+                                    <div style="position: relative; aspect-ratio: 16/10; background: #0f172a; overflow: hidden;">
+                                        <img src="<?php echo htmlspecialchars($cgCover); ?>" alt="<?php echo htmlspecialchars($cg['title']); ?>" style="width: 100%; height: 100%; object-fit: cover;" loading="lazy">
+                                        <span style="position: absolute; top: 12px; left: 12px; background: rgba(0,0,0,0.7); backdrop-filter: blur(6px); color: #fff; font-size: 0.72rem; font-weight: 700; padding: 3px 8px; border-radius: 4px; text-transform: uppercase;">
+                                            <?php echo htmlspecialchars($cg['category'] ?? 'Portrait'); ?>
+                                        </span>
+                                        <?php if ($cgHasDrive): ?>
+                                            <span style="position: absolute; top: 12px; right: 12px; background: rgba(37,99,235,0.85); color: #fff; font-size: 0.72rem; font-weight: 700; padding: 3px 8px; border-radius: 4px; display: inline-flex; align-items: center; gap: 4px;">
+                                                <i class="fa-brands fa-google-drive"></i> GDrive
+                                            </span>
+                                        <?php endif; ?>
+                                    </div>
+
+                                    <div style="padding: 18px 20px; flex: 1; display: flex; flex-direction: column; justify-content: space-between;">
+                                        <div>
+                                            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
+                                                <span style="font-size: 0.78rem; font-weight: 700; color: #dc2626; text-transform: uppercase;">
+                                                    <?php echo htmlspecialchars($cg['client'] ?? 'Falhen Client'); ?>
+                                                </span>
+                                                <span style="font-size: 0.78rem; color: #64748b;">
+                                                    <?php echo $cgPhotosCount; ?> Photos
+                                                </span>
+                                            </div>
+                                            <h3 style="font-size: 1.1rem; font-weight: 700; color: #0f172a; margin-bottom: 8px;">
+                                                <?php echo htmlspecialchars($cg['title']); ?>
+                                            </h3>
+
+                                            <!-- SEO Slug Pill -->
+                                            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 4px 8px; font-family: monospace; font-size: 0.74rem; color: #475569; display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+                                                <span>/album/<?php echo htmlspecialchars($cgSlug); ?></span>
+                                                <button type="button" onclick="navigator.clipboard.writeText('https://client.falhen.com/album/<?php echo htmlspecialchars($cgSlug); ?>'); alert('Copied live link to clipboard!');" style="background: none; border: none; color: #2563eb; cursor: pointer;" title="Copy Live Link">
+                                                    <i class="fa-regular fa-copy"></i>
+                                                </button>
+                                            </div>
+
+                                            <?php if (!empty($cg['client_email'])): ?>
+                                                <div style="font-size: 0.76rem; color: #059669; display: flex; align-items: center; gap: 5px; margin-bottom: 12px;">
+                                                    <i class="fa-solid fa-shield-check"></i> OTP Auth: <?php echo htmlspecialchars($cg['client_email']); ?>
+                                                </div>
+                                            <?php endif; ?>
+                                        </div>
+
+                                        <div style="display: flex; align-items: center; justify-content: space-between; padding-top: 14px; border-top: 1px solid #f1f5f9; margin-top: 8px;">
+                                            <a href="https://client.falhen.com/album/<?php echo htmlspecialchars($cgSlug); ?>" target="_blank" style="color: #0f172a; font-size: 0.82rem; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 5px;">
+                                                <i class="fa-solid fa-arrow-up-right-from-square" style="color: #dc2626;"></i> View Live
+                                            </a>
+                                            <div style="display: flex; gap: 8px;">
+                                                <a href="index.php?section=client_galleries&edit_id=<?php echo $cg['id']; ?>" style="color: #475569; font-size: 0.82rem; font-weight: 600; text-decoration: none; padding: 4px 10px; border-radius: 6px; background: #f1f5f9;">
+                                                    <i class="fa-solid fa-pen"></i> Edit
+                                                </a>
+                                                <button type="button" onclick="confirmDeleteGallery(<?php echo $cg['id']; ?>, '<?php echo addslashes($cg['title']); ?>')" style="background: #fef2f2; border: none; color: #ef4444; font-size: 0.82rem; font-weight: 600; padding: 4px 10px; border-radius: 6px; cursor: pointer;">
+                                                    <i class="fa-solid fa-trash"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+
+                        <!-- Delete Confirmation Modal -->
+                        <div id="deleteGalleryModal" style="position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; z-index: 9999;">
+                            <div style="background: #ffffff; border-radius: 14px; padding: 24px; max-width: 400px; width: 90%;">
+                                <h3 style="font-size: 1.15rem; font-weight: 700; color: #0f172a; margin-bottom: 8px;">Delete Client Gallery?</h3>
+                                <p id="deleteGalleryModalText" style="font-size: 0.88rem; color: #64748b; margin-bottom: 20px;"></p>
+                                <form action="index.php?section=client_galleries" method="POST">
+                                    <input type="hidden" name="action" value="delete_client_gallery">
+                                    <input type="hidden" name="id" id="deleteGalleryIdInput" value="">
+                                    <div style="display: flex; justify-content: flex-end; gap: 10px;">
+                                        <button type="button" onclick="document.getElementById('deleteGalleryModal').style.display='none';" style="background: #f1f5f9; border: none; border-radius: 6px; padding: 8px 16px; font-weight: 600; cursor: pointer;">Cancel</button>
+                                        <button type="submit" style="background: #dc2626; color: #fff; border: none; border-radius: 6px; padding: 8px 16px; font-weight: 700; cursor: pointer;">Delete</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+
+                        <script>
+                        function confirmDeleteGallery(id, title) {
+                            document.getElementById('deleteGalleryIdInput').value = id;
+                            document.getElementById('deleteGalleryModalText').textContent = `Are you sure you want to delete "${title}"? This will remove it from client.falhen.com.`;
+                            document.getElementById('deleteGalleryModal').style.display = 'flex';
+                        }
+                        </script>
+                    <?php endif; ?>
+
+                <?php endif; ?>
 
             <!-- SECTION: CAREERS & HIRING MANAGEMENT -->
             <?php elseif ($activeSection === 'careers'):

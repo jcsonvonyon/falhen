@@ -646,6 +646,122 @@ function convertGoogleDriveUrlToDirect($url) {
 }
 
 /**
+ * Clean URL slug generator per /seo-meta-optimizer guidelines (≤ 60 chars, lowercase, hyphenated)
+ */
+function generateSlug($text, $maxLength = 60) {
+    $text = trim((string)$text);
+    if (empty($text)) return 'gallery';
+    
+    // Convert to lowercase and transliterate special characters
+    $text = strtolower($text);
+    $text = preg_replace('/[^\p{L}\p{N}]+/u', '-', $text);
+    $text = trim($text, '-');
+    
+    // Remove common stop words if slug is long
+    if (strlen($text) > 40) {
+        $stopWords = ['a', 'an', 'the', 'and', 'or', 'in', 'at', 'for', 'of', 'to', 'on', 'with', 'by'];
+        $words = explode('-', $text);
+        $filtered = array_filter($words, function($w) use ($stopWords) {
+            return !in_array($w, $stopWords, true);
+        });
+        if (!empty($filtered)) {
+            $text = implode('-', $filtered);
+        }
+    }
+    
+    if (strlen($text) > $maxLength) {
+        $text = substr($text, 0, $maxLength);
+        $text = rtrim($text, '-');
+    }
+    
+    return $text ?: 'gallery';
+}
+
+/**
+ * Comprehensive SEO & Metadata Generator per /seo-keyword-strategist & /seo-meta-optimizer
+ */
+function generateClientGallerySeo($title, $category = 'Gallery', $client = '', $desc = '') {
+    $cleanTitle = trim(strip_tags((string)$title));
+    $cleanCat = trim(strip_tags((string)$category)) ?: 'Gallery';
+    $cleanClient = trim(strip_tags((string)$client));
+    $slug = generateSlug($cleanTitle);
+    
+    // 1. Title Tag: 50-60 chars optimal, brand hook, primary keyword up front
+    $brandSuffix = ' | Falhen Media';
+    $primaryHook = $cleanTitle;
+    if (strlen($primaryHook . $brandSuffix) > 60) {
+        $availableLen = 60 - strlen($brandSuffix);
+        $primaryHook = substr($primaryHook, 0, $availableLen);
+        $primaryHook = rtrim($primaryHook, ' -');
+    }
+    $seoTitle = $primaryHook . $brandSuffix;
+    
+    // 2. Meta Description: 150-160 chars optimal with power trigger & CTA
+    $baseClient = $cleanClient ?: 'Falhen Media clients';
+    $rawDesc = "View and download the exclusive {$cleanCat} photography gallery for {$baseClient}. Curated and delivered in editorial quality by Falhen Media. Explore frames ✓";
+    if (strlen($rawDesc) > 160) {
+        $rawDesc = substr($rawDesc, 0, 157) . '...';
+    }
+    $seoDesc = $rawDesc;
+    
+    // 3. Semantic LSI Keywords per /seo-keyword-strategist
+    $keywords = [
+        strtolower($cleanTitle),
+        strtolower($cleanCat) . ' photography',
+        'falhen media client gallery',
+        'high resolution photo download',
+        'editorial photography delivery',
+        'private client gallery'
+    ];
+    if (!empty($cleanClient)) {
+        $keywords[] = strtolower($cleanClient) . ' gallery';
+    }
+    
+    return [
+        'slug'            => $slug,
+        'seo_title'       => $seoTitle,
+        'seo_desc'        => $seoDesc,
+        'seo_keywords'    => implode(', ', array_unique($keywords)),
+        'canonical_url'   => "https://client.falhen.com/album/{$slug}",
+        'og_type'         => 'article'
+    ];
+}
+
+/**
+ * Resolve Portfolio / Client Gallery Item by Slug or ID
+ */
+function getPortfolioItemBySlug($slugOrId) {
+    $repo = getPortfolioRepo();
+    if (empty($repo)) return null;
+    
+    $query = strtolower(trim((string)$slugOrId));
+    if (empty($query)) return reset($repo);
+    
+    // Try matching numeric ID first
+    if (is_numeric($query)) {
+        $numericId = (int)$query;
+        foreach ($repo as $item) {
+            if ((int)($item['id'] ?? 0) === $numericId) {
+                return $item;
+            }
+        }
+    }
+    
+    // Try matching exact slug or slugified title
+    foreach ($repo as $item) {
+        $itemSlug = strtolower(trim((string)($item['slug'] ?? '')));
+        if ($itemSlug === $query) {
+            return $item;
+        }
+        if (generateSlug($item['title'] ?? '') === $query) {
+            return $item;
+        }
+    }
+    
+    return null;
+}
+
+/**
  * Get Dynamic Master Portfolio Repository
  */
 function getPortfolioRepo() {
@@ -1019,6 +1135,14 @@ function getPortfolioRepo() {
         $settings['portfolio_items'] = $items;
         saveSiteSettings($settings);
     }
+
+    // Auto-ensure SEO slug exists for all items
+    foreach ($items as &$it) {
+        if (empty($it['slug']) && !empty($it['title'])) {
+            $it['slug'] = generateSlug($it['title']);
+        }
+    }
+    unset($it);
 
     return $items;
 }
