@@ -1961,7 +1961,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $it['media_type'] = 'photo';
                 $it['is_client_gallery'] = true;
                 if (!empty($image)) $it['image'] = $image;
-                if (!empty($galleryPhotos)) {
+                if (isset($_POST['gallery_photos_json'])) {
+                    $it['gallery_photos'] = $galleryPhotos;
+                    $it['photosCount'] = count($galleryPhotos);
+                } else if (!empty($galleryPhotos)) {
                     $it['gallery_photos'] = $galleryPhotos;
                     $it['photosCount'] = count($galleryPhotos);
                 }
@@ -2756,22 +2759,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             try {
                 $stmt = $pdo->prepare("UPDATE `admin_users` SET `password_hash` = ? WHERE `username` = ? OR `email` = ?");
                 $stmt->execute([$newHash, $username, $userEmail]);
-                if ($isTargetAdmin) {
-                    $stmt = $pdo->prepare("UPDATE `admin_users` SET `password_hash` = ? WHERE `username` = 'admin' OR `email` = 'admin@falhen.com'");
+                if ($isTargetAdmin || isOwnerUser($userEmail, $username)) {
+                    $stmt = $pdo->prepare("UPDATE `admin_users` SET `password_hash` = ? WHERE `username` IN ('admin', 'henry.falonipe') OR `email` IN ('admin@falhen.com', 'henry.falonipe@falhen.com', 'henry@falhen.com')");
                     $stmt->execute([$newHash]);
                 }
             } catch (Exception $e) {}
         }
 
         unset($_SESSION['must_change_password']);
+        $_SESSION['password_saved_notice'] = true;
 
-        // Check if onboarding checklist is completed
-        $userOnbProg = getOnboardingProgress($username);
-        if ($userOnbProg['percent'] < 100) {
-            header('Location: index.php?section=onboarding&onboarding_required=1&password_set=1');
-        } else {
-            header('Location: index.php?section=my_profile&pwd_saved=1');
+        // Check if onboarding checklist is completed (Never force on Owner or Admin)
+        if (!isAdminUser($userRole, $userEmail, $username) && !isOwnerUser($userEmail, $username)) {
+            $userOnbProg = getOnboardingProgress($username);
+            if ($userOnbProg['percent'] < 100) {
+                header('Location: index.php?section=onboarding&onboarding_required=1&password_set=1');
+                exit;
+            }
         }
+
+        header('Location: index.php?section=my_profile&pwd_saved=1');
         exit;
     } else if ($action === 'save_staff_account') {
         $sId = (int)($_POST['id'] ?? 0);
@@ -8799,14 +8806,22 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                         </div>
 
                                         <!-- Thumbnails Grid -->
-                                        <div style="font-size: 0.78rem; font-weight: 700; color: #64748b; margin-bottom: 8px; display: flex; justify-content: space-between;">
+                                        <div style="font-size: 0.78rem; font-weight: 700; color: #64748b; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
                                             <span>GALLERY ASSETS (<span id="photo_count_label"><?php echo count($curPhotos); ?></span>)</span>
-                                            <span style="font-weight: 400; color: #94a3b8;">Click photo to set as cover</span>
+                                            <div style="display: flex; gap: 10px; align-items: center;">
+                                                <span style="font-weight: 400; color: #94a3b8; font-size: 0.74rem;">Click: Set Cover · &times;: Delete</span>
+                                                <button type="button" onclick="clearAllGalleryPhotos()" style="background: none; border: none; color: #ef4444; font-size: 0.74rem; font-weight: 700; cursor: pointer; padding: 0;">
+                                                    <i class="fa-solid fa-trash-can"></i> Clear All
+                                                </button>
+                                            </div>
                                         </div>
                                         <div id="photos_preview_container" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; max-height: 240px; overflow-y: auto; padding: 4px; background: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0;">
                                             <?php foreach ($curPhotos as $pIdx => $pUrl): ?>
                                                 <div class="cg-thumb-cell <?php echo ($pUrl === ($editingGallery['image'] ?? '')) ? 'is-cover' : ''; ?>" onclick="setAsCoverImage('<?php echo htmlspecialchars($pUrl); ?>', this)" style="aspect-ratio: 1; border-radius: 6px; overflow: hidden; position: relative; cursor: pointer; border: 2px solid transparent;">
                                                     <img src="<?php echo htmlspecialchars($pUrl); ?>" style="width: 100%; height: 100%; object-fit: cover;" loading="lazy">
+                                                    <button type="button" class="cg-thumb-del-btn" title="Remove photo from gallery" onclick="event.stopPropagation(); removeSinglePhoto(<?php echo $pIdx; ?>);">
+                                                        <i class="fa-solid fa-xmark"></i>
+                                                    </button>
                                                 </div>
                                             <?php endforeach; ?>
                                         </div>
@@ -8920,15 +8935,28 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                             const data = await resp.json();
 
                             if (data.success && data.photos) {
-                                currentPhotosList = data.photos;
+                                // UPSERT: Append new photos to existing photos while preventing duplicates
+                                if (!Array.isArray(currentPhotosList)) {
+                                    currentPhotosList = [];
+                                }
+                                const existingSet = new Set(currentPhotosList);
+                                let addedCount = 0;
+
+                                data.photos.forEach(p => {
+                                    if (!existingSet.has(p)) {
+                                        currentPhotosList.push(p);
+                                        existingSet.add(p);
+                                        addedCount++;
+                                    }
+                                });
+
                                 document.getElementById('gallery_photos_json').value = JSON.stringify(currentPhotosList);
                                 document.getElementById('photo_count_label').textContent = currentPhotosList.length;
                                 renderPhotosGrid(currentPhotosList);
 
-                                let infoMsg = `Successfully fetched all ${data.total} photos from Google Drive without limits!`;
+                                let infoMsg = `Google Drive Folder Processed!\n• ${addedCount} new photos appended to gallery. (Total assets now: ${currentPhotosList.length})`;
                                 if (data.already_uploaded > 0) {
-                                    infoMsg += `\n• ${data.already_uploaded} existing images detected in Cloudinary (will skip duplicates).`;
-                                    infoMsg += `\n• ${data.pending_upload} new images ready to upload.`;
+                                    infoMsg += `\n• ${data.already_uploaded} existing images recognized and retained.`;
                                 }
                                 alert(infoMsg);
                             } else {
@@ -9014,6 +9042,11 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                         const coverInp = document.getElementById('cg_existing_image');
                         container.innerHTML = '';
 
+                        if (!photos || photos.length === 0) {
+                            container.innerHTML = '<div style="grid-column: 1 / -1; padding: 24px; text-align: center; color: #94a3b8; font-size: 0.84rem;">No photos in this gallery yet. Fetch from Google Drive or upload assets above.</div>';
+                            return;
+                        }
+
                         photos.forEach((url, idx) => {
                             const cell = document.createElement('div');
                             cell.className = 'cg-thumb-cell' + (coverInp.value === url || (idx === 0 && !coverInp.value) ? ' is-cover' : '');
@@ -9023,6 +9056,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                             cell.style.position = 'relative';
                             cell.style.cursor = 'pointer';
                             cell.style.border = '2px solid transparent';
+                            cell.title = 'Click to set as gallery cover';
                             cell.onclick = () => setAsCoverImage(url, cell);
 
                             const img = document.createElement('img');
@@ -9031,12 +9065,51 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                             img.style.height = '100%';
                             img.style.objectFit = 'cover';
                             cell.appendChild(img);
+
+                            // Delete button on thumbnail
+                            const delBtn = document.createElement('button');
+                            delBtn.type = 'button';
+                            delBtn.className = 'cg-thumb-del-btn';
+                            delBtn.title = 'Remove photo from gallery';
+                            delBtn.innerHTML = '<i class="fa-solid fa-xmark"></i>';
+                            delBtn.onclick = (e) => {
+                                e.stopPropagation();
+                                removeSinglePhoto(idx);
+                            };
+                            cell.appendChild(delBtn);
+
                             container.appendChild(cell);
 
                             if (idx === 0 && !coverInp.value) {
                                 coverInp.value = url;
                             }
                         });
+                    }
+
+                    function removeSinglePhoto(idx) {
+                        if (confirm('Remove this photo from the gallery?')) {
+                            currentPhotosList.splice(idx, 1);
+                            document.getElementById('gallery_photos_json').value = JSON.stringify(currentPhotosList);
+                            document.getElementById('photo_count_label').textContent = currentPhotosList.length;
+
+                            const coverInp = document.getElementById('cg_existing_image');
+                            if (currentPhotosList.length > 0 && (!coverInp.value || !currentPhotosList.includes(coverInp.value))) {
+                                coverInp.value = currentPhotosList[0];
+                            } else if (currentPhotosList.length === 0) {
+                                coverInp.value = '';
+                            }
+                            renderPhotosGrid(currentPhotosList);
+                        }
+                    }
+
+                    function clearAllGalleryPhotos() {
+                        if (confirm('Are you sure you want to remove ALL photos from this gallery?')) {
+                            currentPhotosList = [];
+                            document.getElementById('gallery_photos_json').value = '[]';
+                            document.getElementById('photo_count_label').textContent = '0';
+                            document.getElementById('cg_existing_image').value = '';
+                            renderPhotosGrid(currentPhotosList);
+                        }
                     }
 
                     function setAsCoverImage(url, el) {
@@ -9051,6 +9124,29 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                     .cg-thumb-cell.is-cover {
                         border-color: #dc2626 !important;
                         box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.4);
+                    }
+                    .cg-thumb-del-btn {
+                        position: absolute;
+                        top: 4px;
+                        right: 4px;
+                        width: 22px;
+                        height: 22px;
+                        border-radius: 50%;
+                        background: rgba(15, 23, 42, 0.85);
+                        color: #ffffff;
+                        border: 1px solid rgba(255, 255, 255, 0.3);
+                        font-size: 11px;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        cursor: pointer;
+                        transition: all 0.15s ease;
+                        z-index: 2;
+                    }
+                    .cg-thumb-del-btn:hover {
+                        background: #dc2626;
+                        border-color: #dc2626;
+                        transform: scale(1.15);
                     }
                     </style>
 

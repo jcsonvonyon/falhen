@@ -37,9 +37,7 @@ if ($hostHeader === 'client.falhen.com' || str_starts_with($hostHeader, 'client.
         return;
     }
     if ($uri === '/' || $uri === '/gallery' || $uri === '/gallery/' || $uri === '/clients' || $uri === '/clients/') {
-        if ($uri === '/clients' || $uri === '/clients/') {
-            $_GET['view'] = 'clients';
-        }
+        $_GET['view'] = 'clients';
         require __DIR__ . '/client-portal.php';
         return;
     }

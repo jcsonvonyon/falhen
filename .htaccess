@@ -37,7 +37,7 @@
     RewriteRule ^(?:clients|gallery)/?$ client-portal.php?view=clients [QSA,L]
 
     RewriteCond %{HTTP_HOST} ^client\.falhen\.com(?::\d+)?$ [NC]
-    RewriteRule ^$ client-portal.php [QSA,L]
+    RewriteRule ^$ client-portal.php?view=clients [QSA,L]
 
     RewriteRule ^clients/([^/]+)/([^/]+)/?$ client-portal.php?category=$1&slug=$2 [QSA,L]
     RewriteRule ^clients/?$ client-portal.php?view=clients [QSA,L]

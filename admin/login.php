@@ -27,12 +27,20 @@ $success = '';
 if (isset($_GET['logged_out'])) {
     $success = 'You have successfully signed out.';
 }
+if (isset($_GET['pwd_updated'])) {
+    $success = 'Your password has been successfully updated! Please sign in with your updated credentials.';
+    $view = 'staff';
+}
 if (isset($_GET['pwd_set'])) {
     $success = 'Password created successfully! Please sign in with your credentials.';
+    $view = 'staff';
 }
+$prefillUser = sanitizeInput($_GET['u'] ?? '');
 
 // Default view is 'choice' landing screen when clicking dashboard from website
-$view = $_GET['view'] ?? 'choice'; 
+if (empty($view)) {
+    $view = $_GET['view'] ?? 'choice';
+} 
 if (isset($_GET['action']) && $_GET['action'] === 'activate') {
     $view = 'activation';
 }
@@ -546,8 +554,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $_SESSION['reset_pending_code_plain']
                     );
 
-                    $success = 'Username and password have been successfully updated! You may now sign in with your updated credentials.';
-                    $view = 'staff';
+                    header('Location: /admin/login.php?view=staff&pwd_updated=1&u=' . urlencode($newUsername));
+                    exit;
                 }
             }
         }
@@ -1327,7 +1335,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 name="email" 
                                 class="form-input" 
                                 placeholder="mail@falhenmedia.com"
-                                value="<?php echo htmlspecialchars($_POST['email'] ?? $_POST['username'] ?? ''); ?>"
+                                value="<?php echo htmlspecialchars(!empty($prefillUser) ? $prefillUser : ($_POST['email'] ?? $_POST['username'] ?? '')); ?>"
                                 required 
                                 autocomplete="username"
                             >
