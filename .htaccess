@@ -68,3 +68,37 @@
     Header unset X-Powered-By
     Header unset Server
 </IfModule>
+
+# Block public access to sensitive config, environment, and INI files
+<FilesMatch "^(\.user\.ini|php\.ini|\.env.*|\.git.*)$">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order allow,deny
+        Deny from all
+    </IfModule>
+</FilesMatch>
+
+# Recommended PHP Directives (LiteSpeed / Apache ea-php)
+<IfModule lsapi_module>
+    php_value memory_limit 512M
+    php_value max_execution_time 300
+    php_value max_input_time 300
+    php_value upload_max_filesize 128M
+    php_value post_max_size 128M
+    php_value max_input_vars 5000
+    php_flag display_errors Off
+    php_flag log_errors On
+</IfModule>
+
+<IfModule mod_php.c>
+    php_value memory_limit 512M
+    php_value max_execution_time 300
+    php_value max_input_time 300
+    php_value upload_max_filesize 128M
+    php_value post_max_size 128M
+    php_value max_input_vars 5000
+    php_flag display_errors Off
+    php_flag log_errors On
+</IfModule>

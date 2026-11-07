@@ -4,6 +4,13 @@
  * Falhen Media
  */
 
+// Recommended PHP Runtime Settings for Media-Heavy Photography & Video Workloads
+@ini_set('memory_limit', '512M');
+@ini_set('max_execution_time', '300');
+@ini_set('max_input_time', '300');
+@ini_set('display_errors', '0');
+@ini_set('log_errors', '1');
+
 // Cloudflare Edge IP Restoration & Origin IP Exposure Protection
 if (!headers_sent()) {
     @header_remove('X-Powered-By');
