@@ -2,10 +2,13 @@
 /**
  * client-portal.php
  * Falhen Media — Independent Client Gallery Subdomain Portal (client.falhen.com)
- * Built with the falhen.com/portfolio dark editorial design system:
- * - Responsive Masonry Grid View & Dynamic Full-Screen Lightbox (Mobile, Tablet, Desktop)
- * - Google Drive API -> Cloudinary Lightweight Asset Sync
+ * SmugMug-inspired clean photography delivery UX:
+ * - Minimalist breadcrumbs & typography-first album header
+ * - Edge-to-edge responsive photography gallery (Masonry / Justified)
+ * - Dynamic Full-Screen Lightbox Slideshow with thumbnail track & keyboard navigation
+ * - Complete Clients / Folders directory view (?view=clients)
  * - 2-Step Client Security Gate (Name, Email, Phone + 6-Digit OTP) & Bulk ZIP Download
+ * - Cloudinary CDN optimized assets & Google Drive sync
  */
 
 require_once __DIR__ . '/includes/functions.php';
@@ -25,11 +28,14 @@ if (empty($albumsRepo)) {
     }
 }
 
-// Check if client email was passed via query or session (e.g. from /dashboard?view=client)
+// Check if client email was passed via query or session
 $requestedClientEmail = strtolower(trim($_GET['client_email'] ?? $_POST['client_email'] ?? ''));
 if (!empty($requestedClientEmail) && filter_var($requestedClientEmail, FILTER_VALIDATE_EMAIL)) {
     $_SESSION['portal_lookup_email'] = $requestedClientEmail;
 }
+
+// Check if client requested directory view
+$isClientsView = (isset($_GET['view']) && $_GET['view'] === 'clients') || isset($_GET['clients']);
 
 // Determine active album
 $albumId = isset($_GET['id']) ? (int)$_GET['id'] : (isset($_GET['album_id']) ? (int)$_GET['album_id'] : (int)key($albumsRepo));
@@ -48,7 +54,9 @@ if (isset($albumsRepo[$albumId])) {
 
 $currentAlbumId = (int)($currentAlbum['id'] ?? 1);
 $coverImage = getCloudinaryUrl($currentAlbum['image'] ?? $currentAlbum['cover'] ?? '/assets/img/portfolio/portfolio_halima.png');
-$pageTitle = htmlspecialchars($currentAlbum['title'] ?? 'Client Gallery') . " — Client Portal | Falhen Media";
+$pageTitle = $isClientsView
+    ? "Client Galleries — Falhen Media"
+    : htmlspecialchars($currentAlbum['title'] ?? 'Client Gallery') . " — Client Portal | Falhen Media";
 
 // Client Authentication & Verification State
 $isClientVerified = !empty($_SESSION['client_download_verified']) && !empty($_SESSION['registered_client_email']);
@@ -100,6 +108,15 @@ if (empty($rawPhotos)) {
 
 $photoItems = buildClientGalleryPhotoItems($rawPhotos, $currentAlbumId);
 $totalPhotos = count($photoItems);
+
+// Collect all categories for the directory filter
+$allCategories = [];
+foreach ($albumsRepo as $alb) {
+    $cat = trim($alb['category'] ?? 'General');
+    if ($cat && !in_array($cat, $allCategories, true)) {
+        $allCategories[] = $cat;
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -111,1454 +128,1191 @@ $totalPhotos = count($photoItems);
     <link rel="icon" type="image/png" href="/assets/img/icons/favicon.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="/assets/css/style.css">
 
     <style>
         :root {
-            --bg-dark: #030305;
-            --surface-card: #0b0b0f;
-            --surface-elevated: #111218;
-            --brand-red: #dc2626;
-            --brand-red-hover: #ef4444;
-            --brand-blue: #2563eb;
-            --brand-blue-hover: #1d4ed8;
-            --text-main: #ffffff;
-            --text-secondary: #d4d4d8;
-            --text-muted: #a1a1aa;
-            --border-subtle: rgba(255, 255, 255, 0.08);
-            --border-highlight: rgba(255, 255, 255, 0.16);
+            --smug-bg: #070709;
+            --smug-surface: #0f0f13;
+            --smug-border: rgba(255, 255, 255, 0.08);
+            --smug-border-light: rgba(255, 255, 255, 0.16);
+            --smug-red: #dc2626;
+            --smug-red-hover: #ef4444;
+            --smug-text-primary: #ffffff;
+            --smug-text-secondary: #a1a1aa;
+            --smug-text-muted: #71717a;
         }
 
         * {
             box-sizing: border-box;
+            margin: 0;
+            padding: 0;
         }
 
         body {
-            background-color: var(--bg-dark);
-            color: var(--text-main);
+            background-color: var(--smug-bg);
+            color: var(--smug-text-primary);
             font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
-            margin: 0;
-            padding: 0;
             min-height: 100vh;
             overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
         }
 
-        /* Top Sticky Navigation Bar matching falhen.com/portfolio */
-        .port-nav-bar {
+        /* SmugMug Minimal Top Brand Header */
+        .smug-topbar {
             position: sticky;
             top: 0;
             left: 0;
             right: 0;
-            background: rgba(3, 3, 5, 0.9);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            border-bottom: 1px solid var(--border-subtle);
+            background: rgba(7, 7, 9, 0.94);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--smug-border);
             z-index: 100;
-            padding: 16px 28px;
+            padding: 14px 32px;
         }
 
-        .port-nav-container {
-            max-width: 1400px;
+        .smug-topbar-inner {
+            max-width: 1720px;
             margin: 0 auto;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            gap: 16px;
+            gap: 20px;
         }
 
-        .port-nav-left {
+        .smug-brand-link {
             display: flex;
             align-items: center;
-            gap: 14px;
+            gap: 12px;
+            text-decoration: none;
+            color: #ffffff;
         }
 
-        .port-back-link {
-            color: #d4d4d8;
+        .smug-brand-link img {
+            height: 28px;
+            width: auto;
+            display: block;
+        }
+
+        .smug-brand-tag {
+            font-size: 0.72rem;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            font-weight: 700;
+            color: var(--smug-text-muted);
+            border-left: 1px solid var(--smug-border-light);
+            padding-left: 12px;
+        }
+
+        .smug-topbar-actions {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .smug-nav-link {
+            color: var(--smug-text-secondary);
             text-decoration: none;
-            font-size: 0.9rem;
+            font-size: 0.84rem;
             font-weight: 600;
+            padding: 8px 14px;
+            border-radius: 8px;
+            transition: all 0.2s ease;
             display: inline-flex;
             align-items: center;
             gap: 8px;
-            padding: 8px 14px;
-            border-radius: 10px;
-            border: 1px solid var(--border-subtle);
-            background: rgba(255, 255, 255, 0.03);
-            transition: all 0.2s ease;
         }
 
-        .port-back-link:hover {
+        .smug-nav-link:hover {
             color: #ffffff;
-            background: rgba(255, 255, 255, 0.08);
-            border-color: var(--border-highlight);
+            background: rgba(255, 255, 255, 0.05);
         }
 
-        .subdomain-pill {
+        .smug-nav-cta {
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid var(--smug-border-light);
+            color: #ffffff;
+            font-size: 0.84rem;
+            font-weight: 600;
+            padding: 8px 16px;
+            border-radius: 8px;
+            text-decoration: none;
             display: inline-flex;
             align-items: center;
-            gap: 7px;
-            padding: 6px 12px;
-            border-radius: 20px;
-            font-size: 0.76rem;
-            font-weight: 700;
-            letter-spacing: 0.4px;
-            background: rgba(220, 38, 38, 0.12);
-            border: 1px solid rgba(220, 38, 38, 0.35);
-            color: #f87171;
+            gap: 8px;
+            transition: all 0.2s ease;
+            cursor: pointer;
         }
 
-        .port-logo-center img {
-            height: 30px;
-            width: auto;
-            display: block;
-            filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.5));
+        .smug-nav-cta:hover {
+            background: #ffffff;
+            color: #000000;
+            border-color: #ffffff;
         }
 
-        .port-nav-actions {
+        .smug-nav-primary {
+            background: var(--smug-red);
+            border: 1px solid var(--smug-red);
+            color: #ffffff;
+            font-size: 0.84rem;
+            font-weight: 600;
+            padding: 8px 18px;
+            border-radius: 8px;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+
+        .smug-nav-primary:hover {
+            background: var(--smug-red-hover);
+            border-color: var(--smug-red-hover);
+        }
+
+        /* Container */
+        .smug-page-container {
+            max-width: 1720px;
+            margin: 0 auto;
+            padding: 28px 32px 80px;
+        }
+
+        /* Breadcrumbs (SmugMug style) */
+        .smug-breadcrumbs {
             display: flex;
             align-items: center;
             gap: 10px;
+            font-size: 0.84rem;
+            color: var(--smug-text-muted);
+            margin-bottom: 20px;
+            flex-wrap: wrap;
         }
 
-        .btn-nav-action {
-            background: rgba(255, 255, 255, 0.06);
-            border: 1px solid var(--border-highlight);
+        .smug-breadcrumbs a {
+            color: var(--smug-text-secondary);
+            text-decoration: none;
+            transition: color 0.15s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .smug-breadcrumbs a:hover {
             color: #ffffff;
-            padding: 9px 16px;
-            border-radius: 10px;
-            font-size: 0.86rem;
+        }
+
+        .smug-breadcrumbs .sep {
+            color: var(--smug-text-muted);
+            opacity: 0.6;
+        }
+
+        .smug-breadcrumbs .current {
+            color: #ffffff;
             font-weight: 600;
+        }
+
+        /* Album Hero Header (Clean, Photography-First) */
+        .smug-album-header {
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            gap: 24px;
+            padding-bottom: 24px;
+            border-bottom: 1px solid var(--smug-border);
+            margin-bottom: 32px;
+            flex-wrap: wrap;
+        }
+
+        .smug-header-info {
+            max-width: 800px;
+        }
+
+        .smug-album-title {
+            font-size: clamp(2rem, 3.2vw, 3rem);
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            line-height: 1.15;
+            color: #ffffff;
+            margin-bottom: 10px;
+        }
+
+        .smug-album-meta {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            font-size: 0.9rem;
+            color: var(--smug-text-secondary);
+            flex-wrap: wrap;
+        }
+
+        .smug-album-meta .dot {
+            opacity: 0.4;
+        }
+
+        .smug-verified-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            color: #4ade80;
+            font-size: 0.82rem;
+            font-weight: 600;
+        }
+
+        .smug-header-actions {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .btn-smug-action {
             display: inline-flex;
             align-items: center;
             gap: 8px;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 0.88rem;
+            font-weight: 600;
             cursor: pointer;
             transition: all 0.2s ease;
             text-decoration: none;
+            border: 1px solid transparent;
         }
 
-        .btn-nav-action:hover {
+        .btn-smug-primary {
+            background: var(--smug-red);
+            color: #ffffff;
+        }
+
+        .btn-smug-primary:hover {
+            background: var(--smug-red-hover);
+        }
+
+        .btn-smug-ghost {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: var(--smug-border-light);
+            color: #ffffff;
+        }
+
+        .btn-smug-ghost:hover {
             background: rgba(255, 255, 255, 0.12);
             border-color: rgba(255, 255, 255, 0.28);
         }
 
-        .btn-nav-primary {
-            background: var(--brand-red);
-            color: #ffffff;
-            border: none;
-            padding: 9px 20px;
-            border-radius: 10px;
-            font-size: 0.86rem;
-            font-weight: 700;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            cursor: pointer;
-            box-shadow: 0 4px 15px rgba(220, 38, 38, 0.38);
-            transition: all 0.2s ease;
+        /* SmugMug Pure Masonry / Justified Gallery Grid */
+        .smug-gallery-grid {
+            column-count: 3;
+            column-gap: 14px;
         }
 
-        .btn-nav-primary:hover {
-            background: var(--brand-red-hover);
-            transform: translateY(-1px);
-            box-shadow: 0 6px 20px rgba(220, 38, 38, 0.52);
+        @media (max-width: 1200px) {
+            .smug-gallery-grid {
+                column-count: 2;
+                column-gap: 12px;
+            }
         }
 
-        /* Editorial Hero Stage matching falhen.com/portfolio */
-        .client-hero-stage {
+        @media (max-width: 640px) {
+            .smug-gallery-grid {
+                column-count: 1;
+                column-gap: 0;
+            }
+            .smug-topbar {
+                padding: 12px 18px;
+            }
+            .smug-page-container {
+                padding: 20px 18px 60px;
+            }
+        }
+
+        .smug-photo-card {
+            break-inside: avoid;
+            margin-bottom: 14px;
             position: relative;
-            padding: 56px 28px 42px;
-            background:
-                linear-gradient(180deg, rgba(3, 3, 5, 0.78) 0%, rgba(3, 3, 5, 0.96) 85%, #030305 100%),
-                radial-gradient(circle at 50% 20%, rgba(220, 38, 38, 0.22) 0%, transparent 62%),
-                url('<?php echo htmlspecialchars($coverImage); ?>') center/cover no-repeat;
-            border-bottom: 1px solid var(--border-subtle);
-        }
-
-        .client-hero-inner {
-            max-width: 1400px;
-            margin: 0 auto;
-            display: grid;
-            grid-template-columns: 420px 1fr;
-            gap: 44px;
-            align-items: center;
-        }
-
-        .hero-featured-card {
-            position: relative;
-            border-radius: 22px;
+            border-radius: 4px;
             overflow: hidden;
-            background: #000;
-            border: 1px solid rgba(255, 255, 255, 0.14);
-            box-shadow: 0 24px 60px rgba(0, 0, 0, 0.85), 0 0 30px rgba(220, 38, 38, 0.12);
-            aspect-ratio: 4 / 3.6;
+            background: #111116;
             cursor: pointer;
-            transition: transform 0.3s ease;
         }
 
-        .hero-featured-card:hover {
-            transform: translateY(-3px);
-        }
-
-        .hero-featured-card img {
+        .smug-photo-card img {
             width: 100%;
-            height: 100%;
-            object-fit: cover;
+            height: auto;
             display: block;
+            transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
-        .hero-featured-overlay {
+        .smug-photo-card:hover img {
+            transform: scale(1.02);
+        }
+
+        /* Subtle minimal hover overlay */
+        .smug-photo-overlay {
             position: absolute;
             inset: 0;
-            background: linear-gradient(180deg, rgba(0,0,0,0.05) 0%, rgba(0,0,0,0.55) 100%);
+            background: linear-gradient(180deg, rgba(0,0,0,0) 50%, rgba(0,0,0,0.7) 100%);
+            opacity: 0;
+            transition: opacity 0.25s ease;
             display: flex;
             align-items: flex-end;
             justify-content: space-between;
-            padding: 18px;
+            padding: 16px;
         }
 
-        .hero-zoom-pill {
-            background: rgba(3, 3, 5, 0.8);
-            backdrop-filter: blur(8px);
-            border: 1px solid rgba(255, 255, 255, 0.22);
-            color: #ffffff;
-            padding: 8px 16px;
-            border-radius: 24px;
-            font-size: 0.82rem;
-            font-weight: 700;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
+        .smug-photo-card:hover .smug-photo-overlay {
+            opacity: 1;
         }
 
-        .hero-details-col {
-            display: flex;
-            flex-direction: column;
-            align-items: flex-start;
-        }
-
-        .hero-badges-row {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            flex-wrap: wrap;
-            margin-bottom: 14px;
-        }
-
-        .badge-crimson {
-            background: var(--brand-red);
-            color: #ffffff;
-            font-size: 0.76rem;
-            font-weight: 700;
-            padding: 4px 14px;
-            border-radius: 20px;
-            text-transform: uppercase;
+        .smug-overlay-num {
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.85);
             letter-spacing: 0.5px;
         }
 
-        .badge-sync {
-            background: rgba(16, 185, 129, 0.12);
-            border: 1px solid rgba(16, 185, 129, 0.35);
-            color: #34d399;
-            font-size: 0.76rem;
-            font-weight: 700;
-            padding: 4px 12px;
-            border-radius: 20px;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-        .badge-verified {
-            background: rgba(37, 99, 235, 0.15);
-            border: 1px solid rgba(37, 99, 235, 0.4);
-            color: #60a5fa;
-            font-size: 0.76rem;
-            font-weight: 700;
-            padding: 4px 12px;
-            border-radius: 20px;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-        .hero-main-title {
-            font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
-            font-size: 3rem;
-            font-weight: 800;
-            color: #ffffff;
-            margin: 0 0 12px 0;
-            line-height: 1.12;
-            letter-spacing: -1px;
-        }
-
-        .hero-main-title span {
-            color: var(--brand-red);
-        }
-
-        .hero-description {
-            color: var(--text-muted);
-            font-size: 1rem;
-            line-height: 1.6;
-            margin: 0 0 22px 0;
-            max-width: 660px;
-        }
-
-        .hero-meta-pills {
+        .smug-overlay-actions {
             display: flex;
             align-items: center;
-            gap: 10px;
-            flex-wrap: wrap;
-            margin-bottom: 24px;
+            gap: 8px;
         }
 
-        .meta-pill {
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid var(--border-subtle);
-            border-radius: 20px;
-            padding: 6px 14px;
-            font-size: 0.82rem;
-            font-weight: 600;
-            color: #e4e4e7;
-            display: inline-flex;
-            align-items: center;
-            gap: 7px;
-        }
-
-        .hero-cta-row {
+        .smug-overlay-btn {
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #ffffff;
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
             display: flex;
             align-items: center;
-            gap: 12px;
-            flex-wrap: wrap;
-        }
-
-        .btn-download-all {
-            background: var(--brand-red);
-            color: #ffffff;
-            border: none;
-            padding: 13px 26px;
-            border-radius: 12px;
-            font-size: 0.95rem;
-            font-weight: 700;
-            display: inline-flex;
-            align-items: center;
-            gap: 10px;
-            cursor: pointer;
-            box-shadow: 0 6px 20px rgba(220, 38, 38, 0.4);
-            transition: all 0.2s ease;
-        }
-
-        .btn-download-all:hover {
-            background: var(--brand-red-hover);
-            transform: translateY(-2px);
-            box-shadow: 0 10px 28px rgba(220, 38, 38, 0.55);
-        }
-
-        .btn-fullview-launch {
-            background: rgba(255, 255, 255, 0.07);
-            border: 1px solid var(--border-highlight);
-            color: #ffffff;
-            padding: 13px 22px;
-            border-radius: 12px;
-            font-size: 0.95rem;
-            font-weight: 700;
-            display: inline-flex;
-            align-items: center;
-            gap: 9px;
+            justify-content: center;
+            font-size: 0.8rem;
             cursor: pointer;
             transition: all 0.2s ease;
         }
 
-        .btn-fullview-launch:hover {
-            background: rgba(255, 255, 255, 0.14);
-            transform: translateY(-2px);
+        .smug-overlay-btn:hover {
+            background: #ffffff;
+            color: #000000;
+            border-color: #ffffff;
         }
 
-        /* Album Selector & View Controls Toolbar */
-        .portal-toolbar-wrap {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 26px 28px 12px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 18px;
-            flex-wrap: wrap;
+        /* CLIENTS DIRECTORY VIEW (?view=clients) */
+        .smug-directory-header {
+            margin-bottom: 32px;
+            padding-bottom: 24px;
+            border-bottom: 1px solid var(--smug-border);
         }
 
-        .album-selector-strip {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            overflow-x: auto;
-            padding-bottom: 4px;
-        }
-
-        .album-tab-pill {
-            background: rgba(255, 255, 255, 0.04);
-            border: 1px solid var(--border-subtle);
-            color: var(--text-secondary);
-            padding: 8px 16px;
-            border-radius: 12px;
-            font-size: 0.84rem;
-            font-weight: 600;
-            text-decoration: none;
-            white-space: nowrap;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            transition: all 0.2s ease;
-        }
-
-        .album-tab-pill:hover {
+        .smug-directory-title {
+            font-size: clamp(2rem, 3.5vw, 2.8rem);
+            font-weight: 700;
             color: #ffffff;
-            border-color: var(--border-highlight);
-            background: rgba(255, 255, 255, 0.08);
+            letter-spacing: -0.02em;
+            margin-bottom: 8px;
         }
 
-        .album-tab-pill.active {
-            background: rgba(220, 38, 38, 0.15);
-            border-color: var(--brand-red);
-            color: #ffffff;
-            box-shadow: 0 4px 14px rgba(220, 38, 38, 0.22);
+        .smug-directory-subtitle {
+            font-size: 0.95rem;
+            color: var(--smug-text-secondary);
         }
 
-        .view-toggle-group {
-            display: inline-flex;
-            align-items: center;
-            background: #0b0b0f;
-            border: 1px solid var(--border-subtle);
-            border-radius: 12px;
-            padding: 4px;
-            gap: 4px;
+        .smug-folders-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 24px;
         }
 
-        .view-toggle-btn {
-            background: transparent;
-            border: none;
-            color: var(--text-muted);
-            padding: 7px 14px;
+        @media (max-width: 640px) {
+            .smug-folders-grid {
+                grid-template-columns: 1fr;
+                gap: 18px;
+            }
+        }
+
+        .smug-folder-card {
+            background: var(--smug-surface);
+            border: 1px solid var(--smug-border);
             border-radius: 8px;
-            font-size: 0.82rem;
-            font-weight: 700;
-            cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            transition: all 0.2s ease;
-        }
-
-        .view-toggle-btn.active {
-            background: var(--brand-red);
+            overflow: hidden;
+            text-decoration: none;
             color: #ffffff;
+            transition: all 0.25s ease;
+            display: flex;
+            flex-direction: column;
         }
 
-        /* ==============================================================
-           R2: RESPONSIVE MASONRY GALLERY VIEW (Desktop, Tablet, Mobile)
-           ============================================================== */
-        .gallery-masonry-section {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 18px 28px 90px;
+        .smug-folder-card:hover {
+            border-color: var(--smug-border-light);
+            transform: translateY(-3px);
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5);
         }
 
-        .masonry-gallery-grid {
-            column-count: 3;
-            column-gap: 22px;
-            width: 100%;
-        }
-
-        .masonry-gallery-grid.cols-4 {
-            column-count: 4;
-        }
-
-        .masonry-photo-card {
-            break-inside: avoid;
-            margin-bottom: 22px;
+        .smug-folder-cover {
             position: relative;
-            border-radius: 18px;
-            overflow: hidden;
-            background: var(--surface-card);
-            border: 1px solid var(--border-subtle);
-            cursor: pointer;
-            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.3s, box-shadow 0.3s;
-        }
-
-        .masonry-photo-card:hover {
-            transform: translateY(-4px);
-            border-color: rgba(220, 38, 38, 0.45);
-            box-shadow: 0 18px 44px rgba(0, 0, 0, 0.78);
-        }
-
-        .masonry-img-wrap {
             width: 100%;
-            position: relative;
+            aspect-ratio: 16 / 10;
             overflow: hidden;
-            background: #0d0e14;
+            background: #111116;
         }
 
-        .masonry-img-wrap img {
+        .smug-folder-cover img {
             width: 100%;
             height: 100%;
             object-fit: cover;
             display: block;
-            transition: transform 0.45s ease, filter 0.3s ease;
+            transition: transform 0.4s ease;
         }
 
-        .masonry-photo-card:hover .masonry-img-wrap img {
+        .smug-folder-card:hover .smug-folder-cover img {
             transform: scale(1.04);
         }
 
-        .card-hover-overlay {
+        .smug-folder-cat-badge {
             position: absolute;
-            inset: 0;
-            background: linear-gradient(180deg, rgba(0,0,0,0.15) 0%, transparent 40%, rgba(0,0,0,0.82) 100%);
-            opacity: 0;
+            top: 12px;
+            left: 12px;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: #ffffff;
+            font-size: 0.7rem;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            padding: 4px 10px;
+            border-radius: 4px;
+        }
+
+        .smug-folder-body {
+            padding: 18px 20px 20px;
             display: flex;
             flex-direction: column;
-            justify-content: space-between;
-            padding: 14px;
-            transition: opacity 0.25s ease;
+            gap: 6px;
         }
 
-        .masonry-photo-card:hover .card-hover-overlay {
-            opacity: 1;
-        }
-
-        .card-top-badges {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .card-num-badge {
-            background: rgba(3, 3, 5, 0.78);
-            backdrop-filter: blur(6px);
-            border: 1px solid rgba(255, 255, 255, 0.16);
+        .smug-folder-title {
+            font-size: 1.1rem;
+            font-weight: 700;
             color: #ffffff;
-            font-size: 0.74rem;
-            font-weight: 700;
-            padding: 4px 10px;
-            border-radius: 12px;
         }
 
-        .card-cdn-badge {
-            background: rgba(16, 185, 129, 0.2);
-            border: 1px solid rgba(16, 185, 129, 0.45);
-            color: #6ee7b7;
-            font-size: 0.68rem;
-            font-weight: 700;
-            padding: 3px 8px;
-            border-radius: 10px;
-        }
-
-        .card-bottom-actions {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 10px;
-        }
-
-        .card-photo-caption {
+        .smug-folder-meta {
             font-size: 0.82rem;
-            font-weight: 600;
-            color: #f4f4f5;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-        }
-
-        .card-action-btns {
+            color: var(--smug-text-secondary);
             display: flex;
             align-items: center;
             gap: 8px;
         }
 
-        .overlay-circle-btn {
-            width: 38px;
-            height: 38px;
-            border-radius: 50%;
-            background: rgba(15, 15, 22, 0.85);
-            border: 1px solid rgba(255, 255, 255, 0.22);
+        /* FULLSCREEN DYNAMIC LIGHTBOX / SLIDESHOW */
+        .smug-lightbox {
+            position: fixed;
+            inset: 0;
+            background: rgba(4, 4, 6, 0.98);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            z-index: 9999;
+            display: none;
+            flex-direction: column;
+        }
+
+        .smug-lightbox-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 28px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
             color: #ffffff;
+            background: rgba(0, 0, 0, 0.4);
+        }
+
+        .smug-lightbox-title {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--smug-text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .smug-lightbox-count {
+            color: #ffffff;
+            font-weight: 700;
+        }
+
+        .smug-lightbox-tools {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .smug-tool-btn {
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            color: #ffffff;
+            padding: 7px 14px;
+            border-radius: 6px;
+            font-size: 0.82rem;
+            font-weight: 600;
             display: inline-flex;
             align-items: center;
-            justify-content: center;
+            gap: 6px;
             cursor: pointer;
             transition: all 0.2s ease;
         }
 
-        .overlay-circle-btn:hover {
-            background: var(--brand-red);
-            border-color: var(--brand-red);
-            transform: scale(1.08);
+        .smug-tool-btn:hover {
+            background: rgba(255, 255, 255, 0.15);
+            border-color: rgba(255, 255, 255, 0.3);
         }
 
-        /* ==============================================================
-           DYNAMIC FULL-SCREEN LIGHTBOX VIEW (Mobile, Tablet, Desktop)
-           ============================================================== */
-        .carousel-modal-backdrop {
-            position: fixed;
-            inset: 0;
-            background: rgba(3, 3, 5, 0.96);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            z-index: 99999;
-            display: none;
-            flex-direction: column;
-            justify-content: space-between;
-            padding: 18px 28px 22px;
-        }
-
-        .carousel-top-bar {
-            max-width: 1500px;
-            width: 100%;
-            margin: 0 auto;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 12px;
-        }
-
-        .carousel-counter-pill {
-            background: rgba(255, 255, 255, 0.07);
-            border: 1px solid var(--border-highlight);
-            padding: 7px 16px;
-            border-radius: 20px;
-            font-size: 0.86rem;
-            font-weight: 600;
-            color: #f4f4f5;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .carousel-top-actions {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .btn-carousel-tool {
-            background: rgba(255, 255, 255, 0.08);
-            border: 1px solid rgba(255, 255, 255, 0.16);
-            color: #ffffff;
-            padding: 8px 14px;
-            border-radius: 10px;
-            font-size: 0.84rem;
-            font-weight: 600;
-            cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            transition: all 0.2s;
-        }
-
-        .btn-carousel-tool:hover {
-            background: rgba(255, 255, 255, 0.16);
-        }
-
-        .btn-carousel-download {
-            background: var(--brand-red);
-            color: #ffffff;
+        .smug-tool-close {
+            background: none;
             border: none;
-            padding: 8px 18px;
-            border-radius: 10px;
-            font-size: 0.85rem;
-            font-weight: 700;
+            color: var(--smug-text-secondary);
+            font-size: 1.25rem;
             cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            box-shadow: 0 4px 14px rgba(220, 38, 38, 0.4);
-            transition: all 0.2s;
+            padding: 6px 10px;
+            border-radius: 6px;
+            transition: color 0.15s ease;
         }
 
-        .btn-carousel-download:hover {
-            background: var(--brand-red-hover);
-        }
-
-        .btn-carousel-close {
-            width: 38px;
-            height: 38px;
-            border-radius: 50%;
-            background: rgba(255, 255, 255, 0.08);
-            border: 1px solid rgba(255, 255, 255, 0.15);
+        .smug-tool-close:hover {
             color: #ffffff;
-            font-size: 1.1rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: all 0.2s;
         }
 
-        .btn-carousel-close:hover {
-            background: var(--brand-red);
-            border-color: var(--brand-red);
-        }
-
-        .carousel-center-stage {
+        .smug-lightbox-stage {
             flex: 1;
             display: flex;
             align-items: center;
             justify-content: space-between;
             position: relative;
-            max-width: 1500px;
-            width: 100%;
-            margin: 0 auto;
-            padding: 12px 0;
             overflow: hidden;
+            padding: 12px 20px;
         }
 
-        .carousel-arrow-btn {
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            background: rgba(20, 20, 28, 0.82);
-            border: 1px solid rgba(255, 255, 255, 0.16);
+        .smug-nav-arrow {
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.15);
             color: #ffffff;
-            font-size: 1.15rem;
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            transition: all 0.2s ease;
             z-index: 10;
-            flex-shrink: 0;
+            transition: all 0.2s ease;
         }
 
-        .carousel-arrow-btn:hover {
-            background: var(--brand-red);
-            border-color: var(--brand-red);
-            transform: scale(1.08);
+        .smug-nav-arrow:hover {
+            background: #ffffff;
+            color: #000000;
         }
 
-        .carousel-main-image-wrap {
+        .smug-image-holder {
             flex: 1;
             height: 100%;
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 0 18px;
-            overflow: hidden;
-        }
-
-        .carousel-main-img {
-            max-width: 86vw;
-            max-height: 70vh;
-            border-radius: 14px;
-            object-fit: contain;
-            box-shadow: 0 24px 80px rgba(0, 0, 0, 0.92);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            transition: opacity 0.2s ease, transform 0.28s ease;
+            user-select: none;
             cursor: zoom-in;
         }
 
-        .carousel-main-img.zoomed {
-            transform: scale(1.65);
+        .smug-image-holder.zoomed {
+            cursor: zoom-out;
+            overflow: auto;
+            display: block;
+        }
+
+        .smug-lightbox-img {
+            max-height: 82vh;
+            max-width: 90vw;
+            object-fit: contain;
+            transition: opacity 0.2s ease, transform 0.3s ease;
+        }
+
+        .smug-image-holder.zoomed .smug-lightbox-img {
+            max-height: none;
+            max-width: none;
+            transform: scale(1.6);
+            transform-origin: center center;
             cursor: zoom-out;
         }
 
-        .carousel-bottom-thumbs {
-            max-width: 1200px;
-            width: 100%;
-            margin: 0 auto;
+        .smug-thumbs-rail {
+            height: 72px;
+            background: rgba(0, 0, 0, 0.6);
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 8px;
+            padding: 8px 24px;
             overflow-x: auto;
-            padding: 8px 4px 2px;
+            white-space: nowrap;
         }
 
-        .carousel-thumb-item {
-            width: 72px;
+        .smug-thumb {
             height: 52px;
-            border-radius: 8px;
+            aspect-ratio: 3 / 2;
+            border-radius: 3px;
             overflow: hidden;
-            flex-shrink: 0;
             border: 2px solid transparent;
             cursor: pointer;
             opacity: 0.45;
             transition: all 0.2s ease;
-            background: #000;
+            flex-shrink: 0;
         }
 
-        .carousel-thumb-item.active {
-            opacity: 1;
-            border-color: var(--brand-red);
-            transform: translateY(-2px);
-        }
-
-        .carousel-thumb-item img {
+        .smug-thumb img {
             width: 100%;
             height: 100%;
             object-fit: cover;
             display: block;
         }
 
-        /* ==============================================================
-           R3: 2-STEP CLIENT SECURITY & 6-DIGIT OTP DOWNLOAD MODAL
-           ============================================================== */
-        .client-modal-backdrop {
+        .smug-thumb.active {
+            border-color: #ffffff;
+            opacity: 1;
+        }
+
+        .smug-thumb:hover {
+            opacity: 0.9;
+        }
+
+        /* REFINED CLIENT SECURITY OTP MODAL */
+        .smug-modal-overlay {
             position: fixed;
             inset: 0;
-            background: rgba(0, 0, 0, 0.82);
+            background: rgba(0, 0, 0, 0.85);
             backdrop-filter: blur(12px);
             -webkit-backdrop-filter: blur(12px);
-            z-index: 100001;
+            z-index: 10000;
             display: none;
             align-items: center;
             justify-content: center;
             padding: 20px;
         }
 
-        .client-modal-box {
-            background: #111218;
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            border-radius: 20px;
+        .smug-modal-box {
+            background: #111116;
+            border: 1px solid var(--smug-border-light);
+            border-radius: 12px;
+            max-width: 480px;
             width: 100%;
-            max-width: 490px;
             overflow: hidden;
-            box-shadow: 0 25px 70px rgba(0, 0, 0, 0.92), 0 0 35px rgba(220, 38, 38, 0.18);
+            box-shadow: 0 24px 60px rgba(0, 0, 0, 0.7);
         }
 
-        .client-modal-header {
-            padding: 24px 28px 18px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        .smug-modal-header {
+            padding: 24px 28px 20px;
+            border-bottom: 1px solid var(--smug-border);
             display: flex;
             align-items: flex-start;
-            gap: 16px;
+            justify-content: space-between;
         }
 
-        .client-icon-badge {
-            width: 44px;
-            height: 44px;
-            border-radius: 12px;
-            background: rgba(220, 38, 38, 0.15);
-            border: 1px solid rgba(220, 38, 38, 0.4);
-            color: #ef4444;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+        .smug-modal-title {
             font-size: 1.25rem;
-            flex-shrink: 0;
-        }
-
-        .client-modal-title {
-            font-size: 1.2rem;
             font-weight: 700;
             color: #ffffff;
-            margin: 0 0 4px 0;
+            margin-bottom: 4px;
         }
 
-        .client-modal-subtitle {
+        .smug-modal-subtitle {
             font-size: 0.84rem;
-            color: #94a3b8;
-            margin: 0 0 8px 0;
+            color: var(--smug-text-secondary);
+            line-height: 1.4;
         }
 
-        .client-stats-pill {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            background: rgba(255, 255, 255, 0.06);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            padding: 4px 10px;
-            border-radius: 12px;
-            font-size: 0.76rem;
-            color: #e4e4e7;
+        .smug-modal-body {
+            padding: 24px 28px;
         }
 
-        .client-modal-body {
-            padding: 22px 28px 24px;
+        .smug-field-group {
+            margin-bottom: 16px;
         }
 
-        .cdm-form-group {
-            margin-bottom: 15px;
-            text-align: left;
-        }
-
-        .cdm-label {
+        .smug-label {
             display: block;
-            font-size: 0.82rem;
+            font-size: 0.78rem;
             font-weight: 600;
-            color: #e4e4e7;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            color: var(--smug-text-secondary);
             margin-bottom: 6px;
         }
 
-        .cdm-input {
+        .smug-input {
             width: 100%;
-            background: #181922;
-            border: 1px solid rgba(255, 255, 255, 0.14);
-            border-radius: 10px;
+            background: #09090c;
+            border: 1px solid var(--smug-border-light);
+            border-radius: 6px;
             padding: 11px 14px;
             color: #ffffff;
             font-size: 0.92rem;
-            font-family: inherit;
             outline: none;
-            transition: border-color 0.2s;
+            transition: border-color 0.2s ease;
         }
 
-        .cdm-input:focus {
-            border-color: var(--brand-red);
-            box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.2);
+        .smug-input:focus {
+            border-color: #ffffff;
         }
 
-        .cdm-otp-input {
-            letter-spacing: 8px;
-            font-size: 1.35rem;
-            font-weight: 800;
+        .smug-otp-input {
+            font-size: 1.6rem;
+            letter-spacing: 12px;
             text-align: center;
-            padding: 12px;
+            font-weight: 700;
         }
 
-        .cdm-error-alert {
+        .smug-modal-alert {
+            padding: 10px 14px;
+            border-radius: 6px;
+            font-size: 0.82rem;
+            margin-bottom: 16px;
             display: none;
-            background: rgba(239, 68, 68, 0.14);
-            border: 1px solid rgba(239, 68, 68, 0.4);
-            color: #fca5a5;
-            padding: 10px 14px;
-            border-radius: 10px;
-            font-size: 0.83rem;
-            margin-bottom: 16px;
         }
 
-        .cdm-info-alert {
-            background: rgba(16, 185, 129, 0.12);
-            border: 1px solid rgba(16, 185, 129, 0.35);
-            color: #6ee7b7;
-            padding: 10px 14px;
-            border-radius: 10px;
-            font-size: 0.83rem;
-            margin-bottom: 16px;
+        .smug-alert-error {
+            background: rgba(220, 38, 38, 0.15);
+            border: 1px solid rgba(220, 38, 38, 0.4);
+            color: #f87171;
         }
 
-        .cdm-privacy-note {
-            font-size: 0.78rem;
-            color: #94a3b8;
-            line-height: 1.45;
-            margin: 12px 0 0;
+        .smug-alert-info {
+            background: rgba(37, 99, 235, 0.15);
+            border: 1px solid rgba(37, 99, 235, 0.4);
+            color: #93c5fd;
         }
 
-        .client-modal-footer {
-            padding: 16px 28px 22px;
-            border-top: 1px solid rgba(255, 255, 255, 0.08);
+        .smug-modal-footer {
+            padding: 16px 28px 24px;
             display: flex;
             align-items: center;
             justify-content: flex-end;
             gap: 12px;
+            border-top: 1px solid var(--smug-border);
         }
 
-        .btn-cdm-cancel {
-            background: rgba(255, 255, 255, 0.06);
-            border: 1px solid rgba(255, 255, 255, 0.14);
-            color: #d4d4d8;
-            padding: 10px 18px;
-            border-radius: 10px;
+        .btn-modal-cancel {
+            background: none;
+            border: none;
+            color: var(--smug-text-secondary);
             font-size: 0.88rem;
             font-weight: 600;
             cursor: pointer;
+            padding: 8px 16px;
         }
 
-        .btn-cdm-submit {
-            background: var(--brand-red);
+        .btn-modal-cancel:hover {
+            color: #ffffff;
+        }
+
+        .btn-modal-submit {
+            background: var(--smug-red);
             border: none;
             color: #ffffff;
             padding: 10px 22px;
-            border-radius: 10px;
+            border-radius: 6px;
             font-size: 0.88rem;
-            font-weight: 700;
+            font-weight: 600;
             cursor: pointer;
             display: inline-flex;
             align-items: center;
             gap: 8px;
-            box-shadow: 0 4px 14px rgba(220, 38, 38, 0.4);
+            transition: background 0.2s ease;
         }
 
-        .btn-cdm-submit:hover {
-            background: var(--brand-red-hover);
+        .btn-modal-submit:hover {
+            background: var(--smug-red-hover);
         }
 
-        /* Toast notification */
-        .download-toast {
+        /* Toast feedback */
+        .smug-toast {
             position: fixed;
-            bottom: 28px;
-            right: 28px;
-            background: #111827;
-            border: 1px solid rgba(255, 255, 255, 0.18);
+            bottom: 24px;
+            right: 24px;
+            background: #111116;
+            border: 1px solid var(--smug-border-light);
             color: #ffffff;
-            padding: 14px 22px;
-            border-radius: 12px;
-            box-shadow: 0 12px 32px rgba(0,0,0,0.75);
+            padding: 12px 20px;
+            border-radius: 8px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
             display: flex;
             align-items: center;
-            gap: 12px;
-            font-size: 0.9rem;
-            font-weight: 600;
-            z-index: 100005;
+            gap: 10px;
+            font-size: 0.86rem;
+            font-weight: 500;
+            z-index: 10001;
             opacity: 0;
-            transform: translateY(20px);
-            transition: all 0.3s ease;
             pointer-events: none;
+            transform: translateY(12px);
+            transition: all 0.25s ease;
         }
 
-        .download-toast.show {
+        .smug-toast.show {
             opacity: 1;
+            pointer-events: auto;
             transform: translateY(0);
-        }
-
-        /* Responsive Breakpoints (Tablet & Mobile) */
-        @media (max-width: 1024px) {
-            .client-hero-inner {
-                grid-template-columns: 1fr;
-                gap: 32px;
-            }
-            .hero-featured-card {
-                max-width: 520px;
-            }
-            .masonry-gallery-grid,
-            .masonry-gallery-grid.cols-4 {
-                column-count: 2;
-                column-gap: 16px;
-            }
-            .masonry-photo-card {
-                margin-bottom: 16px;
-            }
-            .hero-main-title {
-                font-size: 2.4rem;
-            }
-        }
-
-        @media (max-width: 640px) {
-            .port-nav-bar {
-                padding: 12px 16px;
-            }
-            .port-back-link span,
-            .subdomain-pill {
-                display: none;
-            }
-            .client-hero-stage {
-                padding: 28px 16px 26px;
-            }
-            .hero-main-title {
-                font-size: 1.9rem;
-            }
-            .portal-toolbar-wrap {
-                padding: 18px 16px 8px;
-            }
-            .gallery-masonry-section {
-                padding: 12px 16px 80px;
-            }
-            .masonry-gallery-grid,
-            .masonry-gallery-grid.cols-4 {
-                column-count: 1;
-                column-gap: 0;
-            }
-            .card-hover-overlay {
-                opacity: 1;
-                background: linear-gradient(180deg, rgba(0,0,0,0.2) 0%, transparent 50%, rgba(0,0,0,0.78) 100%);
-            }
-            .carousel-modal-backdrop {
-                padding: 12px;
-            }
-            .carousel-arrow-btn {
-                width: 40px;
-                height: 40px;
-            }
         }
     </style>
 </head>
 <body>
 
-    <!-- Top Sticky Navigation Bar (falhen.com/portfolio feel & look) -->
-    <header class="port-nav-bar">
-        <div class="port-nav-container">
-            <div class="port-nav-left">
-                <a href="/portfolio.php" class="port-back-link">
-                    <i class="fa-solid fa-arrow-left"></i>
-                    <span>Back to Portfolio</span>
-                </a>
-                <span class="subdomain-pill">
-                    <i class="fa-solid fa-lock"></i> client.falhen.com
-                </span>
-            </div>
-
-            <a href="/" class="port-logo-center" aria-label="Falhen Media Home">
+    <!-- Minimal SmugMug Top Bar -->
+    <header class="smug-topbar">
+        <div class="smug-topbar-inner">
+            <a href="?view=clients" class="smug-brand-link">
                 <img src="/assets/img/icons/logo.png" alt="Falhen Media">
+                <span class="smug-brand-tag">Client Galleries</span>
             </a>
 
-            <div class="port-nav-actions">
-                <button type="button" class="btn-nav-action" onclick="openDynamicFullView(0)">
-                    <i class="fa-solid fa-expand"></i>
-                    <span>Dynamic Full View</span>
-                </button>
-                <button type="button" class="btn-nav-primary" onclick="triggerBulkDownload()">
-                    <i class="fa-solid fa-cloud-arrow-down"></i>
-                    <span>Download All (<?php echo $totalPhotos; ?>)</span>
-                </button>
+            <div class="smug-topbar-actions">
+                <a href="/portfolio.php" class="smug-nav-link">
+                    <i class="fa-solid fa-arrow-left"></i>
+                    <span>Portfolio</span>
+                </a>
+                <a href="?view=clients" class="smug-nav-link <?php echo $isClientsView ? 'style="color:#fff;"' : ''; ?>">
+                    <i class="fa-regular fa-folder"></i>
+                    <span>All Clients</span>
+                </a>
+                <?php if (!$isClientsView): ?>
+                    <button type="button" class="smug-nav-cta" onclick="openDynamicFullView(0)">
+                        <i class="fa-solid fa-play"></i>
+                        <span>Slideshow</span>
+                    </button>
+                    <button type="button" class="smug-nav-primary" onclick="triggerBulkDownload()">
+                        <i class="fa-solid fa-cloud-arrow-down"></i>
+                        <span>Download All</span>
+                    </button>
+                <?php endif; ?>
             </div>
         </div>
     </header>
 
-    <!-- Editorial Hero Stage -->
-    <section class="client-hero-stage">
-        <div class="client-hero-inner">
-            <!-- Featured Cover Preview -->
-            <div class="hero-featured-card" onclick="openDynamicFullView(0)">
-                <img src="<?php echo htmlspecialchars($coverImage); ?>" alt="<?php echo htmlspecialchars($currentAlbum['title'] ?? 'Client Gallery'); ?>">
-                <div class="hero-featured-overlay">
-                    <span class="hero-zoom-pill">
-                        <i class="fa-solid fa-wand-magic-sparkles"></i> Tap for Dynamic Full View
-                    </span>
-                </div>
+    <div class="smug-page-container">
+
+        <?php if ($isClientsView): ?>
+            <!-- ================= CLIENTS DIRECTORY VIEW (SmugMug /Clients) ================= -->
+            <nav class="smug-breadcrumbs" aria-label="Breadcrumb">
+                <a href="/portfolio.php">Portfolio</a>
+                <span class="sep">/</span>
+                <span class="current">Clients</span>
+            </nav>
+
+            <div class="smug-directory-header">
+                <h1 class="smug-directory-title">Client Deliveries</h1>
+                <p class="smug-directory-subtitle">Select your curated gallery below to view, stream, and download high-resolution photography assets.</p>
             </div>
 
-            <!-- Shoot Details & Actions -->
-            <div class="hero-details-col">
-                <div class="hero-badges-row">
-                    <span class="badge-crimson"><?php echo htmlspecialchars($currentAlbum['category'] ?? 'Client Delivery'); ?></span>
-                    <span class="badge-sync">
-                        <i class="fa-solid fa-bolt"></i>
-                        <?php echo $hasGdriveSource ? 'Synced via Google Drive & Cloudinary CDN' : 'Cloudinary Lightweight Optimized'; ?>
-                    </span>
-                    <?php if ($isClientVerified): ?>
-                        <span class="badge-verified" id="verifiedStatusBadge">
-                            <i class="fa-solid fa-shield-check"></i> Verified: <?php echo htmlspecialchars($clientEmail); ?>
-                        </span>
-                    <?php else: ?>
-                        <span class="badge-verified" id="verifiedStatusBadge" style="display:none;"></span>
-                    <?php endif; ?>
-                </div>
-
-                <h1 class="hero-main-title">
-                    <?php echo htmlspecialchars($currentAlbum['title'] ?? 'Client Gallery'); ?>
-                </h1>
-
-                <p class="hero-description">
-                    <?php echo htmlspecialchars($currentAlbum['description'] ?? 'Explore your curated photography gallery in responsive Masonry or Dynamic Full View. All assets are synced via Google Drive and optimized through Cloudinary for fast, lightweight device downloads.'); ?>
-                </p>
-
-                <div class="hero-meta-pills">
-                    <span class="meta-pill">
-                        <i class="fa-regular fa-user"></i>
-                        Client: <?php echo htmlspecialchars($currentAlbum['client'] ?? ($clientName ?: 'Falhen VIP Client')); ?>
-                    </span>
-                    <span class="meta-pill">
-                        <i class="fa-regular fa-images"></i>
-                        <?php echo $totalPhotos; ?> Lightweight Photos
-                    </span>
-                    <span class="meta-pill">
-                        <i class="fa-solid fa-mobile-screen-button"></i>
-                        Mobile · Tablet · Desktop Ready
-                    </span>
-                </div>
-
-                <div class="hero-cta-row">
-                    <button type="button" class="btn-download-all" id="btnHeroDownloadAll" onclick="triggerBulkDownload()">
-                        <i class="fa-solid fa-file-zipper"></i>
-                        Download All Photos (.ZIP)
-                    </button>
-                    <button type="button" class="btn-fullview-launch" onclick="openDynamicFullView(0)">
-                        <i class="fa-solid fa-maximize"></i>
-                        Launch Dynamic Full View
-                    </button>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Album Switcher & Masonry Density Controls -->
-    <div class="portal-toolbar-wrap">
-        <div class="album-selector-strip" role="tablist" aria-label="Client Galleries">
-            <?php foreach ($albumsRepo as $aId => $albumItem): ?>
-                <a href="?id=<?php echo (int)$aId; ?>"
-                   class="album-tab-pill <?php echo ((int)$aId === $currentAlbumId) ? 'active' : ''; ?>">
-                    <i class="fa-regular fa-folder-open"></i>
-                    <?php echo htmlspecialchars($albumItem['title'] ?? ('Album #' . $aId)); ?>
-                </a>
-            <?php endforeach; ?>
-        </div>
-
-        <div class="view-toggle-group" aria-label="Gallery Layout Switcher">
-            <button type="button" class="view-toggle-btn active" id="btnMasonry3" onclick="setMasonryColumns(3)">
-                <i class="fa-solid fa-table-cells-large"></i> Editorial Masonry
-            </button>
-            <button type="button" class="view-toggle-btn" id="btnMasonry4" onclick="setMasonryColumns(4)">
-                <i class="fa-solid fa-grip"></i> Compact Masonry
-            </button>
-            <button type="button" class="view-toggle-btn" onclick="openDynamicFullView(0)">
-                <i class="fa-solid fa-expand"></i> Full Screen
-            </button>
-        </div>
-    </div>
-
-    <!-- R2: Responsive Masonry Gallery Grid -->
-    <main class="gallery-masonry-section">
-        <div id="masonryGrid" class="masonry-gallery-grid">
-            <?php foreach ($photoItems as $item): ?>
-                <article class="masonry-photo-card"
-                         data-index="<?php echo (int)$item['index']; ?>"
-                         onclick="openDynamicFullView(<?php echo (int)$item['index']; ?>)">
-                    <div class="masonry-img-wrap" style="aspect-ratio: <?php echo htmlspecialchars($item['aspect_ratio']); ?>;">
-                        <img src="<?php echo htmlspecialchars($item['masonry_url']); ?>"
-                             alt="<?php echo htmlspecialchars(($currentAlbum['title'] ?? 'Gallery') . ' — Photo ' . $item['number']); ?>"
-                             loading="lazy">
-                    </div>
-                    <div class="card-hover-overlay">
-                        <div class="card-top-badges">
-                            <span class="card-num-badge">#<?php echo str_pad((string)$item['number'], 2, '0', STR_PAD_LEFT); ?></span>
-                            <span class="card-cdn-badge">
-                                <i class="fa-solid fa-cloud-bolt"></i> Lightweight HD
-                            </span>
+            <div class="smug-folders-grid">
+                <?php foreach ($albumsRepo as $aId => $album): 
+                    $albCover = getCloudinaryUrl($album['image'] ?? $album['cover'] ?? '/assets/img/portfolio/portfolio_halima.png');
+                    $albCount = (int)($album['photosCount'] ?? 25);
+                ?>
+                    <a href="?id=<?php echo (int)$aId; ?>" class="smug-folder-card">
+                        <div class="smug-folder-cover">
+                            <img src="<?php echo htmlspecialchars($albCover); ?>" alt="<?php echo htmlspecialchars($album['title']); ?>" loading="lazy">
+                            <span class="smug-folder-cat-badge"><?php echo htmlspecialchars($album['category'] ?? 'Gallery'); ?></span>
                         </div>
-                        <div class="card-bottom-actions">
-                            <span class="card-photo-caption">
-                                <?php echo htmlspecialchars($currentAlbum['title'] ?? 'Falhen Shoot'); ?>
+                        <div class="smug-folder-body">
+                            <h2 class="smug-folder-title"><?php echo htmlspecialchars($album['title']); ?></h2>
+                            <div class="smug-folder-meta">
+                                <span><?php echo htmlspecialchars($album['client'] ?? 'Falhen Client'); ?></span>
+                                <span>·</span>
+                                <span><?php echo $albCount; ?> Photos</span>
+                            </div>
+                        </div>
+                    </a>
+                <?php endforeach; ?>
+            </div>
+
+        <?php else: ?>
+            <!-- ================= ALBUM GALLERY VIEW (SmugMug /Clients/CATEGORY/ALBUM) ================= -->
+            <nav class="smug-breadcrumbs" aria-label="Breadcrumb">
+                <a href="?view=clients">Clients</a>
+                <span class="sep">/</span>
+                <a href="?view=clients&category=<?php echo urlencode($currentAlbum['category'] ?? 'Gallery'); ?>">
+                    <?php echo htmlspecialchars($currentAlbum['category'] ?? 'Gallery'); ?>
+                </a>
+                <span class="sep">/</span>
+                <span class="current"><?php echo htmlspecialchars($currentAlbum['title']); ?></span>
+            </nav>
+
+            <div class="smug-album-header">
+                <div class="smug-header-info">
+                    <h1 class="smug-album-title"><?php echo htmlspecialchars($currentAlbum['title']); ?></h1>
+                    <div class="smug-album-meta">
+                        <span><?php echo $totalPhotos; ?> Photos</span>
+                        <span class="dot">·</span>
+                        <span>Client: <?php echo htmlspecialchars($currentAlbum['client'] ?? ($clientName ?: 'Falhen VIP')); ?></span>
+                        <span class="dot">·</span>
+                        <span>Delivered by Falhen Media</span>
+                        <?php if ($isClientVerified): ?>
+                            <span class="dot">·</span>
+                            <span class="smug-verified-badge" id="verifiedStatusBadge">
+                                <i class="fa-solid fa-circle-check"></i> Verified: <?php echo htmlspecialchars($clientEmail); ?>
                             </span>
-                            <div class="card-action-btns">
+                        <?php else: ?>
+                            <span class="smug-verified-badge" id="verifiedStatusBadge" style="display:none;"></span>
+                        <?php endif; ?>
+                    </div>
+                </div>
+
+                <div class="smug-header-actions">
+                    <button type="button" class="btn-smug-action btn-smug-primary" onclick="triggerBulkDownload()">
+                        <i class="fa-solid fa-cloud-arrow-down"></i>
+                        <span>Download All (<?php echo $totalPhotos; ?>)</span>
+                    </button>
+                    <button type="button" class="btn-smug-action btn-smug-ghost" onclick="openDynamicFullView(0)">
+                        <i class="fa-solid fa-play"></i>
+                        <span>Slideshow</span>
+                    </button>
+                    <a href="?view=clients" class="btn-smug-action btn-smug-ghost">
+                        <i class="fa-regular fa-folder-open"></i>
+                        <span>Browse Albums</span>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Pure Masonry Photography Grid (SmugMug style) -->
+            <main class="smug-gallery-grid" id="smugMasonryGrid">
+                <?php foreach ($photoItems as $item): ?>
+                    <article class="smug-photo-card" onclick="openDynamicFullView(<?php echo (int)$item['index']; ?>)">
+                        <img src="<?php echo htmlspecialchars($item['masonry_url']); ?>"
+                             alt="<?php echo htmlspecialchars($currentAlbum['title'] . ' — Frame ' . $item['number']); ?>"
+                             loading="lazy">
+                        <div class="smug-photo-overlay">
+                            <span class="smug-overlay-num">Frame #<?php echo str_pad((string)$item['number'], 2, '0', STR_PAD_LEFT); ?></span>
+                            <div class="smug-overlay-actions">
                                 <button type="button"
-                                        class="overlay-circle-btn"
-                                        title="Open in Dynamic Full View"
+                                        class="smug-overlay-btn"
+                                        title="View Fullscreen"
                                         onclick="event.stopPropagation(); openDynamicFullView(<?php echo (int)$item['index']; ?>);">
-                                    <i class="fa-solid fa-magnifying-glass-plus"></i>
+                                    <i class="fa-solid fa-expand"></i>
                                 </button>
                                 <button type="button"
-                                        class="overlay-circle-btn"
-                                        title="Download Photo #<?php echo (int)$item['number']; ?>"
+                                        class="smug-overlay-btn"
+                                        title="Download Photo"
                                         onclick="event.stopPropagation(); triggerSinglePhotoDownload(<?php echo (int)$item['index']; ?>);">
-                                    <i class="fa-solid fa-download"></i>
+                                    <i class="fa-solid fa-arrow-down"></i>
                                 </button>
                             </div>
                         </div>
-                    </div>
-                </article>
-            <?php endforeach; ?>
-        </div>
-    </main>
+                    </article>
+                <?php endforeach; ?>
+            </main>
 
-    <!-- R2: Dynamic Full-Screen Lightbox View -->
-    <div id="dynamicFullViewModal" class="carousel-modal-backdrop" role="dialog" aria-modal="true" aria-label="Dynamic Full View">
-        <div class="carousel-top-bar">
-            <div class="carousel-counter-pill" id="fullViewCounter">
-                <i class="fa-regular fa-image"></i> Photo 1 of <?php echo $totalPhotos; ?>
+        <?php endif; ?>
+
+    </div>
+
+    <!-- FULLSCREEN LIGHTBOX & SLIDESHOW MODAL -->
+    <div id="smugLightbox" class="smug-lightbox" role="dialog" aria-modal="true" aria-label="Dynamic Lightbox">
+        <div class="smug-lightbox-top">
+            <div class="smug-lightbox-title">
+                <span class="smug-lightbox-count" id="lightboxCounter">Photo 1 of <?php echo $totalPhotos; ?></span>
+                <span>·</span>
+                <span><?php echo htmlspecialchars($currentAlbum['title'] ?? 'Gallery'); ?></span>
             </div>
-            <div class="carousel-top-actions">
-                <button type="button" class="btn-carousel-tool" onclick="toggleFullViewZoom()">
+
+            <div class="smug-lightbox-tools">
+                <button type="button" class="smug-tool-btn" id="btnSlideshowToggle" onclick="toggleSlideshow()">
+                    <i class="fa-solid fa-play" id="slideshowIcon"></i>
+                    <span id="slideshowLabel">Slideshow</span>
+                </button>
+                <button type="button" class="smug-tool-btn" onclick="toggleLightboxZoom()">
                     <i class="fa-solid fa-magnifying-glass-plus" id="zoomIcon"></i>
                     <span id="zoomLabel">Zoom</span>
                 </button>
-                <button type="button" class="btn-carousel-download" onclick="triggerSinglePhotoDownload(currentPhotoIndex)">
-                    <i class="fa-solid fa-download"></i> Download Photo
+                <button type="button" class="smug-tool-btn" onclick="triggerSinglePhotoDownload(currentPhotoIndex)">
+                    <i class="fa-solid fa-arrow-down"></i> Download Photo
                 </button>
-                <button type="button" class="btn-carousel-tool" onclick="triggerBulkDownload()">
-                    <i class="fa-solid fa-file-zipper"></i> Download All
+                <button type="button" class="smug-tool-btn" onclick="triggerBulkDownload()">
+                    <i class="fa-solid fa-cloud-arrow-down"></i> Download All
                 </button>
-                <button type="button" class="btn-carousel-close" onclick="closeDynamicFullView()" aria-label="Close Full View">
+                <button type="button" class="smug-tool-close" onclick="closeDynamicFullView()" aria-label="Close Lightbox">
                     <i class="fa-solid fa-xmark"></i>
                 </button>
             </div>
         </div>
 
-        <div class="carousel-center-stage" id="fullViewTouchStage">
-            <button type="button" class="carousel-arrow-btn" onclick="prevFullViewPhoto()" aria-label="Previous Photo">
+        <div class="smug-lightbox-stage" id="lightboxStage">
+            <button type="button" class="smug-nav-arrow" onclick="prevPhoto()" aria-label="Previous">
                 <i class="fa-solid fa-chevron-left"></i>
             </button>
-            <div class="carousel-main-image-wrap">
-                <img id="fullViewMainImg"
-                     class="carousel-main-img"
+            <div class="smug-image-holder" id="imageHolder" onclick="toggleLightboxZoom()">
+                <img id="lightboxMainImg"
+                     class="smug-lightbox-img"
                      src="<?php echo htmlspecialchars($photoItems[0]['full_url'] ?? $coverImage); ?>"
-                     alt="Full screen preview"
-                     onclick="toggleFullViewZoom()">
+                     alt="Fullscreen photo">
             </div>
-            <button type="button" class="carousel-arrow-btn" onclick="nextFullViewPhoto()" aria-label="Next Photo">
+            <button type="button" class="smug-nav-arrow" onclick="nextPhoto()" aria-label="Next">
                 <i class="fa-solid fa-chevron-right"></i>
             </button>
         </div>
 
-        <div class="carousel-bottom-thumbs" id="fullViewThumbs">
+        <div class="smug-thumbs-rail" id="thumbsRail">
             <?php foreach ($photoItems as $item): ?>
-                <div class="carousel-thumb-item <?php echo ($item['index'] === 0) ? 'active' : ''; ?>"
-                     onclick="goToFullViewPhoto(<?php echo (int)$item['index']; ?>)">
-                    <img src="<?php echo htmlspecialchars($item['masonry_url']); ?>"
-                         alt="Thumb <?php echo (int)$item['number']; ?>"
-                         loading="lazy">
+                <div class="smug-thumb <?php echo ($item['index'] === 0) ? 'active' : ''; ?>"
+                     onclick="goToPhoto(<?php echo (int)$item['index']; ?>)">
+                    <img src="<?php echo htmlspecialchars($item['masonry_url']); ?>" alt="Frame <?php echo (int)$item['number']; ?>" loading="lazy">
                 </div>
             <?php endforeach; ?>
         </div>
     </div>
 
-    <!-- R3: 2-Step Client Security Verification & OTP Download Modal -->
-    <div id="clientDownloadModal" class="client-modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="cdmModalTitle">
-        <div class="client-modal-box">
-            <div class="client-modal-header">
-                <div class="client-icon-badge">
-                    <i class="fa-solid fa-user-shield"></i>
-                </div>
+    <!-- 2-STEP CLIENT IDENTITY & OTP VERIFICATION MODAL -->
+    <div id="smugVerifyModal" class="smug-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="verifyModalTitle">
+        <div class="smug-modal-box">
+            <div class="smug-modal-header">
                 <div>
-                    <h2 class="client-modal-title" id="cdmModalTitle">Client Security Verification</h2>
-                    <p class="client-modal-subtitle" id="cdmModalSubtitle">
-                        Verify your name, email &amp; phone number to unlock your gallery download.
-                    </p>
-                    <span class="client-stats-pill" id="downloadModalStats">
-                        <i class="fa-solid fa-images"></i> <?php echo $totalPhotos; ?> lightweight photos
-                    </span>
+                    <h2 class="smug-modal-title" id="verifyModalTitle">Client Security Verification</h2>
+                    <p class="smug-modal-subtitle" id="verifyModalSubtitle">Please verify your details to download high-resolution photos.</p>
                 </div>
+                <button type="button" class="smug-tool-close" onclick="closeVerifyModal()" aria-label="Close">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
             </div>
 
-            <div class="client-modal-body">
-                <div id="cdm_error" class="cdm-error-alert"></div>
-                <div id="cdm_info" class="cdm-info-alert" style="display:none;"></div>
+            <div class="smug-modal-body">
+                <div id="verifyErrorAlert" class="smug-modal-alert smug-alert-error"></div>
+                <div id="verifyInfoAlert" class="smug-modal-alert smug-alert-info"></div>
 
-                <!-- STEP 1: Client Identity (Full Name, Email, Phone Number) -->
-                <div id="cdmStepIdentity">
-                    <div class="cdm-form-group">
-                        <label class="cdm-label" for="cdm_name">Full Name *</label>
-                        <input type="text" id="cdm_name" class="cdm-input" placeholder="Your full name" value="<?php echo htmlspecialchars($clientName); ?>" required>
+                <!-- STEP 1: Name, Email, Phone -->
+                <div id="verifyStepIdentity">
+                    <div class="smug-field-group">
+                        <label class="smug-label" for="client_input_name">Full Name *</label>
+                        <input type="text" id="client_input_name" class="smug-input" placeholder="Your full name" value="<?php echo htmlspecialchars($clientName); ?>" required>
                     </div>
 
-                    <div class="cdm-form-group">
-                        <label class="cdm-label" for="cdm_email">Client Email Address *</label>
-                        <input type="email" id="cdm_email" class="cdm-input" placeholder="client@falhen.com" value="<?php echo htmlspecialchars($clientEmail); ?>" required>
+                    <div class="smug-field-group">
+                        <label class="smug-label" for="client_input_email">Email Address *</label>
+                        <input type="email" id="client_input_email" class="smug-input" placeholder="client@falhen.com" value="<?php echo htmlspecialchars($clientEmail); ?>" required>
                     </div>
 
-                    <div class="cdm-form-group">
-                        <label class="cdm-label" for="cdm_phone">Phone Number *</label>
-                        <input type="tel" id="cdm_phone" class="cdm-input" placeholder="+1 (555) 234-5678" value="<?php echo htmlspecialchars($clientPhone); ?>" required>
+                    <div class="smug-field-group">
+                        <label class="smug-label" for="client_input_phone">Phone Number *</label>
+                        <input type="tel" id="client_input_phone" class="smug-input" placeholder="+1 (555) 234-5678" value="<?php echo htmlspecialchars($clientPhone); ?>" required>
                     </div>
                 </div>
 
-                <!-- STEP 2: 6-Digit One-Time Verification Passcode (OTP) -->
-                <div id="cdmStepOtp" style="display:none;">
-                    <div class="cdm-form-group">
-                        <label class="cdm-label" for="cdm_otp_code">Enter 6-Digit Verification Code *</label>
+                <!-- STEP 2: 6-Digit OTP -->
+                <div id="verifyStepOtp" style="display: none;">
+                    <div class="smug-field-group">
+                        <label class="smug-label" for="client_input_otp">Enter 6-Digit Security Code *</label>
                         <input type="text"
-                               id="cdm_otp_code"
-                               class="cdm-input cdm-otp-input"
+                               id="client_input_otp"
+                               class="smug-input smug-otp-input"
                                placeholder="000000"
                                maxlength="6"
                                inputmode="numeric"
                                autocomplete="one-time-code">
                     </div>
-                    <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.8rem; color:#94a3b8;">
-                        <span id="otpDestinationHint">Sent to your registered email/phone</span>
-                        <button type="button" onclick="resetToIdentityStep()" style="background:none; border:none; color:#ef4444; font-weight:700; cursor:pointer;">
-                            Resend / Edit Details
+                    <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.8rem; color:var(--smug-text-muted);">
+                        <span id="otpNoticeText">Code sent to your contact info</span>
+                        <button type="button" onclick="resetToIdentityStep()" style="background:none; border:none; color:#ef4444; font-weight:600; cursor:pointer;">
+                            Edit info / Resend
                         </button>
                     </div>
                 </div>
-
-                <p class="cdm-privacy-note">
-                    <i class="fa-solid fa-shield-halved" style="color: #ef4444; margin-right: 4px;"></i>
-                    Protected by Falhen Media Client Security Gate. Your Name, Email, Phone Number, and 6-digit OTP verify authorized access before downloading.
-                </p>
             </div>
 
-            <div class="client-modal-footer">
-                <button type="button" class="btn-cdm-cancel" onclick="closeClientDownloadModal()">Cancel</button>
-                <button type="button" class="btn-cdm-submit" id="btnCdmSubmit" onclick="handleVerificationSubmit()">
+            <div class="smug-modal-footer">
+                <button type="button" class="btn-modal-cancel" onclick="closeVerifyModal()">Cancel</button>
+                <button type="button" class="btn-modal-submit" id="btnVerifySubmit" onclick="submitVerification()">
                     <i class="fa-solid fa-paper-plane"></i> Send Verification Code
                 </button>
             </div>
         </div>
     </div>
 
-    <!-- Toast Feedback -->
-    <div id="downloadToast" class="download-toast">
-        <i class="fa-solid fa-circle-check" style="color:#ef4444;"></i>
-        <span id="downloadToastText">Preparing download...</span>
+    <!-- Feedback Toast -->
+    <div id="smugToast" class="smug-toast">
+        <i class="fa-solid fa-circle-check" style="color: #ef4444;"></i>
+        <span id="smugToastMsg">Notification</span>
     </div>
 
     <script>
         const galleryItems = <?php echo json_encode($photoItems); ?>;
         const currentAlbumId = <?php echo (int)$currentAlbumId; ?>;
-        const shootTitle = <?php echo json_encode($currentAlbum['title'] ?? 'Falhen_Gallery'); ?>;
+        const currentAlbumTitle = <?php echo json_encode($currentAlbum['title'] ?? 'Falhen Gallery'); ?>;
         let isClientVerified = <?php echo json_encode($isClientVerified); ?>;
         let downloadToken = <?php echo json_encode($downloadToken); ?>;
+
         let currentPhotoIndex = 0;
-        let verificationStep = 'identity'; // 'identity' | 'otp'
+        let slideshowTimer = null;
+        let verificationStep = 'identity';
         let pendingDownloadCallback = null;
 
-        function showToast(message) {
-            const toast = document.getElementById('downloadToast');
-            const textEl = document.getElementById('downloadToastText');
-            textEl.textContent = message;
+        function showToast(msg) {
+            const toast = document.getElementById('smugToast');
+            const msgEl = document.getElementById('smugToastMsg');
+            msgEl.textContent = msg;
             toast.classList.add('show');
-            setTimeout(() => toast.classList.remove('show'), 3400);
+            setTimeout(() => toast.classList.remove('show'), 3600);
         }
 
-        function setMasonryColumns(cols) {
-            const grid = document.getElementById('masonryGrid');
-            const btn3 = document.getElementById('btnMasonry3');
-            const btn4 = document.getElementById('btnMasonry4');
-            if (cols === 4) {
-                grid.classList.add('cols-4');
-                btn4.classList.add('active');
-                btn3.classList.remove('active');
-            } else {
-                grid.classList.remove('cols-4');
-                btn3.classList.add('active');
-                btn4.classList.remove('active');
-            }
-        }
-
-        // Dynamic Full View Controls
-        function openDynamicFullView(index) {
-            if (index < 0 || index >= galleryItems.length) index = 0;
-            currentPhotoIndex = index;
-            updateDynamicFullView();
-            document.getElementById('dynamicFullViewModal').style.display = 'flex';
+        // ================= DYNAMIC LIGHTBOX & SLIDESHOW =================
+        function openDynamicFullView(idx) {
+            if (!galleryItems || galleryItems.length === 0) return;
+            if (idx < 0 || idx >= galleryItems.length) idx = 0;
+            currentPhotoIndex = idx;
+            updateLightboxView();
+            document.getElementById('smugLightbox').style.display = 'flex';
             document.body.style.overflow = 'hidden';
         }
 
         function closeDynamicFullView() {
-            const img = document.getElementById('fullViewMainImg');
-            img.classList.remove('zoomed');
-            document.getElementById('dynamicFullViewModal').style.display = 'none';
+            stopSlideshow();
+            resetLightboxZoom();
+            document.getElementById('smugLightbox').style.display = 'none';
             document.body.style.overflow = '';
         }
 
-        function toggleFullViewZoom() {
-            const img = document.getElementById('fullViewMainImg');
-            const label = document.getElementById('zoomLabel');
-            img.classList.toggle('zoomed');
-            label.textContent = img.classList.contains('zoomed') ? 'Reset' : 'Zoom';
-        }
-
-        function prevFullViewPhoto() {
-            currentPhotoIndex = (currentPhotoIndex - 1 + galleryItems.length) % galleryItems.length;
-            updateDynamicFullView();
-        }
-
-        function nextFullViewPhoto() {
+        function nextPhoto() {
             currentPhotoIndex = (currentPhotoIndex + 1) % galleryItems.length;
-            updateDynamicFullView();
+            updateLightboxView();
         }
 
-        function goToFullViewPhoto(index) {
-            currentPhotoIndex = index;
-            updateDynamicFullView();
+        function prevPhoto() {
+            currentPhotoIndex = (currentPhotoIndex - 1 + galleryItems.length) % galleryItems.length;
+            updateLightboxView();
         }
 
-        function updateDynamicFullView() {
+        function goToPhoto(idx) {
+            currentPhotoIndex = idx;
+            updateLightboxView();
+        }
+
+        function updateLightboxView() {
             const item = galleryItems[currentPhotoIndex];
-            const img = document.getElementById('fullViewMainImg');
-            img.classList.remove('zoomed');
-            document.getElementById('zoomLabel').textContent = 'Zoom';
-            img.style.opacity = '0.25';
+            const img = document.getElementById('lightboxMainImg');
+            resetLightboxZoom();
 
+            img.style.opacity = '0.3';
             setTimeout(() => {
                 img.src = item.full_url;
                 img.style.opacity = '1';
-            }, 90);
+            }, 80);
 
-            document.getElementById('fullViewCounter').innerHTML =
-                `<i class="fa-regular fa-image"></i> Photo ${currentPhotoIndex + 1} of ${galleryItems.length}`;
+            document.getElementById('lightboxCounter').textContent =
+                `Photo ${currentPhotoIndex + 1} of ${galleryItems.length}`;
 
-            const thumbs = document.querySelectorAll('#fullViewThumbs .carousel-thumb-item');
-            thumbs.forEach((t, idx) => {
-                if (idx === currentPhotoIndex) {
+            const thumbs = document.querySelectorAll('#thumbsRail .smug-thumb');
+            thumbs.forEach((t, i) => {
+                if (i === currentPhotoIndex) {
                     t.classList.add('active');
                     t.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
                 } else {
@@ -1567,69 +1321,115 @@ $totalPhotos = count($photoItems);
             });
         }
 
-        // Keyboard & Touch-Swipe Support for Dynamic Full View
+        function toggleLightboxZoom() {
+            const holder = document.getElementById('imageHolder');
+            const label = document.getElementById('zoomLabel');
+            holder.classList.toggle('zoomed');
+            label.textContent = holder.classList.contains('zoomed') ? 'Reset' : 'Zoom';
+        }
+
+        function resetLightboxZoom() {
+            const holder = document.getElementById('imageHolder');
+            const label = document.getElementById('zoomLabel');
+            if (holder) holder.classList.remove('zoomed');
+            if (label) label.textContent = 'Zoom';
+        }
+
+        function toggleSlideshow() {
+            if (slideshowTimer) {
+                stopSlideshow();
+            } else {
+                startSlideshow();
+            }
+        }
+
+        function startSlideshow() {
+            const icon = document.getElementById('slideshowIcon');
+            const label = document.getElementById('slideshowLabel');
+            icon.className = 'fa-solid fa-pause';
+            label.textContent = 'Pause';
+            slideshowTimer = setInterval(nextPhoto, 3800);
+            showToast('Slideshow started');
+        }
+
+        function stopSlideshow() {
+            if (slideshowTimer) {
+                clearInterval(slideshowTimer);
+                slideshowTimer = null;
+                const icon = document.getElementById('slideshowIcon');
+                const label = document.getElementById('slideshowLabel');
+                if (icon) icon.className = 'fa-solid fa-play';
+                if (label) label.textContent = 'Slideshow';
+            }
+        }
+
+        // Keyboard Navigation
         document.addEventListener('keydown', function(e) {
-            const modal = document.getElementById('dynamicFullViewModal');
-            if (modal && modal.style.display === 'flex') {
-                if (e.key === 'ArrowLeft') prevFullViewPhoto();
-                else if (e.key === 'ArrowRight') nextFullViewPhoto();
+            const lb = document.getElementById('smugLightbox');
+            if (lb && lb.style.display === 'flex') {
+                if (e.key === 'ArrowRight') nextPhoto();
+                else if (e.key === 'ArrowLeft') prevPhoto();
                 else if (e.key === 'Escape') closeDynamicFullView();
+                else if (e.key === ' ') {
+                    e.preventDefault();
+                    toggleSlideshow();
+                }
             }
         });
 
-        let touchStartX = 0;
-        const touchStage = document.getElementById('fullViewTouchStage');
-        touchStage.addEventListener('touchstart', function(e) {
-            touchStartX = e.changedTouches[0].screenX;
-        }, { passive: true });
-        touchStage.addEventListener('touchend', function(e) {
-            const touchEndX = e.changedTouches[0].screenX;
-            if (touchEndX + 45 < touchStartX) nextFullViewPhoto();
-            else if (touchEndX > touchStartX + 45) prevFullViewPhoto();
-        }, { passive: true });
+        // Touch Swipe
+        let touchX = 0;
+        const stage = document.getElementById('lightboxStage');
+        if (stage) {
+            stage.addEventListener('touchstart', e => {
+                touchX = e.changedTouches[0].screenX;
+            }, { passive: true });
+            stage.addEventListener('touchend', e => {
+                const diff = e.changedTouches[0].screenX - touchX;
+                if (diff < -50) nextPhoto();
+                else if (diff > 50) prevPhoto();
+            }, { passive: true });
+        }
 
-        // Security Gate & Download Orchestration
-        function requireVerifiedClient(callback, statsHtml) {
+        // ================= SECURITY GATE & OTP =================
+        function requireVerification(callback) {
             if (isClientVerified) {
                 callback();
             } else {
                 pendingDownloadCallback = callback;
-                openClientDownloadModal(statsHtml);
+                openVerifyModal();
             }
         }
 
-        function openClientDownloadModal(statsHtml) {
-            if (statsHtml) {
-                document.getElementById('downloadModalStats').innerHTML = statsHtml;
-            }
+        function openVerifyModal() {
             resetToIdentityStep();
-            document.getElementById('clientDownloadModal').style.display = 'flex';
+            document.getElementById('smugVerifyModal').style.display = 'flex';
             document.body.style.overflow = 'hidden';
         }
 
-        function closeClientDownloadModal() {
-            document.getElementById('clientDownloadModal').style.display = 'none';
+        function closeVerifyModal() {
+            document.getElementById('smugVerifyModal').style.display = 'none';
             document.body.style.overflow = '';
         }
 
         function resetToIdentityStep() {
             verificationStep = 'identity';
-            document.getElementById('cdmStepIdentity').style.display = 'block';
-            document.getElementById('cdmStepOtp').style.display = 'none';
-            document.getElementById('cdm_error').style.display = 'none';
-            document.getElementById('cdm_info').style.display = 'none';
-            const btn = document.getElementById('btnCdmSubmit');
+            document.getElementById('verifyStepIdentity').style.display = 'block';
+            document.getElementById('verifyStepOtp').style.display = 'none';
+            document.getElementById('verifyErrorAlert').style.display = 'none';
+            document.getElementById('verifyInfoAlert').style.display = 'none';
+            const btn = document.getElementById('btnVerifySubmit');
             btn.disabled = false;
             btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Send Verification Code';
         }
 
-        async function handleVerificationSubmit() {
-            const name = document.getElementById('cdm_name').value.trim();
-            const email = document.getElementById('cdm_email').value.trim();
-            const phone = document.getElementById('cdm_phone').value.trim();
-            const errBox = document.getElementById('cdm_error');
-            const infoBox = document.getElementById('cdm_info');
-            const submitBtn = document.getElementById('btnCdmSubmit');
+        async function submitVerification() {
+            const name = document.getElementById('client_input_name').value.trim();
+            const email = document.getElementById('client_input_email').value.trim();
+            const phone = document.getElementById('client_input_phone').value.trim();
+            const errBox = document.getElementById('verifyErrorAlert');
+            const infoBox = document.getElementById('verifyInfoAlert');
+            const submitBtn = document.getElementById('btnVerifySubmit');
 
             errBox.style.display = 'none';
 
@@ -1640,7 +1440,7 @@ $totalPhotos = count($photoItems);
                     return;
                 }
                 if (!email || !email.includes('@')) {
-                    errBox.textContent = 'Please enter a valid client email address.';
+                    errBox.textContent = 'Please enter a valid email address.';
                     errBox.style.display = 'block';
                     return;
                 }
@@ -1651,7 +1451,7 @@ $totalPhotos = count($photoItems);
                 }
 
                 submitBtn.disabled = true;
-                submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Dispatching 6-Digit Code...';
+                submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Sending 6-Digit Code...';
 
                 try {
                     const fd = new FormData();
@@ -1660,23 +1460,23 @@ $totalPhotos = count($photoItems);
                     fd.append('email', email);
                     fd.append('phone', phone);
                     fd.append('album_id', currentAlbumId);
-                    fd.append('album_title', shootTitle);
+                    fd.append('album_title', currentAlbumTitle);
 
                     const resp = await fetch('/api/verify-download.php', { method: 'POST', body: fd });
                     const res = await resp.json();
 
                     if (res.success) {
                         verificationStep = 'otp';
-                        document.getElementById('cdmStepIdentity').style.display = 'none';
-                        document.getElementById('cdmStepOtp').style.display = 'block';
+                        document.getElementById('verifyStepIdentity').style.display = 'none';
+                        document.getElementById('verifyStepOtp').style.display = 'block';
                         infoBox.style.display = 'block';
                         infoBox.innerHTML = `<i class="fa-solid fa-envelope-circle-check"></i> ${res.message}` +
                             (res.dev_otp_hint ? `<br><strong>Passcode: ${res.dev_otp_hint}</strong>` : '');
                         if (res.dev_otp_hint) {
-                            document.getElementById('cdm_otp_code').value = res.dev_otp_hint;
+                            document.getElementById('client_input_otp').value = res.dev_otp_hint;
                         }
                         submitBtn.innerHTML = '<i class="fa-solid fa-unlock-keyhole"></i> Verify & Start Download';
-                        document.getElementById('cdm_otp_code').focus();
+                        document.getElementById('client_input_otp').focus();
                     } else {
                         errBox.textContent = res.message || 'Verification failed. Please check your credentials.';
                         errBox.style.display = 'block';
@@ -1690,8 +1490,8 @@ $totalPhotos = count($photoItems);
                     submitBtn.disabled = false;
                 }
             } else {
-                const otpCode = document.getElementById('cdm_otp_code').value.trim();
-                if (!otpCode || otpCode.length !== 6) {
+                const otp = document.getElementById('client_input_otp').value.trim();
+                if (!otp || otp.length !== 6) {
                     errBox.textContent = 'Please enter the 6-digit verification code.';
                     errBox.style.display = 'block';
                     return;
@@ -1706,9 +1506,9 @@ $totalPhotos = count($photoItems);
                     fd.append('email', email);
                     fd.append('name', name);
                     fd.append('phone', phone);
-                    fd.append('code', otpCode);
+                    fd.append('code', otp);
                     fd.append('album_id', currentAlbumId);
-                    fd.append('album_title', shootTitle);
+                    fd.append('album_title', currentAlbumTitle);
 
                     const resp = await fetch('/api/verify-download.php', { method: 'POST', body: fd });
                     const res = await resp.json();
@@ -1719,10 +1519,10 @@ $totalPhotos = count($photoItems);
                         const badge = document.getElementById('verifiedStatusBadge');
                         if (badge) {
                             badge.style.display = 'inline-flex';
-                            badge.innerHTML = `<i class="fa-solid fa-shield-check"></i> Verified: ${res.email}`;
+                            badge.innerHTML = `<i class="fa-solid fa-circle-check"></i> Verified: ${res.email}`;
                         }
-                        closeClientDownloadModal();
-                        showToast('Identity verified! Starting your download...');
+                        closeVerifyModal();
+                        showToast('Identity verified! Starting download...');
                         if (typeof pendingDownloadCallback === 'function') {
                             const cb = pendingDownloadCallback;
                             pendingDownloadCallback = null;
@@ -1742,24 +1542,23 @@ $totalPhotos = count($photoItems);
             }
         }
 
-        // Trigger Single Photo Download (Protected by Security Gate)
-        function triggerSinglePhotoDownload(index) {
-            const item = galleryItems[index] || galleryItems[0];
-            requireVerifiedClient(() => {
+        // ================= DOWNLOAD TRIGGERS =================
+        function triggerSinglePhotoDownload(idx) {
+            const item = galleryItems[idx] || galleryItems[0];
+            requireVerification(() => {
                 const url = `/api/download-album.php?album_id=${currentAlbumId}&photo_index=${item.index}&token=${encodeURIComponent(downloadToken)}`;
-                showToast(`Downloading Photo #${item.number}...`);
+                showToast(`Downloading Frame #${item.number}...`);
                 const a = document.createElement('a');
                 a.href = url;
                 a.download = '';
                 document.body.appendChild(a);
                 a.click();
                 document.body.removeChild(a);
-            }, `<i class="fa-regular fa-image"></i> Photo #${item.number} · Lightweight HD`);
+            });
         }
 
-        // Trigger Bulk Packaged ZIP Download (Protected by Security Gate)
         function triggerBulkDownload() {
-            requireVerifiedClient(() => {
+            requireVerification(() => {
                 const url = `/api/download-album.php?album_id=${currentAlbumId}&token=${encodeURIComponent(downloadToken)}`;
                 showToast(`Packaging & downloading ${galleryItems.length} photos (.ZIP)...`);
                 const a = document.createElement('a');
@@ -1768,7 +1567,7 @@ $totalPhotos = count($photoItems);
                 document.body.appendChild(a);
                 a.click();
                 document.body.removeChild(a);
-            }, `<i class="fa-solid fa-file-zipper"></i> All ${galleryItems.length} Photos · Packaged ZIP Archive`);
+            });
         }
     </script>
 </body>
