@@ -51,6 +51,17 @@ if (preg_match('#^/album/([^/]+)/?$#', $uri, $matches)) {
     require __DIR__ . '/client-portal.php';
     return;
 }
+if (preg_match('#^/clients/([^/]+)/([^/]+)/?$#', $uri, $matches)) {
+    $_GET['category'] = $matches[1];
+    $_GET['slug'] = $matches[2];
+    require __DIR__ . '/client-portal.php';
+    return;
+}
+if ($uri === '/clients' || $uri === '/clients/') {
+    $_GET['view'] = 'clients';
+    require __DIR__ . '/client-portal.php';
+    return;
+}
 if ($uri === '/client-portal' || $uri === '/client-portal/') {
     require __DIR__ . '/client-portal.php';
     return;

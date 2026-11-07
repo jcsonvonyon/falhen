@@ -12,18 +12,28 @@ $albumId = isset($_GET['album_id']) ? (int)$_GET['album_id'] : 0;
 $photoIndex = isset($_GET['photo_index']) ? (int)$_GET['photo_index'] : -1;
 $providedToken = trim($_GET['token'] ?? $_POST['token'] ?? ($_SERVER['HTTP_X_DOWNLOAD_TOKEN'] ?? ''));
 
-// Verify OTP-gated client session or signed download token
-$sessionVerified = !empty($_SESSION['client_download_verified']) && !empty($_SESSION['registered_client_email']);
-$sessionToken = $_SESSION['client_download_token'] ?? '';
-$tokenMatches = (!empty($providedToken) && !empty($sessionToken) && hash_equals($sessionToken, $providedToken));
+// Verify folder-scoped OTP authorization or signed download token for THIS album
+$albumVerified = !empty($_SESSION['verified_albums'][$albumId]);
+$albumToken = $_SESSION['verified_album_tokens'][$albumId] ?? '';
+$tokenMatches = (!empty($providedToken) && !empty($albumToken) && hash_equals($albumToken, $providedToken));
 
-if (!$sessionVerified && !$tokenMatches) {
+// Backward compatibility check for single active verification session strictly matching album
+if (!$albumVerified && !$tokenMatches && !empty($_SESSION['client_download_token']) && !empty($providedToken)) {
+    if (hash_equals($_SESSION['client_download_token'], $providedToken)) {
+        $lastAlbId = (int)($_SESSION['last_verified_album_id'] ?? 0);
+        if ($lastAlbId === 0 || $lastAlbId === $albumId) {
+            $tokenMatches = true;
+        }
+    }
+}
+
+if (!$albumVerified && !$tokenMatches) {
     http_response_code(403);
     header('Content-Type: application/json');
     echo json_encode([
         'success' => false,
         'error'   => 'DOWNLOAD_GATE_LOCKED',
-        'message' => 'Security verification required. Please verify your Name, Email, Phone Number, and 6-digit OTP code before downloading.'
+        'message' => 'Security verification required. Please verify your Name, Email, Phone Number, and 6-digit OTP code for this specific gallery before downloading.'
     ]);
     exit;
 }
@@ -166,14 +176,14 @@ foreach ($photoItems as $idx => $pItem) {
     }
 }
 
-// Include a manifest receipt inside the ZIP
+// Include a manifest receipt inside the ZIP without leaking private email addresses
 $receiptText = "FALHEN MEDIA — CLIENT GALLERY ARCHIVE\n"
     . "=====================================\n"
     . "Album: " . $albumTitle . "\n"
-    . "Client: " . ($_SESSION['registered_client_name'] ?? 'Verified Client') . " (" . ($_SESSION['registered_client_email'] ?? '') . ")\n"
-    . "Phone: " . ($_SESSION['registered_client_phone'] ?? 'Verified') . "\n"
+    . "Client: " . ($_SESSION['registered_client_name'] ?? 'Verified Client') . "\n"
     . "Total Photos Packaged: " . $addedCount . "\n"
     . "Downloaded At: " . date('Y-m-d H:i:s T') . "\n"
+    . "Verification: Private Folder OTP Verification Passed\n"
     . "Portal: https://client.falhen.com\n";
 $zip->addFromString($cleanAlbumSlug . '/README_FALHEN_GALLERY.txt', $receiptText);
 $zip->close();

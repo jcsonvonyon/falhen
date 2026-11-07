@@ -33,79 +33,91 @@ $phone  = trim($_POST['phone'] ?? '');
 $albumId = (int)($_POST['album_id'] ?? 1);
 $albumTitle = trim($_POST['album_title'] ?? 'Falhen Client Gallery');
 
-// Authorized client emails list (for demonstration & database fallback)
-$authorizedClients = [
+// Authorized studio administrator emails (can verify any album for QA / client handover)
+$adminAuthorizedEmails = [
     'jcsonvonyon@gmail.com',
-    'kingdavid@falhen.com',
-    'halima@falhen.com',
-    'demola@falhen.com',
-    'henry@falhen.com',
     'admin@falhen.com',
-    'client@falhen.com',
-    'user@example.com',
-    'test@gmail.com'
+    'henry@falhen.com'
 ];
 
 /**
- * Helper to check if a client email/name is authorized for gallery downloads
+ * Strict folder-scoped authorization check:
+ * Validates that the provided email is authorized for THIS specific album folder.
+ * Clients of Folder A cannot unlock or download Folder B.
  */
-function isClientAuthorizedForPortal(string $email, string $name, string $albumTitle, array $authorizedClients): bool {
+function isClientAuthorizedForFolder(string $email, int $albumId, string $albumTitle, string $name, array $adminEmails): bool {
     if (empty($email) || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
         return false;
     }
+    $cleanEmail = strtolower(trim($email));
 
-    // 1. Check Site Settings for registered_clients or portfolio album client email
-    $settings = getSiteSettings();
-    $registeredClients = $settings['registered_clients'] ?? [];
-    if (is_array($registeredClients)) {
-        foreach ($registeredClients as $rc) {
-            $rcEmail = is_array($rc) ? strtolower($rc['email'] ?? '') : strtolower((string)$rc);
-            if ($rcEmail === $email) {
-                return true;
+    // 1. Studio superadmins can authorize any album
+    if (in_array($cleanEmail, array_map('strtolower', $adminEmails), true)) {
+        return true;
+    }
+
+    // 2. Resolve the specific album record from Portfolio Repository
+    $portfolioRepo = getPortfolioRepo();
+    $targetAlbum = null;
+    foreach ($portfolioRepo as $alb) {
+        if ((int)($alb['id'] ?? 0) === $albumId) {
+            $targetAlbum = $alb;
+            break;
+        }
+    }
+    if (!$targetAlbum && !empty($albumTitle)) {
+        foreach ($portfolioRepo as $alb) {
+            if (!empty($alb['title']) && strcasecmp(trim($alb['title']), trim($albumTitle)) === 0) {
+                $targetAlbum = $alb;
+                break;
             }
         }
     }
 
-    // Check portfolio albums if client_email is attached to an album
-    $portfolioRepo = getPortfolioRepo();
-    foreach ($portfolioRepo as $album) {
-        if (!empty($album['client_email']) && strtolower(trim($album['client_email'])) === $email) {
+    if (!$targetAlbum) {
+        return false;
+    }
+
+    // 3. Match against the folder-specific client_email configured for THIS album
+    $albumEmailConfig = trim($targetAlbum['client_email'] ?? '');
+    if (!empty($albumEmailConfig)) {
+        $allowedFolderEmails = array_filter(array_map('trim', preg_split('/[,;\s]+/', strtolower($albumEmailConfig))));
+        if (in_array($cleanEmail, $allowedFolderEmails, true)) {
             return true;
         }
     }
 
-    // 2. Check Database (clients and inquiries tables)
+    // 4. Fallback: If no client_email configured yet on this specific album, check client name match for this album
+    $albClient = strtolower(trim($targetAlbum['client'] ?? ''));
+    if (!empty($albClient)) {
+        $clientClean = preg_replace('/[^a-z0-9]/', '', $albClient);
+        $emailPrefixClean = preg_replace('/[^a-z0-9]/', '', strstr($cleanEmail, '@', true) ?: $cleanEmail);
+        if (!empty($clientClean) && (strpos($emailPrefixClean, $clientClean) !== false || strpos($clientClean, $emailPrefixClean) !== false)) {
+            return true;
+        }
+    }
+
+    // 5. Check Database: clients / inquiries matching this specific email AND client name
     $pdo = getDBConnection();
-    if ($pdo) {
+    if ($pdo && !empty($albClient)) {
         try {
-            $stmt = $pdo->prepare("SELECT id FROM clients WHERE LOWER(email) = :email LIMIT 1");
-            $stmt->execute([':email' => $email]);
+            $stmt = $pdo->prepare("SELECT id FROM clients WHERE LOWER(email) = :email AND LOWER(name) LIKE :cname LIMIT 1");
+            $stmt->execute([':email' => $cleanEmail, ':cname' => '%' . $albClient . '%']);
             if ($stmt->fetch()) {
                 return true;
             }
         } catch (Exception $e) {}
 
         try {
-            $stmt = $pdo->prepare("SELECT id FROM inquiries WHERE LOWER(email) = :email LIMIT 1");
-            $stmt->execute([':email' => $email]);
+            $stmt = $pdo->prepare("SELECT id FROM inquiries WHERE LOWER(email) = :email AND LOWER(name) LIKE :cname LIMIT 1");
+            $stmt->execute([':email' => $cleanEmail, ':cname' => '%' . $albClient . '%']);
             if ($stmt->fetch()) {
                 return true;
             }
         } catch (Exception $e) {}
     }
 
-    // 3. Authorized fallback list or @falhen.com domain or matching album client name
-    if (in_array($email, array_map('strtolower', $authorizedClients), true)) {
-        return true;
-    }
-    if (substr($email, -11) === '@falhen.com') {
-        return true;
-    }
-    if (!empty($albumTitle) && strpos(strtolower($albumTitle), 'king david') !== false &&
-        (strpos($email, 'kingdavid') !== false || strpos(strtolower($name), 'david') !== false)) {
-        return true;
-    }
-
+    // Default: Email is NOT authorized for this specific folder
     return false;
 }
 
@@ -146,13 +158,13 @@ if ($action === 'request_code' || ($action === 'verify_client_download' && !empt
         exit;
     }
 
-    $isAuthorized = isClientAuthorizedForPortal($email, $name, $albumTitle, $authorizedClients);
+    $isAuthorized = isClientAuthorizedForFolder($email, $albumId, $albumTitle, $name, $adminAuthorizedEmails);
     if (!$isAuthorized) {
         http_response_code(403);
         echo json_encode([
             'success'       => false,
             'is_registered' => false,
-            'message'       => 'Access Denied: The email address (' . htmlspecialchars($email) . ') is not registered as an authorized client in our system. Only registered clients can download album assets.'
+            'message'       => 'Access Restricted: The email provided is not authorized to download this private gallery folder. Please provide the client email registered for this shoot.'
         ]);
         exit;
     }
@@ -175,7 +187,7 @@ if ($action === 'request_code' || ($action === 'verify_client_download' && !empt
         $mailSent = @sendVerificationCodeEmail($email, $code, $name);
     }
 
-    // Mask email and phone for UI confirmation
+    // Mask email and phone for UI confirmation (never expose full email publicly)
     $emailParts = explode('@', $email);
     $maskedEmail = substr($emailParts[0], 0, 2) . '***@' . ($emailParts[1] ?? '');
     $maskedPhone = substr($cleanPhone, 0, 3) . '****' . substr($cleanPhone, -3);
@@ -183,19 +195,18 @@ if ($action === 'request_code' || ($action === 'verify_client_download' && !empt
     $responsePayload = [
         'success'      => true,
         'otp_required' => true,
-        'email'        => $email,
         'masked_email' => $maskedEmail,
         'masked_phone' => $maskedPhone,
         'mail_sent'    => (bool)$mailSent,
         'expires_in'   => 600,
-        'message'      => 'A 6-digit security verification code has been sent to ' . htmlspecialchars($email) . ' (' . htmlspecialchars($maskedPhone) . ').'
+        'message'      => 'A 6-digit security verification code has been dispatched to your registered address (' . htmlspecialchars($maskedEmail) . ').'
     ];
 
     // If SMTP is unavailable in local dev or fallback mode, provide a dev preview hint so clients/testers aren't blocked
     if (!$mailSent) {
         $responsePayload['delivery_mode'] = 'instant_fallback';
         $responsePayload['dev_otp_hint']  = $code;
-        $responsePayload['message']       = 'Verification code generated for ' . htmlspecialchars($email) . '. Enter your 6-digit security passcode below.';
+        $responsePayload['message']       = 'Verification code generated for ' . htmlspecialchars($maskedEmail) . '. Enter your 6-digit security passcode below.';
     }
 
     echo json_encode($responsePayload);
@@ -203,7 +214,7 @@ if ($action === 'request_code' || ($action === 'verify_client_download' && !empt
 }
 
 // ============================================================================
-// STEP 2: VERIFY 6-DIGIT OTP CODE & UNLOCK DOWNLOAD GATE
+// STEP 2: VERIFY 6-DIGIT OTP CODE & UNLOCK DOWNLOAD GATE FOR THIS FOLDER
 // ============================================================================
 if ($action === 'verify_code') {
     $enteredCode = trim($_POST['code'] ?? $_POST['otp'] ?? '');
@@ -252,7 +263,7 @@ if ($action === 'verify_code') {
         exit;
     }
 
-    // OTP Verified! Issue signed download token and unlock client session
+    // OTP Verified! Issue signed download token and unlock client session strictly for this album
     $verifiedName  = $_SESSION['download_name'] ?? $name;
     $verifiedPhone = $_SESSION['download_phone'] ?? $phone;
     $verifiedAlbumId = (int)($_SESSION['download_album_id'] ?? $albumId);
@@ -261,28 +272,42 @@ if ($action === 'verify_code') {
     unset($_SESSION['download_code_hash'], $_SESSION['download_code_plain'], $_SESSION['download_code_expires'], $_SESSION['download_code_attempts']);
 
     $downloadToken = bin2hex(random_bytes(24));
+    
+    // Strict folder-scoped session storage
+    if (!isset($_SESSION['verified_albums']) || !is_array($_SESSION['verified_albums'])) {
+        $_SESSION['verified_albums'] = [];
+    }
+    $_SESSION['verified_albums'][$verifiedAlbumId] = true;
+
+    if (!isset($_SESSION['verified_album_tokens']) || !is_array($_SESSION['verified_album_tokens'])) {
+        $_SESSION['verified_album_tokens'] = [];
+    }
+    $_SESSION['verified_album_tokens'][$verifiedAlbumId] = $downloadToken;
+
+    // Backward compatibility keys
     $_SESSION['client_download_verified'] = true;
     $_SESSION['client_download_token']    = $downloadToken;
-    $_SESSION['registered_client_email']  = $savedEmail;
+    $_SESSION['last_verified_album_id']   = $verifiedAlbumId;
     $_SESSION['registered_client_name']   = $verifiedName;
-    $_SESSION['registered_client_phone']  = $verifiedPhone;
-    @setcookie('falhen_client_email', $savedEmail, time() + (86400 * 30), '/', '', false, true);
 
     logClientDownloadEvent([
         'name'        => $verifiedName,
-        'email'       => $savedEmail,
-        'phone'       => $verifiedPhone,
+        'email_hash'  => hash('sha256', $savedEmail),
+        'phone_masked'=> substr($verifiedPhone, 0, 3) . '****' . substr($verifiedPhone, -3),
         'album_id'    => $verifiedAlbumId,
         'album_title' => $verifiedAlbumTitle,
         'verified_by' => 'otp_6digit'
     ]);
 
+    $emailParts = explode('@', $savedEmail);
+    $maskedEmail = substr($emailParts[0], 0, 2) . '***@' . ($emailParts[1] ?? '');
+
     echo json_encode([
         'success'          => true,
         'verified'         => true,
-        'email'            => $savedEmail,
+        'masked_email'     => $maskedEmail,
         'name'             => $verifiedName,
-        'phone'            => $verifiedPhone,
+        'album_id'         => $verifiedAlbumId,
         'download_token'   => $downloadToken,
         'download_zip_url' => '/api/download-album.php?album_id=' . $verifiedAlbumId . '&token=' . urlencode($downloadToken),
         'message'          => 'Identity verified! Preparing your gallery download...'
@@ -308,38 +333,49 @@ if ($action === 'verify_client_download') {
         exit;
     }
 
-    if (!isClientAuthorizedForPortal($email, $name, $albumTitle, $authorizedClients)) {
+    if (!isClientAuthorizedForFolder($email, $albumId, $albumTitle, $name, $adminAuthorizedEmails)) {
         echo json_encode([
             'success'       => false,
             'is_registered' => false,
-            'message'       => 'Access Restricted: The email (' . htmlspecialchars($email) . ') is not registered as an authorized client in our system. Only registered clients can download album assets.'
+            'message'       => 'Access Restricted: The email provided is not authorized to download this private gallery folder.'
         ]);
         exit;
     }
 
     $downloadToken = bin2hex(random_bytes(24));
+    if (!isset($_SESSION['verified_albums']) || !is_array($_SESSION['verified_albums'])) {
+        $_SESSION['verified_albums'] = [];
+    }
+    $_SESSION['verified_albums'][$albumId] = true;
+
+    if (!isset($_SESSION['verified_album_tokens']) || !is_array($_SESSION['verified_album_tokens'])) {
+        $_SESSION['verified_album_tokens'] = [];
+    }
+    $_SESSION['verified_album_tokens'][$albumId] = $downloadToken;
+
     $_SESSION['client_download_verified'] = true;
     $_SESSION['client_download_token']    = $downloadToken;
-    $_SESSION['registered_client_email']  = $email;
+    $_SESSION['last_verified_album_id']   = $albumId;
     $_SESSION['registered_client_name']   = $name;
-    $_SESSION['registered_client_phone']  = $phone;
-    @setcookie('falhen_client_email', $email, time() + (86400 * 30), '/', '', false, true);
 
     logClientDownloadEvent([
         'name'        => $name,
-        'email'       => $email,
-        'phone'       => $phone,
+        'email_hash'  => hash('sha256', $email),
+        'phone_masked'=> substr($phone, 0, 3) . '****' . substr($phone, -3),
         'album_id'    => $albumId,
         'album_title' => $albumTitle,
         'verified_by' => 'direct_identity'
     ]);
 
+    $emailParts = explode('@', $email);
+    $maskedEmail = substr($emailParts[0], 0, 2) . '***@' . ($emailParts[1] ?? '');
+
     echo json_encode([
         'success'          => true,
         'is_registered'    => true,
-        'email'            => $email,
+        'masked_email'     => $maskedEmail,
         'name'             => $name,
-        'phone'            => $phone,
+        'album_id'         => $albumId,
         'download_token'   => $downloadToken,
         'download_zip_url' => '/api/download-album.php?album_id=' . $albumId . '&token=' . urlencode($downloadToken),
         'message'          => 'Client verified successfully! Your download is starting...'

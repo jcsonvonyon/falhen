@@ -67,7 +67,9 @@ function uploadToCloudinary($fileOrUrl, $folder = 'falhen', $customPublicId = nu
     $timestamp = time();
     $paramsToSign = [
         'folder' => $folder,
-        'timestamp' => $timestamp
+        'image_metadata' => 'true',
+        'timestamp' => $timestamp,
+        'transformation' => 'c_limit,w_2560,h_2560,q_auto:best'
     ];
     if (!empty($customPublicId)) {
         $paramsToSign['public_id'] = $customPublicId;
@@ -87,6 +89,8 @@ function uploadToCloudinary($fileOrUrl, $folder = 'falhen', $customPublicId = nu
         'api_key' => $apiKey,
         'timestamp' => $timestamp,
         'folder' => $folder,
+        'image_metadata' => 'true',
+        'transformation' => 'c_limit,w_2560,h_2560,q_auto:best',
         'signature' => $signature
     ];
     if (!empty($customPublicId)) {
@@ -249,10 +253,10 @@ function syncSinglePhotoToCloudinary($photoUrlOrFile, $slug = 'general', $index 
         ];
     }
 
-    // If it's a Google Drive link, ensure direct download stream
+    // If it's a Google Drive link, ensure high-resolution stream (2560px authentic photo master)
     $targetSource = $photoUrlOrFile;
     if (strpos((string) $photoUrlOrFile, 'lh3.googleusercontent.com/d/') !== false) {
-        $targetSource = preg_replace('/=w\d+$/', '=w2400', (string) $photoUrlOrFile);
+        $targetSource = preg_replace('/=w\d+$/', '=w2560', (string) $photoUrlOrFile);
     }
 
     $res = uploadToCloudinary($targetSource, $folder, $publicId);
@@ -277,9 +281,9 @@ function syncSinglePhotoToCloudinary($photoUrlOrFile, $slug = 'general', $index 
 }
 
 /**
- * Synchronize a full Google Drive folder to Cloudinary with SEO paths
+ * Synchronize a full Google Drive folder to Cloudinary with SEO paths (up to 100 photos)
  */
-function syncGoogleDriveFolderToCloudinary($gdriveUrl, $slug = 'general', $limit = 50)
+function syncGoogleDriveFolderToCloudinary($gdriveUrl, $slug = 'general', $limit = 100)
 {
     if (!function_exists('getGoogleDriveFolderPhotos')) {
         require_once __DIR__ . '/../config/gdrive.php';

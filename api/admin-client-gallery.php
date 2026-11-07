@@ -37,7 +37,7 @@ switch ($action) {
             exit;
         }
 
-        $photos = getGoogleDriveFolderPhotos($gdriveUrl);
+        $photos = getGoogleDriveFolderPhotos($gdriveUrl, 100);
         if (empty($photos)) {
             echo json_encode([
                 'success' => false,
@@ -45,6 +45,9 @@ switch ($action) {
             ]);
             exit;
         }
+
+        // Limit preview and synchronization batch to max 100 photos
+        $photos = array_slice($photos, 0, 100);
 
         echo json_encode([
             'success'    => true,

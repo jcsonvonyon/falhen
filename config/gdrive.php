@@ -34,21 +34,23 @@ function getGoogleDriveApiEndpoint($fileId) {
 }
 
 /**
- * Extract photo URLs from a Google Drive Folder or File link
+ * Extract photo URLs from a Google Drive Folder or File link (up to 100 photos)
  * @param string $driveUrl
+ * @param int $limit Maximum number of photos to extract (default: 100)
  * @return array Array of direct image URLs
  */
-function getGoogleDriveFolderPhotos($driveUrl) {
+function getGoogleDriveFolderPhotos($driveUrl, $limit = 100) {
     if (empty($driveUrl)) return [];
 
     $driveUrl = trim($driveUrl);
+    $limit = max(1, min(100, (int)$limit));
     $photos = [];
 
     // Case 1: Single file link
     if (strpos($driveUrl, '/folders/') === false) {
         if (preg_match('/\/file\/d\/([a-zA-Z0-9_-]+)/i', $driveUrl, $matches) || preg_match('/id=([a-zA-Z0-9_-]+)/i', $driveUrl, $matches)) {
             $fileId = $matches[1];
-            return ["https://lh3.googleusercontent.com/d/{$fileId}=w1600"];
+            return ["https://lh3.googleusercontent.com/d/{$fileId}=w2560"];
         }
     }
 
@@ -65,18 +67,18 @@ function getGoogleDriveFolderPhotos($driveUrl) {
         if (file_exists($cacheFile) && (time() - filemtime($cacheFile) < 3600)) {
             $cachedData = @json_decode(file_get_contents($cacheFile), true);
             if (is_array($cachedData) && !empty($cachedData)) {
-                return $cachedData;
+                return array_slice($cachedData, 0, $limit);
             }
         }
 
-        // Method A: Query Google Drive API v3
+        // Method A: Query Google Drive API v3 (pageSize=100)
         $apiKey = defined('GOOGLE_DRIVE_API_KEY') ? GOOGLE_DRIVE_API_KEY : '';
         if (!empty($apiKey)) {
             $apiUrl = "https://www.googleapis.com/drive/v3/files?q=" . urlencode("'{$folderId}' in parents and trashed=false") . "&key={$apiKey}&fields=" . urlencode("files(id,name,mimeType,thumbnailLink,webContentLink)") . "&pageSize=100";
             
             $ctx = stream_context_create([
                 'http' => [
-                    'timeout' => 4,
+                    'timeout' => 6,
                     'user_agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) FalhenMedia/1.0',
                     'ignore_errors' => true
                 ],
@@ -93,9 +95,12 @@ function getGoogleDriveFolderPhotos($driveUrl) {
                     foreach ($data['files'] as $f) {
                         $mime = strtolower($f['mimeType'] ?? '');
                         $name = strtolower($f['name'] ?? '');
-                        if (strpos($mime, 'image/') === 0 || preg_match('/\.(jpg|jpeg|png|webp|gif)$/i', $name)) {
+                        if (strpos($mime, 'image/') === 0 || preg_match('/\.(jpg|jpeg|png|webp|gif|heic|tiff)$/i', $name)) {
                             $id = $f['id'];
-                            $photos[] = "https://lh3.googleusercontent.com/d/{$id}=w1600";
+                            $photos[] = "https://lh3.googleusercontent.com/d/{$id}=w2560";
+                            if (count($photos) >= $limit) {
+                                break;
+                            }
                         }
                     }
                 }
@@ -107,7 +112,7 @@ function getGoogleDriveFolderPhotos($driveUrl) {
             $htmlUrl = "https://drive.google.com/drive/folders/{$folderId}";
             $ctx = stream_context_create([
                 'http' => [
-                    'timeout' => 4,
+                    'timeout' => 6,
                     'user_agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
                     'ignore_errors' => true
                 ],
@@ -122,7 +127,10 @@ function getGoogleDriveFolderPhotos($driveUrl) {
                 // Match image IDs from Google Drive initial state JSON
                 if (preg_match_all('/\["([a-zA-Z0-9_-]{28,45})",\["([^"]+\.(?:jpg|jpeg|png|webp|gif|JPG|PNG|JPEG))"/i', $html, $m)) {
                     foreach ($m[1] as $fId) {
-                        $photos[] = "https://lh3.googleusercontent.com/d/{$fId}=w1600";
+                        $photos[] = "https://lh3.googleusercontent.com/d/{$fId}=w2560";
+                        if (count($photos) >= $limit) {
+                            break;
+                        }
                     }
                 }
             }
@@ -130,7 +138,7 @@ function getGoogleDriveFolderPhotos($driveUrl) {
 
         // Cache results if non-empty
         if (!empty($photos)) {
-            $photos = array_values(array_unique($photos));
+            $photos = array_slice(array_values(array_unique($photos)), 0, $limit);
             @file_put_contents($cacheFile, json_encode($photos));
         }
     }

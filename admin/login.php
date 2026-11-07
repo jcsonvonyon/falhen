@@ -73,7 +73,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $clientEmail = sanitizeInput($_POST['client_email'] ?? '');
             if ($clientEmail && filter_var($clientEmail, FILTER_VALIDATE_EMAIL)) {
                 $_SESSION['portal_lookup_email'] = strtolower($clientEmail);
-                header('Location: /client-portal.php?client_email=' . urlencode(strtolower($clientEmail)));
+                header('Location: /clients');
                 exit;
             } else {
                 $error = 'Please enter a valid client email address.';

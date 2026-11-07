@@ -4002,6 +4002,18 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
             gap: 8px;
         }
 
+        .breadcrumb-text a {
+            color: #64748b;
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.15s ease;
+        }
+
+        .breadcrumb-text a:hover {
+            color: #dc2626;
+            text-decoration: underline;
+        }
+
         .breadcrumb strong {
             color: var(--text-primary);
             font-weight: 600;
@@ -4947,21 +4959,50 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                 </button>
                 <?php 
                 $sectionTitles = [
-                    'hero' => 'Hero',
-                    'stats' => 'Stats Counter',
-                    'bts' => 'Production BTS',
-                    'featured' => 'Featured Work',
-                    'services' => 'Services',
-                    'portfolio' => 'Portfolio',
-                    'video_gallery' => 'Video Gallery',
-                    'inquiries' => 'Inquiries & Quotes',
-                    'dashboard' => 'Dashboard',
-                    'comms' => 'Team Comms',
-                    'assets' => 'Brand Assets'
+                    'hero'             => 'Hero',
+                    'stats'            => 'Stats Counter',
+                    'bts'              => 'Production BTS',
+                    'featured'         => 'Featured Work',
+                    'services'         => 'Services',
+                    'portfolio'        => 'Portfolio',
+                    'client_galleries' => 'Client Galleries',
+                    'video_gallery'    => 'Video Gallery',
+                    'inquiries'        => 'Inquiries & Quotes',
+                    'dashboard'        => 'Dashboard',
+                    'comms'            => 'Team Comms',
+                    'assets'           => 'Brand Assets'
                 ];
                 $displayBreadcrumb = $sectionTitles[$activeSection] ?? ucwords(str_replace('_', ' ', $activeSection));
+                $subBreadcrumb = '';
+                if ($activeSection === 'client_galleries') {
+                    if (!empty($_GET['edit_id'])) {
+                        $eId = (int)$_GET['edit_id'];
+                        $eName = 'Edit Gallery #' . $eId;
+                        if (function_exists('getPortfolioRepo')) {
+                            foreach (getPortfolioRepo() as $pIt) {
+                                if ((int)($pIt['id'] ?? 0) === $eId) {
+                                    $eName = 'Edit: ' . ($pIt['title'] ?? ('Gallery #' . $eId));
+                                    break;
+                                }
+                            }
+                        }
+                        $subBreadcrumb = $eName;
+                    } elseif (isset($_GET['sub_action']) && $_GET['sub_action'] === 'new') {
+                        $subBreadcrumb = 'Add New Gallery';
+                    }
+                }
                 ?>
-                <div class="breadcrumb-text">Admin &rsaquo; <strong><?php echo htmlspecialchars($displayBreadcrumb); ?></strong></div>
+                <div class="breadcrumb-text">
+                    <a href="/admin/index.php?section=dashboard">Admin</a>
+                    &rsaquo; 
+                    <?php if (!empty($subBreadcrumb)): ?>
+                        <a href="/admin/index.php?section=<?php echo urlencode($activeSection); ?>"><?php echo htmlspecialchars($displayBreadcrumb); ?></a>
+                        &rsaquo; 
+                        <strong><?php echo htmlspecialchars($subBreadcrumb); ?></strong>
+                    <?php else: ?>
+                        <strong><?php echo htmlspecialchars($displayBreadcrumb); ?></strong>
+                    <?php endif; ?>
+                </div>
 
                 <!-- 3 PRIMARY TOPBAR MENU ITEMS FOR STAFF PORTAL -->
                 <?php 

@@ -83,10 +83,9 @@ $pageTitle = $isClientsView
     ? "Client Galleries & Deliveries — Falhen Media"
     : htmlspecialchars($seoTitle);
 
-// Client Authentication & Verification State
-$isClientVerified = !empty($_SESSION['client_download_verified']) && !empty($_SESSION['registered_client_email']);
-$downloadToken = $_SESSION['client_download_token'] ?? '';
-$clientEmail = $_SESSION['registered_client_email'] ?? $_SESSION['portal_lookup_email'] ?? $_COOKIE['falhen_client_email'] ?? '';
+// Client Authentication & Verification State (Folder-Scoped)
+$isClientVerified = !empty($_SESSION['verified_albums'][$currentAlbumId]) || (!empty($_SESSION['client_download_verified']) && (int)($_SESSION['last_verified_album_id'] ?? 0) === $currentAlbumId);
+$downloadToken = $_SESSION['verified_album_tokens'][$currentAlbumId] ?? ($_SESSION['client_download_token'] ?? '');
 $clientName = $_SESSION['registered_client_name'] ?? '';
 $clientPhone = $_SESSION['registered_client_phone'] ?? '';
 
@@ -1015,17 +1014,17 @@ foreach ($albumsRepo as $alb) {
     <!-- Minimal SmugMug Top Bar -->
     <header class="smug-topbar">
         <div class="smug-topbar-inner">
-            <a href="?view=clients" class="smug-brand-link">
+            <a href="/clients" class="smug-brand-link">
                 <img src="/assets/img/icons/logo.png" alt="Falhen Media">
                 <span class="smug-brand-tag">Client Galleries</span>
             </a>
 
             <div class="smug-topbar-actions">
-                <a href="/portfolio.php" class="smug-nav-link">
+                <a href="https://www.falhen.com/portfolio" class="smug-nav-link">
                     <i class="fa-solid fa-arrow-left"></i>
                     <span>Portfolio</span>
                 </a>
-                <a href="?view=clients" class="smug-nav-link <?php echo $isClientsView ? 'style="color:#fff;"' : ''; ?>">
+                <a href="/clients" class="smug-nav-link <?php echo $isClientsView ? 'style="color:#fff;"' : ''; ?>">
                     <i class="fa-regular fa-folder"></i>
                     <span>All Clients</span>
                 </a>
@@ -1048,7 +1047,9 @@ foreach ($albumsRepo as $alb) {
         <?php if ($isClientsView): ?>
             <!-- ================= CLIENTS DIRECTORY VIEW (SmugMug /Clients) ================= -->
             <nav class="smug-breadcrumbs" aria-label="Breadcrumb">
-                <a href="/portfolio.php">Portfolio</a>
+                <a href="https://www.falhen.com">Home</a>
+                <span class="sep">/</span>
+                <a href="https://www.falhen.com/portfolio">Portfolio</a>
                 <span class="sep">/</span>
                 <span class="current">Clients</span>
             </nav>
@@ -1062,8 +1063,9 @@ foreach ($albumsRepo as $alb) {
                 <?php foreach ($albumsRepo as $aId => $album): 
                     $albCover = getCloudinaryUrl($album['image'] ?? $album['cover'] ?? '/assets/img/portfolio/portfolio_halima.png');
                     $albCount = (int)($album['photosCount'] ?? 25);
+                    $albSlug = $album['slug'] ?? generateSlug($album['title'] ?? 'gallery');
                 ?>
-                    <a href="?id=<?php echo (int)$aId; ?>" class="smug-folder-card">
+                    <a href="/album/<?php echo urlencode($albSlug); ?>" class="smug-folder-card">
                         <div class="smug-folder-cover">
                             <img src="<?php echo htmlspecialchars($albCover); ?>" alt="<?php echo htmlspecialchars($album['title']); ?>" loading="lazy">
                             <span class="smug-folder-cat-badge"><?php echo htmlspecialchars($album['category'] ?? 'Gallery'); ?></span>
@@ -1083,9 +1085,11 @@ foreach ($albumsRepo as $alb) {
         <?php else: ?>
             <!-- ================= ALBUM GALLERY VIEW (SmugMug /Clients/CATEGORY/ALBUM) ================= -->
             <nav class="smug-breadcrumbs" aria-label="Breadcrumb">
-                <a href="?view=clients">Clients</a>
+                <a href="https://www.falhen.com">Home</a>
                 <span class="sep">/</span>
-                <a href="?view=clients&category=<?php echo urlencode($currentAlbum['category'] ?? 'Gallery'); ?>">
+                <a href="/clients">Clients</a>
+                <span class="sep">/</span>
+                <a href="/clients?category=<?php echo urlencode($currentAlbum['category'] ?? 'Gallery'); ?>">
                     <?php echo htmlspecialchars($currentAlbum['category'] ?? 'Gallery'); ?>
                 </a>
                 <span class="sep">/</span>
@@ -1104,7 +1108,7 @@ foreach ($albumsRepo as $alb) {
                         <?php if ($isClientVerified): ?>
                             <span class="dot">·</span>
                             <span class="smug-verified-badge" id="verifiedStatusBadge">
-                                <i class="fa-solid fa-circle-check"></i> Verified: <?php echo htmlspecialchars($clientEmail); ?>
+                                <i class="fa-solid fa-circle-check"></i> Verified Client
                             </span>
                         <?php else: ?>
                             <span class="smug-verified-badge" id="verifiedStatusBadge" style="display:none;"></span>
@@ -1121,7 +1125,7 @@ foreach ($albumsRepo as $alb) {
                         <i class="fa-solid fa-play"></i>
                         <span>Slideshow</span>
                     </button>
-                    <a href="?view=clients" class="btn-smug-action btn-smug-ghost">
+                    <a href="/clients" class="btn-smug-action btn-smug-ghost">
                         <i class="fa-regular fa-folder-open"></i>
                         <span>Browse Albums</span>
                     </a>
@@ -1241,7 +1245,7 @@ foreach ($albumsRepo as $alb) {
 
                     <div class="smug-field-group">
                         <label class="smug-label" for="client_input_email">Email Address *</label>
-                        <input type="email" id="client_input_email" class="smug-input" placeholder="client@falhen.com" value="<?php echo htmlspecialchars($clientEmail); ?>" required>
+                        <input type="email" id="client_input_email" class="smug-input" placeholder="Enter your authorized email address" value="" required autocomplete="email">
                     </div>
 
                     <div class="smug-field-group">
@@ -1561,14 +1565,18 @@ foreach ($albumsRepo as $alb) {
                         const badge = document.getElementById('verifiedStatusBadge');
                         if (badge) {
                             badge.style.display = 'inline-flex';
-                            badge.innerHTML = `<i class="fa-solid fa-circle-check"></i> Verified: ${res.email}`;
+                            badge.innerHTML = '<i class="fa-solid fa-circle-check"></i> Verified Client';
                         }
                         closeVerifyModal();
                         showToast('Identity verified! Starting download...');
+
+                        // Immediately trigger the requested file download without synthetic click blocking
                         if (typeof pendingDownloadCallback === 'function') {
                             const cb = pendingDownloadCallback;
                             pendingDownloadCallback = null;
-                            cb();
+                            cb(downloadToken);
+                        } else if (res.download_zip_url) {
+                            initiateBrowserDownload(res.download_zip_url);
                         }
                     } else {
                         errBox.textContent = res.message || 'Invalid verification code.';
@@ -1584,31 +1592,55 @@ foreach ($albumsRepo as $alb) {
             }
         }
 
+        // ================= NATIVE INSTANT DOWNLOAD ENGINE =================
+        function initiateBrowserDownload(url) {
+            if (!url) return;
+
+            // 1. Invisible streaming iframe ensures browser starts native file download without popup suppression
+            let dlFrame = document.getElementById('falhenDlIframe');
+            if (!dlFrame) {
+                dlFrame = document.createElement('iframe');
+                dlFrame.id = 'falhenDlIframe';
+                dlFrame.style.display = 'none';
+                dlFrame.style.width = '0px';
+                dlFrame.style.height = '0px';
+                dlFrame.style.border = 'none';
+                document.body.appendChild(dlFrame);
+            }
+            dlFrame.src = url;
+
+            // 2. Direct location fallback if iframe stream is prevented by browser policy
+            setTimeout(() => {
+                try {
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = '';
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                } catch (e) {
+                    window.location.assign(url);
+                }
+            }, 80);
+        }
+
         // ================= DOWNLOAD TRIGGERS =================
         function triggerSinglePhotoDownload(idx) {
             const item = galleryItems[idx] || galleryItems[0];
-            requireVerification(() => {
-                const url = `/api/download-album.php?album_id=${currentAlbumId}&photo_index=${item.index}&token=${encodeURIComponent(downloadToken)}`;
+            requireVerification((token) => {
+                const activeToken = token || downloadToken;
+                const url = `/api/download-album.php?album_id=${currentAlbumId}&photo_index=${item.index}&token=${encodeURIComponent(activeToken)}`;
                 showToast(`Downloading Frame #${item.number}...`);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = '';
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
+                initiateBrowserDownload(url);
             });
         }
 
         function triggerBulkDownload() {
-            requireVerification(() => {
-                const url = `/api/download-album.php?album_id=${currentAlbumId}&token=${encodeURIComponent(downloadToken)}`;
+            requireVerification((token) => {
+                const activeToken = token || downloadToken;
+                const url = `/api/download-album.php?album_id=${currentAlbumId}&token=${encodeURIComponent(activeToken)}`;
                 showToast(`Packaging & downloading ${galleryItems.length} photos (.ZIP)...`);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = '';
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
+                initiateBrowserDownload(url);
             });
         }
     </script>
