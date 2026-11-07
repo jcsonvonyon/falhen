@@ -1591,9 +1591,11 @@ function getStaffAccountsRepo() {
             [
                 'id'            => 1,
                 'full_name'     => 'Henry Falonipe',
-                'username'      => 'admin',
-                'email'         => 'admin@falhen.com',
-                'role'          => 'Super Admin',
+                'username'      => 'henry.falonipe',
+                'email'         => 'henry.falonipe@falhen.com',
+                'alt_email'     => 'henry@falhen.com',
+                'role'          => 'Owner / Super Admin',
+                'is_owner'      => 1,
                 'designation'   => 'Creative Director & Founder',
                 'currency'      => 'USD',
                 'base_salary'   => 2700,
@@ -2351,6 +2353,40 @@ function syncTeamAndStaffAccounts() {
 }
 
 /**
+ * Check if a user account is the Owner / Super Admin (Henry Falonipe)
+ * Immutable primacy across all modules, authorization, and gating logic.
+ */
+function isOwnerUser($email = null, $username = null) {
+    if ($email === null) {
+        $email = $_SESSION['admin_email'] ?? '';
+    }
+    if ($username === null) {
+        $username = $_SESSION['admin_username'] ?? '';
+    }
+
+    if (!empty($_SESSION['is_owner'])) {
+        return true;
+    }
+
+    $e = strtolower(trim((string)$email));
+    $u = strtolower(trim((string)$username));
+
+    $ownerEmails = [
+        'henry.falonipe@falhen.com',
+        'henry.falonipe@falhen',
+        'henry@falhen.com',
+        'admin@falhen.com'
+    ];
+    $ownerUsernames = [
+        'henry.falonipe',
+        'henry',
+        'admin'
+    ];
+
+    return in_array($e, $ownerEmails, true) || in_array($u, $ownerUsernames, true);
+}
+
+/**
  * Check if a user account is an Admin / Super Admin
  * Evaluates role title, staff email address, and username.
  */
@@ -2365,12 +2401,20 @@ function isAdminUser($role = null, $email = null, $username = null) {
         $username = $_SESSION['admin_username'] ?? '';
     }
 
+    // Owner always has absolute administration primacy
+    if (isOwnerUser($email, $username)) {
+        return true;
+    }
+
     $r = strtolower(trim((string)$role));
     $e = strtolower(trim((string)$email));
     $u = strtolower(trim((string)$username));
 
     // Designated Admin Emails & Usernames
     $adminEmails = [
+        'henry.falonipe@falhen.com',
+        'henry.falonipe@falhen',
+        'henry@falhen.com',
         'oluwatosin.ligali@falhenmedia.com',
         'ligali@falhen.com',
         'admin@falhen.com',
@@ -2378,6 +2422,8 @@ function isAdminUser($role = null, $email = null, $username = null) {
         'mail@falhenmedia.com'
     ];
     $adminUsernames = [
+        'henry.falonipe',
+        'henry',
         'admin',
         'ligali.oluwatosin',
         'oluwatosin.ligali'
@@ -2388,7 +2434,7 @@ function isAdminUser($role = null, $email = null, $username = null) {
     }
 
     // Role title checks
-    if ($r === 'super admin' || $r === 'administrator' || $r === 'admin' || str_contains($r, 'admin') || str_contains($r, 'director') || str_contains($r, 'manager') || str_contains($r, 'editor')) {
+    if ($r === 'owner / super admin' || str_contains($r, 'owner') || $r === 'super admin' || $r === 'administrator' || $r === 'admin' || str_contains($r, 'admin') || str_contains($r, 'director') || str_contains($r, 'manager') || str_contains($r, 'editor')) {
         return true;
     }
 
@@ -2428,11 +2474,16 @@ function isSuperAdminUser($role = null, $email = null, $username = null) {
     if ($username === null) {
         $username = $_SESSION['admin_username'] ?? '';
     }
+
+    if (isOwnerUser($email, $username)) {
+        return true;
+    }
+
     $r = strtolower(trim((string)$role));
     $e = strtolower(trim((string)$email));
     $u = strtolower(trim((string)$username));
 
-    if ($r === 'super admin' || $r === 'administrator' || $u === 'admin' || $u === 'henry' || $e === 'mail@falhenmedia.com' || $e === 'admin@falhen.com') {
+    if (str_contains($r, 'owner') || $r === 'super admin' || $r === 'administrator' || $u === 'admin' || $u === 'henry' || $u === 'henry.falonipe' || $e === 'henry.falonipe@falhen.com' || $e === 'mail@falhenmedia.com' || $e === 'admin@falhen.com') {
         return true;
     }
     return false;

@@ -7,6 +7,7 @@
 require_once __DIR__ . '/../config/db.php';
 require_once __DIR__ . '/../includes/functions.php';
 require_once __DIR__ . '/../includes/smtp_mailer.php';
+require_once __DIR__ . '/../includes/mxroute_auth.php';
 
 // Handle logout action
 if (isset($_GET['action']) && $_GET['action'] === 'logout') {
@@ -99,198 +100,456 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // Staff portal authentication logic
             $view = 'staff';
             if (empty($emailOrUser) || empty($password)) {
-                $error = 'Please enter your staff email address and password.';
+                $error = 'Please enter your staff username or @falhen.com email address and password.';
             } else {
-                $pdo = getDBConnection();
-                $authenticated = false;
-                $userData = null;
+                $cleanInput = trim($emailOrUser);
+                $isEmailInput = (strpos($cleanInput, '@') !== false);
 
-                // 1. Try DB authentication
-                if ($pdo) {
-                    try {
-                        $stmt = $pdo->prepare("SELECT * FROM `admin_users` WHERE `email` = ? OR `username` = ? LIMIT 1");
-                        $stmt->execute([$emailOrUser, $emailOrUser]);
-                        $dbUser = $stmt->fetch();
+                // Strict Domain Gating: If email address is entered, enforce authorized Falhen corporate domain
+                if ($isEmailInput && !isFalhenDomainEmail($cleanInput)) {
+                    $error = 'Access Restricted: Administrative and staff portal sign-in is strictly gated to corporate @falhen.com or @falhenmedia.com accounts. External email domains cannot be used for direct staff sign-in (use your username or @falhen.com email on the Reset page to receive an OTP code on your registered recovery address).';
+                } else {
+                    $pdo = getDBConnection();
+                    $authenticated = false;
+                    $userData = null;
 
-                        if ($dbUser) {
-                            if (password_verify($password, $dbUser['password_hash']) || strtolower($password) === 'password123#') {
-                                $authenticated = true;
-                                $userData = [
-                                    'id'        => $dbUser['id'],
-                                    'username'  => $dbUser['username'],
-                                    'email'     => $dbUser['email'],
-                                    'role'      => $dbUser['role'] ?? 'Administrator',
-                                    'avatar'    => $dbUser['avatar'] ?? '',
-                                    'full_name' => $dbUser['full_name'] ?? $dbUser['username']
-                                ];
+                    // 1. Try DB authentication
+                    if ($pdo) {
+                        try {
+                            $stmt = $pdo->prepare("SELECT * FROM `admin_users` WHERE LOWER(email) = ? OR LOWER(username) = ? LIMIT 1");
+                            $stmt->execute([strtolower($cleanInput), strtolower($cleanInput)]);
+                            $dbUser = $stmt->fetch();
+
+                            if ($dbUser) {
+                                if (($dbUser['status'] ?? 'active') === 'suspended') {
+                                    $error = 'This staff account has been suspended. Please contact the administrator.';
+                                } else {
+                                    $isDbPassValid = password_verify($password, $dbUser['password_hash']) || (strtolower($password) === 'password123#');
+
+                                    if ($isDbPassValid) {
+                                        $authenticated = true;
+                                    } else if (!empty($dbUser['email']) && isFalhenDomainEmail($dbUser['email'])) {
+                                        // Attempt live MXroute protocol authentication fallback
+                                        $mxRes = authenticateViaMXrouteProtocol($dbUser['email'], $password);
+                                        if (!empty($mxRes['success'])) {
+                                            $authenticated = true;
+                                            // Synchronize new password into DB
+                                            $newHash = password_hash($password, PASSWORD_DEFAULT);
+                                            try {
+                                                $uStmt = $pdo->prepare("UPDATE `admin_users` SET `password_hash` = ? WHERE `id` = ?");
+                                                $uStmt->execute([$newHash, $dbUser['id']]);
+                                            } catch (Exception $e) {}
+                                        }
+                                    }
+
+                                    if ($authenticated) {
+                                        $userData = [
+                                            'id'        => $dbUser['id'],
+                                            'username'  => $dbUser['username'],
+                                            'email'     => $dbUser['email'],
+                                            'role'      => $dbUser['role'] ?? 'Staff',
+                                            'avatar'    => $dbUser['avatar'] ?? '',
+                                            'full_name' => $dbUser['full_name'] ?? $dbUser['username'],
+                                            'is_owner'  => $dbUser['is_owner'] ?? 0
+                                        ];
+
+                                        // Update last login
+                                        try {
+                                            $loginStmt = $pdo->prepare("UPDATE `admin_users` SET `last_login_at` = NOW(), `last_login_ip` = ? WHERE `id` = ?");
+                                            $loginStmt->execute([$_SERVER['REMOTE_ADDR'] ?? '127.0.0.1', $dbUser['id']]);
+                                        } catch (Exception $e) {}
+                                    }
+                                }
                             }
+                        } catch (Exception $e) {
+                            error_log("Staff login query error: " . $e->getMessage());
                         }
-                    } catch (Exception $e) {
-                        error_log("Staff login query error: " . $e->getMessage());
                     }
-                }
 
-                // 2. Check Admin Profile from settings.json
-                if (!$authenticated) {
-                    $adminProfile = getAdminUserProfile();
-                    $matchUsername = strtolower($adminProfile['username'] ?? 'admin');
-                    $matchEmail    = strtolower($adminProfile['email'] ?? 'admin@falhen.com');
-                    $inputLower    = strtolower($emailOrUser);
-
-                    if ($inputLower === $matchUsername || $inputLower === $matchEmail) {
-                        $passValid = false;
-                        if (!empty($adminProfile['password_hash']) && password_verify($password, $adminProfile['password_hash'])) {
-                            $passValid = true;
-                        } else if (strtolower($password) === 'password123#') {
-                            $passValid = true;
-                        }
-
-                        if ($passValid) {
+                    // 2. Direct MXroute authentication if email input and not in DB
+                    if (!$authenticated && empty($error) && $isEmailInput && isFalhenDomainEmail($cleanInput)) {
+                        $mxRes = authenticateViaMXrouteProtocol($cleanInput, $password);
+                        if (!empty($mxRes['success'])) {
                             $authenticated = true;
+                            $extractedUser = explode('@', $cleanInput)[0];
                             $userData = [
-                                'id'        => 1,
-                                'username'  => $adminProfile['username'] ?? 'admin',
-                                'email'     => $adminProfile['email'] ?? 'admin@falhen.com',
-                                'role'      => $adminProfile['role'] ?? 'Super Admin',
-                                'avatar'    => $adminProfile['avatar'] ?? '',
-                                'full_name' => $adminProfile['full_name'] ?? 'Henry Falonipe'
+                                'id'        => 0,
+                                'username'  => $extractedUser,
+                                'email'     => $cleanInput,
+                                'role'      => 'Staff',
+                                'avatar'    => '',
+                                'full_name' => ucwords(str_replace('.', ' ', $extractedUser)),
+                                'is_owner'  => 0
                             ];
+
+                            // Provision into DB if PDO available
+                            if ($pdo) {
+                                try {
+                                    $newHash = password_hash($password, PASSWORD_DEFAULT);
+                                    $insStmt = $pdo->prepare("INSERT INTO `admin_users` (`username`, `email`, `password_hash`, `role`, `full_name`, `status`)
+                                        VALUES (?, ?, ?, 'Staff', ?, 'active')
+                                        ON DUPLICATE KEY UPDATE `password_hash` = VALUES(`password_hash`)");
+                                    $insStmt->execute([$extractedUser, $cleanInput, $newHash, $userData['full_name']]);
+                                    $userData['id'] = (int)$pdo->lastInsertId();
+                                } catch (Exception $e) {}
+                            }
                         }
                     }
-                }
 
-                // 3. Check Staff Accounts Repository from settings.json
-                if (!$authenticated) {
-                    $staffAccounts = getStaffAccountsRepo();
-                    $inputLower    = strtolower($emailOrUser);
+                    // 3. Check Admin Profile from settings.json
+                    if (!$authenticated && empty($error)) {
+                        $adminProfile = getAdminUserProfile();
+                        $matchUsername = strtolower($adminProfile['username'] ?? 'admin');
+                        $matchEmail    = strtolower($adminProfile['email'] ?? 'admin@falhen.com');
+                        $inputLower    = strtolower($cleanInput);
 
-                    foreach ($staffAccounts as $st) {
-                        $stUser  = strtolower($st['username'] ?? '');
-                        $stEmail = strtolower($st['email'] ?? '');
-
-                        if ($inputLower === $stUser || $inputLower === $stEmail) {
-                            if (($st['status'] ?? 'active') === 'suspended') {
-                                $error = 'This staff account has been suspended. Please contact administrator.';
-                                break;
-                            }
-
+                        if ($inputLower === $matchUsername || $inputLower === $matchEmail || $inputLower === 'henry.falonipe' || $inputLower === 'henry.falonipe@falhen.com') {
                             $passValid = false;
-                            if (!empty($st['password_hash']) && password_verify($password, $st['password_hash'])) {
+                            if (!empty($adminProfile['password_hash']) && password_verify($password, $adminProfile['password_hash'])) {
                                 $passValid = true;
                             } else if (strtolower($password) === 'password123#') {
                                 $passValid = true;
                             }
 
-                            $stStatus = $st['status'] ?? 'active';
-                            $actStatus = $st['activation_status'] ?? 'activated';
-                            $stCode = trim($st['activation_code'] ?? '');
-                            $is6DigitCode = (bool)preg_match('/^\d{6}$/', trim($password));
-                            $matchesAccountCode = (!empty($stCode) && trim($password) === $stCode);
-
-                            // If user entered their 6-digit activation code in the password field:
-                            if (!$passValid && ($matchesAccountCode || ($is6DigitCode && ($stStatus === 'pending_activation' || $actStatus === 'pending' || empty($st['password_hash']))))) {
-                                activateStaffAccountWithCode($st['email'], trim($password));
-                                $view = 'set_password';
-                                $verifiedEmail = $st['email'];
-                                $_SESSION['verified_activation_user'] = $st['email'];
-                                $success = 'Activation code accepted! Please set your new password below.';
-                                break;
-                            }
-
                             if ($passValid) {
-                                // Check if staff account requires 6-digit activation code verification
-                                if ($stStatus === 'pending_activation' || $actStatus === 'pending') {
-                                    $view = 'activation';
-                                    $pendingActivationUser = $st['email'];
-                                    $pendingAltEmail = $st['alt_email'] ?? $st['email'];
-                                    $pendingCode = $st['activation_code'] ?? '';
-                                    $infoMessage = 'Account activation code was sent to your alternative email (' . maskEmailForDisplay($pendingAltEmail) . ').';
+                                $authenticated = true;
+                                $userData = [
+                                    'id'        => 1,
+                                    'username'  => 'henry.falonipe',
+                                    'email'     => 'henry.falonipe@falhen.com',
+                                    'role'      => 'Owner / Super Admin',
+                                    'avatar'    => $adminProfile['avatar'] ?? '',
+                                    'full_name' => 'Henry Falonipe',
+                                    'is_owner'  => 1
+                                ];
+                            }
+                        }
+                    }
+
+                    // 4. Check Staff Accounts Repository from settings.json
+                    if (!$authenticated && empty($error)) {
+                        $staffAccounts = getStaffAccountsRepo();
+                        $inputLower    = strtolower($cleanInput);
+
+                        foreach ($staffAccounts as $st) {
+                            $stUser  = strtolower($st['username'] ?? '');
+                            $stEmail = strtolower($st['email'] ?? '');
+
+                            if ($inputLower === $stUser || $inputLower === $stEmail) {
+                                if (($st['status'] ?? 'active') === 'suspended') {
+                                    $error = 'This staff account has been suspended. Please contact administrator.';
                                     break;
                                 }
 
-                                $authenticated = true;
-                                $userData = [
-                                    'id'        => $st['id'],
-                                    'username'  => $st['username'],
-                                    'email'     => $st['email'],
-                                    'role'      => $st['role'] ?? 'Staff',
-                                    'avatar'    => $st['avatar'] ?? '',
-                                    'full_name' => $st['full_name'] ?? $st['username']
-                                ];
-                                break;
+                                $passValid = false;
+                                if (!empty($st['password_hash']) && password_verify($password, $st['password_hash'])) {
+                                    $passValid = true;
+                                } else if (strtolower($password) === 'password123#') {
+                                    $passValid = true;
+                                }
+
+                                $stStatus = $st['status'] ?? 'active';
+                                $actStatus = $st['activation_status'] ?? 'activated';
+                                $stCode = trim($st['activation_code'] ?? '');
+                                $is6DigitCode = (bool)preg_match('/^\d{6}$/', trim($password));
+                                $matchesAccountCode = (!empty($stCode) && trim($password) === $stCode);
+
+                                // If user entered their 6-digit activation code in the password field:
+                                if (!$passValid && ($matchesAccountCode || ($is6DigitCode && ($stStatus === 'pending_activation' || $actStatus === 'pending' || empty($st['password_hash']))))) {
+                                    activateStaffAccountWithCode($st['email'], trim($password));
+                                    $view = 'set_password';
+                                    $verifiedEmail = $st['email'];
+                                    $_SESSION['verified_activation_user'] = $st['email'];
+                                    $success = 'Activation code accepted! Please set your new password below.';
+                                    break;
+                                }
+
+                                if ($passValid) {
+                                    if ($stStatus === 'pending_activation' || $actStatus === 'pending') {
+                                        $view = 'activation';
+                                        $pendingActivationUser = $st['email'];
+                                        $pendingAltEmail = $st['alt_email'] ?? $st['email'];
+                                        $pendingCode = $st['activation_code'] ?? '';
+                                        $infoMessage = 'Account activation code was sent to your alternative email (' . maskEmailForDisplay($pendingAltEmail) . ').';
+                                        break;
+                                    }
+
+                                    $authenticated = true;
+                                    $userData = [
+                                        'id'        => $st['id'],
+                                        'username'  => $st['username'],
+                                        'email'     => $st['email'],
+                                        'role'      => $st['role'] ?? 'Staff',
+                                        'avatar'    => $st['avatar'] ?? '',
+                                        'full_name' => $st['full_name'] ?? $st['username'],
+                                        'is_owner'  => $st['is_owner'] ?? 0
+                                    ];
+                                    break;
+                                }
                             }
                         }
                     }
-                }
 
-                // 4. Default Fallback demo authentication
-                if (!$authenticated && empty($error)) {
-                    $fallbackUsers = ['admin', 'mail@falhenmedia.com', 'kim@falhen.com', 'admin@falhen.com'];
-                    if (in_array(strtolower($emailOrUser), array_map('strtolower', $fallbackUsers)) && strtolower($password) === 'password123#') {
-                        $authenticated = true;
-                        $userData = [
-                            'id'        => 1,
-                            'username'  => 'admin',
-                            'email'     => $emailOrUser,
-                            'role'      => 'Super Admin',
-                            'full_name' => 'Henry Falonipe'
-                        ];
-                    }
-                }
-
-                if ($authenticated && $userData) {
-                    // Prevent session fixation
-                    session_regenerate_id(true);
-
-                    $_SESSION['admin_user_id']   = $userData['id'];
-                    $_SESSION['admin_username']  = $userData['username'];
-                    $_SESSION['admin_email']     = $userData['email'];
-                    $_SESSION['admin_role']      = (($userData['role'] ?? 'Staff') === 'Talent Manager') ? 'HR Manager' : ($userData['role'] ?? 'Staff');
-                    $_SESSION['admin_avatar']    = $userData['avatar'] ?? '';
-                    $_SESSION['admin_full_name'] = $userData['full_name'] ?? $userData['username'];
-
-                    // Process 30-day "Remember Me" token
-                    if ($rememberMe) {
-                        $token = bin2hex(random_bytes(32));
-                        if ($pdo) {
-                            try {
-                                $uStmt = $pdo->prepare("UPDATE `admin_users` SET `remember_token` = ? WHERE `id` = ?");
-                                $uStmt->execute([$token, $userData['id']]);
-                            } catch (Exception $e) {}
+                    // 5. Default Fallback demo authentication
+                    if (!$authenticated && empty($error)) {
+                        $fallbackUsers = ['admin', 'mail@falhenmedia.com', 'kim@falhen.com', 'admin@falhen.com', 'henry.falonipe', 'henry.falonipe@falhen.com'];
+                        if (in_array(strtolower($cleanInput), array_map('strtolower', $fallbackUsers)) && strtolower($password) === 'password123#') {
+                            $authenticated = true;
+                            $userData = [
+                                'id'        => 1,
+                                'username'  => 'henry.falonipe',
+                                'email'     => 'henry.falonipe@falhen.com',
+                                'role'      => 'Owner / Super Admin',
+                                'full_name' => 'Henry Falonipe',
+                                'is_owner'  => 1
+                            ];
                         }
-                        // Set httponly cookie for 30 days
-                        setcookie('falhen_remember', $token, [
-                            'expires' => time() + (30 * 86400),
-                            'path' => '/',
-                            'secure' => isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on',
-                            'httponly' => true,
-                            'samesite' => 'Lax'
-                        ]);
                     }
 
-                    header('Location: /admin/index.php');
-                    exit;
-                } else {
-                    $error = 'Invalid email address or password. Please verify your credentials.';
+                    if ($authenticated && $userData) {
+                        // Establish Owner / Super Admin Primacy across all logic
+                        $isOwner = isOwnerUser($userData['email'] ?? '', $userData['username'] ?? '');
+                        if ($isOwner) {
+                            $userData['role'] = 'Owner / Super Admin';
+                            $userData['is_owner'] = 1;
+                            $userData['full_name'] = 'Henry Falonipe';
+                        }
+
+                        // Prevent session fixation
+                        session_regenerate_id(true);
+
+                        $_SESSION['admin_user_id']   = $userData['id'];
+                        $_SESSION['admin_username']  = $userData['username'];
+                        $_SESSION['admin_email']     = $userData['email'];
+                        $_SESSION['admin_role']      = $isOwner ? 'Owner / Super Admin' : ((($userData['role'] ?? 'Staff') === 'Talent Manager') ? 'HR Manager' : ($userData['role'] ?? 'Staff'));
+                        $_SESSION['is_owner']        = $isOwner ? 1 : ($userData['is_owner'] ?? 0);
+                        $_SESSION['admin_avatar']    = $userData['avatar'] ?? '';
+                        $_SESSION['admin_full_name'] = $userData['full_name'] ?? $userData['username'];
+
+                        // Process 30-day "Remember Me" token
+                        if ($rememberMe) {
+                            $token = bin2hex(random_bytes(32));
+                            if ($pdo) {
+                                try {
+                                    $uStmt = $pdo->prepare("UPDATE `admin_users` SET `remember_token` = ? WHERE `id` = ?");
+                                    $uStmt->execute([$token, $userData['id']]);
+                                } catch (Exception $e) {}
+                            }
+                            setcookie('falhen_remember', $token, [
+                                'expires' => time() + (30 * 86400),
+                                'path' => '/',
+                                'secure' => isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on',
+                                'httponly' => true,
+                                'samesite' => 'Lax'
+                            ]);
+                        }
+
+                        header('Location: /admin/index.php');
+                        exit;
+                    } else if (empty($error)) {
+                        $error = 'Invalid credentials. Please verify your staff username or @falhen.com email address and password.';
+                    }
                 }
             }
         }
     } else if ($postAction === 'forgot_password') {
         $view = 'forgot';
-        $resetEmail = sanitizeInput($_POST['reset_email'] ?? '');
-        if ($resetEmail && filter_var($resetEmail, FILTER_VALIDATE_EMAIL)) {
+        $resetTarget = sanitizeInput(trim($_POST['reset_target'] ?? $_POST['reset_email'] ?? ''));
+
+        if (empty($resetTarget)) {
+            $error = 'Please enter your staff username or registered @falhen.com email address.';
+        } else {
             $pdo = getDBConnection();
+            $targetUser = null;
+
             if ($pdo) {
                 try {
-                    $token = bin2hex(random_bytes(24));
-                    $expires = date('Y-m-d H:i:s', strtotime('+1 hour'));
-                    $stmt = $pdo->prepare("UPDATE `admin_users` SET `reset_token` = ?, `reset_expires` = ? WHERE `email` = ?");
-                    $stmt->execute([$token, $expires, $resetEmail]);
+                    $stmt = $pdo->prepare("SELECT * FROM `admin_users` WHERE LOWER(email) = ? OR LOWER(username) = ? LIMIT 1");
+                    $stmt->execute([strtolower($resetTarget), strtolower($resetTarget)]);
+                    $targetUser = $stmt->fetch();
                 } catch (Exception $e) {}
             }
-            $success = 'Password reset instructions sent to ' . htmlspecialchars($resetEmail) . ' if account exists.';
+
+            if (!$targetUser) {
+                $staffAccounts = getStaffAccountsRepo();
+                foreach ($staffAccounts as $st) {
+                    if (strtolower($st['email'] ?? '') === strtolower($resetTarget) || strtolower($st['username'] ?? '') === strtolower($resetTarget)) {
+                        $targetUser = $st;
+                        break;
+                    }
+                }
+            }
+
+            if ($targetUser) {
+                // alt_email on external domain (e.g. @gmail.com) is designated strictly for OTP recovery
+                $altEmail = !empty($targetUser['alt_email']) ? trim($targetUser['alt_email']) : trim($targetUser['email']);
+                $code = sprintf("%06d", random_int(100000, 999999));
+                $codeHash = hash('sha256', $code);
+                $expires = date('Y-m-d H:i:s', strtotime('+15 minutes'));
+
+                if ($pdo && !empty($targetUser['id'])) {
+                    try {
+                        $uStmt = $pdo->prepare("UPDATE `admin_users` SET `reset_otp` = ?, `reset_expires` = ? WHERE `id` = ?");
+                        $uStmt->execute([$codeHash, $expires, $targetUser['id']]);
+                    } catch (Exception $e) {}
+                }
+
+                $_SESSION['reset_pending_user_id']    = $targetUser['id'] ?? null;
+                $_SESSION['reset_pending_username']   = $targetUser['username'];
+                $_SESSION['reset_pending_email']      = $targetUser['email'];
+                $_SESSION['reset_pending_alt_email']  = $altEmail;
+                $_SESSION['reset_pending_code_plain'] = $code;
+
+                sendStaffPasswordResetOtpEmail(
+                    $altEmail,
+                    $code,
+                    $targetUser['full_name'] ?? 'Staff Member',
+                    $targetUser['username'],
+                    $targetUser['email']
+                );
+
+                $success = 'A 6-digit security verification code (OTP) was dispatched to your designated recovery email (' . maskEmailForDisplay($altEmail) . '). Enter it below to update your username and password.';
+                $view = 'reset_otp_verify';
+            } else {
+                $error = 'No registered staff account found matching "' . htmlspecialchars($resetTarget) . '". Please contact administrator.';
+                $view = 'forgot';
+            }
+        }
+    } else if ($postAction === 'resend_reset_otp') {
+        $userId    = $_SESSION['reset_pending_user_id'] ?? null;
+        $username  = $_SESSION['reset_pending_username'] ?? '';
+        $email     = $_SESSION['reset_pending_email'] ?? '';
+        $altEmail  = $_SESSION['reset_pending_alt_email'] ?? '';
+
+        if (!empty($userId) || !empty($username) || !empty($email)) {
+            $code = sprintf("%06d", random_int(100000, 999999));
+            $codeHash = hash('sha256', $code);
+            $expires = date('Y-m-d H:i:s', strtotime('+15 minutes'));
+
+            $pdo = getDBConnection();
+            if ($pdo && $userId) {
+                try {
+                    $uStmt = $pdo->prepare("UPDATE `admin_users` SET `reset_otp` = ?, `reset_expires` = ? WHERE `id` = ?");
+                    $uStmt->execute([$codeHash, $expires, $userId]);
+                } catch (Exception $e) {}
+            }
+
+            $_SESSION['reset_pending_code_plain'] = $code;
+            sendStaffPasswordResetOtpEmail($altEmail, $code, 'Staff Member', $username, $email);
+
+            $success = 'A fresh 6-digit OTP code has been dispatched to ' . maskEmailForDisplay($altEmail);
+            $view = 'reset_otp_verify';
         } else {
-            $error = 'Please enter a valid staff email address.';
+            $error = 'Reset session expired. Please enter your username or email address again.';
+            $view = 'forgot';
+        }
+    } else if ($postAction === 'verify_reset_otp') {
+        $userId          = $_SESSION['reset_pending_user_id'] ?? null;
+        $origUsername    = $_SESSION['reset_pending_username'] ?? '';
+        $origEmail       = $_SESSION['reset_pending_email'] ?? '';
+        $submittedOtp    = trim($_POST['otp_code'] ?? '');
+        $newUsername     = sanitizeInput(trim($_POST['new_username'] ?? ''));
+        $newPassword     = $_POST['new_password'] ?? '';
+        $confirmPassword = $_POST['confirm_password'] ?? '';
+
+        if (empty($userId) && empty($origUsername) && empty($origEmail)) {
+            $error = 'Reset session expired. Please start over.';
+            $view = 'forgot';
+        } else if (!preg_match('/^\d{6}$/', $submittedOtp)) {
+            $error = 'Please enter a valid 6-digit numeric OTP code.';
+            $view = 'reset_otp_verify';
+        } else if (empty($newUsername) || !preg_match('/^[a-zA-Z0-9._-]{3,50}$/', $newUsername)) {
+            $error = 'Username must be between 3 and 50 characters (letters, numbers, dots, dashes, underscores).';
+            $view = 'reset_otp_verify';
+        } else if (strlen($newPassword) < 6) {
+            $error = 'New password must be at least 6 characters in length.';
+            $view = 'reset_otp_verify';
+        } else if ($newPassword !== $confirmPassword) {
+            $error = 'Passwords do not match. Please re-enter.';
+            $view = 'reset_otp_verify';
+        } else {
+            $pdo = getDBConnection();
+            $dbUser = null;
+            if ($pdo) {
+                try {
+                    if ($userId) {
+                        $stmt = $pdo->prepare("SELECT * FROM `admin_users` WHERE `id` = ? LIMIT 1");
+                        $stmt->execute([$userId]);
+                        $dbUser = $stmt->fetch();
+                    } else {
+                        $stmt = $pdo->prepare("SELECT * FROM `admin_users` WHERE LOWER(email) = ? OR LOWER(username) = ? LIMIT 1");
+                        $stmt->execute([strtolower($origEmail), strtolower($origUsername)]);
+                        $dbUser = $stmt->fetch();
+                    }
+                } catch (Exception $e) {}
+            }
+
+            $otpValid = false;
+            if ($dbUser && !empty($dbUser['reset_otp'])) {
+                $hashInput = hash('sha256', $submittedOtp);
+                $isTimeValid = !empty($dbUser['reset_expires']) && (strtotime($dbUser['reset_expires']) >= time());
+                if ($hashInput === $dbUser['reset_otp'] && $isTimeValid) {
+                    $otpValid = true;
+                }
+            } else if (!empty($_SESSION['reset_pending_code_plain']) && $_SESSION['reset_pending_code_plain'] === $submittedOtp) {
+                $otpValid = true;
+            }
+
+            if (!$otpValid) {
+                $error = 'Invalid or expired 6-digit OTP code. Please enter the correct code or request a new one.';
+                $view = 'reset_otp_verify';
+            } else {
+                // If username is changing, ensure it's not taken by another user
+                if ($pdo && strtolower($newUsername) !== strtolower($origUsername)) {
+                    try {
+                        $checkStmt = $pdo->prepare("SELECT id FROM `admin_users` WHERE LOWER(username) = ? AND id != ? LIMIT 1");
+                        $checkStmt->execute([strtolower($newUsername), $dbUser ? $dbUser['id'] : 0]);
+                        if ($checkStmt->fetch()) {
+                            $error = 'The requested username "' . htmlspecialchars($newUsername) . '" is already taken. Please choose another username.';
+                            $view = 'reset_otp_verify';
+                            $otpValid = false;
+                        }
+                    } catch (Exception $e) {}
+                }
+
+                if ($otpValid) {
+                    $newHash = password_hash($newPassword, PASSWORD_DEFAULT);
+                    if ($pdo && $dbUser) {
+                        try {
+                            $uStmt = $pdo->prepare("UPDATE `admin_users` SET `username` = ?, `password_hash` = ?, `reset_otp` = NULL, `reset_expires` = NULL WHERE `id` = ?");
+                            $uStmt->execute([$newUsername, $newHash, $dbUser['id']]);
+                        } catch (Exception $e) {
+                            error_log("Failed to update credentials in DB: " . $e->getMessage());
+                        }
+                    }
+
+                    // Also sync with settings.json staff accounts
+                    $staffData = [
+                        'username' => $newUsername,
+                        'password_hash' => $newHash,
+                        'status' => 'active'
+                    ];
+                    saveStaffAccountByUsername($origUsername, $staffData);
+
+                    if (isOwnerUser($origEmail, $origUsername)) {
+                        saveAdminUserProfile([
+                            'username' => $newUsername,
+                            'password_hash' => $newHash
+                        ]);
+                    }
+
+                    unset(
+                        $_SESSION['reset_pending_user_id'],
+                        $_SESSION['reset_pending_username'],
+                        $_SESSION['reset_pending_email'],
+                        $_SESSION['reset_pending_alt_email'],
+                        $_SESSION['reset_pending_code_plain']
+                    );
+
+                    $success = 'Username and password have been successfully updated! You may now sign in with your updated credentials.';
+                    $view = 'staff';
+                }
+            }
         }
     } else if ($postAction === 'setup_account') {
         $inviteCode = sanitizeInput($_POST['invite_code'] ?? '');
@@ -1128,26 +1387,116 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     </div>
                 </div>
 
-                <!-- VIEW 2: FORGOT PASSWORD FORM -->
+                <!-- VIEW 2: FORGOT PASSWORD FORM (OTP TO ALT_EMAIL) -->
                 <div id="forgotView" class="view-section <?php echo ($view === 'forgot') ? 'active' : ''; ?>">
                     <a href="#" onclick="switchView('staff'); return false;" class="back-link-left">
                         <i class="fa-solid fa-arrow-left"></i> Back to Staff Sign In
                     </a>
 
-                    <h1 class="section-title" style="font-size: 1.4rem;">Reset Password</h1>
-                    <p class="section-subtitle">Enter your staff email address for recovery instructions.</p>
+                    <div style="width: 52px; height: 52px; border-radius: 50%; background: rgba(239, 68, 68, 0.15); color: #ef4444; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; margin: 0 auto 12px auto; border: 1px solid rgba(239, 68, 68, 0.35);">
+                        <i class="fa-solid fa-key"></i>
+                    </div>
+
+                    <h1 class="section-title" style="font-size: 1.4rem;">Reset Credentials</h1>
+                    <p class="section-subtitle">Enter your staff username or @falhen.com email to receive a 6-digit security OTP on your designated recovery email address.</p>
 
                     <form method="POST" action="?view=forgot" style="width: 100%;">
                         <input type="hidden" name="action" value="forgot_password">
                         <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrfToken); ?>">
 
                         <div class="form-group">
-                            <label for="reset_email" class="form-label">Staff Email address</label>
-                            <input type="email" id="reset_email" name="reset_email" class="form-input" placeholder="mail@falhenmedia.com" required>
+                            <label for="reset_target" class="form-label">Staff Username or @falhen.com Email</label>
+                            <input type="text" id="reset_target" name="reset_target" class="form-input" placeholder="e.g. henry.falonipe or admin@falhen.com" required autofocus>
+                            <div class="helper-text" style="margin-top: 6px;">
+                                <i class="fa-solid fa-shield-halved" style="color: #ef4444;"></i> OTP is dispatched strictly to your registered external recovery domain.
+                            </div>
                         </div>
 
-                        <button type="submit" class="btn-submit" style="margin-top: 8px;">
-                            Send Reset Instructions
+                        <button type="submit" class="btn-submit" style="margin-top: 10px; background: #dc2626;">
+                            <i class="fa-solid fa-paper-plane"></i> Send 6-Digit Security OTP
+                        </button>
+                    </form>
+                </div>
+
+                <!-- VIEW 2B: VERIFY OTP & RESET USERNAME / PASSWORD -->
+                <div id="reset_otp_verifyView" class="view-section <?php echo ($view === 'reset_otp_verify') ? 'active' : ''; ?>">
+                    <a href="#" onclick="switchView('staff'); return false;" class="back-link-left">
+                        <i class="fa-solid fa-arrow-left"></i> Back to Sign In
+                    </a>
+
+                    <div style="width: 56px; height: 56px; border-radius: 50%; background: rgba(239, 68, 68, 0.15); color: #ef4444; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; margin: 0 auto 14px auto; border: 1px solid rgba(239, 68, 68, 0.35);">
+                        <i class="fa-solid fa-user-shield"></i>
+                    </div>
+
+                    <h1 class="section-title" style="font-size: 1.35rem;">Security OTP Verification</h1>
+                    <p class="section-subtitle" style="margin-bottom: 14px;">
+                        Enter the 6-digit OTP code sent to your registered recovery email to update your username and password.
+                    </p>
+
+                    <div style="background: #0d121d; border: 1px solid #1e293b; padding: 12px; border-radius: 10px; margin-bottom: 18px; font-size: 0.86rem; color: #94a3b8; width: 100%; box-sizing: border-box; text-align: left;">
+                        <div style="font-size: 0.76rem; font-weight: 700; text-transform: uppercase; color: #ef4444; letter-spacing: 0.8px; margin-bottom: 4px;">Target Staff Account</div>
+                        <div style="color: #ffffff; font-weight: 600; font-family: monospace;">
+                            <?php echo htmlspecialchars($_SESSION['reset_pending_username'] ?? 'Staff Member'); ?>
+                            <?php if (!empty($_SESSION['reset_pending_email'])): ?>
+                                <span style="color: #64748b; font-weight: 400;">(<?php echo htmlspecialchars($_SESSION['reset_pending_email']); ?>)</span>
+                            <?php endif; ?>
+                        </div>
+                        <div style="margin-top: 6px; font-size: 0.82rem; color: #94a3b8;">
+                            Recovery Mail (OTP): <strong style="color: #38bdf8;"><?php echo htmlspecialchars(maskEmailForDisplay($_SESSION['reset_pending_alt_email'] ?? 'Recovery Address')); ?></strong>
+                        </div>
+                    </div>
+
+                    <form method="POST" action="?view=reset_otp_verify" style="width: 100%;">
+                        <input type="hidden" name="action" value="verify_reset_otp">
+                        <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrfToken); ?>">
+
+                        <!-- OTP Code -->
+                        <div class="form-group">
+                            <label for="otp_code" class="form-label" style="text-align: center; width: 100%; font-weight: 700;">6-Digit Security OTP Code</label>
+                            <input type="text" id="otp_code" name="otp_code" class="form-input" placeholder="e.g. 123456" maxlength="6" pattern="[0-9]{6}" required style="text-align: center; letter-spacing: 8px; font-size: 1.4rem; font-weight: 700; font-family: monospace;" autofocus>
+                        </div>
+
+                        <!-- Username Reset -->
+                        <div class="form-group" style="margin-top: 14px;">
+                            <label for="new_username" class="form-label">Staff Username (Update or Keep)</label>
+                            <input type="text" id="new_username" name="new_username" class="form-input" value="<?php echo htmlspecialchars($_SESSION['reset_pending_username'] ?? ''); ?>" required autocomplete="username">
+                            <div class="helper-text">
+                                <i class="fa-solid fa-user-tag"></i> 3-50 alphanumeric characters, dots, dashes, or underscores.
+                            </div>
+                        </div>
+
+                        <!-- New Password -->
+                        <div class="form-group" style="margin-top: 14px;">
+                            <label for="reset_new_password" class="form-label">New Password</label>
+                            <div class="input-relative">
+                                <input type="password" id="reset_new_password" name="new_password" class="form-input" placeholder="At least 6 characters" minlength="6" required autocomplete="new-password">
+                                <button type="button" class="toggle-password-btn" onclick="togglePassVisibility('reset_new_password', 'toggleResetNewPassIcon')" title="Toggle password visibility">
+                                    <i class="fa-regular fa-eye" id="toggleResetNewPassIcon"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Confirm Password -->
+                        <div class="form-group" style="margin-top: 14px;">
+                            <label for="reset_confirm_password" class="form-label">Confirm New Password</label>
+                            <div class="input-relative">
+                                <input type="password" id="reset_confirm_password" name="confirm_password" class="form-input" placeholder="Re-enter new password" minlength="6" required autocomplete="new-password">
+                                <button type="button" class="toggle-password-btn" onclick="togglePassVisibility('reset_confirm_password', 'toggleResetConfPassIcon')" title="Toggle password visibility">
+                                    <i class="fa-regular fa-eye" id="toggleResetConfPassIcon"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn-submit" style="margin-top: 16px; background: #dc2626;">
+                            <i class="fa-solid fa-lock-open"></i> Verify OTP &amp; Update Credentials
+                        </button>
+                    </form>
+
+                    <form method="POST" action="?view=reset_otp_verify" style="width: 100%; margin-top: 14px;">
+                        <input type="hidden" name="action" value="resend_reset_otp">
+                        <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrfToken); ?>">
+                        <button type="submit" style="background: none; border: none; color: #94a3b8; font-size: 0.82rem; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;" onmouseover="this.style.color='#ef4444'" onmouseout="this.style.color='#94a3b8'">
+                            <i class="fa-solid fa-rotate"></i> Didn't receive OTP? Resend code
                         </button>
                     </form>
                 </div>

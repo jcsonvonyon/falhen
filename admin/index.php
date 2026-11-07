@@ -2865,6 +2865,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $targetId = $found ? $sId : $newId;
         saveSiteSettings(['staff_accounts' => $items]);
 
+        // Synchronize with MySQL admin_users database table
+        $pdo = getDBConnection();
+        if ($pdo) {
+            try {
+                $isOwnerFlag = isOwnerUser($email, $username) ? 1 : 0;
+                $pwdHash = !empty($password) ? password_hash($password, PASSWORD_DEFAULT) : null;
+                if ($pwdHash) {
+                    $dbUpsert = $pdo->prepare("INSERT INTO `admin_users` (`username`, `email`, `alt_email`, `password_hash`, `role`, `full_name`, `is_owner`, `status`)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                        ON DUPLICATE KEY UPDATE `username` = VALUES(`username`), `alt_email` = VALUES(`alt_email`), `password_hash` = VALUES(`password_hash`), `role` = VALUES(`role`), `full_name` = VALUES(`full_name`), `is_owner` = VALUES(`is_owner`), `status` = VALUES(`status`)");
+                    $dbUpsert->execute([$username, $email, $altEmail, $pwdHash, $role, $fullName, $isOwnerFlag, $status]);
+                } else {
+                    $dbUpsert = $pdo->prepare("INSERT INTO `admin_users` (`username`, `email`, `alt_email`, `password_hash`, `role`, `full_name`, `is_owner`, `status`)
+                        VALUES (?, ?, ?, '$2y$10$w8T.N0V3F0r.rC3TqN197.W84d7O8w4Q8gU4E9hR2F1H0Z3F4X5Y6', ?, ?, ?, ?)
+                        ON DUPLICATE KEY UPDATE `username` = VALUES(`username`), `alt_email` = VALUES(`alt_email`), `role` = VALUES(`role`), `full_name` = VALUES(`full_name`), `is_owner` = VALUES(`is_owner`), `status` = VALUES(`status`)");
+                    $dbUpsert->execute([$username, $email, $altEmail, $role, $fullName, $isOwnerFlag, $status]);
+                }
+            } catch (Exception $e) {
+                error_log("Failed to sync staff account to admin_users: " . $e->getMessage());
+            }
+        }
+
         // Dispatch 6-digit Activation Code via SMTP to Alternative Email
         if (!empty($altEmail) && !empty($activeCodeUsed)) {
             sendStaffActivationEmail($altEmail, $activeCodeUsed, $fullName, $email);
@@ -2875,10 +2897,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } else if ($action === 'delete_staff_account') {
         $sId = (int)($_POST['id'] ?? 0);
         $items = array_values(getStaffAccountsRepo());
+
+        // Find target account
+        $targetAccount = null;
+        foreach ($items as $it) {
+            if ((int)($it['id'] ?? 0) === $sId) {
+                $targetAccount = $it;
+                break;
+            }
+        }
+
+        if ($targetAccount && (isOwnerUser($targetAccount['email'] ?? '', $targetAccount['username'] ?? '') || (int)$sId === 1)) {
+            header('Location: index.php?section=staff_accounts&error=' . urlencode('The Owner / Super Admin account cannot be deleted.'));
+            exit;
+        }
+
         $newItems = array_values(array_filter($items, function($it) use ($sId) {
             return (int)($it['id'] ?? 0) !== $sId;
         }));
         saveSiteSettings(['staff_accounts' => $newItems]);
+
+        // Sync deletion with MySQL admin_users
+        $pdo = getDBConnection();
+        if ($pdo && $targetAccount) {
+            try {
+                $delStmt = $pdo->prepare("DELETE FROM `admin_users` WHERE LOWER(email) = ? OR LOWER(username) = ?");
+                $delStmt->execute([strtolower($targetAccount['email'] ?? ''), strtolower($targetAccount['username'] ?? '')]);
+            } catch (Exception $e) {}
+        }
+
         header('Location: index.php?section=staff_accounts&deleted=1');
         exit;
     } else if ($action === 'toggle_staff_status') {
@@ -2886,12 +2933,57 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $items = array_values(getStaffAccountsRepo());
         foreach ($items as &$it) {
             if ((int)($it['id'] ?? 0) === $sId) {
-                $it['status'] = ($it['status'] ?? 'active') === 'active' ? 'suspended' : 'active';
+                if (isOwnerUser($it['email'] ?? '', $it['username'] ?? '') || (int)$sId === 1) {
+                    header('Location: index.php?section=staff_accounts&error=' . urlencode('The Owner / Super Admin account cannot be suspended.'));
+                    exit;
+                }
+                $newStatus = ($it['status'] ?? 'active') === 'active' ? 'suspended' : 'active';
+                $it['status'] = $newStatus;
+
+                // Sync status to MySQL
+                $pdo = getDBConnection();
+                if ($pdo) {
+                    try {
+                        $sStmt = $pdo->prepare("UPDATE `admin_users` SET `status` = ? WHERE LOWER(email) = ? OR LOWER(username) = ?");
+                        $sStmt->execute([$newStatus, strtolower($it['email'] ?? ''), strtolower($it['username'] ?? '')]);
+                    } catch (Exception $e) {}
+                }
                 break;
             }
         }
         saveSiteSettings(['staff_accounts' => $items]);
         header('Location: index.php?section=staff_accounts&saved=1');
+        exit;
+    } else if ($action === 'send_staff_reset_otp') {
+        $sId = (int)($_POST['id'] ?? 0);
+        $items = array_values(getStaffAccountsRepo());
+        $targetAccount = null;
+        foreach ($items as $it) {
+            if ((int)($it['id'] ?? 0) === $sId) {
+                $targetAccount = $it;
+                break;
+            }
+        }
+
+        if ($targetAccount) {
+            $altEmail = !empty($targetAccount['alt_email']) ? trim($targetAccount['alt_email']) : trim($targetAccount['email'] ?? '');
+            $code = sprintf("%06d", random_int(100000, 999999));
+            $codeHash = hash('sha256', $code);
+            $expires = date('Y-m-d H:i:s', strtotime('+15 minutes'));
+
+            $pdo = getDBConnection();
+            if ($pdo) {
+                try {
+                    $uStmt = $pdo->prepare("UPDATE `admin_users` SET `reset_otp` = ?, `reset_expires` = ? WHERE LOWER(email) = ? OR LOWER(username) = ?");
+                    $uStmt->execute([$codeHash, $expires, strtolower($targetAccount['email'] ?? ''), strtolower($targetAccount['username'] ?? '')]);
+                } catch (Exception $e) {}
+            }
+
+            sendStaffPasswordResetOtpEmail($altEmail, $code, $targetAccount['full_name'] ?? 'Staff Member', $targetAccount['username'] ?? '', $targetAccount['email'] ?? '');
+            header('Location: index.php?section=staff_accounts&otp_sent=1&alt_email=' . urlencode($altEmail));
+            exit;
+        }
+        header('Location: index.php?section=staff_accounts&error=' . urlencode('Staff account not found.'));
         exit;
     } else if ($action === 'sync_team_and_staff') {
         $result = syncTeamAndStaffAccounts();
@@ -10454,6 +10546,12 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                     </div>
                 <?php endif; ?>
 
+                <?php if (isset($_GET['otp_sent'])): ?>
+                    <div style="background: #eff6ff; border: 1px solid #bfdbfe; color: #1e40af; padding: 12px 18px; border-radius: 10px; font-weight: 700; font-size: 0.9rem; margin-bottom: 24px; display: flex; align-items: center; gap: 10px;">
+                        <i class="fa-solid fa-paper-plane" style="color: #3b82f6;"></i> Security reset OTP has been dispatched to the designated recovery email (<strong><?php echo htmlspecialchars($_GET['alt_email'] ?? 'Recovery Address'); ?></strong>).
+                    </div>
+                <?php endif; ?>
+
                 <?php if (isset($_GET['saved'])): ?>
                     <div style="background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; padding: 14px 20px; border-radius: 12px; font-weight: 700; font-size: 0.9rem; margin-bottom: 24px; display: flex; flex-direction: column; gap: 6px;">
                         <div style="display: flex; align-items: center; gap: 10px;">
@@ -10534,8 +10632,9 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                 </div>
 
                                 <div class="form-field">
-                                    <label class="form-label-title"><i class="fa-solid fa-envelope-open-text" style="color: #2563eb;"></i> Alternative Email Address <span style="font-size: 0.74rem; font-weight: 600; color: #2563eb;">(Receives 6-digit Activation Code)</span></label>
-                                    <input type="email" name="alt_email" class="form-text-input" value="<?php echo htmlspecialchars($editingStaff['alt_email'] ?? ''); ?>" placeholder="e.g. diane.personal@gmail.com" autocomplete="off">
+                                    <label class="form-label-title"><i class="fa-solid fa-envelope-open-text" style="color: #2563eb;"></i> Alternative Email Address <span style="font-size: 0.74rem; font-weight: 600; color: #2563eb;">(Strictly for OTP &amp; Password/Username Resets)</span></label>
+                                    <input type="email" name="alt_email" class="form-text-input" value="<?php echo htmlspecialchars($editingStaff['alt_email'] ?? ''); ?>" placeholder="e.g. staff.personal@gmail.com" autocomplete="off">
+                                    <span class="form-label-help" style="font-size: 0.74rem; color: #64748b; margin-top: 3px; display: block;">External mail domain (e.g. Gmail, Yahoo, iCloud) designated strictly for security OTP verifications.</span>
                                 </div>
 
                                 <div class="form-field">
@@ -10547,14 +10646,14 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                     <label class="form-label-title">Assign Access Role <span style="font-size: 0.74rem; font-weight: 600; color: #64748b;">(System Permissions)</span></label>
                                     <select name="role" class="form-text-input">
                                         <?php 
-                                            $roles = ['Super Admin', 'Content Editor', 'Production Manager', 'HR Manager', 'Staff'];
+                                            $roles = ['Owner / Super Admin', 'Super Admin', 'Content Editor', 'Production Manager', 'HR Manager', 'Staff'];
                                             $currentRole = $editingStaff['role'] ?? 'Staff';
                                             foreach ($roles as $r):
                                         ?>
                                             <option value="<?php echo $r; ?>" <?php echo ($currentRole === $r) ? 'selected' : ''; ?>><?php echo $r; ?></option>
                                         <?php endforeach; ?>
                                     </select>
-                                    <span class="form-label-help" style="font-size: 0.74rem; color: #64748b; margin-top: 3px; display: block;">Controls system access level (e.g. Super Admin, HR Manager, Staff).</span>
+                                    <span class="form-label-help" style="font-size: 0.74rem; color: #64748b; margin-top: 3px; display: block;">Controls system access level (Owner / Super Admin has absolute primacy).</span>
                                 </div>
 
                                 <div class="form-field">
@@ -10701,6 +10800,13 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                                 <i class="fa-solid fa-briefcase" style="font-size: 0.74rem;"></i>
                                                 <span><?php echo htmlspecialchars($stItem['designation'] ?? ($stItem['role'] ?? 'Creative Specialist')); ?></span>
                                             </div>
+                                            <?php if (isOwnerUser($stItem['email'] ?? '', $stItem['username'] ?? '') || (int)($stItem['id'] ?? 0) === 1): ?>
+                                                <div style="margin-top: 4px;">
+                                                    <span style="background: linear-gradient(135deg, #fef08a, #fde047); color: #854d0e; font-size: 0.7rem; font-weight: 800; padding: 2px 8px; border-radius: 6px; border: 1px solid #facc15; display: inline-flex; align-items: center; gap: 4px;">
+                                                        <i class="fa-solid fa-crown"></i> OWNER / SUPER ADMIN
+                                                    </span>
+                                                </div>
+                                            <?php endif; ?>
                                         </div>
                                     </div>
 
@@ -10712,7 +10818,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                     <?php if (!empty($stItem['alt_email'])): ?>
                                         <div style="font-size: 0.78rem; color: #2563eb; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
                                             <i class="fa-solid fa-envelope-open-text"></i>
-                                            <span>Alt: <strong style="word-break: break-all;"><?php echo htmlspecialchars($stItem['alt_email']); ?></strong></span>
+                                            <span>Recovery (OTP): <strong style="word-break: break-all;"><?php echo htmlspecialchars($stItem['alt_email']); ?></strong></span>
                                         </div>
                                     <?php endif; ?>
 
@@ -10724,7 +10830,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                     <?php endif; ?>
                                 </div>
 
-                                <div style="display: flex; align-items: center; justify-content: space-between; border-top: 1px solid #f1f5f9; padding-top: 14px; margin-top: 14px;">
+                                <div style="display: flex; align-items: center; justify-content: space-between; border-top: 1px solid #f1f5f9; padding-top: 14px; margin-top: 14px; gap: 8px;">
                                     <?php 
                                      $stUser = strtolower($stItem['username'] ?? '');
                                      $stEmail = strtolower($stItem['email'] ?? '');
@@ -10733,6 +10839,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
 
                                      $isSelfAccount = (!empty($stUser) && !empty($curUser) && $stUser === $curUser) || 
                                                        (!empty($stEmail) && !empty($curEmail) && $stEmail === $curEmail);
+                                     $isOwnerAccount = isOwnerUser($stEmail, $stUser) || (int)($stItem['id'] ?? 0) === 1;
 
                                      $editUrl = 'index.php?section=staff_accounts&edit_id=' . $stItem['id'];
                                      ?>
@@ -10740,13 +10847,29 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                          <i class="fa-solid fa-user-pen" style="font-size: 0.75rem; color: #dc2626;"></i> <?php echo $isSelfAccount ? 'Edit My Account' : 'Edit Member'; ?>
                                      </a>
 
-                                    <form action="index.php?section=staff_accounts" method="POST" onsubmit="return promptConfirmModal(this, 'Remove Staff Account', 'Are you sure you want to remove <?php echo htmlspecialchars(addslashes($stItem['full_name'])); ?> from staff accounts?');" style="margin: 0;">
-                                        <input type="hidden" name="action" value="delete_staff_account">
-                                        <input type="hidden" name="id" value="<?php echo $stItem['id']; ?>">
-                                        <button type="submit" style="background: none; border: none; color: #94a3b8; font-size: 0.82rem; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; padding: 4px 8px;" onmouseover="this.style.color='#dc2626'" onmouseout="this.style.color='#94a3b8'">
-                                            <i class="fa-solid fa-trash-can" style="font-size: 0.75rem;"></i> Remove
-                                        </button>
-                                    </form>
+                                    <?php if ($isOwnerAccount): ?>
+                                        <span style="display: inline-flex; align-items: center; gap: 4px; font-size: 0.74rem; color: #854d0e; font-weight: 700; background: #fef9c3; padding: 4px 10px; border-radius: 6px; border: 1px solid #fde047;">
+                                            <i class="fa-solid fa-shield-halved"></i> Immutable Owner
+                                        </span>
+                                    <?php else: ?>
+                                        <div style="display: flex; align-items: center; gap: 6px;">
+                                            <form action="index.php?section=staff_accounts" method="POST" style="margin: 0;">
+                                                <input type="hidden" name="action" value="send_staff_reset_otp">
+                                                <input type="hidden" name="id" value="<?php echo $stItem['id']; ?>">
+                                                <button type="submit" style="background: none; border: 1px solid #e2e8f0; color: #2563eb; font-size: 0.76rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; padding: 4px 8px; border-radius: 6px;" title="Send password & username reset OTP to alternative recovery email">
+                                                    <i class="fa-solid fa-key" style="font-size: 0.7rem;"></i> Send OTP
+                                                </button>
+                                            </form>
+
+                                            <form action="index.php?section=staff_accounts" method="POST" onsubmit="return promptConfirmModal(this, 'Remove Staff Account', 'Are you sure you want to remove <?php echo htmlspecialchars(addslashes($stItem['full_name'])); ?> from staff accounts?');" style="margin: 0;">
+                                                <input type="hidden" name="action" value="delete_staff_account">
+                                                <input type="hidden" name="id" value="<?php echo $stItem['id']; ?>">
+                                                <button type="submit" style="background: none; border: none; color: #94a3b8; font-size: 0.82rem; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; padding: 4px 6px;" onmouseover="this.style.color='#dc2626'" onmouseout="this.style.color='#94a3b8'">
+                                                    <i class="fa-solid fa-trash-can" style="font-size: 0.75rem;"></i> Remove
+                                                </button>
+                                            </form>
+                                        </div>
+                                    <?php endif; ?>
                                 </div>
                             </div>
                         <?php endforeach; ?>

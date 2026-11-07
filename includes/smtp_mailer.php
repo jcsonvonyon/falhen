@@ -463,6 +463,73 @@ function sendStaffActivationEmail($toEmail, $code, $recipientName = '', $staffEm
 }
 
 /**
+ * Send 6-digit Staff Password / Username Reset OTP Email via SMTP / Resend
+ * Sent to the registered alternative email domain (alt_email) provided strictly for OTP verification.
+ */
+function sendStaffPasswordResetOtpEmail($toAltEmail, $code, $recipientName = '', $staffUsername = '', $staffEmail = '') {
+    if (empty($toAltEmail)) return false;
+
+    $mailer = new FalhenSMTPMailer();
+    $subject = "Falhen Staff Security — Password & Username Reset Code (OTP)";
+
+    $accountSection = '';
+    if (!empty($staffEmail) || !empty($staffUsername)) {
+        $accountSection = '
+        <div style="background-color: #0d121d; border: 1px solid #1e293b; border-radius: 12px; padding: 14px 18px; margin: 18px 0; text-align: left;">
+            <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: #ef4444; letter-spacing: 1px; margin-bottom: 6px;">Target Staff Account Credentials</div>
+            ' . (!empty($staffUsername) ? '<div style="font-size: 14px; color: #94a3b8; margin-bottom: 4px;">Staff Username: <strong style="color: #ffffff; font-family: monospace;">' . htmlspecialchars($staffUsername) . '</strong></div>' : '') . '
+            ' . (!empty($staffEmail) ? '<div style="font-size: 14px; color: #94a3b8;">Official Falhen Domain: <strong style="color: #ffffff; font-family: monospace;">' . htmlspecialchars($staffEmail) . '</strong></div>' : '') . '
+        </div>';
+    }
+
+    $html = '
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="UTF-8">
+        <style>
+            body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: #080b11; color: #f8fafc; margin: 0; padding: 40px 20px; }
+            .email-card { max-width: 520px; margin: 0 auto; background-color: #111723; border: 1px solid #1e293b; border-radius: 16px; padding: 36px 32px; text-align: center; }
+            .brand-logo { margin-bottom: 24px; }
+            h2 { color: #ffffff; font-size: 22px; font-weight: 700; margin-top: 0; margin-bottom: 12px; }
+            p { color: #94a3b8; font-size: 15px; line-height: 1.6; margin: 0 0 16px 0; }
+            .code-box { display: inline-block; background-color: #0d121d; border: 2px solid #ef4444; color: #ffffff; font-size: 34px; font-weight: 700; letter-spacing: 8px; padding: 18px 32px; border-radius: 14px; margin: 20px 0; box-shadow: 0 4px 20px rgba(239, 68, 68, 0.25); }
+            .notice-box { background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 10px; padding: 12px; font-size: 13px; color: #fca5a5; margin-top: 20px; text-align: left; }
+            .footer { font-size: 12px; color: #64748b; margin-top: 32px; border-top: 1px solid #1e293b; padding-top: 16px; }
+        </style>
+    </head>
+    <body>
+        <div class="email-card">
+            <div class="brand-logo">
+                <img src="https://falhen.com/assets/img/icons/logo.png" alt="Falhen Media" style="height: 36px;">
+            </div>
+            <h2>Password &amp; Username Reset OTP</h2>
+            <p>Hello ' . htmlspecialchars($recipientName ?: 'Staff Member') . ',</p>
+            <p>A request was received to reset the username and password for your Falhen Staff Portal account. This one-time password has been dispatched to your designated recovery email address:</p>
+            ' . $accountSection . '
+            <div class="code-box">' . htmlspecialchars($code) . '</div>
+            <p style="font-size: 14px; color: #94a3b8; margin-top: 10px;">
+                Enter this 6-digit code on the reset page to authorize and update your username and password. This code expires in <strong>15 minutes</strong>.
+            </p>
+            <div class="notice-box">
+                <strong>Important Security Notice:</strong> This alternative email address is designated strictly for security OTP verifications. If you did not initiate this request, your account credentials remain unchanged. Notify the system administrator immediately.
+            </div>
+            <div class="footer">
+                &copy; ' . date('Y') . ' Falhen Media Ltd. All rights reserved.
+            </div>
+        </div>
+    </body>
+    </html>';
+
+    try {
+        return $mailer->sendMail($toAltEmail, $subject, $html, $recipientName);
+    } catch (Exception $e) {
+        error_log("Failed to send Staff Password Reset OTP SMTP/Resend email: " . $e->getMessage());
+        return false;
+    }
+}
+
+/**
  * Dispatch Salary Payout Notification Email to Employee
  */
 function sendSalaryPayoutNotificationEmail($toEmail, $recipientName, $payPeriod, $netPay, $txRef = '') {

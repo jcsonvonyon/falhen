@@ -76,6 +76,70 @@ function initDatabaseSchema($pdo) {
     if ($initialized) return;
 
     try {
+        // 1. Ensure admin_users table exists with complete schema
+        $pdo->exec("CREATE TABLE IF NOT EXISTS `admin_users` (
+            `id` INT AUTO_INCREMENT PRIMARY KEY,
+            `username` VARCHAR(100) NOT NULL UNIQUE,
+            `email` VARCHAR(150) NOT NULL UNIQUE,
+            `alt_email` VARCHAR(150) DEFAULT NULL,
+            `password_hash` VARCHAR(255) NOT NULL,
+            `full_name` VARCHAR(150) NOT NULL DEFAULT 'Staff Member',
+            `role` VARCHAR(50) DEFAULT 'Staff',
+            `is_owner` TINYINT(1) DEFAULT 0,
+            `status` ENUM('active', 'pending_activation', 'suspended') DEFAULT 'active',
+            `reset_otp` VARCHAR(64) DEFAULT NULL,
+            `reset_token` VARCHAR(255) DEFAULT NULL,
+            `reset_expires` DATETIME DEFAULT NULL,
+            `remember_token` VARCHAR(255) DEFAULT NULL,
+            `last_login_at` DATETIME DEFAULT NULL,
+            `last_login_ip` VARCHAR(45) DEFAULT NULL,
+            `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+            INDEX `idx_admin_users_email_status` (`email`, `status`),
+            INDEX `idx_admin_users_username_status` (`username`, `status`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+
+        // 2. Perform non-destructive migrations for existing installations
+        $columns = [];
+        try {
+            $colStmt = $pdo->query("SHOW COLUMNS FROM `admin_users`");
+            $columns = $colStmt ? $colStmt->fetchAll(PDO::FETCH_COLUMN) : [];
+        } catch (Exception $e) {}
+
+        if (!in_array('alt_email', $columns)) {
+            @$pdo->exec("ALTER TABLE `admin_users` ADD COLUMN `alt_email` VARCHAR(150) DEFAULT NULL AFTER `email`");
+        }
+        if (!in_array('full_name', $columns)) {
+            @$pdo->exec("ALTER TABLE `admin_users` ADD COLUMN `full_name` VARCHAR(150) NOT NULL DEFAULT 'Staff Member' AFTER `password_hash`");
+        }
+        if (!in_array('is_owner', $columns)) {
+            @$pdo->exec("ALTER TABLE `admin_users` ADD COLUMN `is_owner` TINYINT(1) DEFAULT 0 AFTER `role`");
+        }
+        if (!in_array('status', $columns)) {
+            @$pdo->exec("ALTER TABLE `admin_users` ADD COLUMN `status` ENUM('active', 'pending_activation', 'suspended') DEFAULT 'active' AFTER `is_owner`");
+        }
+        if (!in_array('reset_otp', $columns)) {
+            @$pdo->exec("ALTER TABLE `admin_users` ADD COLUMN `reset_otp` VARCHAR(64) DEFAULT NULL AFTER `status`");
+        }
+        if (!in_array('last_login_at', $columns)) {
+            @$pdo->exec("ALTER TABLE `admin_users` ADD COLUMN `last_login_at` DATETIME DEFAULT NULL AFTER `remember_token`");
+        }
+        if (!in_array('last_login_ip', $columns)) {
+            @$pdo->exec("ALTER TABLE `admin_users` ADD COLUMN `last_login_ip` VARCHAR(45) DEFAULT NULL AFTER `last_login_at`");
+        }
+
+        // 3. Ensure Henry Falonipe exists as Owner / Super Admin
+        $checkStmt = $pdo->prepare("SELECT id FROM `admin_users` WHERE LOWER(email) = 'henry.falonipe@falhen.com' OR username = 'henry.falonipe' LIMIT 1");
+        $checkStmt->execute();
+        if (!$checkStmt->fetch()) {
+            $defaultHash = password_hash('Password123#', PASSWORD_DEFAULT);
+            $insStmt = $pdo->prepare("INSERT INTO `admin_users` (`username`, `email`, `alt_email`, `password_hash`, `role`, `full_name`, `is_owner`, `status`)
+                VALUES ('henry.falonipe', 'henry.falonipe@falhen.com', 'henry@falhen.com', ?, 'Owner / Super Admin', 'Henry Falonipe', 1, 'active')");
+            $insStmt->execute([$defaultHash]);
+        } else {
+            @$pdo->exec("UPDATE `admin_users` SET `role` = 'Owner / Super Admin', `is_owner` = 1, `status` = 'active', `alt_email` = 'henry@falhen.com' WHERE LOWER(email) = 'henry.falonipe@falhen.com' OR username = 'henry.falonipe'");
+        }
+
+        // 4. Run additional project DDL if present
         $schemaFile = __DIR__ . '/schema.sql';
         if (file_exists($schemaFile)) {
             $sql = file_get_contents($schemaFile);
@@ -83,6 +147,7 @@ function initDatabaseSchema($pdo) {
                 $pdo->exec($sql);
             }
         }
+
         $initialized = true;
     } catch (Exception $e) {
         error_log("Schema Init Warning: " . $e->getMessage());

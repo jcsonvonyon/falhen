@@ -52,18 +52,27 @@ CREATE TABLE IF NOT EXISTS `testimonials` (
     `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- 5. Table for Admin Users
+-- 5. Table for Admin Users & Staff Authentication
 CREATE TABLE IF NOT EXISTS `admin_users` (
     `id` INT AUTO_INCREMENT PRIMARY KEY,
     `username` VARCHAR(100) NOT NULL UNIQUE,
     `email` VARCHAR(150) NOT NULL UNIQUE,
+    `alt_email` VARCHAR(150) DEFAULT NULL,
     `password_hash` VARCHAR(255) NOT NULL,
-    `remember_token` VARCHAR(255) DEFAULT NULL,
+    `full_name` VARCHAR(150) NOT NULL DEFAULT 'Staff Member',
+    `role` VARCHAR(50) DEFAULT 'Staff',
+    `is_owner` TINYINT(1) DEFAULT 0,
+    `status` ENUM('active', 'pending_activation', 'suspended') DEFAULT 'active',
+    `reset_otp` VARCHAR(64) DEFAULT NULL,
     `reset_token` VARCHAR(255) DEFAULT NULL,
     `reset_expires` DATETIME DEFAULT NULL,
-    `role` VARCHAR(50) DEFAULT 'Staff',
-    `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    `remember_token` VARCHAR(255) DEFAULT NULL,
+    `last_login_at` DATETIME DEFAULT NULL,
+    `last_login_ip` VARCHAR(45) DEFAULT NULL,
+    `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+    INDEX `idx_admin_users_email_status` (`email`, `status`),
+    INDEX `idx_admin_users_username_status` (`username`, `status`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Pre-populate Initial Services
 INSERT INTO `services` (`slug`, `title`, `subtitle`, `description`, `icon`, `image_url`, `featured`) VALUES
@@ -89,7 +98,9 @@ INSERT INTO `testimonials` (`client_name`, `company_role`, `avatar_url`, `conten
 ('Claire Dupont', 'Event Lead, Vantage Summit', 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=200&auto=format&fit=crop', 'Their live streaming crew executed a flawless multi-camera broadcast for our global conference. Reliable, calm under pressure, and ultra-professional.', 5),
 ('Marcus & Evelyn', 'Destination Wedding Couple', 'https://images.unsplash.com/photo-1517841905240-472988babdf9?q=80&w=200&auto=format&fit=crop', 'Our wedding video feels like a Hollywood motion picture! Every detail, emotion, and song match was perfection.', 5);
 
--- Insert Default Admin & Staff User (Username: admin, Password: Password123#)
-INSERT INTO `admin_users` (`username`, `email`, `password_hash`, `role`) VALUES
-('admin', 'kim@falhen.com', '$2y$10$w8T.N0V3F0r.rC3TqN197.W84d7O8w4Q8gU4E9hR2F1H0Z3F4X5Y6', 'Administrator'),
-('staff', 'mail@falhenmedia.com', '$2y$10$w8T.N0V3F0r.rC3TqN197.W84d7O8w4Q8gU4E9hR2F1H0Z3F4X5Y6', 'Staff');
+-- Insert Default Owner / Super Admin and Staff Accounts
+INSERT INTO `admin_users` (`username`, `email`, `alt_email`, `password_hash`, `role`, `full_name`, `is_owner`, `status`) VALUES
+('henry.falonipe', 'henry.falonipe@falhen.com', 'henry@falhen.com', '$2y$10$w8T.N0V3F0r.rC3TqN197.W84d7O8w4Q8gU4E9hR2F1H0Z3F4X5Y6', 'Owner / Super Admin', 'Henry Falonipe', 1, 'active'),
+('admin', 'admin@falhen.com', 'henry@falhen.com', '$2y$10$w8T.N0V3F0r.rC3TqN197.W84d7O8w4Q8gU4E9hR2F1H0Z3F4X5Y6', 'Owner / Super Admin', 'Henry Falonipe', 1, 'active'),
+('staff', 'mail@falhenmedia.com', 'team@falhen.com', '$2y$10$w8T.N0V3F0r.rC3TqN197.W84d7O8w4Q8gU4E9hR2F1H0Z3F4X5Y6', 'Staff', 'Production Specialist', 0, 'active')
+ON DUPLICATE KEY UPDATE `role` = VALUES(`role`), `is_owner` = VALUES(`is_owner`), `status` = VALUES(`status`), `alt_email` = VALUES(`alt_email`);
