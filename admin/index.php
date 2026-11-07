@@ -8807,12 +8807,14 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                         }
 
                         btn.disabled = true;
-                        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Fetching...';
+                        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Fetching All Photos...';
 
                         try {
+                            const slug = document.getElementById('cg_slug_input').value.trim() || 'gallery';
                             const fd = new FormData();
                             fd.append('action', 'preview_gdrive');
                             fd.append('gdrive_url', gdriveUrl);
+                            fd.append('slug', slug);
 
                             const resp = await fetch('/api/admin-client-gallery.php', { method: 'POST', body: fd });
                             const data = await resp.json();
@@ -8822,7 +8824,13 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                 document.getElementById('gallery_photos_json').value = JSON.stringify(currentPhotosList);
                                 document.getElementById('photo_count_label').textContent = currentPhotosList.length;
                                 renderPhotosGrid(currentPhotosList);
-                                alert(`Successfully fetched ${data.total} photos from Google Drive! Click "Sync All to Cloudinary CDN" to synchronize them.`);
+
+                                let infoMsg = `Successfully fetched all ${data.total} photos from Google Drive without limits!`;
+                                if (data.already_uploaded > 0) {
+                                    infoMsg += `\n• ${data.already_uploaded} existing images detected in Cloudinary (will skip duplicates).`;
+                                    infoMsg += `\n• ${data.pending_upload} new images ready to upload.`;
+                                }
+                                alert(infoMsg);
                             } else {
                                 alert(data.message || 'Could not fetch photos from this folder.');
                             }
@@ -8852,6 +8860,8 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
 
                         const chunkSize = 4;
                         let syncedCount = 0;
+                        let duplicateCount = 0;
+                        let freshUploadCount = 0;
                         const total = currentPhotosList.length;
                         const updatedPhotos = [];
 
@@ -8872,6 +8882,11 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                 if (res.success && res.results) {
                                     res.results.forEach(r => {
                                         updatedPhotos.push(r.synced_url || r.original_url);
+                                        if (r.duplicate || r.cached) {
+                                            duplicateCount++;
+                                        } else {
+                                            freshUploadCount++;
+                                        }
                                     });
                                 } else {
                                     chunk.forEach(u => updatedPhotos.push(u));
@@ -8889,7 +8904,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                         currentPhotosList = updatedPhotos;
                         document.getElementById('gallery_photos_json').value = JSON.stringify(currentPhotosList);
                         renderPhotosGrid(currentPhotosList);
-                        statusLabel.textContent = `All ${total} photos synchronized to Cloudinary CDN!`;
+                        statusLabel.textContent = `All ${total} photos processed! (${duplicateCount} existing duplicates preserved, ${freshUploadCount} fresh uploads).`;
                         btn.disabled = false;
                         btn.innerHTML = '<i class="fa-solid fa-circle-check"></i> Cloudinary Sync Complete';
                     }

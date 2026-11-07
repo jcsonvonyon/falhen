@@ -29,15 +29,18 @@ $action = trim($_POST['action'] ?? $_GET['action'] ?? '');
 
 switch ($action) {
 
-    // 1. Preview Google Drive Folder using existing Google API process
+    // 1. Preview Google Drive Folder without limits & detect existing uploads to prevent duplicates
     case 'preview_gdrive':
         $gdriveUrl = trim($_POST['gdrive_url'] ?? '');
+        $slug = trim($_POST['slug'] ?? 'general');
+
         if (empty($gdriveUrl)) {
             echo json_encode(['success' => false, 'message' => 'Please provide a valid Google Drive folder URL.']);
             exit;
         }
 
-        $photos = getGoogleDriveFolderPhotos($gdriveUrl, 100);
+        // Fetch ALL photos without arbitrary limits (0 = unlimited)
+        $photos = getGoogleDriveFolderPhotos($gdriveUrl, 0);
         if (empty($photos)) {
             echo json_encode([
                 'success' => false,
@@ -46,22 +49,36 @@ switch ($action) {
             exit;
         }
 
-        // Limit preview and synchronization batch to max 100 photos
-        $photos = array_slice($photos, 0, 100);
+        // Read existing uploaded images for this folder/slug to detect duplicates
+        $existingMap = getFolderUploadedMap($slug);
+        $alreadyUploadedCount = 0;
+        $pendingUploadCount = 0;
+
+        foreach ($photos as $pUrl) {
+            $gId = extractGoogleDriveFileId($pUrl);
+            $hKey = md5($pUrl);
+            if (($gId && isset($existingMap['by_gdrive_id'][$gId])) || isset($existingMap['by_hash'][$hKey])) {
+                $alreadyUploadedCount++;
+            } else {
+                $pendingUploadCount++;
+            }
+        }
 
         echo json_encode([
-            'success'    => true,
-            'total'      => count($photos),
-            'photos'     => array_values($photos),
-            'thumbnails' => array_map(function($url) {
+            'success'          => true,
+            'total'            => count($photos),
+            'already_uploaded' => $alreadyUploadedCount,
+            'pending_upload'   => $pendingUploadCount,
+            'photos'           => array_values($photos),
+            'thumbnails'       => array_map(function($url) {
                 return (strpos($url, 'lh3.googleusercontent.com') !== false)
                     ? preg_replace('/=w\d+$/', '=w400', $url)
                     : $url;
-            }, array_slice($photos, 0, 12))
+            }, array_slice($photos, 0, 24))
         ]);
         exit;
 
-    // 2. Chunked Sync of photo batches to Cloudinary (avoids 30s cPanel timeout)
+    // 2. Chunked Sync of photo batches to Cloudinary (avoids 30s cPanel timeout & skips duplicates)
     case 'sync_chunk':
         $slug = trim($_POST['slug'] ?? 'general');
         $photos = $_POST['photos'] ?? [];
@@ -87,6 +104,7 @@ switch ($action) {
                     'synced_url'   => $syncRes['url'],
                     'public_id'    => $syncRes['public_id'] ?? '',
                     'cached'       => !empty($syncRes['cached']),
+                    'duplicate'    => !empty($syncRes['duplicate']),
                     'index'        => $currentIndex
                 ];
             } else {

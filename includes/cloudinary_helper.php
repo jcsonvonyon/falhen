@@ -228,7 +228,58 @@ function buildClientGalleryPhotoItems(array $rawPhotos, $albumId = 0)
 }
 
 /**
- * Synchronize a single photo asset to Cloudinary using an SEO-friendly public_id
+ * Extract Google Drive file ID from an image share or preview URL
+ */
+function extractGoogleDriveFileId($urlOrFile)
+{
+    if (empty($urlOrFile) || !is_string($urlOrFile)) return null;
+    if (preg_match('#(?:lh3\.googleusercontent\.com/d/|drive\.google\.com/(?:file/d/|open\?id=)|id=)([a-zA-Z0-9_-]{20,55})#i', $urlOrFile, $m)) {
+        return $m[1];
+    }
+    return null;
+}
+
+/**
+ * Read already-uploaded images for a specific album slug to prevent duplicate uploads
+ */
+function getFolderUploadedMap($slug = '')
+{
+    $cleanSlug = preg_replace('/[^a-z0-9_-]/i', '-', strtolower(trim((string) $slug)));
+    $mapFile = __DIR__ . '/../config/cloudinary_sync_map.json';
+    $syncMap = file_exists($mapFile) ? @json_decode(file_get_contents($mapFile), true) : [];
+    if (!is_array($syncMap)) {
+        $syncMap = [];
+    }
+
+    $existing = [
+        'by_gdrive_id' => [],
+        'by_hash'      => [],
+        'by_public_id' => []
+    ];
+
+    if (!empty($syncMap['by_gdrive_id']) && is_array($syncMap['by_gdrive_id'])) {
+        $existing['by_gdrive_id'] = $syncMap['by_gdrive_id'];
+    }
+
+    foreach ($syncMap as $k => $entry) {
+        if ($k === 'by_gdrive_id') continue;
+        if (is_array($entry)) {
+            $existing['by_hash'][$k] = $entry;
+            if (!empty($entry['gdrive_id'])) {
+                $existing['by_gdrive_id'][$entry['gdrive_id']] = $entry;
+            }
+            if (!empty($entry['public_id'])) {
+                $existing['by_public_id'][$entry['public_id']] = $entry;
+            }
+        }
+    }
+
+    return $existing;
+}
+
+/**
+ * Synchronize a single photo asset to Cloudinary using an SEO-friendly public_id.
+ * Checks existing folder uploads to prevent duplicate uploads.
  */
 function syncSinglePhotoToCloudinary($photoUrlOrFile, $slug = 'general', $index = 1)
 {
@@ -243,37 +294,76 @@ function syncSinglePhotoToCloudinary($photoUrlOrFile, $slug = 'general', $index 
         $syncMap = [];
     }
 
+    $gdriveId = extractGoogleDriveFileId($photoUrlOrFile);
     $hashKey = md5((string) $photoUrlOrFile);
-    if (!empty($syncMap[$hashKey]['cloudinary_url'])) {
+
+    // 1. Check if this exact Google Drive file ID was already uploaded to Cloudinary
+    if (!empty($gdriveId) && !empty($syncMap['by_gdrive_id'][$gdriveId])) {
+        $hit = $syncMap['by_gdrive_id'][$gdriveId];
         return [
-            'success' => true,
-            'url' => $syncMap[$hashKey]['cloudinary_url'],
-            'public_id' => $syncMap[$hashKey]['public_id'] ?? $publicId,
-            'cached' => true
+            'success'   => true,
+            'url'       => $hit['cloudinary_url'],
+            'public_id' => $hit['public_id'] ?? $publicId,
+            'cached'    => true,
+            'duplicate' => true
         ];
     }
 
-    // If it's a Google Drive link, ensure high-resolution stream (2560px authentic photo master)
+    // 2. Check if source URL hash is already mapped
+    if (!empty($syncMap[$hashKey]['cloudinary_url'])) {
+        return [
+            'success'   => true,
+            'url'       => $syncMap[$hashKey]['cloudinary_url'],
+            'public_id' => $syncMap[$hashKey]['public_id'] ?? $publicId,
+            'cached'    => true,
+            'duplicate' => true
+        ];
+    }
+
+    // 3. Check if target source stream (with =w2560) is already mapped
     $targetSource = $photoUrlOrFile;
     if (strpos((string) $photoUrlOrFile, 'lh3.googleusercontent.com/d/') !== false) {
         $targetSource = preg_replace('/=w\d+$/', '=w2560', (string) $photoUrlOrFile);
     }
+    $targetHash = md5((string)$targetSource);
+    if (!empty($syncMap[$targetHash]['cloudinary_url'])) {
+        return [
+            'success'   => true,
+            'url'       => $syncMap[$targetHash]['cloudinary_url'],
+            'public_id' => $syncMap[$targetHash]['public_id'] ?? $publicId,
+            'cached'    => true,
+            'duplicate' => true
+        ];
+    }
 
+    // 4. Upload fresh new asset with 2.5K high quality photographic re-render & EXIF preservation
     $res = uploadToCloudinary($targetSource, $folder, $publicId);
     if (!empty($res['success']) && !empty($res['url'])) {
-        $syncMap[$hashKey] = [
-            'source_url' => $photoUrlOrFile,
+        $record = [
+            'source_url'     => $photoUrlOrFile,
+            'gdrive_id'      => $gdriveId,
             'cloudinary_url' => $res['url'],
-            'public_id' => $res['public_id'] ?? $publicId,
-            'slug' => $cleanSlug,
-            'synced_at' => date('c')
+            'public_id'      => $res['public_id'] ?? $publicId,
+            'slug'           => $cleanSlug,
+            'synced_at'      => date('c')
         ];
+
+        $syncMap[$hashKey] = $record;
+        $syncMap[$targetHash] = $record;
+        if (!empty($gdriveId)) {
+            if (!isset($syncMap['by_gdrive_id']) || !is_array($syncMap['by_gdrive_id'])) {
+                $syncMap['by_gdrive_id'] = [];
+            }
+            $syncMap['by_gdrive_id'][$gdriveId] = $record;
+        }
+
         @file_put_contents($mapFile, json_encode($syncMap, JSON_PRETTY_PRINT));
         return [
-            'success' => true,
-            'url' => $res['url'],
+            'success'   => true,
+            'url'       => $res['url'],
             'public_id' => $res['public_id'] ?? $publicId,
-            'cached' => false
+            'cached'    => false,
+            'duplicate' => false
         ];
     }
 
@@ -281,15 +371,17 @@ function syncSinglePhotoToCloudinary($photoUrlOrFile, $slug = 'general', $index 
 }
 
 /**
- * Synchronize a full Google Drive folder to Cloudinary with SEO paths (up to 100 photos)
+ * Synchronize all photos in a Google Drive folder to Cloudinary with SEO paths.
+ * Does not limit pictures so client receives full gallery for personal downloads.
+ * Detects existing uploaded images to avoid duplicates.
  */
-function syncGoogleDriveFolderToCloudinary($gdriveUrl, $slug = 'general', $limit = 100)
+function syncGoogleDriveFolderToCloudinary($gdriveUrl, $slug = 'general', $limit = 0)
 {
     if (!function_exists('getGoogleDriveFolderPhotos')) {
         require_once __DIR__ . '/../config/gdrive.php';
     }
 
-    $rawPhotos = getGoogleDriveFolderPhotos($gdriveUrl);
+    $rawPhotos = getGoogleDriveFolderPhotos($gdriveUrl, $limit);
     if (empty($rawPhotos)) {
         return [
             'success' => false,
@@ -298,22 +390,31 @@ function syncGoogleDriveFolderToCloudinary($gdriveUrl, $slug = 'general', $limit
     }
 
     $synced = [];
-    $photosSlice = array_slice($rawPhotos, 0, $limit);
+    $photosSlice = ($limit > 0) ? array_slice($rawPhotos, 0, $limit) : $rawPhotos;
+    $existingCount = 0;
+    $uploadedCount = 0;
 
     foreach ($photosSlice as $i => $rawUrl) {
         $res = syncSinglePhotoToCloudinary($rawUrl, $slug, $i + 1);
         if (!empty($res['success']) && !empty($res['url'])) {
             $synced[] = $res['url'];
+            if (!empty($res['cached']) || !empty($res['duplicate'])) {
+                $existingCount++;
+            } else {
+                $uploadedCount++;
+            }
         } else {
             $synced[] = $rawUrl; // fallback to original
         }
     }
 
     return [
-        'success' => true,
-        'total_found' => count($rawPhotos),
-        'synced_count' => count($synced),
-        'photos' => $synced
+        'success'        => true,
+        'total_found'    => count($rawPhotos),
+        'synced_count'   => count($synced),
+        'existing_count' => $existingCount,
+        'uploaded_count' => $uploadedCount,
+        'photos'         => $synced
     ];
 }
 
