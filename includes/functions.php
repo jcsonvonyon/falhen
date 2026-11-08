@@ -1617,6 +1617,15 @@ function getBrandLogosRepo() {
 }
 
 /**
+ * Save Brand Logos Repository
+ * Persists directly to MySQL site_settings and disk cache
+ */
+function saveBrandLogosRepo($items) {
+    if (!is_array($items)) return false;
+    return saveSiteSettings(['brand_logos_items' => array_values($items)]);
+}
+
+/**
  * Get Admin User Profile Settings (With distinct Access Role and Corporate Designation)
  */
 function getAdminUserProfile() {

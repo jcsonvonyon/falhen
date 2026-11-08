@@ -58,6 +58,22 @@ if (isset($_GET['export_backups_csv'])) {
     exit;
 }
 
+if (isset($_GET['download_backup_file'])) {
+    $fn = basename($_GET['download_backup_file']);
+    $file = __DIR__ . '/../config/backups/' . $fn;
+    if (file_exists($file)) {
+        $mime = str_ends_with($fn, '.json') ? 'application/json' : 'text/csv';
+        header('Content-Type: ' . $mime);
+        header('Content-Disposition: attachment; filename="' . $fn . '"');
+        header('Content-Length: ' . filesize($file));
+        readfile($file);
+        exit;
+    } else {
+        header('Location: index.php?section=dev_logs&error=file_not_found');
+        exit;
+    }
+}
+
 $pdo = getDBConnection();
 $savedSuccess = false;
 $savedMessage = '';
@@ -69,6 +85,135 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($currentRole === 'Talent Manager') {
         $currentRole = 'HR Manager';
         $_SESSION['admin_role'] = 'HR Manager';
+    }
+
+    if ($action === 'create_full_backup_bundle') {
+        $backupDir = __DIR__ . '/../config/backups';
+        if (!is_dir($backupDir)) {
+            @mkdir($backupDir, 0755, true);
+        }
+        $ts = date('Ymd_His');
+        $settings = getSiteSettings();
+        
+        // 1. JSON full snapshot
+        $jsonFilename = 'full_backup_' . $ts . '.json';
+        $jsonPath = $backupDir . '/' . $jsonFilename;
+        @file_put_contents($jsonPath, json_encode($settings, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
+        
+        // 2. CSV Downloader Telemetry Snapshot
+        $dlFilename = 'client_downloads_' . $ts . '.csv';
+        $dlPath = $backupDir . '/' . $dlFilename;
+        $dlOut = fopen($dlPath, 'w');
+        fputcsv($dlOut, ['Log ID', 'Client Name', 'Client Email', 'Client Phone', 'Album ID', 'Album Title', 'Download Type', 'IP Address', 'Downloaded At']);
+        $logs = function_exists('getClientDownloadLogs') ? getClientDownloadLogs(2000) : [];
+        foreach ($logs as $row) {
+            fputcsv($dlOut, [
+                $row['id'] ?? '',
+                $row['client_name'] ?? '',
+                $row['client_email'] ?? '',
+                $row['client_phone'] ?? '',
+                $row['album_id'] ?? '',
+                $row['album_title'] ?? '',
+                $row['download_type'] ?? '',
+                $row['ip_address'] ?? '',
+                $row['downloaded_at'] ?? ''
+            ]);
+        }
+        fclose($dlOut);
+
+        // 3. CSV Backups Snapshot
+        $bkFilename = 'system_backups_' . $ts . '.csv';
+        $bkPath = $backupDir . '/' . $bkFilename;
+        $bkOut = fopen($bkPath, 'w');
+        fputcsv($bkOut, ['Backup ID', 'Backup Type', 'Filename', 'File Size (Bytes)', 'Items Count', 'Notes', 'Created By', 'Created At']);
+        $backups = function_exists('getSystemBackups') ? getSystemBackups(500) : [];
+        foreach ($backups as $row) {
+            fputcsv($bkOut, [
+                $row['id'] ?? '',
+                $row['backup_type'] ?? '',
+                $row['filename'] ?? '',
+                $row['file_size'] ?? '',
+                $row['items_count'] ?? '',
+                $row['notes'] ?? '',
+                $row['created_by'] ?? '',
+                $row['created_at'] ?? ''
+            ]);
+        }
+        fclose($bkOut);
+
+        // 4. Log to database
+        $itemsCount = count($settings['portfolio_items'] ?? []);
+        if (function_exists('logSystemBackup')) {
+            logSystemBackup($jsonFilename, 'FULL_BUNDLE', $itemsCount, 'One-Click Full Website & Logs Snapshot (JSON + CSV)');
+        }
+
+        $_SESSION['last_backup_bundle'] = [
+            'json' => $jsonFilename,
+            'dl_csv' => $dlFilename,
+            'bk_csv' => $bkFilename,
+            'time' => date('Y-m-d H:i:s')
+        ];
+
+        header('Location: index.php?section=dev_logs&bundle_created=1');
+        exit;
+    }
+
+    if ($action === 'sync_db_and_disk') {
+        $settings = getSiteSettings();
+        $file = __DIR__ . '/../config/settings.json';
+        @file_put_contents($file, json_encode($settings, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES), LOCK_EX);
+        saveSiteSettings($settings);
+        header('Location: index.php?section=dev_logs&synced=1');
+        exit;
+    }
+
+    if ($action === 'optimize_db_tables') {
+        $pdo = getDBConnection();
+        if ($pdo) {
+            try {
+                $pdo->exec("OPTIMIZE TABLE `site_settings`, `client_download_logs`, `system_backups`");
+            } catch (Exception $e) {}
+        }
+        header('Location: index.php?section=dev_logs&optimized=1');
+        exit;
+    }
+
+    if ($action === 'test_db_diagnostics') {
+        header('Content-Type: application/json');
+        $start = microtime(true);
+        $pdo = getDBConnection();
+        if (!$pdo) {
+            echo json_encode(['success' => false, 'message' => 'Database connection failed.']);
+            exit;
+        }
+        $stmt = $pdo->query("SELECT VERSION() as v, DATABASE() as db");
+        $row = $stmt ? $stmt->fetch(PDO::FETCH_ASSOC) : [];
+        $latency = round((microtime(true) - $start) * 1000, 2);
+        
+        $tableStats = [];
+        try {
+            $tStmt = $pdo->query("SELECT table_name, table_rows, data_length, index_length, update_time FROM information_schema.tables WHERE table_schema = DATABASE()");
+            if ($tStmt) {
+                while ($tr = $tStmt->fetch(PDO::FETCH_ASSOC)) {
+                    $tableStats[] = [
+                        'name' => $tr['table_name'],
+                        'rows' => (int)($tr['table_rows'] ?? 0),
+                        'data_size' => round(($tr['data_length'] ?? 0) / 1024, 1),
+                        'index_size' => round(($tr['index_length'] ?? 0) / 1024, 1),
+                        'updated' => $tr['update_time'] ?? 'N/A'
+                    ];
+                }
+            }
+        } catch (Exception $e) {}
+
+        echo json_encode([
+            'success' => true,
+            'version' => $row['v'] ?? 'Unknown',
+            'database' => $row['db'] ?? 'falhen',
+            'latency_ms' => $latency,
+            'tables' => $tableStats
+        ]);
+        exit;
     }
 
     if ($action === 'create_manual_backup') {
@@ -98,6 +243,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // RBAC Action to Section Mapping
     $actionSectionMap = [
         'create_manual_backup'       => 'dev_logs',
+        'create_full_backup_bundle'  => 'dev_logs',
+        'sync_db_and_disk'           => 'dev_logs',
+        'optimize_db_tables'         => 'dev_logs',
+        'test_db_diagnostics'        => 'dev_logs',
         'save_hero'                  => 'hero',
         'save_stats'                 => 'stats',
         'save_bts'                   => 'bts',
@@ -4813,7 +4962,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
         $isContentActive = in_array($activeSection, ['inquiries', 'services', 'portfolio', 'client_galleries', 'team', 'blog', 'testimonials', 'careers'], true);
         $isOperationsActive = in_array($activeSection, ['hr_portal', 'payroll', 'celebrations', 'vendors', 'activity_log', 'email_templates'], true) || ($activeSection === 'careers' && ($_GET['tab'] ?? '') === 'applications');
         $isEmployeePortalActive = in_array($activeSection, ['dashboard', 'directory', 'announcements', 'attendance', 'leaves', 'payslips'], true);
-        $isAccountActive = in_array($activeSection, ['staff_accounts', 'my_profile', 'profile', 'onboarding'], true);
+        $isAccountActive = in_array($activeSection, ['staff_accounts', 'my_profile', 'profile', 'onboarding', 'dev_logs'], true);
         ?>
         <?php if (isAdminUser($userRole, $userEmail, $username)): ?>
             <?php if (!isTalentManager($userRole)): ?>
@@ -4879,14 +5028,6 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                         <span>Client Galleries</span>
                     </a>
                 </li>
-                <?php if (hasSectionAccess('dev_logs', $userRole, $currentUser['email'] ?? '', $currentUser['username'] ?? '')): ?>
-                <li class="nav-item <?php echo ($activeSection === 'dev_logs') ? 'active' : ''; ?>">
-                    <a href="/admin/index.php?section=dev_logs">
-                        <i class="fa-solid fa-server nav-icon"></i>
-                        <span>Dev Logs & Backups</span>
-                    </a>
-                </li>
-                <?php endif; ?>
                 <li class="nav-item <?php echo ($activeSection === 'team') ? 'active' : ''; ?>">
                     <a href="/admin/index.php?section=team">
                         <i class="fa-solid fa-users nav-icon"></i>
@@ -5024,6 +5165,14 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                         <span>Onboarding</span>
                     </a>
                 </li>
+                <?php if (hasSectionAccess('dev_logs', $userRole, $currentUser['email'] ?? '', $currentUser['username'] ?? '')): ?>
+                <li class="nav-item <?php echo ($activeSection === 'dev_logs') ? 'active' : ''; ?>">
+                    <a href="/admin/index.php?section=dev_logs">
+                        <i class="fa-solid fa-database nav-icon"></i>
+                        <span>Database &amp; Dev Logs</span>
+                    </a>
+                </li>
+                <?php endif; ?>
             </ul>
         <?php else: ?>
             <!-- NON-ADMIN EMPLOYEE PORTAL NAVIGATION -->
@@ -9312,6 +9461,9 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                                 <i class="fa-solid fa-arrow-up-right-from-square" style="color: #dc2626;"></i> View Live
                                             </a>
                                             <div style="display: flex; gap: 8px;">
+                                                <button type="button" onclick="syncCloudinaryAlbum(<?php echo (int)$cg['id']; ?>, '<?php echo htmlspecialchars($cgSlug, ENT_QUOTES); ?>', this)" style="background: #eff6ff; border: 1px solid #bfdbfe; color: #1d4ed8; font-size: 0.82rem; font-weight: 600; padding: 4px 10px; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;" title="Sync new photos from Cloudinary">
+                                                    <i class="fa-solid fa-arrows-rotate"></i> Sync
+                                                </button>
                                                 <a href="index.php?section=client_galleries&edit_id=<?php echo $cg['id']; ?>" style="color: #475569; font-size: 0.82rem; font-weight: 600; text-decoration: none; padding: 4px 10px; border-radius: 6px; background: #f1f5f9;">
                                                     <i class="fa-solid fa-pen"></i> Edit
                                                 </a>
@@ -9342,6 +9494,29 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                         </div>
 
                         <script>
+                        function syncCloudinaryAlbum(id, slug, btn) {
+                            const originalHtml = btn.innerHTML;
+                            btn.disabled = true;
+                            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+                            fetch('/api/admin-client-gallery.php?action=sync_cloudinary_folder&album_id=' + id + '&slug=' + encodeURIComponent(slug))
+                                .then(r => r.json())
+                                .then(data => {
+                                    btn.disabled = false;
+                                    btn.innerHTML = originalHtml;
+                                    if (data.success) {
+                                        alert('✓ ' + data.message + '\nTotal photos now: ' + data.photos_count);
+                                        window.location.reload();
+                                    } else {
+                                        alert('Error: ' + (data.message || 'Failed to sync folder.'));
+                                    }
+                                })
+                                .catch(err => {
+                                    btn.disabled = false;
+                                    btn.innerHTML = originalHtml;
+                                    alert('Network error while syncing Cloudinary photos.');
+                                });
+                        }
+
                         function confirmDeleteGallery(id, title) {
                             document.getElementById('deleteGalleryIdInput').value = id;
                             document.getElementById('deleteGalleryModalText').textContent = `Are you sure you want to delete "${title}"? This will remove it from client.falhen.com.`;
@@ -9352,31 +9527,209 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
 
                 <?php endif; ?>
 
-            <!-- SECTION: WEBSITE DEV LOGS & BACKUP HISTORY (IT / SUPER ADMIN) -->
+            <!-- SECTION: WEBSITE DEV LOGS & BACKUP HISTORY (IT / SUPER ADMIN / ACCOUNT) -->
             <?php elseif ($activeSection === 'dev_logs'):
                 $downloadLogs = function_exists('getClientDownloadLogs') ? getClientDownloadLogs(250) : [];
                 $backupLogs = function_exists('getSystemBackups') ? getSystemBackups(100) : [];
+                $lastBundle = $_SESSION['last_backup_bundle'] ?? null;
+                unset($_SESSION['last_backup_bundle']);
             ?>
-                <div style="margin-bottom: 28px; display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 16px;">
+                <!-- Header Bar -->
+                <div style="margin-bottom: 24px; display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 16px;">
                     <div>
-                        <h2 style="font-size: 1.6rem; font-weight: 800; color: #0f172a; margin-bottom: 4px;">Website Dev Logs & Backup History</h2>
-                        <p style="font-size: 0.9rem; color: #64748b; margin: 0;">Super Admin & IT Telemetry: live client download audit trails, system restore points, and exportable CSV records.</p>
+                        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 4px;">
+                            <h2 style="font-size: 1.65rem; font-weight: 800; color: #0f172a; margin: 0;">Database &amp; Dev Logs</h2>
+                            <span style="background: #eff6ff; color: #2563eb; font-weight: 700; font-size: 0.75rem; padding: 3px 10px; border-radius: 20px; border: 1px solid #bfdbfe;">
+                                <i class="fa-solid fa-server"></i> Account &amp; IT Ops
+                            </span>
+                        </div>
+                        <p style="font-size: 0.88rem; color: #64748b; margin: 0;">High-availability telemetry, MySQL database health, automated snapshots, and CSV export records.</p>
                     </div>
                     <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                        <form method="POST" action="index.php?section=dev_logs" style="margin: 0;">
+                            <input type="hidden" name="action" value="create_full_backup_bundle">
+                            <button type="submit" style="background: #e11d48; color: #ffffff; border: none; padding: 10px 18px; border-radius: 8px; font-size: 0.85rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 4px 14px rgba(225,29,72,0.25); transition: transform 0.2s;" onmouseover="this.style.transform='translateY(-1px)';" onmouseout="this.style.transform='none';">
+                                <i class="fa-solid fa-cloud-arrow-down"></i> Create Full Backup Bundle
+                            </button>
+                        </form>
                         <a href="index.php?export_download_logs_csv=1" style="background: #2563eb; color: #ffffff; padding: 10px 16px; border-radius: 8px; text-decoration: none; font-size: 0.85rem; font-weight: 700; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(37,99,235,0.2);">
-                            <i class="fa-solid fa-file-csv"></i> Download Downloader CSV
+                            <i class="fa-solid fa-file-csv"></i> Downloader CSV
                         </a>
                         <a href="index.php?export_backups_csv=1" style="background: #0f172a; color: #ffffff; padding: 10px 16px; border-radius: 8px; text-decoration: none; font-size: 0.85rem; font-weight: 700; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(15,23,42,0.15);">
-                            <i class="fa-solid fa-download"></i> Download Backups CSV
+                            <i class="fa-solid fa-download"></i> Backups CSV
                         </a>
-                        <form method="POST" action="index.php?section=dev_logs" style="margin: 0;">
-                            <input type="hidden" name="action" value="create_manual_backup">
-                            <button type="submit" style="background: #dc2626; color: #ffffff; border: none; padding: 10px 16px; border-radius: 8px; font-size: 0.85rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(220,38,38,0.25);">
-                                <i class="fa-solid fa-shield-halved"></i> Create Manual Backup Snapshot
+                    </div>
+                </div>
+
+                <?php if ($lastBundle): ?>
+                    <div style="background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 12px; padding: 16px 20px; margin-bottom: 24px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px;">
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <div style="width: 40px; height: 40px; border-radius: 50%; background: #059669; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 1.1rem;">
+                                <i class="fa-solid fa-check"></i>
+                            </div>
+                            <div>
+                                <h4 style="margin: 0 0 2px 0; font-size: 0.95rem; font-weight: 700; color: #065f46;">Full Backup Bundle Generated Successfully!</h4>
+                                <p style="margin: 0; font-size: 0.82rem; color: #047857;">Generated at <?php echo htmlspecialchars($lastBundle['time']); ?> with direct archive links:</p>
+                            </div>
+                        </div>
+                        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                            <a href="index.php?download_backup_file=<?php echo urlencode($lastBundle['json']); ?>" style="background: #065f46; color: #fff; text-decoration: none; padding: 6px 12px; border-radius: 6px; font-size: 0.78rem; font-weight: 700; display: inline-flex; align-items: center; gap: 6px;">
+                                <i class="fa-solid fa-file-code"></i> JSON Config
+                            </a>
+                            <a href="index.php?download_backup_file=<?php echo urlencode($lastBundle['dl_csv']); ?>" style="background: #2563eb; color: #fff; text-decoration: none; padding: 6px 12px; border-radius: 6px; font-size: 0.78rem; font-weight: 700; display: inline-flex; align-items: center; gap: 6px;">
+                                <i class="fa-solid fa-file-csv"></i> Downloader CSV
+                            </a>
+                            <a href="index.php?download_backup_file=<?php echo urlencode($lastBundle['bk_csv']); ?>" style="background: #0f172a; color: #fff; text-decoration: none; padding: 6px 12px; border-radius: 6px; font-size: 0.78rem; font-weight: 700; display: inline-flex; align-items: center; gap: 6px;">
+                                <i class="fa-solid fa-file-csv"></i> Backups CSV
+                            </a>
+                        </div>
+                    </div>
+                <?php endif; ?>
+
+                <?php if (isset($_GET['synced'])): ?>
+                    <div style="background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; padding: 12px 18px; border-radius: 10px; font-weight: 700; font-size: 0.88rem; margin-bottom: 20px;">
+                        <i class="fa-solid fa-circle-check" style="color: #22c55e;"></i> Database and config/settings.json disk cache successfully synchronized!
+                    </div>
+                <?php endif; ?>
+
+                <?php if (isset($_GET['optimized'])): ?>
+                    <div style="background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; padding: 12px 18px; border-radius: 10px; font-weight: 700; font-size: 0.88rem; margin-bottom: 20px;">
+                        <i class="fa-solid fa-bolt" style="color: #22c55e;"></i> MySQL database tables optimized and defragmented!
+                    </div>
+                <?php endif; ?>
+
+                <!-- SUB-MODULE 0: INTERACTIVE DATABASE MANAGEMENT CONSOLE -->
+                <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 22px; margin-bottom: 28px; box-shadow: 0 4px 20px rgba(0,0,0,0.03);">
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid #f1f5f9; flex-wrap: wrap; gap: 10px;">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <div style="width: 36px; height: 36px; border-radius: 8px; background: #fef2f2; color: #dc2626; display: flex; align-items: center; justify-content: center; font-size: 1.05rem;">
+                                <i class="fa-solid fa-database"></i>
+                            </div>
+                            <div>
+                                <h3 style="font-size: 1.1rem; font-weight: 800; color: #0f172a; margin: 0;">Interactive Database Console</h3>
+                                <p style="font-size: 0.8rem; color: #64748b; margin: 0;">Direct access to connection telemetry, storage inspector, and optimization routines.</p>
+                            </div>
+                        </div>
+                        <div id="dbTelemetryPills" style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                            <span style="background: #f1f5f9; color: #475569; font-size: 0.78rem; font-weight: 700; padding: 4px 10px; border-radius: 20px;">
+                                <i class="fa-solid fa-circle" style="color: #22c55e; font-size: 0.5rem; vertical-align: middle; margin-right: 4px;"></i> MySQL PDO Live
+                            </span>
+                        </div>
+                    </div>
+
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 16px;">
+                        <button type="button" onclick="runDbDiagnostics(this)" style="background: #0f172a; color: #ffffff; border: none; padding: 9px 15px; border-radius: 8px; font-size: 0.83rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; transition: all 0.2s;">
+                            <i class="fa-solid fa-stethoscope"></i> Test Connection &amp; Latency
+                        </button>
+                        <button type="button" onclick="toggleTableStorageInspect()" style="background: #f8fafc; color: #0f172a; border: 1px solid #cbd5e1; padding: 9px 15px; border-radius: 8px; font-size: 0.83rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; transition: all 0.2s;">
+                            <i class="fa-solid fa-table-cells"></i> Inspect Table Storage
+                        </button>
+                        <form method="POST" action="index.php?section=dev_logs" style="margin: 0; display: inline;">
+                            <input type="hidden" name="action" value="sync_db_and_disk">
+                            <button type="submit" style="background: #f8fafc; color: #2563eb; border: 1px solid #bfdbfe; padding: 9px 15px; border-radius: 8px; font-size: 0.83rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; transition: all 0.2s;">
+                                <i class="fa-solid fa-arrows-rotate"></i> Force Sync DB &amp; Disk Cache
+                            </button>
+                        </form>
+                        <form method="POST" action="index.php?section=dev_logs" style="margin: 0; display: inline;">
+                            <input type="hidden" name="action" value="optimize_db_tables">
+                            <button type="submit" style="background: #f8fafc; color: #16a34a; border: 1px solid #bbf7d0; padding: 9px 15px; border-radius: 8px; font-size: 0.83rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; transition: all 0.2s;">
+                                <i class="fa-solid fa-broom"></i> Optimize MySQL Tables
                             </button>
                         </form>
                     </div>
+
+                    <!-- Diagnostics Output Banner (Hidden initially) -->
+                    <div id="diagnosticsBanner" style="display: none; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px 18px; margin-bottom: 14px;"></div>
+
+                    <!-- Table Storage Breakdown (Toggled on demand) -->
+                    <div id="tableStorageContainer" style="display: none; overflow-x: auto; margin-top: 12px; border: 1px solid #e2e8f0; border-radius: 8px;">
+                        <table style="width: 100%; border-collapse: collapse; font-size: 0.82rem; text-align: left;">
+                            <thead>
+                                <tr style="background: #f1f5f9; color: #475569; font-weight: 700;">
+                                    <th style="padding: 8px 12px;">Table Name</th>
+                                    <th style="padding: 8px 12px;">Total Rows</th>
+                                    <th style="padding: 8px 12px;">Data Size</th>
+                                    <th style="padding: 8px 12px;">Index Size</th>
+                                    <th style="padding: 8px 12px;">Last Updated</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tableStorageTbody">
+                                <tr><td colspan="5" style="padding: 14px; text-align: center; color: #94a3b8;">Click "Test Connection &amp; Latency" above to load table statistics.</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
+
+                <script>
+                    let cachedDbStats = null;
+                    function runDbDiagnostics(btn) {
+                        const originalHtml = btn.innerHTML;
+                        btn.disabled = true;
+                        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Testing...';
+                        
+                        const fd = new FormData();
+                        fd.append('action', 'test_db_diagnostics');
+
+                        fetch('index.php?section=dev_logs', { method: 'POST', body: fd })
+                            .then(r => r.json())
+                            .then(data => {
+                                btn.disabled = false;
+                                btn.innerHTML = originalHtml;
+                                if (data.success) {
+                                    cachedDbStats = data;
+                                    const banner = document.getElementById('diagnosticsBanner');
+                                    banner.style.display = 'block';
+                                    banner.innerHTML = `
+                                        <div style="display: flex; gap: 20px; align-items: center; flex-wrap: wrap;">
+                                            <div><strong style="color: #0f172a;">Round-Trip Latency:</strong> <span style="color: #16a34a; font-weight: 700;">${data.latency_ms} ms</span></div>
+                                            <div><strong style="color: #0f172a;">Database:</strong> <span style="font-family: monospace;">${data.database}</span></div>
+                                            <div><strong style="color: #0f172a;">Engine Version:</strong> <span style="font-family: monospace;">${data.version}</span></div>
+                                            <div><strong style="color: #0f172a;">Monitored Tables:</strong> <span>${data.tables ? data.tables.length : 0}</span></div>
+                                        </div>
+                                    `;
+                                    renderTableStorage(data.tables);
+                                } else {
+                                    alert('Diagnostic Error: ' + (data.message || 'Failed to ping MySQL.'));
+                                }
+                            })
+                            .catch(err => {
+                                btn.disabled = false;
+                                btn.innerHTML = originalHtml;
+                                alert('Network error while running database diagnostics.');
+                            });
+                    }
+
+                    function toggleTableStorageInspect() {
+                        const container = document.getElementById('tableStorageContainer');
+                        if (container.style.display === 'none' || container.style.display === '') {
+                            container.style.display = 'block';
+                            if (!cachedDbStats) {
+                                const btn = document.querySelector('button[onclick*="runDbDiagnostics"]');
+                                if (btn) runDbDiagnostics(btn);
+                            }
+                        } else {
+                            container.style.display = 'none';
+                        }
+                    }
+
+                    function renderTableStorage(tables) {
+                        const tbody = document.getElementById('tableStorageTbody');
+                        if (!tbody || !tables || tables.length === 0) return;
+                        let html = '';
+                        tables.forEach(t => {
+                            html += `
+                                <tr style="border-bottom: 1px solid #f1f5f9;">
+                                    <td style="padding: 8px 12px; font-weight: 700; color: #0f172a; font-family: monospace;">${t.name}</td>
+                                    <td style="padding: 8px 12px; color: #334155;">${t.rows.toLocaleString()}</td>
+                                    <td style="padding: 8px 12px; color: #64748b;">${t.data_size} KB</td>
+                                    <td style="padding: 8px 12px; color: #64748b;">${t.index_size} KB</td>
+                                    <td style="padding: 8px 12px; color: #64748b;">${t.updated}</td>
+                                </tr>
+                            `;
+                        });
+                        tbody.innerHTML = html;
+                    }
+                </script>
 
                 <!-- SUB-MODULE 1: CLIENT DOWNLOADER LOGS -->
                 <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 24px; margin-bottom: 32px; box-shadow: 0 4px 20px rgba(0,0,0,0.03);">
@@ -9449,7 +9802,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                         <div>
                             <h3 style="font-size: 1.15rem; font-weight: 700; color: #0f172a; margin-bottom: 2px;">
                                 <i class="fa-solid fa-database" style="color: #dc2626; margin-right: 8px;"></i>
-                                System Backup & Snapshot History
+                                System Backup &amp; Snapshot History
                             </h3>
                             <p style="font-size: 0.82rem; color: #64748b; margin: 0;">Automated pre-deploy restore points and administrative manual snapshots stored in config/backups.</p>
                         </div>
@@ -9469,14 +9822,15 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                     <th style="padding: 10px 14px;">File Size</th>
                                     <th style="padding: 10px 14px;">Galleries Stored</th>
                                     <th style="padding: 10px 14px;">Author / Notes</th>
+                                    <th style="padding: 10px 14px; text-align: right;">Action</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <?php if (empty($backupLogs)): ?>
                                     <tr>
-                                        <td colspan="7" style="padding: 32px 14px; text-align: center; color: #94a3b8;">
+                                        <td colspan="8" style="padding: 32px 14px; text-align: center; color: #94a3b8;">
                                             <i class="fa-regular fa-clock-rotate-left" style="font-size: 1.8rem; margin-bottom: 8px; display: block; opacity: 0.4;"></i>
-                                            No backup snapshots logged yet. Click "Create Manual Backup Snapshot" above to generate one immediately.
+                                            No backup snapshots logged yet. Click "Create Full Backup Bundle" above to generate one immediately.
                                         </td>
                                     </tr>
                                 <?php else: ?>
@@ -9493,6 +9847,11 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                             <td style="padding: 10px 14px; color: #64748b;"><?php echo round(($bk['file_size'] ?? 0) / 1024, 1); ?> KB</td>
                                             <td style="padding: 10px 14px; font-weight: 700; color: #0f172a;"><?php echo (int)($bk['items_count'] ?? 0); ?> items</td>
                                             <td style="padding: 10px 14px; color: #64748b;"><?php echo htmlspecialchars($bk['notes'] ?? ($bk['created_by'] ?? 'System')); ?></td>
+                                            <td style="padding: 10px 14px; text-align: right;">
+                                                <a href="index.php?download_backup_file=<?php echo urlencode($bk['filename'] ?? ''); ?>" style="color: #2563eb; text-decoration: none; font-weight: 700; font-size: 0.8rem; display: inline-flex; align-items: center; gap: 4px;" title="Direct Download">
+                                                    <i class="fa-solid fa-download"></i> Download
+                                                </a>
+                                            </td>
                                         </tr>
                                     <?php endforeach; ?>
                                 <?php endif; ?>
@@ -9500,7 +9859,6 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                         </table>
                     </div>
                 </div>
-
             <!-- SECTION: CAREERS & HIRING MANAGEMENT -->
             <?php elseif ($activeSection === 'careers'):
                 $jobListings = array_values(getCareersRepo());
@@ -19821,6 +20179,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                             pill.innerHTML = '<i class="fa-solid fa-cloud"></i> Stored in Cloudinary';
                         }
                         updateBtsCountBadge();
+                        syncBtsGallery();
                     }
                 })
                 .catch(err => {
@@ -19870,6 +20229,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
             if (card) {
                 card.remove();
                 updateBtsCountBadge();
+                syncBtsGallery();
             }
         }
 
@@ -19878,6 +20238,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                 const grid = document.getElementById('btsPhotoGrid');
                 if (grid) grid.innerHTML = '';
                 updateBtsCountBadge();
+                syncBtsGallery();
             }
         }
 
@@ -20166,11 +20527,12 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
             const btsForm = document.getElementById('btsForm');
             if (btsForm) {
                 const formData = new FormData(btsForm);
+                formData.append('is_ajax', '1');
                 fetch('/admin/index.php?section=bts', {
                     method: 'POST',
                     body: formData
-                }).then(() => {
-                    showBtsToast('✓ Production BTS gallery order synchronized!');
+                }).then(r => r.json()).then(() => {
+                    showBtsToast('✓ Production BTS photos auto-saved to database!');
                 }).catch(() => {
                     showBtsToast('✓ Production BTS gallery synchronized!');
                 });

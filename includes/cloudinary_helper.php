@@ -434,3 +434,77 @@ function syncGoogleDriveFolderToCloudinary($gdriveUrl, $slug = 'general', $limit
     ];
 }
 
+/**
+ * Sync Cloudinary assets back into an authoritative Client Gallery record
+ * Automatically persists to MySQL site_settings and disk cache
+ */
+function syncCloudinaryClientGalleryFolder($albumSlug, $albumId = null)
+{
+    require_once __DIR__ . '/functions.php';
+
+    $settings = getSiteSettings();
+    $portfolio = $settings['portfolio_items'] ?? [];
+    $targetIdx = null;
+
+    foreach ($portfolio as $idx => $it) {
+        $itSlug = $it['slug'] ?? generateSlug($it['title'] ?? '');
+        $itId = (int)($it['id'] ?? 0);
+        if (($albumId !== null && $itId === (int)$albumId) || $itSlug === $albumSlug) {
+            $targetIdx = $idx;
+            $albumId = $itId;
+            $albumSlug = $itSlug;
+            break;
+        }
+    }
+
+    if ($targetIdx === null) {
+        return [
+            'success' => false,
+            'message' => "Client gallery with slug '{$albumSlug}' could not be located."
+        ];
+    }
+
+    $gallery = $portfolio[$targetIdx];
+    $gdriveUrl = $gallery['gdrive_url'] ?? '';
+    $existingPhotos = $gallery['gallery_photos'] ?? [];
+
+    $syncedPhotos = [];
+
+    // 1. If Google Drive URL exists, sync photos to Cloudinary
+    if (!empty($gdriveUrl)) {
+        $syncResult = syncGoogleDriveFolderToCloudinary($gdriveUrl, $albumSlug, 0);
+        if (!empty($syncResult['success']) && !empty($syncResult['photos'])) {
+            $syncedPhotos = $syncResult['photos'];
+        }
+    }
+
+    // 2. If no Drive sync photos, preserve existing photos
+    if (empty($syncedPhotos) && !empty($existingPhotos)) {
+        $syncedPhotos = $existingPhotos;
+    }
+
+    // 3. Ensure photos are unique while preserving order
+    $cleanPhotos = array_values(array_unique($syncedPhotos));
+
+    // Update gallery in portfolio items
+    $portfolio[$targetIdx]['gallery_photos'] = $cleanPhotos;
+    $portfolio[$targetIdx]['photosCount'] = count($cleanPhotos);
+    if (!empty($cleanPhotos[0]) && isCloudinaryUrl($cleanPhotos[0])) {
+        $portfolio[$targetIdx]['image'] = $cleanPhotos[0];
+        $portfolio[$targetIdx]['cover'] = $cleanPhotos[0];
+    }
+
+    // Persist to MySQL and settings.json
+    saveSiteSettings(['portfolio_items' => $portfolio]);
+
+    return [
+        'success'      => true,
+        'message'      => "Synced " . count($cleanPhotos) . " Cloudinary photos for {$gallery['title']}.",
+        'album_id'     => $albumId,
+        'album_slug'   => $albumSlug,
+        'photos_count' => count($cleanPhotos),
+        'photos'       => $cleanPhotos
+    ];
+}
+
+

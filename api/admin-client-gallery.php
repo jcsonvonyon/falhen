@@ -172,6 +172,20 @@ switch ($action) {
         }
         exit;
 
+    // 5. Automatic Cloudinary Gallery Sync back into client gallery record
+    case 'sync_cloudinary_folder':
+        $albumSlug = trim($_POST['slug'] ?? $_GET['slug'] ?? '');
+        $albumId = isset($_POST['album_id']) ? (int)$_POST['album_id'] : (isset($_GET['album_id']) ? (int)$_GET['album_id'] : null);
+
+        if (empty($albumSlug) && $albumId === null) {
+            echo json_encode(['success' => false, 'message' => 'Please provide an album slug or ID.']);
+            exit;
+        }
+
+        $res = syncCloudinaryClientGalleryFolder($albumSlug, $albumId);
+        echo json_encode($res);
+        exit;
+
     default:
         http_response_code(400);
         echo json_encode([

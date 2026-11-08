@@ -218,17 +218,25 @@ try {
     $dbSettings = getSiteSettings();
     $repoSettings = json_decode(@file_get_contents($liveSettingsFile), true) ?: [];
     
-    // If database has fewer items than the repository restore, sync repository to database
     $dbCount = count($dbSettings['portfolio_items'] ?? []);
     $repoCount = count($repoSettings['portfolio_items'] ?? []);
+
+    // Merge authoritative live settings from MySQL over repo defaults
+    $criticalKeys = ['portfolio_items', 'bts_items', 'brand_logos_items', 'registered_clients'];
+    $mergedSettings = $repoSettings;
+    foreach ($criticalKeys as $ck) {
+        if (!empty($dbSettings[$ck]) && is_array($dbSettings[$ck])) {
+            $mergedSettings[$ck] = $dbSettings[$ck];
+        }
+    }
     
     if ($dbCount < $repoCount || isset($_GET['sync_to_db'])) {
         saveSiteSettings($repoSettings);
         $output[] = "Synced repository settings ({$repoCount} items) to MySQL site_settings database.";
-    } elseif ($dbCount >= $repoCount && $dbCount > 0) {
-        // Database has authoritative live updates/deletions, persist them to disk
-        @file_put_contents($liveSettingsFile, json_encode($dbSettings, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES), LOCK_EX);
-        $output[] = "Preserved authoritative MySQL database settings ({$dbCount} items) to local disk cache.";
+    } else {
+        saveSiteSettings($mergedSettings);
+        @file_put_contents($liveSettingsFile, json_encode($mergedSettings, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES), LOCK_EX);
+        $output[] = "Preserved authoritative MySQL settings (portfolio: {$dbCount}, bts: " . count($mergedSettings['bts_items'] ?? []) . ", brands: " . count($mergedSettings['brand_logos_items'] ?? []) . ") across deployment.";
     }
 
     if (function_exists('logSystemBackup')) {
