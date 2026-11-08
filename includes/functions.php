@@ -468,45 +468,87 @@ function saveSiteSettings($newSettings) {
 }
 
 /**
- * Log client download activity into MySQL database
+ * Log client download activity into MySQL database and append-only local telemetry stream
  */
 function logClientDownload($data) {
     $pdo = function_exists('getDBConnection') ? getDBConnection() : null;
-    if (!$pdo) return false;
-    try {
-        $stmt = $pdo->prepare("INSERT INTO `client_download_logs` 
-            (`client_name`, `client_email`, `client_phone`, `album_id`, `album_title`, `download_type`, `ip_address`, `user_agent`)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
-        return $stmt->execute([
-            $data['client_name'] ?? 'Client',
-            $data['client_email'] ?? '',
-            $data['client_phone'] ?? '',
-            (int)($data['album_id'] ?? 0),
-            $data['album_title'] ?? 'Gallery',
-            $data['download_type'] ?? 'ZIP Archive',
-            $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1',
-            substr($_SERVER['HTTP_USER_AGENT'] ?? '', 0, 500)
-        ]);
-    } catch (Exception $e) {
-        error_log("Error logging client download: " . $e->getMessage());
-        return false;
+    $logged = false;
+    if ($pdo) {
+        try {
+            $stmt = $pdo->prepare("INSERT INTO `client_download_logs` 
+                (`client_name`, `client_email`, `client_phone`, `album_id`, `album_title`, `download_type`, `ip_address`, `user_agent`)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+            $logged = $stmt->execute([
+                $data['client_name'] ?? 'Client',
+                $data['client_email'] ?? '',
+                $data['client_phone'] ?? '',
+                (int)($data['album_id'] ?? 0),
+                $data['album_title'] ?? 'Gallery',
+                $data['download_type'] ?? 'ZIP Archive',
+                $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1',
+                substr($_SERVER['HTTP_USER_AGENT'] ?? '', 0, 500)
+            ]);
+        } catch (Exception $e) {
+            error_log("Error logging client download: " . $e->getMessage());
+        }
     }
+
+    // Always append to local file stream for zero data-loss resilience
+    $backupDir = __DIR__ . '/../config/backups';
+    if (!is_dir($backupDir)) {
+        @mkdir($backupDir, 0755, true);
+    }
+    $streamFile = $backupDir . '/client_downloads_stream.jsonl';
+    $entry = [
+        'id'            => time(),
+        'client_name'   => $data['client_name'] ?? 'Client',
+        'client_email'  => $data['client_email'] ?? '',
+        'client_phone'  => $data['client_phone'] ?? '',
+        'album_id'      => (int)($data['album_id'] ?? 0),
+        'album_title'   => $data['album_title'] ?? 'Gallery',
+        'download_type' => $data['download_type'] ?? 'ZIP Archive',
+        'ip_address'    => $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1',
+        'downloaded_at' => date('Y-m-d H:i:s')
+    ];
+    @file_put_contents($streamFile, json_encode($entry, JSON_UNESCAPED_SLASHES) . "\n", FILE_APPEND | LOCK_EX);
+
+    return $logged;
 }
 
 /**
- * Retrieve client download logs with pagination/search
+ * Retrieve client download logs with pagination/search & disk-stream fallback
  */
 function getClientDownloadLogs($limit = 100) {
     $pdo = function_exists('getDBConnection') ? getDBConnection() : null;
-    if (!$pdo) return [];
-    try {
-        $stmt = $pdo->prepare("SELECT * FROM `client_download_logs` ORDER BY `id` DESC LIMIT ?");
-        $stmt->bindValue(1, (int)$limit, PDO::PARAM_INT);
-        $stmt->execute();
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
-    } catch (Exception $e) {
-        return [];
+    $dbLogs = [];
+    if ($pdo) {
+        try {
+            $stmt = $pdo->prepare("SELECT * FROM `client_download_logs` ORDER BY `id` DESC LIMIT ?");
+            $stmt->bindValue(1, (int)$limit, PDO::PARAM_INT);
+            $stmt->execute();
+            $dbLogs = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        } catch (Exception $e) {
+            $dbLogs = [];
+        }
     }
+
+    if (empty($dbLogs)) {
+        $streamFile = __DIR__ . '/../config/backups/client_downloads_stream.jsonl';
+        if (file_exists($streamFile)) {
+            $lines = file($streamFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+            $diskLogs = [];
+            foreach (array_reverse($lines) as $l) {
+                $j = json_decode($l, true);
+                if ($j && is_array($j)) {
+                    $diskLogs[] = $j;
+                }
+                if (count($diskLogs) >= $limit) break;
+            }
+            return $diskLogs;
+        }
+    }
+
+    return $dbLogs;
 }
 
 /**
@@ -536,19 +578,61 @@ function logSystemBackup($filename, $backupType = 'manual_snapshot', $itemsCount
 }
 
 /**
- * Retrieve system backup logs
+ * Retrieve system backup logs with disk scan fallback
+ * Merges MySQL records and physical disk archives so history is NEVER empty
  */
-function getSystemBackups($limit = 50) {
+function getSystemBackups($limit = 100) {
     $pdo = function_exists('getDBConnection') ? getDBConnection() : null;
-    if (!$pdo) return [];
-    try {
-        $stmt = $pdo->prepare("SELECT * FROM `system_backups` ORDER BY `id` DESC LIMIT ?");
-        $stmt->bindValue(1, (int)$limit, PDO::PARAM_INT);
-        $stmt->execute();
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
-    } catch (Exception $e) {
-        return [];
+    $dbBackups = [];
+    if ($pdo) {
+        try {
+            $stmt = $pdo->prepare("SELECT * FROM `system_backups` ORDER BY `id` DESC LIMIT ?");
+            $stmt->bindValue(1, (int)$limit, PDO::PARAM_INT);
+            $stmt->execute();
+            $dbBackups = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        } catch (Exception $e) {
+            $dbBackups = [];
+        }
     }
+
+    // Disk archive scan fallback and merge
+    $backupDir = __DIR__ . '/../config/backups';
+    if (is_dir($backupDir)) {
+        $files = scandir($backupDir);
+        $existingFilenames = array_map('strtolower', array_column($dbBackups, 'filename'));
+        $idCounter = count($dbBackups) + 1;
+
+        foreach ($files as $file) {
+            if ($file === '.' || $file === '..' || !preg_match('/\.(json|csv)$/i', $file)) {
+                continue;
+            }
+            if (in_array(strtolower($file), $existingFilenames, true)) {
+                continue;
+            }
+
+            $filePath = $backupDir . '/' . $file;
+            $fsize = file_exists($filePath) ? filesize($filePath) : 0;
+            $mtime = file_exists($filePath) ? filemtime($filePath) : time();
+            $bType = str_starts_with($file, 'full_backup') ? 'FULL_BUNDLE' : (str_starts_with($file, 'settings_pre_deploy') ? 'DEPLOY_SNAPSHOT' : 'SNAPSHOT');
+
+            $dbBackups[] = [
+                'id'          => $idCounter++,
+                'backup_type' => $bType,
+                'filename'    => $file,
+                'file_size'   => $fsize,
+                'items_count' => 0,
+                'notes'       => 'Disk Archive Restore Point',
+                'created_by'  => 'System/Disk',
+                'created_at'  => date('Y-m-d H:i:s', $mtime)
+            ];
+        }
+    }
+
+    usort($dbBackups, function($a, $b) {
+        return strcmp($b['created_at'] ?? '', $a['created_at'] ?? '');
+    });
+
+    return array_slice($dbBackups, 0, $limit);
 }
 
 /**

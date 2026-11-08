@@ -42,8 +42,9 @@ $isCpanel = (strpos(__DIR__, 'henadinnovate') !== false || file_exists('/home/he
 $defaultDbName = $isCpanel ? 'henadinn_falhen_db' : 'falhen_db';
 $defaultDbUser = $isCpanel ? 'henadinn_falhen_user' : 'root';
 $defaultDbPass = $isCpanel ? 'FalhenMedia2026!#' : 'Oluwatosin25#';
+$defaultDbHost = $isCpanel ? 'localhost' : '127.0.0.1';
 
-define('DB_HOST', getenv('DB_HOST') ?: '127.0.0.1');
+define('DB_HOST', getenv('DB_HOST') ?: $defaultDbHost);
 define('DB_PORT', getenv('DB_PORT') ?: '3306');
 define('DB_NAME', getenv('DB_NAME') ?: $defaultDbName);
 define('DB_USER', getenv('DB_USER') ?: $defaultDbUser);
@@ -51,23 +52,62 @@ define('DB_PASS', getenv('DB_PASS') ?: $defaultDbPass);
 
 function getDBConnection() {
     static $pdo = null;
-    if ($pdo === null) {
-        try {
-            $dsn = "mysql:host=" . DB_HOST . ";port=" . DB_PORT . ";dbname=" . DB_NAME . ";charset=utf8mb4";
-            $options = [
-                PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
-                PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-                PDO::ATTR_EMULATE_PREPARES   => false,
-            ];
-            $pdo = new PDO($dsn, DB_USER, DB_PASS, $options);
-            initDatabaseSchema($pdo);
-        } catch (PDOException $e) {
-            // In development, return graceful fallback object or raise clear message
-            error_log("Database Connection Error: " . $e->getMessage());
-            return false;
+    if ($pdo !== null) {
+        return $pdo;
+    }
+
+    $options = [
+        PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
+        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+        PDO::ATTR_EMULATE_PREPARES   => false,
+        PDO::ATTR_TIMEOUT            => 4,
+    ];
+
+    // Priority connection candidates (socket first on cPanel, then TCP)
+    $dsnCandidates = [];
+    $envHost = getenv('DB_HOST');
+    if (!empty($envHost)) {
+        $dsnCandidates[] = "mysql:host={$envHost};port=" . DB_PORT . ";dbname=" . DB_NAME . ";charset=utf8mb4";
+    }
+
+    // Unix sockets common in cPanel/Linux
+    $cpanelSockets = [
+        '/var/lib/mysql/mysql.sock',
+        '/tmp/mysql.sock',
+        '/var/run/mysqld/mysqld.sock'
+    ];
+    foreach ($cpanelSockets as $sock) {
+        if (@file_exists($sock)) {
+            $dsnCandidates[] = "mysql:unix_socket={$sock};dbname=" . DB_NAME . ";charset=utf8mb4";
         }
     }
-    return $pdo;
+
+    // Standard localhost socket resolution (matches cPanel 'username'@'localhost')
+    $dsnCandidates[] = "mysql:host=localhost;dbname=" . DB_NAME . ";charset=utf8mb4";
+    // TCP loopback
+    $dsnCandidates[] = "mysql:host=127.0.0.1;port=" . DB_PORT . ";dbname=" . DB_NAME . ";charset=utf8mb4";
+
+    $dsnCandidates = array_values(array_unique($dsnCandidates));
+    $lastException = null;
+
+    foreach ($dsnCandidates as $dsn) {
+        try {
+            $conn = new PDO($dsn, DB_USER, DB_PASS, $options);
+            if ($conn) {
+                $pdo = $conn;
+                $GLOBALS['falhen_db_active_dsn'] = $dsn;
+                initDatabaseSchema($pdo);
+                return $pdo;
+            }
+        } catch (PDOException $e) {
+            $lastException = $e;
+        }
+    }
+
+    $errMsg = $lastException ? $lastException->getMessage() : 'All MySQL connection transports exhausted';
+    $GLOBALS['falhen_db_last_error'] = $errMsg;
+    error_log("Database Connection Error: " . $errMsg);
+    return false;
 }
 
 function initDatabaseSchema($pdo = null) {

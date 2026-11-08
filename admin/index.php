@@ -99,8 +99,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $jsonFilename = 'full_backup_' . $ts . '.json';
         $jsonPath = $backupDir . '/' . $jsonFilename;
         @file_put_contents($jsonPath, json_encode($settings, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
+
+        // 2. Log to database & disk FIRST so the new backup appears in the CSV export!
+        $itemsCount = count($settings['portfolio_items'] ?? []);
+        if (function_exists('logSystemBackup')) {
+            logSystemBackup($jsonFilename, 'FULL_BUNDLE', $itemsCount, 'One-Click Full Website & Logs Snapshot (JSON + CSV)');
+        }
         
-        // 2. CSV Downloader Telemetry Snapshot
+        // 3. CSV Downloader Telemetry Snapshot
         $dlFilename = 'client_downloads_' . $ts . '.csv';
         $dlPath = $backupDir . '/' . $dlFilename;
         $dlOut = fopen($dlPath, 'w');
@@ -121,7 +127,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         fclose($dlOut);
 
-        // 3. CSV Backups Snapshot
+        // 4. CSV Backups Snapshot
         $bkFilename = 'system_backups_' . $ts . '.csv';
         $bkPath = $backupDir . '/' . $bkFilename;
         $bkOut = fopen($bkPath, 'w');
@@ -141,17 +147,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         fclose($bkOut);
 
-        // 4. Log to database
-        $itemsCount = count($settings['portfolio_items'] ?? []);
-        if (function_exists('logSystemBackup')) {
-            logSystemBackup($jsonFilename, 'FULL_BUNDLE', $itemsCount, 'One-Click Full Website & Logs Snapshot (JSON + CSV)');
-        }
-
         $_SESSION['last_backup_bundle'] = [
-            'json' => $jsonFilename,
+            'json'   => $jsonFilename,
             'dl_csv' => $dlFilename,
             'bk_csv' => $bkFilename,
-            'time' => date('Y-m-d H:i:s')
+            'time'   => date('Y-m-d H:i:s')
         ];
 
         header('Location: index.php?section=dev_logs&bundle_created=1');
@@ -183,12 +183,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $start = microtime(true);
         $pdo = getDBConnection();
         if (!$pdo) {
-            echo json_encode(['success' => false, 'message' => 'Database connection failed.']);
+            $errDetail = $GLOBALS['falhen_db_last_error'] ?? 'Database connection failed. Please verify MySQL service status.';
+            echo json_encode(['success' => false, 'message' => $errDetail]);
             exit;
         }
         $stmt = $pdo->query("SELECT VERSION() as v, DATABASE() as db");
         $row = $stmt ? $stmt->fetch(PDO::FETCH_ASSOC) : [];
         $latency = round((microtime(true) - $start) * 1000, 2);
+        $activeDsn = $GLOBALS['falhen_db_active_dsn'] ?? 'unix_socket/localhost';
         
         $tableStats = [];
         try {
@@ -210,6 +212,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'success' => true,
             'version' => $row['v'] ?? 'Unknown',
             'database' => $row['db'] ?? 'falhen',
+            'active_dsn' => $activeDsn,
             'latency_ms' => $latency,
             'tables' => $tableStats
         ]);
@@ -9684,6 +9687,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                             <div><strong style="color: #0f172a;">Round-Trip Latency:</strong> <span style="color: #16a34a; font-weight: 700;">${data.latency_ms} ms</span></div>
                                             <div><strong style="color: #0f172a;">Database:</strong> <span style="font-family: monospace;">${data.database}</span></div>
                                             <div><strong style="color: #0f172a;">Engine Version:</strong> <span style="font-family: monospace;">${data.version}</span></div>
+                                            <div><strong style="color: #0f172a;">Transport:</strong> <span style="font-family: monospace; font-size: 0.8rem; background: #e0f2fe; color: #0369a1; padding: 2px 6px; border-radius: 4px;">${data.active_dsn || 'Unix Socket'}</span></div>
                                             <div><strong style="color: #0f172a;">Monitored Tables:</strong> <span>${data.tables ? data.tables.length : 0}</span></div>
                                         </div>
                                     `;
