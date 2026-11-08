@@ -157,7 +157,7 @@ $returnVar = 0;
 
 // Stash any server-side generated modifications (e.g. settings.json), pull latest, and re-apply
 exec("cd {$repoDir} && git config --global --add safe.directory {$repoDir} 2>&1", $output);
-exec("cd {$repoDir} && git stash 2>&1", $output);
+exec("cd {$repoDir} && git stash -u 2>&1", $output);
 exec("cd {$repoDir} && git pull origin main 2>&1", $output, $returnVar);
 
 echo "Command: git pull origin main\n";
