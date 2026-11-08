@@ -180,17 +180,70 @@ foreach ($albumsRepo as $alb) {
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="/assets/css/style.css">
 
+    <script>
+        (function() {
+            var theme = localStorage.getItem('falhen_theme') || 'daylight';
+            document.documentElement.setAttribute('data-theme', theme);
+        })();
+    </script>
+
     <style>
-        :root {
+        :root,
+        [data-theme="daylight"] {
+            --portal-theme: "daylight";
+            --smug-bg: #f8fafc;
+            --smug-bg-gradient: radial-gradient(circle at 10% 8%, rgba(220, 38, 38, 0.05) 0%, transparent 40%),
+                                radial-gradient(circle at 90% 12%, rgba(59, 130, 246, 0.05) 0%, transparent 40%),
+                                radial-gradient(circle at 50% 80%, rgba(245, 158, 11, 0.03) 0%, transparent 50%);
+            --smug-surface: rgba(255, 255, 255, 0.72);
+            --smug-surface-solid: #ffffff;
+            --smug-surface-hover: rgba(255, 255, 255, 0.95);
+            --smug-border: rgba(15, 23, 42, 0.08);
+            --smug-border-light: rgba(15, 23, 42, 0.14);
+            --smug-glass-border: rgba(255, 255, 255, 0.88);
+            --smug-glass-glow: 0 20px 45px -12px rgba(15, 23, 42, 0.09), 0 0 1px 1px rgba(255, 255, 255, 0.9) inset;
+            --smug-glass-glow-hover: 0 28px 55px -10px rgba(15, 23, 42, 0.15), 0 0 1px 1px rgba(255, 255, 255, 1) inset;
+            --smug-red: #dc2626;
+            --smug-red-hover: #b91c1c;
+            --smug-text-primary: #0f172a;
+            --smug-text-secondary: #475569;
+            --smug-text-muted: #94a3b8;
+            --smug-topbar-bg: rgba(248, 250, 252, 0.85);
+            --smug-badge-bg: rgba(255, 255, 255, 0.88);
+            --smug-badge-border: rgba(15, 23, 42, 0.08);
+            --smug-badge-text: #0f172a;
+            --smug-pill-bg: rgba(15, 23, 42, 0.04);
+            --smug-pill-border: rgba(15, 23, 42, 0.09);
+            --smug-pill-text: #475569;
+            --smug-input-bg: rgba(255, 255, 255, 0.85);
+        }
+
+        [data-theme="noir"] {
+            --portal-theme: "noir";
             --smug-bg: #070709;
-            --smug-surface: #0f0f13;
+            --smug-bg-gradient: radial-gradient(circle at 10% 8%, rgba(220, 38, 38, 0.08) 0%, transparent 40%),
+                                radial-gradient(circle at 90% 12%, rgba(99, 102, 241, 0.07) 0%, transparent 40%);
+            --smug-surface: rgba(17, 17, 24, 0.65);
+            --smug-surface-solid: #0f0f13;
+            --smug-surface-hover: rgba(24, 24, 34, 0.85);
             --smug-border: rgba(255, 255, 255, 0.08);
             --smug-border-light: rgba(255, 255, 255, 0.16);
+            --smug-glass-border: rgba(255, 255, 255, 0.12);
+            --smug-glass-glow: 0 20px 45px rgba(0, 0, 0, 0.6), 0 0 1px 1px rgba(255, 255, 255, 0.08) inset;
+            --smug-glass-glow-hover: 0 28px 60px rgba(0, 0, 0, 0.8), 0 0 1px 1px rgba(255, 255, 255, 0.18) inset;
             --smug-red: #dc2626;
             --smug-red-hover: #ef4444;
             --smug-text-primary: #ffffff;
             --smug-text-secondary: #a1a1aa;
             --smug-text-muted: #71717a;
+            --smug-topbar-bg: rgba(7, 7, 9, 0.85);
+            --smug-badge-bg: rgba(7, 7, 9, 0.75);
+            --smug-badge-border: rgba(255, 255, 255, 0.14);
+            --smug-badge-text: #ffffff;
+            --smug-pill-bg: rgba(255, 255, 255, 0.05);
+            --smug-pill-border: rgba(255, 255, 255, 0.1);
+            --smug-pill-text: #a1a1aa;
+            --smug-input-bg: rgba(17, 17, 22, 0.85);
         }
 
         * {
@@ -201,11 +254,14 @@ foreach ($albumsRepo as $alb) {
 
         body {
             background-color: var(--smug-bg);
+            background-image: var(--smug-bg-gradient);
+            background-attachment: fixed;
             color: var(--smug-text-primary);
             font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
             min-height: 100vh;
             overflow-x: hidden;
             -webkit-font-smoothing: antialiased;
+            transition: background-color 0.3s ease, color 0.3s ease;
         }
 
         /* SmugMug Minimal Top Brand Header */
@@ -214,12 +270,13 @@ foreach ($albumsRepo as $alb) {
             top: 0;
             left: 0;
             right: 0;
-            background: rgba(7, 7, 9, 0.94);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
+            background: var(--smug-topbar-bg);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
             border-bottom: 1px solid var(--smug-border);
             z-index: 100;
             padding: 14px 32px;
+            transition: background-color 0.3s ease, border-color 0.3s ease;
         }
 
         .smug-topbar-inner {
@@ -236,7 +293,7 @@ foreach ($albumsRepo as $alb) {
             align-items: center;
             gap: 12px;
             text-decoration: none;
-            color: #ffffff;
+            color: var(--smug-text-primary);
         }
 
         .smug-brand-link img {
@@ -261,6 +318,41 @@ foreach ($albumsRepo as $alb) {
             gap: 12px;
         }
 
+        /* Daylight / Noir Atmosphere Switcher */
+        .smug-theme-toggle {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: var(--smug-surface);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--smug-border-light);
+            color: var(--smug-text-primary);
+            font-size: 0.78rem;
+            font-weight: 600;
+            padding: 7px 13px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            user-select: none;
+            touch-action: manipulation;
+        }
+
+        .smug-theme-toggle:hover {
+            border-color: var(--smug-red);
+            transform: translateY(-1px);
+        }
+
+        .smug-theme-toggle i {
+            color: #f59e0b;
+            font-size: 0.85rem;
+            transition: transform 0.3s ease;
+        }
+
+        [data-theme="noir"] .smug-theme-toggle i {
+            color: #a78bfa;
+        }
+
         .smug-nav-link {
             color: var(--smug-text-secondary);
             text-decoration: none;
@@ -274,15 +366,18 @@ foreach ($albumsRepo as $alb) {
             gap: 8px;
         }
 
-        .smug-nav-link:hover {
-            color: #ffffff;
-            background: rgba(255, 255, 255, 0.05);
+        .smug-nav-link:hover,
+        .smug-nav-link.active {
+            color: var(--smug-text-primary);
+            background: var(--smug-pill-bg);
         }
 
         .smug-nav-cta {
-            background: rgba(255, 255, 255, 0.06);
+            background: var(--smug-surface);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
             border: 1px solid var(--smug-border-light);
-            color: #ffffff;
+            color: var(--smug-text-primary);
             font-size: 0.84rem;
             font-weight: 600;
             padding: 8px 16px;
@@ -296,9 +391,9 @@ foreach ($albumsRepo as $alb) {
         }
 
         .smug-nav-cta:hover {
-            background: #ffffff;
-            color: #000000;
-            border-color: #ffffff;
+            background: var(--smug-surface-hover);
+            border-color: var(--smug-border);
+            transform: translateY(-1px);
         }
 
         .smug-nav-primary {
@@ -315,11 +410,13 @@ foreach ($albumsRepo as $alb) {
             gap: 8px;
             transition: all 0.2s ease;
             cursor: pointer;
+            box-shadow: 0 4px 14px rgba(220, 38, 38, 0.3);
         }
 
         .smug-nav-primary:hover {
             background: var(--smug-red-hover);
             border-color: var(--smug-red-hover);
+            transform: translateY(-1px);
         }
 
         /* Container */
@@ -329,7 +426,7 @@ foreach ($albumsRepo as $alb) {
             padding: 28px 32px 80px;
         }
 
-        /* Breadcrumbs (SmugMug style) */
+        /* Breadcrumbs */
         .smug-breadcrumbs {
             display: flex;
             align-items: center;
@@ -350,7 +447,7 @@ foreach ($albumsRepo as $alb) {
         }
 
         .smug-breadcrumbs a:hover {
-            color: #ffffff;
+            color: var(--smug-text-primary);
         }
 
         .smug-breadcrumbs .sep {
@@ -359,7 +456,7 @@ foreach ($albumsRepo as $alb) {
         }
 
         .smug-breadcrumbs .current {
-            color: #ffffff;
+            color: var(--smug-text-primary);
             font-weight: 600;
         }
 
@@ -624,52 +721,49 @@ foreach ($albumsRepo as $alb) {
 
         /* CLIENTS DIRECTORY VIEW (?view=clients) */
         .smug-directory-header {
-            margin-bottom: 32px;
-            padding-bottom: 24px;
-            border-bottom: 1px solid var(--smug-border);
+            margin-bottom: 36px;
         }
 
-        .smug-directory-eyebrow {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 0.76rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 1.5px;
-            color: var(--smug-red);
-            margin-bottom: 12px;
+        .smug-header-row {
+            margin-bottom: 24px;
         }
 
         .smug-directory-title {
-            font-size: clamp(2rem, 3.5vw, 2.8rem);
-            font-weight: 700;
-            color: #ffffff;
-            letter-spacing: -0.02em;
-            margin-bottom: 8px;
-            line-height: 1.2;
+            font-size: clamp(2rem, 3.8vw, 3rem);
+            font-weight: 800;
+            color: var(--smug-text-primary);
+            letter-spacing: -0.03em;
+            line-height: 1.15;
+            margin-bottom: 6px;
         }
 
         .smug-directory-subtitle {
             font-size: 0.95rem;
             color: var(--smug-text-secondary);
-            max-width: 720px;
-            line-height: 1.5;
-            margin-bottom: 24px;
+            font-weight: 500;
         }
 
-        /* Search & Filter Toolbar */
-        .smug-directory-toolbar {
+        /* Glassmorphic Search & Filter Bar */
+        .smug-glass-toolbar {
+            background: var(--smug-surface);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid var(--smug-glass-border);
+            border-radius: 16px;
+            padding: 12px 18px;
+            box-shadow: var(--smug-glass-glow);
             display: flex;
-            flex-direction: column;
+            align-items: center;
             gap: 16px;
-            margin-top: 20px;
+            flex-wrap: wrap;
+            transition: all 0.3s ease;
         }
 
         .smug-search-wrap {
             position: relative;
-            max-width: 480px;
-            width: 100%;
+            flex: 1;
+            min-width: 240px;
+            max-width: 380px;
         }
 
         .smug-search-icon {
@@ -684,21 +778,20 @@ foreach ($albumsRepo as $alb) {
 
         .smug-search-input {
             width: 100%;
-            background: #111116;
-            border: 1px solid var(--smug-border-light);
-            border-radius: 8px;
-            padding: 11px 40px 11px 38px;
-            color: #ffffff;
-            font-size: 0.9rem;
+            background: var(--smug-input-bg);
+            border: 1px solid var(--smug-border);
+            border-radius: 10px;
+            padding: 9px 36px 9px 36px;
+            color: var(--smug-text-primary);
+            font-size: 0.88rem;
             outline: none;
             transition: all 0.2s ease;
             -webkit-appearance: none;
         }
 
         .smug-search-input:focus {
-            border-color: rgba(255, 255, 255, 0.4);
-            background: #15151c;
-            box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.15);
+            border-color: var(--smug-red);
+            box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.12);
         }
 
         .smug-search-clear {
@@ -715,7 +808,7 @@ foreach ($albumsRepo as $alb) {
         }
 
         .smug-search-clear:hover {
-            color: #ffffff;
+            color: var(--smug-text-primary);
         }
 
         .smug-cat-pills-row {
@@ -724,9 +817,10 @@ foreach ($albumsRepo as $alb) {
             gap: 8px;
             overflow-x: auto;
             white-space: nowrap;
-            padding-bottom: 4px;
+            padding-bottom: 2px;
             -webkit-overflow-scrolling: touch;
             scrollbar-width: none;
+            flex: 2;
         }
 
         .smug-cat-pills-row::-webkit-scrollbar {
@@ -734,54 +828,67 @@ foreach ($albumsRepo as $alb) {
         }
 
         .smug-cat-pill {
-            background: rgba(255, 255, 255, 0.04);
-            border: 1px solid var(--smug-border);
-            color: var(--smug-text-secondary);
-            font-size: 0.82rem;
+            background: var(--smug-pill-bg);
+            border: 1px solid var(--smug-pill-border);
+            color: var(--smug-pill-text);
+            font-size: 0.8rem;
             font-weight: 600;
-            padding: 7px 16px;
+            padding: 7px 15px;
             border-radius: 20px;
             cursor: pointer;
-            transition: all 0.18s ease;
+            transition: all 0.2s ease;
             user-select: none;
             flex-shrink: 0;
             touch-action: manipulation;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .smug-cat-pill span {
+            opacity: 0.6;
+            font-size: 0.75rem;
         }
 
         .smug-cat-pill:hover {
-            color: #ffffff;
+            color: var(--smug-text-primary);
             border-color: var(--smug-border-light);
-            background: rgba(255, 255, 255, 0.08);
+            background: var(--smug-surface-hover);
         }
 
         .smug-cat-pill.active {
-            background: rgba(220, 38, 38, 0.15);
+            background: var(--smug-red);
             border-color: var(--smug-red);
             color: #ffffff;
             font-weight: 700;
+            box-shadow: 0 4px 14px rgba(220, 38, 38, 0.3);
         }
 
-        .smug-directory-stats {
-            font-size: 0.8rem;
-            color: var(--smug-text-muted);
-            margin-top: 10px;
+        .smug-cat-pill.active span {
+            opacity: 0.95;
+            color: #ffffff;
         }
 
-        /* Folders Grid */
+        /* Dynamic & Engaging Glassmorphism Folders Grid */
         .smug-folders-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-            gap: 24px;
+            grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+            gap: 28px;
+            margin-top: 24px;
         }
 
         .smug-folder-card {
+            position: relative;
             background: var(--smug-surface);
-            border: 1px solid var(--smug-border);
-            border-radius: 10px;
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--smug-glass-border);
+            border-radius: 16px;
             overflow: hidden;
             text-decoration: none;
-            color: #ffffff;
-            transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+            color: var(--smug-text-primary);
+            box-shadow: var(--smug-glass-glow);
+            transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.3s ease;
             display: flex;
             flex-direction: column;
             -webkit-tap-highlight-color: transparent;
@@ -789,19 +896,22 @@ foreach ($albumsRepo as $alb) {
 
         @media (hover: hover) {
             .smug-folder-card:hover {
-                border-color: var(--smug-border-light);
-                transform: translateY(-4px);
-                box-shadow: 0 16px 36px rgba(0, 0, 0, 0.55);
+                transform: translateY(-6px);
+                box-shadow: var(--smug-glass-glow-hover);
+                border-color: rgba(220, 38, 38, 0.4);
             }
             .smug-folder-card:hover .smug-folder-cover img {
-                transform: scale(1.04);
+                transform: scale(1.07);
             }
-            .smug-folder-card:hover .smug-folder-title {
-                color: #ffffff;
+            .smug-folder-card:hover .smug-card-glass-sheen {
+                opacity: 1;
+                transform: translateX(120%);
             }
-            .smug-folder-card:hover .smug-folder-arrow {
+            .smug-folder-card:hover .smug-dock-arrow {
                 transform: translateX(4px);
+                background: var(--smug-red);
                 color: #ffffff;
+                border-color: var(--smug-red);
             }
         }
 
@@ -812,9 +922,9 @@ foreach ($albumsRepo as $alb) {
         .smug-folder-cover {
             position: relative;
             width: 100%;
-            aspect-ratio: 16 / 10;
+            aspect-ratio: 16 / 11;
             overflow: hidden;
-            background: #111116;
+            background: var(--smug-surface-solid);
         }
 
         .smug-folder-cover img {
@@ -822,94 +932,153 @@ foreach ($albumsRepo as $alb) {
             height: 100%;
             object-fit: cover;
             display: block;
-            transition: transform 0.4s ease;
+            transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        /* Glass Sheen sweep effect */
+        .smug-card-glass-sheen {
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 80%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.25), transparent);
+            transform: skewX(-20deg);
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.3s ease, transform 0.8s ease;
         }
 
         .smug-folder-cat-badge {
             position: absolute;
-            top: 12px;
-            left: 12px;
-            background: rgba(0, 0, 0, 0.72);
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            color: #ffffff;
-            font-size: 0.7rem;
+            top: 14px;
+            left: 14px;
+            background: var(--smug-badge-bg);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            border: 1px solid var(--smug-badge-border);
+            color: var(--smug-badge-text);
+            font-size: 0.72rem;
             font-weight: 700;
             letter-spacing: 0.5px;
             text-transform: uppercase;
-            padding: 4px 10px;
-            border-radius: 4px;
+            padding: 5px 12px;
+            border-radius: 20px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            z-index: 2;
+        }
+
+        .smug-folder-count-badge {
+            position: absolute;
+            top: 14px;
+            right: 14px;
+            background: var(--smug-badge-bg);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            border: 1px solid var(--smug-badge-border);
+            color: var(--smug-badge-text);
+            font-size: 0.72rem;
+            font-weight: 600;
+            padding: 5px 11px;
+            border-radius: 20px;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            z-index: 2;
         }
 
         .smug-folder-lock-badge {
-            position: absolute;
-            top: 12px;
-            right: 12px;
-            background: rgba(7, 7, 9, 0.78);
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
-            border: 1px solid rgba(255, 255, 255, 0.12);
-            color: #cbd5e1;
-            font-size: 0.68rem;
-            font-weight: 600;
-            padding: 4px 9px;
-            border-radius: 4px;
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
+            display: none;
         }
 
-        .smug-folder-body {
-            padding: 18px 20px 20px;
+        /* Frosted Glass Floating Dock inside Cover */
+        .smug-folder-glass-dock {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0.4) 30%, rgba(0,0,0,0.85) 100%);
+            padding: 36px 18px 16px;
             display: flex;
-            flex-direction: column;
-            gap: 8px;
+            align-items: flex-end;
+            justify-content: space-between;
+            gap: 12px;
+            z-index: 2;
+        }
+
+        [data-theme="daylight"] .smug-folder-glass-dock {
+            background: linear-gradient(180deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.7) 35%, rgba(255,255,255,0.96) 100%);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-top: 1px solid rgba(255, 255, 255, 0.7);
+        }
+
+        .smug-dock-text {
             flex: 1;
+            min-width: 0;
         }
 
         .smug-folder-title {
-            font-size: clamp(1.05rem, 1.8vw, 1.25rem);
+            font-size: 1.15rem;
             font-weight: 700;
-            color: #f1f5f9;
-            line-height: 1.3;
-            transition: color 0.2s ease;
+            color: #ffffff;
+            line-height: 1.25;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
-        .smug-folder-meta {
-            font-size: 0.82rem;
-            color: var(--smug-text-secondary);
+        [data-theme="daylight"] .smug-folder-title {
+            color: #0f172a;
+        }
+
+        .smug-folder-client {
+            font-size: 0.8rem;
+            color: rgba(255, 255, 255, 0.75);
+            margin-top: 3px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        [data-theme="daylight"] .smug-folder-client {
+            color: #475569;
+        }
+
+        .smug-dock-arrow {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            color: #ffffff;
             display: flex;
             align-items: center;
-            gap: 8px;
-            margin-top: auto;
+            justify-content: center;
+            font-size: 0.8rem;
+            flex-shrink: 0;
+            transition: all 0.25s ease;
         }
 
-        .smug-folder-meta .dot {
-            opacity: 0.4;
-        }
-
-        .smug-folder-count {
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-        }
-
-        .smug-folder-arrow {
-            margin-left: auto;
-            color: var(--smug-text-muted);
-            font-size: 0.85rem;
-            transition: transform 0.2s ease, color 0.2s ease;
+        [data-theme="daylight"] .smug-dock-arrow {
+            background: rgba(15, 23, 42, 0.06);
+            border-color: rgba(15, 23, 42, 0.1);
+            color: #0f172a;
         }
 
         /* Empty State */
         .smug-empty-state {
             text-align: center;
             padding: 60px 20px;
-            background: rgba(255, 255, 255, 0.02);
+            background: var(--smug-surface);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
             border: 1px dashed var(--smug-border-light);
-            border-radius: 12px;
-            margin-top: 20px;
+            border-radius: 16px;
+            margin-top: 24px;
         }
 
         .smug-empty-icon {
@@ -921,7 +1090,7 @@ foreach ($albumsRepo as $alb) {
         .smug-empty-title {
             font-size: 1.2rem;
             font-weight: 700;
-            color: #ffffff;
+            color: var(--smug-text-primary);
             margin-bottom: 8px;
         }
 
@@ -1126,13 +1295,16 @@ foreach ($albumsRepo as $alb) {
         }
 
         .smug-modal-box {
-            background: #111116;
-            border: 1px solid var(--smug-border-light);
-            border-radius: 12px;
+            background: var(--smug-surface-solid);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid var(--smug-glass-border);
+            border-radius: 16px;
             max-width: 480px;
             width: 100%;
             overflow: hidden;
-            box-shadow: 0 24px 60px rgba(0, 0, 0, 0.7);
+            box-shadow: var(--smug-glass-glow-hover);
+            transition: background 0.3s ease;
         }
 
         .smug-modal-header {
@@ -1146,7 +1318,7 @@ foreach ($albumsRepo as $alb) {
         .smug-modal-title {
             font-size: 1.25rem;
             font-weight: 700;
-            color: #ffffff;
+            color: var(--smug-text-primary);
             margin-bottom: 4px;
         }
 
@@ -1176,18 +1348,19 @@ foreach ($albumsRepo as $alb) {
 
         .smug-input {
             width: 100%;
-            background: #09090c;
+            background: var(--smug-input-bg);
             border: 1px solid var(--smug-border-light);
-            border-radius: 6px;
+            border-radius: 8px;
             padding: 11px 14px;
-            color: #ffffff;
+            color: var(--smug-text-primary);
             font-size: 0.92rem;
             outline: none;
-            transition: border-color 0.2s ease;
+            transition: border-color 0.2s ease, background 0.2s ease;
         }
 
         .smug-input:focus {
-            border-color: #ffffff;
+            border-color: var(--smug-red);
+            box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.12);
         }
 
         .smug-otp-input {
@@ -1237,7 +1410,7 @@ foreach ($albumsRepo as $alb) {
         }
 
         .btn-modal-cancel:hover {
-            color: #ffffff;
+            color: var(--smug-text-primary);
         }
 
         .btn-modal-submit {
@@ -1264,12 +1437,14 @@ foreach ($albumsRepo as $alb) {
             position: fixed;
             bottom: 24px;
             right: 24px;
-            background: #111116;
-            border: 1px solid var(--smug-border-light);
-            color: #ffffff;
+            background: var(--smug-surface-solid);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--smug-glass-border);
+            color: var(--smug-text-primary);
             padding: 12px 20px;
-            border-radius: 8px;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+            border-radius: 12px;
+            box-shadow: var(--smug-glass-glow);
             display: flex;
             align-items: center;
             gap: 10px;
@@ -1300,13 +1475,19 @@ foreach ($albumsRepo as $alb) {
             </a>
 
             <div class="smug-topbar-actions">
+                <!-- Daylight / Noir Atmosphere Toggle -->
+                <button type="button" class="smug-theme-toggle" id="portalThemeToggle" onclick="togglePortalTheme()" title="Toggle Daylight / Noir Atmosphere">
+                    <i class="fa-solid fa-sun" id="themeActiveIcon"></i>
+                    <span id="themeActiveLabel">Daylight</span>
+                </button>
+
                 <a href="https://www.falhen.com/portfolio" class="smug-nav-link">
                     <i class="fa-solid fa-arrow-left"></i>
                     <span>Portfolio</span>
                 </a>
-                <a href="/clients" class="smug-nav-link <?php echo $isClientsView ? 'style="color:#fff;"' : ''; ?>">
+                <a href="/clients" class="smug-nav-link <?php echo $isClientsView ? 'active' : ''; ?>">
                     <i class="fa-regular fa-folder"></i>
-                    <span>All Clients</span>
+                    <span>Galleries</span>
                 </a>
                 <?php if (!$isClientsView): ?>
                     <button type="button" class="smug-nav-cta" onclick="openDynamicFullView(0)">
@@ -1325,25 +1506,15 @@ foreach ($albumsRepo as $alb) {
     <div class="smug-page-container">
 
         <?php if ($isClientsView): ?>
-            <!-- ================= CLIENTS DIRECTORY VIEW (SmugMug /Clients) ================= -->
-            <nav class="smug-breadcrumbs" aria-label="Breadcrumb">
-                <a href="https://www.falhen.com">Home</a>
-                <span class="sep">/</span>
-                <a href="https://www.falhen.com/portfolio">Portfolio</a>
-                <span class="sep">/</span>
-                <span class="current">Clients</span>
-            </nav>
-
+            <!-- ================= CLIENTS DIRECTORY VIEW ================= -->
             <div class="smug-directory-header">
-                <div class="smug-directory-eyebrow">
-                    <i class="fa-solid fa-camera-retro"></i>
-                    <span>Curated Client Deliveries</span>
+                <div class="smug-header-row">
+                    <h1 class="smug-directory-title">Client Deliveries</h1>
+                    <p class="smug-directory-subtitle">Curated client archives & proof galleries.</p>
                 </div>
-                <h1 class="smug-directory-title">Client Deliveries</h1>
-                <p class="smug-directory-subtitle">Select your curated gallery below to stream in full-screen slideshow, view photo proofs, and download high-resolution assets.</p>
 
-                <!-- Search & Category Filters Toolbar -->
-                <div class="smug-directory-toolbar">
+                <!-- Glassmorphic Search & Filter Bar -->
+                <div class="smug-glass-toolbar">
                     <div class="smug-search-wrap">
                         <i class="fa-solid fa-magnifying-glass smug-search-icon"></i>
                         <input type="text" id="clientGallerySearch" class="smug-search-input" placeholder="Search gallery or client name..." autocomplete="off">
@@ -1354,7 +1525,7 @@ foreach ($albumsRepo as $alb) {
 
                     <div class="smug-cat-pills-row" id="catPillsRow">
                         <button type="button" class="smug-cat-pill active" data-cat="all" onclick="filterGalleryCategory('all', this)">
-                            All (<?php echo count($albumsRepo); ?>)
+                            All <span><?php echo count($albumsRepo); ?></span>
                         </button>
                         <?php foreach ($allCategories as $catName): 
                             $cCount = 0;
@@ -1363,24 +1534,21 @@ foreach ($albumsRepo as $alb) {
                             }
                         ?>
                             <button type="button" class="smug-cat-pill" data-cat="<?php echo htmlspecialchars(strtolower($catName)); ?>" onclick="filterGalleryCategory('<?php echo htmlspecialchars(strtolower($catName)); ?>', this)">
-                                <?php echo htmlspecialchars($catName); ?> (<?php echo $cCount; ?>)
+                                <?php echo htmlspecialchars($catName); ?> <span><?php echo $cCount; ?></span>
                             </button>
                         <?php endforeach; ?>
                     </div>
                 </div>
-
-                <div class="smug-directory-stats" id="galleryCountStatus">
-                    Showing <span id="visibleGalleryCount"><?php echo count($albumsRepo); ?></span> of <?php echo count($albumsRepo); ?> galleries
-                </div>
             </div>
 
+            <!-- Dynamic Glassmorphic Gallery Cards -->
             <div class="smug-folders-grid" id="smugFoldersGrid">
                 <?php foreach ($albumsRepo as $aId => $album): 
                     $albCover = getCloudinaryUrl($album['image'] ?? $album['cover'] ?? '/assets/img/portfolio/portfolio_halima.png');
                     $albCount = (int)($album['photosCount'] ?? 25);
                     $albSlug = $album['slug'] ?? generateSlug($album['title'] ?? 'gallery');
                     $albCategory = $album['category'] ?? 'Gallery';
-                    $albClient = $album['client'] ?? 'Falhen Client';
+                    $albClient = $album['client'] ?? '';
                 ?>
                     <a href="/album/<?php echo urlencode($albSlug); ?>" 
                        class="smug-folder-card" 
@@ -1389,16 +1557,21 @@ foreach ($albumsRepo as $alb) {
                        data-cat="<?php echo htmlspecialchars(strtolower($albCategory)); ?>">
                         <div class="smug-folder-cover">
                             <img src="<?php echo htmlspecialchars($albCover); ?>" alt="<?php echo htmlspecialchars($album['title']); ?>" loading="lazy">
+                            <div class="smug-card-glass-sheen"></div>
                             <span class="smug-folder-cat-badge"><?php echo htmlspecialchars($albCategory); ?></span>
-                            <span class="smug-folder-lock-badge"><i class="fa-solid fa-lock"></i> Client Delivery</span>
-                        </div>
-                        <div class="smug-folder-body">
-                            <h2 class="smug-folder-title"><?php echo htmlspecialchars($album['title']); ?></h2>
-                            <div class="smug-folder-meta">
-                                <span><?php echo htmlspecialchars($albClient); ?></span>
-                                <span class="dot">·</span>
-                                <span class="smug-folder-count"><i class="fa-regular fa-images"></i> <?php echo $albCount; ?> Photos</span>
-                                <span class="smug-folder-arrow"><i class="fa-solid fa-arrow-right"></i></span>
+                            <span class="smug-folder-count-badge"><i class="fa-regular fa-images"></i> <?php echo $albCount; ?></span>
+                            <span class="smug-folder-lock-badge" style="display:none;"><i class="fa-solid fa-lock"></i> Client Delivery</span>
+                            
+                            <div class="smug-folder-glass-dock">
+                                <div class="smug-dock-text">
+                                    <h2 class="smug-folder-title"><?php echo htmlspecialchars($album['title']); ?></h2>
+                                    <?php if (!empty($albClient) && strcasecmp(trim($albClient), trim($album['title'])) !== 0): ?>
+                                        <p class="smug-folder-client"><?php echo htmlspecialchars($albClient); ?></p>
+                                    <?php endif; ?>
+                                </div>
+                                <span class="smug-dock-arrow">
+                                    <i class="fa-solid fa-arrow-right"></i>
+                                </span>
                             </div>
                         </div>
                     </a>
@@ -1975,6 +2148,36 @@ foreach ($albumsRepo as $alb) {
             });
         }
 
+        // ================= ATMOSPHERIC DAYLIGHT & NOIR THEME ENGINE =================
+        function initPortalTheme() {
+            const savedTheme = localStorage.getItem('falhen_theme') || 'daylight';
+            applyPortalTheme(savedTheme);
+        }
+
+        function togglePortalTheme() {
+            const current = document.documentElement.getAttribute('data-theme') || 'daylight';
+            const next = current === 'daylight' ? 'noir' : 'daylight';
+            applyPortalTheme(next);
+        }
+
+        function applyPortalTheme(theme) {
+            document.documentElement.setAttribute('data-theme', theme);
+            document.body.setAttribute('data-theme', theme);
+            localStorage.setItem('falhen_theme', theme);
+
+            const icon = document.getElementById('themeActiveIcon');
+            const label = document.getElementById('themeActiveLabel');
+            if (icon && label) {
+                if (theme === 'noir') {
+                    icon.className = 'fa-solid fa-moon';
+                    label.textContent = 'Noir';
+                } else {
+                    icon.className = 'fa-solid fa-sun';
+                    label.textContent = 'Daylight';
+                }
+            }
+        }
+
         // ================= CLIENT DIRECTORY SEARCH & CATEGORY FILTER =================
         let activeGalleryCategoryFilter = 'all';
 
@@ -2035,6 +2238,7 @@ foreach ($albumsRepo as $alb) {
         }
 
         document.addEventListener('DOMContentLoaded', () => {
+            initPortalTheme();
             const searchInput = document.getElementById('clientGallerySearch');
             if (searchInput) {
                 searchInput.addEventListener('input', applyGalleryDirectoryFilters);
