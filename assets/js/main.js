@@ -26,6 +26,8 @@ document.addEventListener('DOMContentLoaded', () => {
     let activeIframe = null;
     let activeVideoEl = null;
     let ytHandshakeTimer = null;
+    let latestYtState = null;
+    let sentInitialPlay = false;
     let lastSeekLoopAt = 0;
 
     const revealVideoLayer = () => {
@@ -35,10 +37,8 @@ document.addEventListener('DOMContentLoaded', () => {
         clearInterval(ytHandshakeTimer);
         ytHandshakeTimer = null;
       }
-      setTimeout(() => {
-        heroVideoLayer.classList.add('is-playing');
-        heroStage.classList.add('video-active');
-      }, 110);
+      heroVideoLayer.classList.add('is-playing');
+      heroStage.classList.add('video-active');
     };
 
     const concealVideoLayer = () => {
@@ -150,9 +150,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 JSON.stringify({ event: 'listening', id: 'falhenHeroBg', channel: 'widget' }),
                 '*'
               );
-              // Only nudge playVideo if autoplay hasn't kicked in on its own after 2.4s
-              // (avoids triggering YouTube's transient remote-control HUD overlay)
-              if (ticks === 8 && !isPlayingConfirmed && isInViewport && !isModalOpen) {
+              if (!sentInitialPlay && isInViewport && !isModalOpen) {
+                sentInitialPlay = true;
                 iframe.contentWindow.postMessage(
                   JSON.stringify({ event: 'command', func: 'mute', args: [] }),
                   '*'
@@ -166,6 +165,10 @@ document.addEventListener('DOMContentLoaded', () => {
               iframe.contentWindow.postMessage(JSON.stringify({ method: 'addEventListener', value: 'play' }), '*');
               iframe.contentWindow.postMessage(JSON.stringify({ method: 'addEventListener', value: 'playProgress' }), '*');
               iframe.contentWindow.postMessage(JSON.stringify({ method: 'setVolume', value: 0 }), '*');
+              if (!sentInitialPlay && isInViewport && !isModalOpen) {
+                sentInitialPlay = true;
+                iframe.contentWindow.postMessage(JSON.stringify({ method: 'play' }), '*');
+              }
             }
           } catch (_) {}
         };
@@ -193,11 +196,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
       if (iframeProvider === 'youtube') {
         const info = payload.info || {};
-        const state = typeof info.playerState === 'number' ? info.playerState : null;
+        if (typeof info.playerState === 'number') {
+          latestYtState = info.playerState;
+        }
+        const state = latestYtState;
         const curTime = typeof info.currentTime === 'number' ? info.currentTime : 0;
         const dur = typeof info.duration === 'number' ? info.duration : 0;
 
-        if (state === 1 && curTime > 0.35) {
+        // Wait until 1.35s of active playback so YouTube's initial HUD fades out behind the poster
+        if ((state === 1 && curTime > 1.35) || curTime > 1.5) {
           revealVideoLayer();
         }
 
