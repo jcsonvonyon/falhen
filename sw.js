@@ -4,7 +4,7 @@
  * for instant repeat loads even on slow 2G/3G or offline networks.
  */
 
-const CACHE_VERSION = 'falhen-shell-v3';
+const CACHE_VERSION = 'falhen-shell-v4';
 const CORE_ASSETS = [
   '/',
   '/assets/img/hero.jpg',

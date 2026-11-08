@@ -203,8 +203,23 @@ document.addEventListener('DOMContentLoaded', () => {
         const curTime = typeof info.currentTime === 'number' ? info.currentTime : 0;
         const dur = typeof info.duration === 'number' ? info.duration : 0;
 
-        // Wait until 1.35s of active playback so YouTube's initial HUD fades out behind the poster
-        if ((state === 1 && curTime > 1.35) || curTime > 1.5) {
+        // Strip any auto-generated YouTube closed-caption tracks immediately
+        if (state === 1 && !activeIframe.dataset.ccCleared) {
+          activeIframe.dataset.ccCleared = '1';
+          try {
+            activeIframe.contentWindow.postMessage(
+              JSON.stringify({ event: 'command', func: 'unloadModule', args: ['captions'] }),
+              '*'
+            );
+            activeIframe.contentWindow.postMessage(
+              JSON.stringify({ event: 'command', func: 'unloadModule', args: ['cc'] }),
+              '*'
+            );
+          } catch (_) {}
+        }
+
+        // Wait until 3.2s of active playback so YouTube's desktop/mobile HUD completely clears behind the poster
+        if ((state === 1 && curTime > 3.2) || curTime > 3.4) {
           revealVideoLayer();
         }
 
