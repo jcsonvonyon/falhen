@@ -344,10 +344,146 @@ function extractYouTubeId($urlOrId) {
     if (preg_match('/^[a-zA-Z0-9_-]{11}$/', $urlOrId)) {
         return $urlOrId;
     }
-    if (preg_match('/(?:v=|\/embed\/|\/watch\?v=|youtu\.be\/|\/v\/)([a-zA-Z0-9_-]{11})/i', $urlOrId, $m)) {
+    if (preg_match('/(?:v=|\/embed\/|\/shorts\/|\/live\/|\/watch\?v=|youtu\.be\/|\/v\/)([a-zA-Z0-9_-]{11})/i', $urlOrId, $m)) {
         return $m[1];
     }
     return '';
+}
+
+/**
+ * Extract Vimeo numeric ID from a Vimeo URL or raw numeric string
+ */
+function extractVimeoId($urlOrId) {
+    $urlOrId = trim((string)$urlOrId);
+    if (empty($urlOrId)) return '';
+    if (preg_match('/^\d{6,12}$/', $urlOrId)) {
+        return $urlOrId;
+    }
+    if (preg_match('/vimeo\.com\/(?:video\/|channels\/[^\/]+\/|groups\/[^\/]+\/videos\/)?(\d{6,12})/i', $urlOrId, $m)) {
+        return $m[1];
+    }
+    return '';
+}
+
+/**
+ * Normalize a Cloudinary image or video URL with an exact responsive transformation
+ */
+function getResponsiveCloudinaryAsset($pathOrUrl, $transform = 'f_auto,q_auto') {
+    $raw = trim((string)$pathOrUrl);
+    if ($raw === '') {
+        return '/assets/img/hero.jpg';
+    }
+    if (function_exists('isCloudinaryUrl') && isCloudinaryUrl($raw)) {
+        // Strip any prior inline transformation segment before /v123456/ so transforms never stack
+        $clean = preg_replace('#/upload/(?:[a-zA-Z0-9_,:.-]+/)+(v\d+/)#', '/upload/$1', $raw);
+        if (strpos($clean, '/upload/') !== false) {
+            return str_replace('/upload/', '/upload/' . $transform . '/', $clean);
+        }
+        return $clean;
+    }
+    return function_exists('getCloudinaryUrl') ? getCloudinaryUrl($raw, $transform) : $raw;
+}
+
+/**
+ * Resolve Homepage Hero Media Stack (Backup Poster + Chromeless Primary Video Iframe / Direct Stream)
+ */
+function resolveHeroMediaConfig($settings = null) {
+    if (!is_array($settings)) {
+        $settings = function_exists('getSiteSettings') ? getSiteSettings() : [];
+    }
+
+    $showreelRaw = trim((string)($settings['showreel_youtube_id'] ?? 'Tf8rNMZ-Bw0'));
+    $showreelId  = extractYouTubeId($showreelRaw) ?: 'Tf8rNMZ-Bw0';
+    $showreelModalUrl = 'https://www.youtube-nocookie.com/embed/' . rawurlencode($showreelId) . '?autoplay=1&rel=0&modestbranding=1&playsinline=1';
+
+    $rawPoster = !empty($settings['hero_poster_image']) ? trim((string)$settings['hero_poster_image']) : '/assets/img/hero.jpg';
+    $posterDesktop = getResponsiveCloudinaryAsset($rawPoster, 'f_auto,q_auto:good,w_1920,c_fill');
+    $posterMobile  = getResponsiveCloudinaryAsset($rawPoster, 'f_auto,q_auto:eco,w_780,c_fill');
+    $posterLqip    = getResponsiveCloudinaryAsset($rawPoster, 'f_auto,q_30,w_48,e_blur:200,c_fill');
+
+    $directVideoRaw = trim((string)($settings['hero_direct_video_url'] ?? ''));
+    $directVideoDesktop = $directVideoRaw !== '' ? getResponsiveCloudinaryAsset($directVideoRaw, 'f_auto,q_auto:eco,vc_auto,ac_none,w_1280') : '';
+    $directVideoMobile  = $directVideoRaw !== '' ? getResponsiveCloudinaryAsset($directVideoRaw, 'f_auto,q_auto:eco,vc_auto,ac_none,w_720') : '';
+
+    // Resolve Third-Party Chromeless Video Iframe (explicit YouTube/Vimeo override OR seamless Showreel sync)
+    $ytBgRaw    = trim((string)($settings['hero_youtube_bg'] ?? ''));
+    $vimeoBgRaw = trim((string)($settings['hero_vimeo_bg'] ?? ''));
+    $useShowreelAsBg = isset($settings['hero_bg_use_showreel']) ? (bool)$settings['hero_bg_use_showreel'] : true;
+
+    $iframeProvider = '';
+    $iframeVideoId  = '';
+    $iframeEmbedUrl = '';
+
+    // Allow pasting either YouTube or Vimeo into hero_youtube_bg / unified iframe field
+    if ($ytBgRaw !== '') {
+        $ytCandidate = extractYouTubeId($ytBgRaw);
+        $vmCandidate = $ytCandidate === '' ? extractVimeoId($ytBgRaw) : '';
+        if ($ytCandidate !== '') {
+            $iframeProvider = 'youtube';
+            $iframeVideoId  = $ytCandidate;
+        } elseif ($vmCandidate !== '') {
+            $iframeProvider = 'vimeo';
+            $iframeVideoId  = $vmCandidate;
+        }
+    }
+
+    if ($iframeProvider === '' && $vimeoBgRaw !== '') {
+        $vmCandidate = extractVimeoId($vimeoBgRaw);
+        if ($vmCandidate !== '') {
+            $iframeProvider = 'vimeo';
+            $iframeVideoId  = $vmCandidate;
+        }
+    }
+
+    // Seamless fallback to existing Showreel interaction when enabled and no explicit override is set
+    if ($iframeProvider === '' && $directVideoRaw === '' && $useShowreelAsBg && $showreelId !== '') {
+        $iframeProvider = 'youtube';
+        $iframeVideoId  = $showreelId;
+    }
+
+    if ($iframeProvider === 'youtube' && $iframeVideoId !== '') {
+        $encId = rawurlencode($iframeVideoId);
+        $iframeEmbedUrl = "https://www.youtube-nocookie.com/embed/{$encId}"
+            . "?autoplay=1&mute=1&controls=0&showinfo=0&rel=0&playsinline=1"
+            . "&loop=1&playlist={$encId}&modestbranding=1&iv_load_policy=3"
+            . "&disablekb=1&fs=0&cc_load_policy=0&enablejsapi=1";
+    } elseif ($iframeProvider === 'vimeo' && $iframeVideoId !== '') {
+        $encId = rawurlencode($iframeVideoId);
+        $iframeEmbedUrl = "https://player.vimeo.com/video/{$encId}"
+            . "?background=1&autoplay=1&muted=1&loop=1&byline=0&title=0&portrait=0&dnt=1&playsinline=1&autopause=0";
+    }
+
+    // Determine primary active mode
+    $bgMode = 'poster';
+    if ($iframeEmbedUrl !== '') {
+        $bgMode = $iframeProvider; // 'youtube' or 'vimeo'
+    } elseif ($directVideoRaw !== '') {
+        $bgMode = 'direct';
+    }
+
+    // If BOTH an iframe and direct video are configured, respect explicit priority if direct stream is set without custom iframe
+    if ($directVideoRaw !== '' && $ytBgRaw === '' && $vimeoBgRaw === '' && !$useShowreelAsBg) {
+        $bgMode = 'direct';
+    } elseif ($directVideoRaw !== '' && ($settings['hero_prefer_direct_stream'] ?? false)) {
+        $bgMode = 'direct';
+    }
+
+    return [
+        'bg_mode'              => $bgMode,
+        'use_showreel_bg'      => $useShowreelAsBg,
+        'iframe_provider'      => $iframeProvider,
+        'iframe_video_id'      => $iframeVideoId,
+        'iframe_embed_url'     => $iframeEmbedUrl,
+        'direct_video_raw'     => $directVideoRaw,
+        'direct_video_desktop' => $directVideoDesktop,
+        'direct_video_mobile'  => $directVideoMobile,
+        'poster_raw'           => $rawPoster,
+        'poster_desktop'       => $posterDesktop,
+        'poster_mobile'        => $posterMobile,
+        'poster_lqip'          => $posterLqip,
+        'showreel_id'          => $showreelId,
+        'showreel_modal_url'   => $showreelModalUrl
+    ];
 }
 
 /**

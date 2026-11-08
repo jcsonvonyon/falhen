@@ -87,6 +87,6 @@ $footerSlug = isset($currentSlug) ? $currentSlug : preg_replace('/\.php$/', '', 
 
 <?php require_once __DIR__ . '/cookie-banner.php'; ?>
 
-<script src="/assets/js/main.js"></script>
+<script src="/assets/js/main.js?v=<?php echo file_exists(__DIR__ . '/../assets/js/main.js') ? filemtime(__DIR__ . '/../assets/js/main.js') : '2.4'; ?>" defer></script>
 </body>
 </html>

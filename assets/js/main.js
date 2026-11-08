@@ -3,6 +3,330 @@
  */
 
 document.addEventListener('DOMContentLoaded', () => {
+  // 0. Lightweight Hero Chromeless Autoplay Video + Offline/Slow-Network Engine
+  const heroStage = document.getElementById('heroStage');
+  const heroVideoLayer = document.getElementById('heroVideoLayer');
+  const heroPosterImg = heroStage ? heroStage.querySelector('.hero-poster-img') : null;
+  let heroMediaController = null;
+
+  if (heroStage && heroVideoLayer) {
+    const bgMode = heroVideoLayer.dataset.bgMode || 'poster';
+    const iframeProvider = heroVideoLayer.dataset.iframeProvider || '';
+    const rawIframeSrc = heroVideoLayer.dataset.iframeSrc || '';
+    const directDesktop = heroVideoLayer.dataset.directDesktop || '';
+    const directMobile = heroVideoLayer.dataset.directMobile || '';
+
+    const conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+    const prefersSaveData = Boolean(conn && conn.saveData);
+
+    let isMounted = false;
+    let isPlayingConfirmed = false;
+    let isInViewport = true;
+    let isModalOpen = false;
+    let activeIframe = null;
+    let activeVideoEl = null;
+    let ytHandshakeTimer = null;
+    let lastSeekLoopAt = 0;
+
+    const revealVideoLayer = () => {
+      if (isPlayingConfirmed) return;
+      isPlayingConfirmed = true;
+      if (ytHandshakeTimer) {
+        clearInterval(ytHandshakeTimer);
+        ytHandshakeTimer = null;
+      }
+      setTimeout(() => {
+        heroVideoLayer.classList.add('is-playing');
+        heroStage.classList.add('video-active');
+      }, 110);
+    };
+
+    const concealVideoLayer = () => {
+      isPlayingConfirmed = false;
+      heroVideoLayer.classList.remove('is-playing');
+      heroStage.classList.remove('video-active');
+    };
+
+    const sendPlayerCommand = (action) => {
+      if (activeVideoEl) {
+        if (action === 'pause') {
+          activeVideoEl.pause();
+        } else if (action === 'play' && isInViewport && !isModalOpen) {
+          activeVideoEl.play().catch(() => {});
+        }
+        return;
+      }
+      if (!activeIframe || !activeIframe.contentWindow) return;
+      try {
+        if (iframeProvider === 'youtube') {
+          const func = action === 'pause' ? 'pauseVideo' : 'playVideo';
+          activeIframe.contentWindow.postMessage(
+            JSON.stringify({ event: 'command', func, args: [] }),
+            '*'
+          );
+        } else if (iframeProvider === 'vimeo') {
+          activeIframe.contentWindow.postMessage(
+            JSON.stringify({ method: action }),
+            '*'
+          );
+        }
+      } catch (_) {}
+    };
+
+    heroMediaController = {
+      onModalOpen() {
+        isModalOpen = true;
+        sendPlayerCommand('pause');
+      },
+      onModalClose() {
+        isModalOpen = false;
+        if (isInViewport) sendPlayerCommand('play');
+      }
+    };
+
+    const mountDirectVideo = (srcUrl) => {
+      if (!srcUrl || isMounted) return;
+      isMounted = true;
+      const vid = document.createElement('video');
+      vid.className = 'hero-bg-video';
+      vid.muted = true;
+      vid.defaultMuted = true;
+      vid.loop = true;
+      vid.playsInline = true;
+      vid.autoplay = true;
+      vid.preload = 'auto';
+      vid.setAttribute('muted', '');
+      vid.setAttribute('playsinline', '');
+      vid.setAttribute('webkit-playsinline', '');
+      vid.setAttribute('aria-hidden', 'true');
+      vid.src = srcUrl;
+
+      const onFramePlaying = () => {
+        if (vid.currentTime > 0.03 || !vid.paused) {
+          revealVideoLayer();
+        }
+      };
+      vid.addEventListener('playing', onFramePlaying);
+      vid.addEventListener('timeupdate', onFramePlaying, { once: true });
+      vid.addEventListener('error', () => concealVideoLayer());
+
+      heroVideoLayer.appendChild(vid);
+      activeVideoEl = vid;
+      vid.play().catch(() => {});
+    };
+
+    const mountIframeVideo = () => {
+      if (!rawIframeSrc || isMounted) return;
+      isMounted = true;
+
+      let finalSrc = rawIframeSrc;
+      if (iframeProvider === 'youtube' && !finalSrc.includes('origin=')) {
+        finalSrc += (finalSrc.includes('?') ? '&' : '?') + 'origin=' + encodeURIComponent(window.location.origin);
+      }
+
+      const iframe = document.createElement('iframe');
+      iframe.className = 'hero-bg-iframe';
+      iframe.src = finalSrc;
+      iframe.title = '';
+      iframe.tabIndex = -1;
+      iframe.setAttribute('aria-hidden', 'true');
+      iframe.setAttribute('allow', 'autoplay; encrypted-media');
+      iframe.setAttribute('referrerpolicy', 'strict-origin-when-cross-origin');
+
+      iframe.addEventListener('load', () => {
+        let ticks = 0;
+        const pingPlayer = () => {
+          if (!iframe.contentWindow || isPlayingConfirmed || ticks > 16) {
+            if (ytHandshakeTimer) {
+              clearInterval(ytHandshakeTimer);
+              ytHandshakeTimer = null;
+            }
+            return;
+          }
+          ticks++;
+          try {
+            if (iframeProvider === 'youtube') {
+              iframe.contentWindow.postMessage(
+                JSON.stringify({ event: 'listening', id: 'falhenHeroBg', channel: 'widget' }),
+                '*'
+              );
+              iframe.contentWindow.postMessage(
+                JSON.stringify({ event: 'command', func: 'mute', args: [] }),
+                '*'
+              );
+              if (isInViewport && !isModalOpen) {
+                iframe.contentWindow.postMessage(
+                  JSON.stringify({ event: 'command', func: 'playVideo', args: [] }),
+                  '*'
+                );
+              }
+            } else if (iframeProvider === 'vimeo') {
+              iframe.contentWindow.postMessage(JSON.stringify({ method: 'addEventListener', value: 'play' }), '*');
+              iframe.contentWindow.postMessage(JSON.stringify({ method: 'addEventListener', value: 'playProgress' }), '*');
+              iframe.contentWindow.postMessage(JSON.stringify({ method: 'setVolume', value: 0 }), '*');
+              if (isInViewport && !isModalOpen) {
+                iframe.contentWindow.postMessage(JSON.stringify({ method: 'play' }), '*');
+              }
+            }
+          } catch (_) {}
+        };
+        pingPlayer();
+        ytHandshakeTimer = setInterval(pingPlayer, 300);
+      });
+
+      heroVideoLayer.appendChild(iframe);
+      activeIframe = iframe;
+    };
+
+    // Listen for real decoded frame playback events from YouTube / Vimeo
+    window.addEventListener('message', (e) => {
+      if (!activeIframe || typeof e.data !== 'string') return;
+      const origin = e.origin || '';
+      if (!origin.includes('youtube') && !origin.includes('vimeo')) return;
+
+      let payload = null;
+      try {
+        payload = JSON.parse(e.data);
+      } catch (_) {
+        return;
+      }
+      if (!payload) return;
+
+      if (iframeProvider === 'youtube') {
+        const info = payload.info || {};
+        const state = typeof info.playerState === 'number' ? info.playerState : null;
+        const curTime = typeof info.currentTime === 'number' ? info.currentTime : 0;
+        const dur = typeof info.duration === 'number' ? info.duration : 0;
+
+        if (state === 1 || curTime > 0.08) {
+          revealVideoLayer();
+        }
+
+        // Seamless in-memory loop before YouTube's end-screen / reload blink
+        const now = Date.now();
+        if (dur > 2 && curTime >= dur - 0.42 && now - lastSeekLoopAt > 1500) {
+          lastSeekLoopAt = now;
+          try {
+            activeIframe.contentWindow.postMessage(
+              JSON.stringify({ event: 'command', func: 'seekTo', args: [0, true] }),
+              '*'
+            );
+            activeIframe.contentWindow.postMessage(
+              JSON.stringify({ event: 'command', func: 'playVideo', args: [] }),
+              '*'
+            );
+          } catch (_) {}
+        } else if (state === 0) {
+          try {
+            activeIframe.contentWindow.postMessage(
+              JSON.stringify({ event: 'command', func: 'seekTo', args: [0, true] }),
+              '*'
+            );
+            activeIframe.contentWindow.postMessage(
+              JSON.stringify({ event: 'command', func: 'playVideo', args: [] }),
+              '*'
+            );
+          } catch (_) {}
+        }
+
+        // If connection drops mid-stream and player stalls in buffering, fall back cleanly to poster
+        if (!navigator.onLine && (state === 3 || state === -1)) {
+          concealVideoLayer();
+        }
+      } else if (iframeProvider === 'vimeo') {
+        if (
+          payload.event === 'play' ||
+          payload.event === 'playProgress' ||
+          payload.method === 'playProgress'
+        ) {
+          revealVideoLayer();
+        }
+      }
+    });
+
+    const preferredDirectStream = () => {
+      const isMobile = window.innerWidth <= 768;
+      return (isMobile && directMobile) ? directMobile : (directDesktop || directMobile);
+    };
+
+    const bootHeroMedia = () => {
+      if (isMounted) return;
+      const directUrl = preferredDirectStream();
+
+      // Offline guard: never mount a dead third-party iframe while offline
+      if (!navigator.onLine) {
+        if (directUrl) {
+          mountDirectVideo(directUrl);
+        }
+        return;
+      }
+
+      // Respect explicit mobile OS Data-Saver preference
+      if (prefersSaveData) {
+        return;
+      }
+
+      if (bgMode === 'direct' && directUrl) {
+        mountDirectVideo(directUrl);
+      } else if ((bgMode === 'youtube' || bgMode === 'vimeo') && rawIframeSrc) {
+        mountIframeVideo();
+      } else if (directUrl) {
+        mountDirectVideo(directUrl);
+      }
+    };
+
+    // Mount non-blockingly right after first paint so Poster LCP gets 100% bandwidth priority
+    requestAnimationFrame(() => {
+      setTimeout(bootHeroMedia, 50);
+    });
+
+    // Automatically mount & crossfade video if user starts offline and regains connectivity
+    window.addEventListener('online', () => {
+      if (!isMounted) {
+        bootHeroMedia();
+      } else {
+        sendPlayerCommand('play');
+      }
+    });
+
+    // Pause off-screen to preserve mobile battery & 60/120fps scroll smoothness
+    if ('IntersectionObserver' in window) {
+      const heroObserver = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            isInViewport = entry.isIntersecting;
+            if (!isMounted) return;
+            sendPlayerCommand(entry.isIntersecting ? 'play' : 'pause');
+          });
+        },
+        { threshold: 0.05 }
+      );
+      heroObserver.observe(heroStage);
+    }
+
+    // Pause when browser tab is backgrounded on mobile/desktop
+    document.addEventListener('visibilitychange', () => {
+      if (!isMounted) return;
+      sendPlayerCommand(document.hidden ? 'pause' : 'play');
+    });
+  }
+
+  // Register lightweight Service Worker & warm active Hero Poster for instant offline/slow-net loads
+  if ('serviceWorker' in navigator && !window.location.hostname.startsWith('client.')) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker
+        .register('/sw.js', { scope: '/' })
+        .then((reg) => {
+          const posterUrl = heroPosterImg ? heroPosterImg.currentSrc || heroPosterImg.src : '';
+          const sw = reg.active || reg.waiting || reg.installing;
+          if (sw && posterUrl) {
+            sw.postMessage({ type: 'WARM_HERO_ASSETS', urls: [posterUrl] });
+          }
+        })
+        .catch(() => {});
+    });
+  }
+
   // 1. Sticky Navigation Bar
   const header = document.querySelector('.header');
   window.addEventListener('scroll', () => {
@@ -11,7 +335,7 @@ document.addEventListener('DOMContentLoaded', () => {
     } else {
       header?.classList.remove('scrolled');
     }
-  });
+  }, { passive: true });
 
   // 2. Mobile Nav Toggle
   const navToggle = document.querySelector('.nav-toggle');
@@ -70,10 +394,14 @@ document.addEventListener('DOMContentLoaded', () => {
   playButtons.forEach(btn => {
     btn.addEventListener('click', (e) => {
       e.preventDefault();
-      const videoUrl = btn.getAttribute('data-video') || 'https://www.youtube.com/embed/ySus5ZS0b94?autoplay=1';
+      const videoUrl = btn.getAttribute('data-video') || 'https://www.youtube-nocookie.com/embed/ySus5ZS0b94?autoplay=1';
       if (modalIframe && modal) {
-        modalIframe.src = videoUrl.includes('?') ? `${videoUrl}&autoplay=1` : `${videoUrl}?autoplay=1`;
+        const finalModalUrl = videoUrl.includes('autoplay=1')
+          ? videoUrl
+          : (videoUrl.includes('?') ? `${videoUrl}&autoplay=1` : `${videoUrl}?autoplay=1`);
+        modalIframe.src = finalModalUrl;
         modal.classList.add('active');
+        if (heroMediaController) heroMediaController.onModalOpen();
       }
     });
   });
@@ -83,12 +411,16 @@ document.addEventListener('DOMContentLoaded', () => {
     modal.addEventListener('click', (e) => {
       if (e.target === modal) closeModal();
     });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && modal.classList.contains('active')) closeModal();
+    });
   }
 
   function closeModal() {
     if (modal && modalIframe) {
       modal.classList.remove('active');
       modalIframe.src = '';
+      if (heroMediaController) heroMediaController.onModalClose();
     }
   }
 

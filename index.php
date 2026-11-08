@@ -9,6 +9,10 @@ if ($incomingHost === 'client.falhen.com' || str_starts_with($incomingHost, 'cli
 $pageTitle = "Falhen Video Production | Visual Storytelling";
 require_once __DIR__ . '/config/db.php';
 require_once __DIR__ . '/includes/functions.php';
+
+$settings  = getSiteSettings();
+$heroMedia = resolveHeroMediaConfig($settings);
+
 require_once __DIR__ . '/includes/header.php';
 
 // Fetch services from DB if available
@@ -25,40 +29,51 @@ if ($pdo) {
     } catch (Exception $e) {}
 }
 ?>
-<style>
-body, h1, h2, h3, h4, h5, h6, p, span, a, button, input, select, textarea, label {
-    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
-}
-</style>
 
-<!-- Hero Section (Dynamic Admin Settings Integration) -->
-<?php 
-$settings = getSiteSettings();
-$showreelId = $settings['showreel_youtube_id'] ?? 'Tf8rNMZ-Bw0';
-if (preg_match('/(?:v=|\/embed\/|\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/', $showreelId, $matches)) {
-    $showreelId = $matches[1];
-}
-$showreelEmbedUrl = "https://www.youtube.com/embed/" . htmlspecialchars($showreelId) . "?autoplay=1";
-$rawPoster = !empty($settings['hero_poster_image']) ? $settings['hero_poster_image'] : '/assets/img/hero.jpg';
-$heroPoster = getCloudinaryUrl($rawPoster);
-$heroDirectVideo = $settings['hero_direct_video_url'] ?? '';
-?>
-<section class="hero-stage">
-    <?php if ($heroDirectVideo): ?>
-        <video class="hero-bg-animated" autoplay muted loop playsinline poster="<?php echo htmlspecialchars($heroPoster); ?>" style="object-fit: cover; width:100%; height:100%;">
-            <source src="<?php echo htmlspecialchars($heroDirectVideo); ?>" type="video/mp4">
-        </video>
-    <?php else: ?>
-        <div class="hero-bg-animated" style="background-image: url('<?php echo htmlspecialchars($heroPoster); ?>');"></div>
+<!-- Hero Section: Instant Poster Backup + Chromeless Autoplay Video Stage -->
+<section class="hero-stage" id="heroStage">
+    <!-- Layer 0: Instant Responsive Backup Picture (Offline & Zero-Latency LCP Layer) -->
+    <div class="hero-poster-layer" id="heroPosterLayer" aria-hidden="true">
+        <picture>
+            <source media="(max-width: 768px)" srcset="<?php echo htmlspecialchars($heroMedia['poster_mobile']); ?>">
+            <img
+                src="<?php echo htmlspecialchars($heroMedia['poster_desktop']); ?>"
+                alt=""
+                class="hero-poster-img"
+                fetchpriority="high"
+                decoding="sync"
+                onerror="this.onerror=null;this.src='/assets/img/hero.jpg';"
+            >
+        </picture>
+    </div>
+
+    <!-- Layer 1: Primary Chromeless Muted Video Layer (Crossfades in ONLY when frames are playing) -->
+    <?php if ($heroMedia['bg_mode'] !== 'poster'): ?>
+        <div
+            class="hero-video-layer"
+            id="heroVideoLayer"
+            aria-hidden="true"
+            data-bg-mode="<?php echo htmlspecialchars($heroMedia['bg_mode']); ?>"
+            data-iframe-provider="<?php echo htmlspecialchars($heroMedia['iframe_provider']); ?>"
+            data-iframe-id="<?php echo htmlspecialchars($heroMedia['iframe_video_id']); ?>"
+            data-iframe-src="<?php echo htmlspecialchars($heroMedia['iframe_embed_url']); ?>"
+            data-direct-desktop="<?php echo htmlspecialchars($heroMedia['direct_video_desktop']); ?>"
+            data-direct-mobile="<?php echo htmlspecialchars($heroMedia['direct_video_mobile']); ?>"
+        ></div>
     <?php endif; ?>
-    <div class="hero-overlay"></div>
+
+    <!-- Layer 2: Cinematic Readability Vignette -->
+    <div class="hero-overlay" aria-hidden="true"></div>
+
+    <!-- Layer 3: Foreground Copy & Actions -->
     <div class="container hero-container">
+        <div class="hero-content">
             <?php if (!empty($settings['hero_badge_label'])): ?>
-                <div class="section-badge-pill" style="margin-bottom: 16px; display: inline-block;">
+                <div class="section-badge-pill hero-badge-pill">
                     <?php echo htmlspecialchars($settings['hero_badge_label']); ?>
                 </div>
             <?php endif; ?>
-            <h1 class="hero-title" style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif !important;">
+            <h1 class="hero-title">
                 <?php 
                 $line1 = htmlspecialchars($settings['hero_headline_line1'] ?? 'Creating what the');
                 $line2 = htmlspecialchars($settings['hero_headline_line2'] ?? 'World Watches');
@@ -72,7 +87,7 @@ $heroDirectVideo = $settings['hero_direct_video_url'] ?? '';
                 <a href="<?php echo htmlspecialchars($settings['hero_primary_cta_url'] ?? '/portfolio.php'); ?>" class="btn btn-hero-red">
                     <?php echo htmlspecialchars($settings['hero_primary_cta_text'] ?? 'Explore Our Projects'); ?>
                 </a>
-                <a href="#" class="btn btn-hero-glass trigger-video" data-video="<?php echo $showreelEmbedUrl; ?>">
+                <a href="#" class="btn btn-hero-glass trigger-video" data-video="<?php echo htmlspecialchars($heroMedia['showreel_modal_url']); ?>">
                     <span class="hero-play-icon"><i class="fa-solid fa-play"></i></span> <?php echo htmlspecialchars($settings['hero_secondary_cta_text'] ?? 'Watch Showreel'); ?>
                 </a>
             </div>
@@ -172,7 +187,53 @@ $heroDirectVideo = $settings['hero_direct_video_url'] ?? '';
     </div>
 </section>
 
+<!-- Stats Counter / By the Numbers Section (Synced with Admin > Stats Counter) -->
+<?php
+$statsVisible = !empty($settings['stats_visible']);
+$statsItemsList = $settings['stats_items'] ?? [];
+if ($statsVisible && !empty($statsItemsList) && is_array($statsItemsList)):
+    $statsBadge = $settings['stats_badge_label'] ?? 'By the Numbers';
+    $statsWhite = $settings['stats_headline_white'] ?? 'A Decade of';
+    $statsRed   = $settings['stats_headline_red'] ?? 'Impact';
+    $statsDesc  = $settings['stats_description'] ?? '';
+?>
+<section class="section" id="impact-stats" style="padding-top: 20px;">
+    <div class="container">
+        <div class="section-title-wrapper" style="text-align: center;">
+            <?php if (!empty($statsBadge)): ?>
+                <div class="section-badge-pill" style="display: inline-block; margin-bottom: 12px;">
+                    <?php echo htmlspecialchars($statsBadge); ?>
+                </div>
+            <?php endif; ?>
+            <h2 class="section-title" style="font-size: clamp(2rem, 3.8vw, 2.85rem); font-weight: 800;">
+                <?php echo htmlspecialchars($statsWhite); ?> <span style="color: #dc2626;"><?php echo htmlspecialchars($statsRed); ?></span>
+            </h2>
+            <?php if (!empty($statsDesc)): ?>
+                <p class="section-subtitle" style="max-width: 640px; margin: 12px auto 0 auto; color: var(--text-muted); font-size: 1.02rem;">
+                    <?php echo htmlspecialchars($statsDesc); ?>
+                </p>
+            <?php endif; ?>
+        </div>
 
+        <div class="impact-grid">
+            <?php foreach ($statsItemsList as $st): ?>
+                <div class="impact-card">
+                    <div class="impact-icon-box">
+                        <i class="<?php echo htmlspecialchars(!empty($st['icon']) ? $st['icon'] : 'ri-film-line'); ?>"></i>
+                    </div>
+                    <div class="impact-number">
+                        <?php if (!empty($st['prefix'])): ?><span><?php echo htmlspecialchars($st['prefix']); ?></span><?php endif; ?><?php echo htmlspecialchars($st['number'] ?? '0'); ?><?php if (!empty($st['suffix'])): ?><span class="impact-plus"><?php echo htmlspecialchars($st['suffix']); ?></span><?php endif; ?>
+                    </div>
+                    <div class="impact-label"><?php echo htmlspecialchars($st['label'] ?? ''); ?></div>
+                    <?php if (!empty($st['sublabel'])): ?>
+                        <div class="impact-sublabel"><?php echo htmlspecialchars($st['sublabel']); ?></div>
+                    <?php endif; ?>
+                </div>
+            <?php endforeach; ?>
+        </div>
+    </div>
+</section>
+<?php endif; ?>
 
 <!-- Featured Work Section (Dynamically powered by Portfolio Showcase Video Reels) -->
 <?php 

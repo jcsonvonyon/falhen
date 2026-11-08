@@ -26,7 +26,8 @@ $currentSlug = preg_replace('/\.php$/', '', $currentPage);
     </script>
 
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#09090b">
     <title><?php echo isset($pageTitle) ? htmlspecialchars($pageTitle) . ' | Falhen Media' : 'Falhen Video Production | Visual Storytelling'; ?></title>
     <meta name="description" content="Falhen is a full-service media production company specializing in video production, post-production, live streaming, animation, wedding coverage & content strategy.">
     <meta name="keywords" content="video production, photography, concert production, live streaming, animation motion graphics, wedding videography, creative services">
@@ -36,9 +37,23 @@ $currentSlug = preg_replace('/\.php$/', '', $currentPage);
     <meta property="og:description" content="Award-winning visual storytelling for brands worldwide.">
     <meta property="og:type" content="website">
     
-    <!-- Google Fonts & Font Awesome 6 -->
+    <!-- Resource Hints & Preloads for Instant Mobile/Slow-Network Paint -->
+    <link rel="preconnect" href="https://res.cloudinary.com" crossorigin>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+    <?php if (!empty($heroMedia) && is_array($heroMedia)): ?>
+        <?php if (($heroMedia['iframe_provider'] ?? '') === 'youtube'): ?>
+            <link rel="preconnect" href="https://www.youtube-nocookie.com" crossorigin>
+        <?php elseif (($heroMedia['iframe_provider'] ?? '') === 'vimeo'): ?>
+            <link rel="preconnect" href="https://player.vimeo.com" crossorigin>
+        <?php endif; ?>
+        <link rel="preload" as="image" href="<?php echo htmlspecialchars($heroMedia['poster_mobile']); ?>" media="(max-width: 768px)" fetchpriority="high">
+        <link rel="preload" as="image" href="<?php echo htmlspecialchars($heroMedia['poster_desktop']); ?>" media="(min-width: 769px)" fetchpriority="high">
+    <?php endif; ?>
+
+    <!-- Google Fonts & Icon Libraries -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@4.2.0/fonts/remixicon.css">
