@@ -144,21 +144,83 @@ if ($providedKey !== $secretKey) {
 }
 
 header('Content-Type: text/plain');
+
+$repoDir = __DIR__;
+putenv("HOME=/home/henadinnovate");
+
+$action = $_GET['action'] ?? $_POST['action'] ?? 'deploy';
+
+if ($action === 'stash_list') {
+    $out = [];
+    exec("cd {$repoDir} && git config --global --add safe.directory {$repoDir} 2>&1");
+    exec("cd {$repoDir} && git stash list 2>&1", $out);
+    echo implode("\n", $out);
+    exit;
+}
+
+if ($action === 'stash_cat') {
+    $stashIdx = (int)($_GET['stash'] ?? 0);
+    $out = [];
+    exec("cd {$repoDir} && git config --global --add safe.directory {$repoDir} 2>&1");
+    exec("cd {$repoDir} && git show stash@{{$stashIdx}}:config/settings.json 2>&1", $out);
+    echo implode("\n", $out);
+    exit;
+}
+
+if ($action === 'stash_diff') {
+    $stashIdx = (int)($_GET['stash'] ?? 0);
+    $out = [];
+    exec("cd {$repoDir} && git config --global --add safe.directory {$repoDir} 2>&1");
+    exec("cd {$repoDir} && git stash show -p stash@{{$stashIdx}} 2>&1", $out);
+    echo implode("\n", $out);
+    exit;
+}
+
 echo "===========================================\n";
 echo "   FALHEN CPANEL GIT DEPLOYMENT SYSTEM     \n";
 echo "===========================================\n";
 echo "Timestamp: " . date('Y-m-d H:i:s') . "\n";
 
-$repoDir = __DIR__;
-putenv("HOME=/home/henadinnovate");
-
 $output = [];
 $returnVar = 0;
 
-// Stash any server-side generated modifications (e.g. settings.json), pull latest, and re-apply
+// 1. Back up live settings.json before any git action
+$backupDir = $repoDir . '/config/backups';
+if (!is_dir($backupDir)) {
+    @mkdir($backupDir, 0755, true);
+}
+$liveSettingsFile = $repoDir . '/config/settings.json';
+if (file_exists($liveSettingsFile)) {
+    @copy($liveSettingsFile, $backupDir . '/settings_pre_deploy_' . date('Ymd_His') . '.json');
+    @copy($liveSettingsFile, $backupDir . '/settings_latest_live.json');
+}
+
+// 2. Perform safe deployment
 exec("cd {$repoDir} && git config --global --add safe.directory {$repoDir} 2>&1", $output);
 exec("cd {$repoDir} && git stash -u 2>&1", $output);
 exec("cd {$repoDir} && git pull origin main 2>&1", $output, $returnVar);
+
+// 3. Re-apply persistent live settings from backup or database if available
+$postDeploySettings = $backupDir . '/settings_latest_live.json';
+if (file_exists($postDeploySettings)) {
+    $liveContent = @file_get_contents($postDeploySettings);
+    $liveData = json_decode($liveContent, true);
+    if (!empty($liveData) && is_array($liveData)) {
+        // If live settings had portfolio items, merge/preserve them
+        $repoSettings = json_decode(@file_get_contents($liveSettingsFile), true) ?: [];
+        if (!empty($liveData['portfolio_items'])) {
+            $repoSettings['portfolio_items'] = $liveData['portfolio_items'];
+        }
+        if (!empty($liveData['registered_clients'])) {
+            $repoSettings['registered_clients'] = array_values(array_unique(array_merge(
+                $repoSettings['registered_clients'] ?? [],
+                $liveData['registered_clients'] ?? []
+            )));
+        }
+        @file_put_contents($liveSettingsFile, json_encode($repoSettings, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES), LOCK_EX);
+        $output[] = "Preserved live client gallery portfolio items and registered clients across deployment.";
+    }
+}
 
 echo "Command: git pull origin main\n";
 echo "-------------------------------------------\n";
