@@ -266,6 +266,12 @@ foreach ($albumsRepo as $alb) {
             padding: 0;
         }
 
+        html {
+            overflow-x: clip;
+            width: 100%;
+            max-width: 100vw;
+        }
+
         body {
             background-color: var(--smug-bg);
             background-image: var(--smug-bg-gradient);
@@ -273,7 +279,9 @@ foreach ($albumsRepo as $alb) {
             color: var(--smug-text-primary);
             font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
             min-height: 100vh;
-            overflow-x: hidden;
+            overflow-x: clip;
+            width: 100%;
+            max-width: 100vw;
             -webkit-font-smoothing: antialiased;
             transition: background-color 0.3s ease, color 0.3s ease;
         }
@@ -284,12 +292,16 @@ foreach ($albumsRepo as $alb) {
             top: 0;
             left: 0;
             right: 0;
+            width: 100%;
+            max-width: 100vw;
+            overflow-x: clip;
             background: var(--smug-topbar-bg);
             backdrop-filter: blur(24px);
             -webkit-backdrop-filter: blur(24px);
             border-bottom: 1px solid var(--smug-border);
             z-index: 100;
             padding: 14px 32px;
+            box-sizing: border-box;
             transition: background-color 0.3s ease, border-color 0.3s ease;
         }
 
@@ -299,7 +311,9 @@ foreach ($albumsRepo as $alb) {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            gap: 20px;
+            gap: 16px;
+            width: 100%;
+            box-sizing: border-box;
         }
 
         .smug-brand-link {
@@ -425,6 +439,10 @@ foreach ($albumsRepo as $alb) {
             transition: all 0.2s ease;
             cursor: pointer;
             box-shadow: 0 4px 14px rgba(220, 38, 38, 0.3);
+        }
+
+        .smug-nav-primary .btn-text-short {
+            display: none;
         }
 
         .smug-nav-primary:hover {
@@ -564,35 +582,44 @@ foreach ($albumsRepo as $alb) {
 
         /* SmugMug Pure Masonry / Justified Gallery Grid */
         .smug-gallery-grid {
-            column-count: 3;
+            column-count: 4;
             column-gap: 14px;
+            width: 100%;
+            box-sizing: border-box;
         }
 
-        @media (max-width: 1200px) {
+        @media (max-width: 1280px) {
+            .smug-gallery-grid {
+                column-count: 3;
+                column-gap: 12px;
+            }
+        }
+
+        @media (max-width: 900px) {
             .smug-gallery-grid {
                 column-count: 2;
-                column-gap: 12px;
+                column-gap: 10px;
             }
         }
 
         /* iPad / Tablet Responsiveness (641px - 1024px) */
         @media (min-width: 641px) and (max-width: 1024px) {
             .smug-topbar {
-                padding: 14px 24px;
+                padding: 12px 20px;
             }
             .smug-page-container {
-                padding: 24px 24px 60px;
+                padding: 20px 20px 60px;
             }
             .smug-gallery-grid {
-                column-count: 2;
-                column-gap: 14px;
+                column-count: 3 !important;
+                column-gap: 12px !important;
             }
             .smug-folders-grid {
                 grid-template-columns: repeat(2, 1fr) !important;
-                gap: 20px !important;
+                gap: 18px !important;
             }
             .smug-album-title {
-                font-size: 2.2rem;
+                font-size: 2.1rem;
             }
             .smug-album-header {
                 gap: 18px;
@@ -602,60 +629,134 @@ foreach ($albumsRepo as $alb) {
         /* Mobile Phone Responsiveness (<= 640px) */
         @media (max-width: 640px) {
             .smug-gallery-grid {
-                column-count: 1;
-                column-gap: 0;
+                column-count: 2 !important;
+                column-gap: 8px !important;
+                width: 100% !important;
+            }
+            .smug-photo-card {
+                margin-bottom: 8px !important;
+                border-radius: 8px !important;
+            }
+            .smug-photo-card img {
+                border-radius: 8px !important;
+            }
+            .smug-photo-overlay {
+                padding: 8px !important;
+            }
+            .smug-overlay-num {
+                font-size: 0.7rem !important;
+                padding: 2px 6px !important;
             }
             .smug-topbar {
-                padding: 12px 16px;
-                padding-left: max(16px, env(safe-area-inset-left));
-                padding-right: max(16px, env(safe-area-inset-right));
+                padding: 10px 14px;
+                padding-left: max(14px, env(safe-area-inset-left));
+                padding-right: max(14px, env(safe-area-inset-right));
+                height: 54px;
+                overflow: hidden;
             }
-            .smug-brand-tag {
-                display: none;
+            .smug-topbar-inner {
+                gap: 8px;
+                width: 100%;
             }
-            .smug-topbar-actions {
+            .smug-brand-link {
                 gap: 8px;
             }
-            .smug-nav-link span,
-            .smug-nav-cta span {
-                display: inline-block;
+            .smug-brand-link img {
+                height: 24px;
+            }
+            .smug-brand-tag {
+                display: none !important;
+            }
+            .smug-topbar-actions {
+                gap: 6px;
+            }
+            /* Hide verbose text links and secondary buttons on mobile top bar */
+            .smug-nav-link,
+            .smug-nav-cta {
+                display: none !important;
+            }
+            /* Minimalist icon-only Sun/Moon atmosphere switch */
+            .smug-theme-toggle {
+                padding: 7px;
+                width: 34px;
+                height: 34px;
+                border-radius: 50%;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                gap: 0;
+            }
+            .smug-theme-toggle span {
+                display: none !important;
+            }
+            /* Compact mobile download action */
+            .smug-nav-primary {
+                padding: 7px 12px;
+                font-size: 0.78rem;
+                border-radius: 20px;
+                gap: 4px;
+            }
+            .smug-nav-primary .btn-text-full {
+                display: none !important;
+            }
+            .smug-nav-primary .btn-text-short {
+                display: inline-block !important;
             }
             .smug-page-container {
-                padding: 16px 16px 60px;
-                padding-left: max(16px, env(safe-area-inset-left));
-                padding-right: max(16px, env(safe-area-inset-right));
+                padding: 14px 14px 60px;
+                padding-left: max(14px, env(safe-area-inset-left));
+                padding-right: max(14px, env(safe-area-inset-right));
+                width: 100%;
+                max-width: 100vw;
+                box-sizing: border-box;
+                overflow-x: clip;
             }
             .smug-breadcrumbs {
+                font-size: 0.78rem;
+                margin-bottom: 12px;
                 overflow-x: auto;
                 white-space: nowrap;
                 -webkit-overflow-scrolling: touch;
-                padding-bottom: 4px;
+                padding-bottom: 2px;
             }
             .smug-breadcrumbs::-webkit-scrollbar {
                 display: none;
             }
             .smug-album-title {
-                font-size: 1.75rem;
+                font-size: clamp(1.4rem, 5.5vw, 1.95rem);
+                line-height: 1.2;
+                word-break: break-word;
+                margin-bottom: 8px;
+            }
+            .smug-album-meta {
+                font-size: 0.8rem;
+                gap: 8px;
             }
             .smug-album-header {
                 flex-direction: column;
                 align-items: flex-start;
-                gap: 16px;
+                gap: 14px;
+                margin-bottom: 20px;
+                padding-bottom: 18px;
             }
             .smug-header-actions {
                 width: 100%;
                 display: grid;
                 grid-template-columns: 1fr 1fr;
-                gap: 10px;
+                gap: 8px;
+            }
+            .smug-header-actions .btn-smug-primary {
+                grid-column: span 2;
             }
             .btn-smug-action {
                 justify-content: center;
-                padding: 11px 14px;
+                padding: 10px 12px;
+                font-size: 0.82rem;
                 width: 100%;
             }
             .smug-folders-grid {
                 grid-template-columns: 1fr !important;
-                gap: 16px !important;
+                gap: 14px !important;
             }
         }
 
@@ -1294,6 +1395,102 @@ foreach ($albumsRepo as $alb) {
             opacity: 0.9;
         }
 
+        /* Responsive Mobile & Tablet Lightbox */
+        @media (max-width: 640px) {
+            .smug-lightbox {
+                height: 100dvh;
+                height: 100vh;
+                width: 100vw;
+                background: rgba(4, 4, 8, 0.98);
+            }
+            .smug-lightbox-top {
+                padding: 10px 14px;
+                height: 52px;
+                background: rgba(0, 0, 0, 0.65);
+                backdrop-filter: blur(16px);
+                -webkit-backdrop-filter: blur(16px);
+            }
+            .smug-lightbox-title {
+                font-size: 0.82rem;
+            }
+            .smug-lightbox-sep,
+            .smug-lightbox-albumname {
+                display: none !important;
+            }
+            .smug-lightbox-tools {
+                gap: 6px;
+            }
+            .smug-tool-btn {
+                padding: 7px 10px;
+                border-radius: 20px;
+                font-size: 0.8rem;
+                background: rgba(255, 255, 255, 0.1);
+            }
+            .smug-tool-btn span,
+            .smug-tool-btn .tool-btn-text,
+            #slideshowLabel,
+            #zoomLabel {
+                display: none !important;
+            }
+            .smug-tool-download-all {
+                display: none !important;
+            }
+            .smug-nav-arrow {
+                display: none !important;
+            }
+            .smug-thumbs-rail {
+                display: none !important;
+            }
+            .smug-lightbox-stage {
+                padding: 6px;
+                flex: 1;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                height: calc(100dvh - 52px);
+                height: calc(100vh - 52px);
+                overflow: hidden;
+            }
+            .smug-image-holder {
+                height: 100%;
+                width: 100%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                cursor: default;
+            }
+            .smug-lightbox-img {
+                max-height: calc(100dvh - 72px) !important;
+                max-height: calc(100vh - 72px) !important;
+                max-width: 96vw !important;
+                border-radius: 6px;
+                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
+                object-fit: contain;
+            }
+            .smug-image-holder.zoomed .smug-lightbox-img {
+                max-height: none !important;
+                max-width: none !important;
+                transform: scale(1.8);
+            }
+        }
+
+        @media (min-width: 641px) and (max-width: 1024px) {
+            .smug-lightbox-top {
+                padding: 12px 18px;
+            }
+            .smug-lightbox-img {
+                max-height: 80vh;
+                max-width: 90vw;
+            }
+            .smug-thumbs-rail {
+                height: 60px;
+                padding: 6px 16px;
+            }
+            .smug-thumb {
+                height: 44px;
+            }
+        }
+
         /* REFINED CLIENT SECURITY OTP MODAL */
         .smug-modal-overlay {
             position: fixed;
@@ -1483,7 +1680,7 @@ foreach ($albumsRepo as $alb) {
     <!-- Minimal SmugMug Top Bar -->
     <header class="smug-topbar">
         <div class="smug-topbar-inner">
-            <a href="/clients" class="smug-brand-link">
+            <a href="/clients" class="smug-brand-link" title="Falhen Client Deliveries">
                 <img src="/assets/img/icons/logo.png" alt="Falhen Media">
                 <span class="smug-brand-tag">Client Galleries</span>
             </a>
@@ -1495,22 +1692,23 @@ foreach ($albumsRepo as $alb) {
                     <span id="themeActiveLabel">Daylight</span>
                 </button>
 
-                <a href="https://www.falhen.com/portfolio" class="smug-nav-link">
+                <a href="https://www.falhen.com/portfolio" class="smug-nav-link smug-nav-portfolio">
                     <i class="fa-solid fa-arrow-left"></i>
                     <span>Portfolio</span>
                 </a>
-                <a href="/clients" class="smug-nav-link <?php echo $isClientsView ? 'active' : ''; ?>">
+                <a href="/clients" class="smug-nav-link smug-nav-galleries <?php echo $isClientsView ? 'active' : ''; ?>">
                     <i class="fa-regular fa-folder"></i>
                     <span>Galleries</span>
                 </a>
                 <?php if (!$isClientsView): ?>
-                    <button type="button" class="smug-nav-cta" onclick="openDynamicFullView(0)">
+                    <button type="button" class="smug-nav-cta smug-nav-slideshow" onclick="openDynamicFullView(0)" title="Start Slideshow">
                         <i class="fa-solid fa-play"></i>
                         <span>Slideshow</span>
                     </button>
-                    <button type="button" class="smug-nav-primary" onclick="triggerBulkDownload()">
+                    <button type="button" class="smug-nav-primary smug-nav-download" onclick="triggerBulkDownload()" title="Download All Photos">
                         <i class="fa-solid fa-cloud-arrow-down"></i>
-                        <span>Download All</span>
+                        <span class="btn-text-full">Download All</span>
+                        <span class="btn-text-short">Download</span>
                     </button>
                 <?php endif; ?>
             </div>
@@ -1687,26 +1885,26 @@ foreach ($albumsRepo as $alb) {
         <div class="smug-lightbox-top">
             <div class="smug-lightbox-title">
                 <span class="smug-lightbox-count" id="lightboxCounter">Photo 1 of <?php echo $totalPhotos; ?></span>
-                <span>·</span>
-                <span><?php echo htmlspecialchars($currentAlbum['title'] ?? 'Gallery'); ?></span>
+                <span class="smug-lightbox-sep">·</span>
+                <span class="smug-lightbox-albumname"><?php echo htmlspecialchars($currentAlbum['title'] ?? 'Gallery'); ?></span>
             </div>
 
             <div class="smug-lightbox-tools">
-                <button type="button" class="smug-tool-btn" id="btnSlideshowToggle" onclick="toggleSlideshow()">
+                <button type="button" class="smug-tool-btn smug-tool-slideshow" id="btnSlideshowToggle" onclick="toggleSlideshow()" title="Slideshow">
                     <i class="fa-solid fa-play" id="slideshowIcon"></i>
                     <span id="slideshowLabel">Slideshow</span>
                 </button>
-                <button type="button" class="smug-tool-btn" onclick="toggleLightboxZoom()">
+                <button type="button" class="smug-tool-btn smug-tool-zoom" onclick="toggleLightboxZoom()" title="Zoom">
                     <i class="fa-solid fa-magnifying-glass-plus" id="zoomIcon"></i>
                     <span id="zoomLabel">Zoom</span>
                 </button>
-                <button type="button" class="smug-tool-btn" onclick="triggerSinglePhotoDownload(currentPhotoIndex)">
-                    <i class="fa-solid fa-arrow-down"></i> Download Photo
+                <button type="button" class="smug-tool-btn smug-tool-download" onclick="triggerSinglePhotoDownload(currentPhotoIndex)" title="Download Photo">
+                    <i class="fa-solid fa-arrow-down"></i> <span class="tool-btn-text">Download Photo</span>
                 </button>
-                <button type="button" class="smug-tool-btn" onclick="triggerBulkDownload()">
-                    <i class="fa-solid fa-cloud-arrow-down"></i> Download All
+                <button type="button" class="smug-tool-btn smug-tool-download-all" onclick="triggerBulkDownload()" title="Download All Photos">
+                    <i class="fa-solid fa-cloud-arrow-down"></i> <span class="tool-btn-text">Download All</span>
                 </button>
-                <button type="button" class="smug-tool-close" onclick="closeDynamicFullView()" aria-label="Close Lightbox">
+                <button type="button" class="smug-tool-close" onclick="closeDynamicFullView()" aria-label="Close Lightbox" title="Close (Esc)">
                     <i class="fa-solid fa-xmark"></i>
                 </button>
             </div>
@@ -1941,18 +2139,59 @@ foreach ($albumsRepo as $alb) {
             }
         });
 
-        // Touch Swipe
-        let touchX = 0;
+        // Enhanced Touch Gestures (Swipe Left/Right, Swipe Down to Close, Double-Tap Zoom)
+        let touchStartX = 0;
+        let touchStartY = 0;
+        let touchStartTime = 0;
+        let lastTapTime = 0;
         const stage = document.getElementById('lightboxStage');
+        const mainImg = document.getElementById('lightboxMainImg');
+
         if (stage) {
             stage.addEventListener('touchstart', e => {
-                touchX = e.changedTouches[0].screenX;
+                if (e.touches && e.touches.length === 1) {
+                    touchStartX = e.touches[0].clientX;
+                    touchStartY = e.touches[0].clientY;
+                    touchStartTime = Date.now();
+                }
             }, { passive: true });
+
             stage.addEventListener('touchend', e => {
-                const diff = e.changedTouches[0].screenX - touchX;
-                if (diff < -50) nextPhoto();
-                else if (diff > 50) prevPhoto();
+                if (e.changedTouches && e.changedTouches.length === 1) {
+                    const diffX = e.changedTouches[0].clientX - touchStartX;
+                    const diffY = e.changedTouches[0].clientY - touchStartY;
+                    const elapsed = Date.now() - touchStartTime;
+
+                    // If user is currently zoomed in, allow free pan without navigating
+                    const holder = document.getElementById('imageHolder');
+                    if (holder && holder.classList.contains('zoomed')) return;
+
+                    // Horizontal swipe to next / prev frame
+                    if (Math.abs(diffX) > 42 && Math.abs(diffX) > Math.abs(diffY) * 1.3) {
+                        if (diffX < 0) {
+                            nextPhoto();
+                        } else {
+                            prevPhoto();
+                        }
+                    }
+                    // Quick vertical swipe down to dismiss lightbox (iOS/Android gesture)
+                    else if (diffY > 90 && Math.abs(diffY) > Math.abs(diffX) * 1.6 && elapsed < 400) {
+                        closeDynamicFullView();
+                    }
+                }
             }, { passive: true });
+        }
+
+        // Double-tap on image to toggle zoom
+        if (mainImg) {
+            mainImg.addEventListener('touchend', function(e) {
+                const now = Date.now();
+                if (now - lastTapTime < 320) {
+                    e.preventDefault();
+                    toggleLightboxZoom();
+                }
+                lastTapTime = now;
+            });
         }
 
         // ================= SECURITY GATE & OTP =================
