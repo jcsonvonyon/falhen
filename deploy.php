@@ -195,6 +195,17 @@ if ($action === 'probe_db') {
     }
     if (!$found) {
         $info = [];
+        $home = '/home/henadinnovate';
+        if (is_dir($home)) {
+            $files = @scandir($home) ?: [];
+            $info[] = "Scandir {$home}: " . implode(', ', array_diff($files, ['.', '..']));
+            foreach (['public_html', 'etc', '.cpanel'] as $sub) {
+                if (is_dir("{$home}/{$sub}")) {
+                    $subFiles = @scandir("{$home}/{$sub}") ?: [];
+                    $info[] = "Scandir {$home}/{$sub}: " . implode(', ', array_diff($subFiles, ['.', '..']));
+                }
+            }
+        }
         $myCnf = '/home/henadinnovate/.my.cnf';
         if (file_exists($myCnf)) {
             $info[] = "Found .my.cnf: " . file_get_contents($myCnf);
