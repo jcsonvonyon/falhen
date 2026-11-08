@@ -828,7 +828,7 @@ function getPortfolioRepo() {
             [
                 'id' => 5,
                 'title' => 'Jussoul — Winery Music Tour',
-                'category' => 'Event',
+                'category' => 'Events',
                 'media_type' => 'photo',
                 'featured' => false,
                 'client' => 'Jussoul',
@@ -840,7 +840,7 @@ function getPortfolioRepo() {
             [
                 'id' => 6,
                 'title' => 'Halima Ogunde',
-                'category' => 'Event',
+                'category' => 'Events',
                 'media_type' => 'photo',
                 'featured' => false,
                 'client' => 'Halima Ogunde',
@@ -864,7 +864,7 @@ function getPortfolioRepo() {
             [
                 'id' => 8,
                 'title' => 'Darasinmi - 10th Birthday',
-                'category' => 'Event',
+                'category' => 'Events',
                 'media_type' => 'photo',
                 'featured' => false,
                 'client' => 'Darasinmi Family',
@@ -876,7 +876,7 @@ function getPortfolioRepo() {
             [
                 'id' => 9,
                 'title' => 'Adetutu - Burial Repass',
-                'category' => 'Event',
+                'category' => 'Events',
                 'media_type' => 'photo',
                 'featured' => false,
                 'client' => 'Adetutu Family',
@@ -927,7 +927,7 @@ function getPortfolioRepo() {
             [
                 'id' => 13,
                 'title' => 'Apex Tech Global Summit — 4K Stream',
-                'category' => 'Event',
+                'category' => 'Events',
                 'media_type' => 'video',
                 'duration' => '03:10',
                 'featured' => false,
@@ -990,7 +990,7 @@ function getPortfolioRepo() {
             [
                 'id' => 18,
                 'title' => 'Electric Vehicle Launch Campaign',
-                'category' => 'Commercials',
+                'category' => 'Commercial',
                 'media_type' => 'project',
                 'featured' => true,
                 'client' => 'EcoMotors',
@@ -1050,7 +1050,7 @@ function getPortfolioRepo() {
             [
                 'id' => 23,
                 'title' => 'Artisan Coffee — Brand Story',
-                'category' => 'Commercials',
+                'category' => 'Commercial',
                 'media_type' => 'project',
                 'featured' => true,
                 'client' => 'Roast & Ritual',

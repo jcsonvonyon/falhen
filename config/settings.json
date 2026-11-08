@@ -492,7 +492,7 @@
         {
             "id": 5,
             "title": "Jussoul \u2014 Winery Music Tour",
-            "category": "Event",
+            "category": "Events",
             "media_type": "photo",
             "featured": false,
             "client": "Jussoul",
@@ -510,7 +510,7 @@
         {
             "id": 6,
             "title": "Halima Ogunde",
-            "category": "Event",
+            "category": "Events",
             "media_type": "photo",
             "featured": false,
             "client": "Halima Ogunde",
@@ -546,7 +546,7 @@
         {
             "id": 8,
             "title": "Darasinmi - 10th Birthday",
-            "category": "Event",
+            "category": "Events",
             "media_type": "photo",
             "featured": false,
             "client": "Darasinmi Family",
@@ -558,7 +558,7 @@
         {
             "id": 9,
             "title": "Adetutu - Burial Repass",
-            "category": "Event",
+            "category": "Events",
             "media_type": "photo",
             "featured": false,
             "client": "Adetutu Family",
