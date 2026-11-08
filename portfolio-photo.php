@@ -31,7 +31,7 @@ if (isset($albumsRepo[$albumId])) {
     }
 }
 
-$coverImage = getCloudinaryUrl($currentAlbum['image'] ?? $currentAlbum['cover'] ?? '/assets/img/portfolio/portfolio_halima.png');
+$coverImage = getCloudinaryUrl($currentAlbum['image'] ?? $currentAlbum['cover'] ?? 'https://res.cloudinary.com/pnabfi91/image/upload/v1791224271/falhen/portfolio/ysfriy8jlhhkcuzl8j16.jpg');
 $pageTitle = htmlspecialchars($currentAlbum['title']) . " — Gallery | Falhen Media";
 
 // Registered Client Authentication Status
@@ -127,43 +127,39 @@ if (!empty($gdrivePhotos)) {
         // Demola The Violinist - Live Concert Tour
         $clientPhotos = [
             $coverImage,
-            'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?q=80&w=1200&auto=format&fit=crop',
-            'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?q=80&w=1200&auto=format&fit=crop',
-            'https://images.unsplash.com/photo-1465847899084-d164df4dedc6?q=80&w=1200&auto=format&fit=crop',
-            'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?q=80&w=1200&auto=format&fit=crop',
-            'https://images.unsplash.com/photo-1501386761578-eac5c94b800a?q=80&w=1200&auto=format&fit=crop',
-            '/assets/img/portfolio/portfolio_wedding.png',
-            '/assets/img/portfolio/portfolio_award.png',
-            'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?q=80&w=1200&auto=format&fit=crop',
-            'https://images.unsplash.com/photo-1429962714451-bb934ecdc4ec?q=80&w=1200&auto=format&fit=crop',
-            'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?q=80&w=1200&auto=format&fit=crop',
-            'https://images.unsplash.com/photo-1459749411175-04bf5292ceea?q=80&w=1200&auto=format&fit=crop'
+            'https://res.cloudinary.com/pnabfi91/image/upload/v1791222750/falhen/portfolio/blpzc2fznaqr0czm3ji8.jpg',
+            'https://res.cloudinary.com/pnabfi91/image/upload/v1791222920/falhen/portfolio/c5k5xwoa1misejie2oxy.jpg',
+            'https://res.cloudinary.com/pnabfi91/image/upload/v1791226024/falhen/portfolio/ldtm77cjygkwcgijkdqq.jpg',
+            'https://res.cloudinary.com/pnabfi91/image/upload/v1791224320/falhen/portfolio/qdkldutyaqhrena0mrza.jpg',
+            'https://res.cloudinary.com/pnabfi91/image/upload/v1791226059/falhen/portfolio/lavtrjw84dyapshxdgpl.jpg',
+            'https://res.cloudinary.com/pnabfi91/image/upload/v1791226088/falhen/portfolio/sfa4gof0yfr0bc14r1eg.jpg',
+            'https://res.cloudinary.com/pnabfi91/image/upload/v1794096443/falhen/client-galleries/king-david-grad-shoot/king-david-grad-shoot-01.jpg',
+            'https://res.cloudinary.com/pnabfi91/image/upload/v1794096445/falhen/client-galleries/king-david-grad-shoot/king-david-grad-shoot-02.jpg',
+            'https://res.cloudinary.com/pnabfi91/image/upload/v1794096448/falhen/client-galleries/king-david-grad-shoot/king-david-grad-shoot-03.jpg'
         ];
     } elseif ($clientId === 2 || strpos($clientName, 'halima') !== false || strpos($clientTitle, 'halima') !== false) {
         // Halima Ogunde - 40th Birthday Celebration
         $clientPhotos = [
             $coverImage,
-            '/assets/img/portfolio/portfolio_halima.png',
-            'https://images.unsplash.com/photo-1511795409834-ef04bbd61622?q=80&w=1200&auto=format&fit=crop',
-            'https://images.unsplash.com/photo-1464366400600-7168b8af9bc3?q=80&w=1200&auto=format&fit=crop',
-            'https://images.unsplash.com/photo-1530103862676-de8c9debad1d?q=80&w=1200&auto=format&fit=crop',
-            'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?q=80&w=1200&auto=format&fit=crop',
-            'https://images.unsplash.com/photo-1527529482837-4698179dc6ce?q=80&w=1200&auto=format&fit=crop',
-            'https://images.unsplash.com/photo-1519741497674-611481863552?q=80&w=1200&auto=format&fit=crop',
-            'https://images.unsplash.com/photo-1519671482749-fd09be7ccebf?q=80&w=1200&auto=format&fit=crop'
+            'https://res.cloudinary.com/pnabfi91/image/upload/v1791224271/falhen/portfolio/ysfriy8jlhhkcuzl8j16.jpg',
+            'https://res.cloudinary.com/pnabfi91/image/upload/v1791224320/falhen/portfolio/qdkldutyaqhrena0mrza.jpg',
+            'https://res.cloudinary.com/pnabfi91/image/upload/v1791226059/falhen/portfolio/lavtrjw84dyapshxdgpl.jpg',
+            'https://res.cloudinary.com/pnabfi91/image/upload/v1791226088/falhen/portfolio/sfa4gof0yfr0bc14r1eg.jpg',
+            'https://res.cloudinary.com/pnabfi91/image/upload/v1794096443/falhen/client-galleries/king-david-grad-shoot/king-david-grad-shoot-01.jpg',
+            'https://res.cloudinary.com/pnabfi91/image/upload/v1794096445/falhen/client-galleries/king-david-grad-shoot/king-david-grad-shoot-02.jpg',
+            'https://res.cloudinary.com/pnabfi91/image/upload/v1794096448/falhen/client-galleries/king-david-grad-shoot/king-david-grad-shoot-03.jpg'
         ];
     } else {
-        // Default curated showcase collection
+        // Default curated showcase collection with authentic Cloudinary master photos
         $clientPhotos = [
             $coverImage,
-            'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=1200&auto=format&fit=crop',
-            'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=1200&auto=format&fit=crop',
-            'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=1200&auto=format&fit=crop',
-            '/assets/img/portfolio/portfolio_halima.png',
-            '/assets/img/portfolio/portfolio_wedding.png',
-            '/assets/img/portfolio/portfolio_commercial.png',
-            '/assets/img/portfolio/portfolio_award.png',
-            '/assets/img/services/service_photo.png'
+            'https://res.cloudinary.com/pnabfi91/image/upload/v1791224271/falhen/portfolio/ysfriy8jlhhkcuzl8j16.jpg',
+            'https://res.cloudinary.com/pnabfi91/image/upload/v1791222750/falhen/portfolio/blpzc2fznaqr0czm3ji8.jpg',
+            'https://res.cloudinary.com/pnabfi91/image/upload/v1791222920/falhen/portfolio/c5k5xwoa1misejie2oxy.jpg',
+            'https://res.cloudinary.com/pnabfi91/image/upload/v1791226024/falhen/portfolio/ldtm77cjygkwcgijkdqq.jpg',
+            'https://res.cloudinary.com/pnabfi91/image/upload/v1791224320/falhen/portfolio/qdkldutyaqhrena0mrza.jpg',
+            'https://res.cloudinary.com/pnabfi91/image/upload/v1791226059/falhen/portfolio/lavtrjw84dyapshxdgpl.jpg',
+            'https://res.cloudinary.com/pnabfi91/image/upload/v1791226088/falhen/portfolio/sfa4gof0yfr0bc14r1eg.jpg'
         ];
     }
 }

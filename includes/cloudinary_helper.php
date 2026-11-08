@@ -20,7 +20,7 @@ function isCloudinaryUrl($url)
 function getCloudinaryUrl($pathOrUrl, $transform = 'f_auto,q_auto')
 {
     if (empty($pathOrUrl)) {
-        return '/assets/img/hero.jpg';
+        return 'https://res.cloudinary.com/pnabfi91/image/upload/v1791224271/falhen/portfolio/ysfriy8jlhhkcuzl8j16.jpg';
     }
 
     $cloudName = CLOUDINARY_CLOUD_NAME;
@@ -144,7 +144,7 @@ function uploadToCloudinary($fileOrUrl, $folder = 'falhen', $customPublicId = nu
 function syncDrivePhotoToCloudinary($photoUrl, $albumId = 0, $autoUpload = false)
 {
     if (empty($photoUrl)) {
-        return '/assets/img/portfolio/portfolio_halima.png';
+        return 'https://res.cloudinary.com/pnabfi91/image/upload/v1791224271/falhen/portfolio/ysfriy8jlhhkcuzl8j16.jpg';
     }
 
     if (isCloudinaryUrl($photoUrl)) {

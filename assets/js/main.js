@@ -271,7 +271,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const client = activeCard.dataset.client || 'Halima';
         const time = activeCard.dataset.time || '1:23';
         const title = activeCard.dataset.title || '40th Birthday Celebration';
-        const img = activeCard.dataset.img || '/assets/img/portfolio/portfolio_halima.png';
+        const img = activeCard.dataset.img || 'https://res.cloudinary.com/pnabfi91/image/upload/v1791224271/falhen/portfolio/ysfriy8jlhhkcuzl8j16.jpg';
         const video = activeCard.dataset.video || 'https://www.youtube.com/embed/ySus5ZS0b94';
 
         if (showcaseBg) showcaseBg.style.backgroundImage = `url('${img}')`;

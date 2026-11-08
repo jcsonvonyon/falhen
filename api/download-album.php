@@ -55,7 +55,7 @@ if (!$currentAlbum && !empty($masterPortfolioItems)) {
 
 $albumTitle = $currentAlbum['title'] ?? 'Falhen_Client_Gallery';
 $cleanAlbumSlug = preg_replace('/[^a-zA-Z0-9_-]/', '_', $albumTitle);
-$coverImage = getCloudinaryUrl($currentAlbum['image'] ?? $currentAlbum['cover'] ?? '/assets/img/portfolio/portfolio_halima.png');
+$coverImage = getCloudinaryUrl($currentAlbum['image'] ?? $currentAlbum['cover'] ?? 'https://res.cloudinary.com/pnabfi91/image/upload/v1791224271/falhen/portfolio/ysfriy8jlhhkcuzl8j16.jpg');
 
 // Resolve album photos (Google Drive synced -> gallery_photos -> curated fallback)
 $rawPhotos = [];
@@ -70,9 +70,9 @@ if (empty($rawPhotos) && !empty($currentAlbum['photos']) && is_array($currentAlb
 }
 if (empty($rawPhotos)) {
     $rawPhotos = [
-        '/assets/img/portfolio/king_david_01.jpg',
-        '/assets/img/portfolio/king_david_02.jpg',
-        '/assets/img/portfolio/king_david_03.jpg',
+        'https://res.cloudinary.com/pnabfi91/image/upload/v1794096443/falhen/client-galleries/king-david-grad-shoot/king-david-grad-shoot-01.jpg',
+        'https://res.cloudinary.com/pnabfi91/image/upload/v1794096445/falhen/client-galleries/king-david-grad-shoot/king-david-grad-shoot-02.jpg',
+        'https://res.cloudinary.com/pnabfi91/image/upload/v1794096448/falhen/client-galleries/king-david-grad-shoot/king-david-grad-shoot-03.jpg',
         $coverImage
     ];
 }

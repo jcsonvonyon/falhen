@@ -1859,7 +1859,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'project_date' => $year,
                 'video_url' => $videoUrl,
                 'gdrive_url' => $gdriveUrl,
-                'image' => !empty($image) ? $image : '/assets/img/portfolio/portfolio_halima.png',
+                'image' => !empty($image) ? $image : 'https://res.cloudinary.com/pnabfi91/image/upload/v1791224271/falhen/portfolio/ysfriy8jlhhkcuzl8j16.jpg',
                 'desc' => $desc,
                 'services' => $services,
                 'keywords' => $services,
@@ -2001,7 +2001,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'featured'           => $featured,
                 'media_type'         => 'photo',
                 'is_client_gallery'  => true,
-                'image'              => !empty($image) ? $image : '/assets/img/portfolio/portfolio_halima.png',
+                'image'              => !empty($image) ? $image : 'https://res.cloudinary.com/pnabfi91/image/upload/v1791224271/falhen/portfolio/ysfriy8jlhhkcuzl8j16.jpg',
                 'gallery_photos'     => $galleryPhotos,
                 'photosCount'        => count($galleryPhotos) ?: 25
             ];
@@ -6000,12 +6000,12 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
             <?php elseif ($activeSection === 'featured'): ?>
                 <?php 
                 $featuredItems = $settings['featured_work_items'] ?? [
-                    ['id' => 1, 'project_name' => '40th Birthday Celebration', 'client' => 'Halima', 'category' => 'Social Event', 'year' => '2024', 'duration' => '1:23', 'youtube_id' => 'YlmUJ16slrY', 'video_source' => 'youtube', 'thumbnail' => '/assets/img/portfolio/portfolio_halima.png', 'is_hero_featured' => true, 'status' => 'live'],
-                    ['id' => 2, 'project_name' => 'Wedding Celebration', 'client' => 'Kane Oberman', 'category' => 'Wedding Film', 'year' => '2024', 'duration' => '0:00', 'youtube_id' => 'jaJawGCNx-I', 'video_source' => 'youtube', 'thumbnail' => '/assets/img/portfolio/portfolio_wedding.png', 'is_hero_featured' => false, 'status' => 'live'],
-                    ['id' => 3, 'project_name' => 'Wedding Celebration', 'client' => 'Kailey and William', 'category' => 'Wedding Trailer', 'year' => '2024', 'duration' => '1:28', 'youtube_id' => 'z56VNoHV1Ic', 'video_source' => 'youtube', 'thumbnail' => '/assets/img/portfolio/portfolio_wedding.png', 'is_hero_featured' => false, 'status' => 'live'],
-                    ['id' => 4, 'project_name' => 'Gala Award Night', 'client' => 'Ibadan College of Medicine', 'category' => 'Award Night Documentary', 'year' => '2024', 'duration' => '1:53', 'youtube_id' => 'Tf8rNMZ-Bw0', 'video_source' => 'youtube', 'thumbnail' => '/assets/img/portfolio/portfolio_award.png', 'is_hero_featured' => false, 'status' => 'live'],
-                    ['id' => 5, 'project_name' => 'Black History Month', 'client' => 'BMRC', 'category' => 'Commercial Documentary', 'year' => '2024', 'duration' => '2:25', 'youtube_id' => 'Z84AOc_t2Sk', 'video_source' => 'youtube', 'thumbnail' => '/assets/img/portfolio/portfolio_commercial.png', 'is_hero_featured' => false, 'status' => 'live'],
-                    ['id' => 6, 'project_name' => 'Wedding Celebration', 'client' => 'Diané & Max', 'category' => 'Wedding Film', 'year' => '2024', 'duration' => '1:49', 'youtube_id' => 'AXqylP5AENQ', 'video_source' => 'youtube', 'thumbnail' => '/assets/img/portfolio/portfolio_halima.png', 'is_hero_featured' => false, 'status' => 'live'],
+                    ['id' => 1, 'project_name' => '40th Birthday Celebration', 'client' => 'Halima', 'category' => 'Social Event', 'year' => '2024', 'duration' => '1:23', 'youtube_id' => 'YlmUJ16slrY', 'video_source' => 'youtube', 'thumbnail' => 'https://res.cloudinary.com/pnabfi91/image/upload/v1791224271/falhen/portfolio/ysfriy8jlhhkcuzl8j16.jpg', 'is_hero_featured' => true, 'status' => 'live'],
+                    ['id' => 2, 'project_name' => 'Wedding Celebration', 'client' => 'Kane Oberman', 'category' => 'Wedding Film', 'year' => '2024', 'duration' => '0:00', 'youtube_id' => 'jaJawGCNx-I', 'video_source' => 'youtube', 'thumbnail' => 'https://res.cloudinary.com/pnabfi91/image/upload/v1791222750/falhen/portfolio/blpzc2fznaqr0czm3ji8.jpg', 'is_hero_featured' => false, 'status' => 'live'],
+                    ['id' => 3, 'project_name' => 'Wedding Celebration', 'client' => 'Kailey and William', 'category' => 'Wedding Trailer', 'year' => '2024', 'duration' => '1:28', 'youtube_id' => 'z56VNoHV1Ic', 'video_source' => 'youtube', 'thumbnail' => 'https://res.cloudinary.com/pnabfi91/image/upload/v1791222750/falhen/portfolio/blpzc2fznaqr0czm3ji8.jpg', 'is_hero_featured' => false, 'status' => 'live'],
+                    ['id' => 4, 'project_name' => 'Gala Award Night', 'client' => 'Ibadan College of Medicine', 'category' => 'Award Night Documentary', 'year' => '2024', 'duration' => '1:53', 'youtube_id' => 'Tf8rNMZ-Bw0', 'video_source' => 'youtube', 'thumbnail' => 'https://res.cloudinary.com/pnabfi91/image/upload/v1791226024/falhen/portfolio/ldtm77cjygkwcgijkdqq.jpg', 'is_hero_featured' => false, 'status' => 'live'],
+                    ['id' => 5, 'project_name' => 'Black History Month', 'client' => 'BMRC', 'category' => 'Commercial Documentary', 'year' => '2024', 'duration' => '2:25', 'youtube_id' => 'Z84AOc_t2Sk', 'video_source' => 'youtube', 'thumbnail' => 'https://res.cloudinary.com/pnabfi91/image/upload/v1791222920/falhen/portfolio/c5k5xwoa1misejie2oxy.jpg', 'is_hero_featured' => false, 'status' => 'live'],
+                    ['id' => 6, 'project_name' => 'Wedding Celebration', 'client' => 'Diané & Max', 'category' => 'Wedding Film', 'year' => '2024', 'duration' => '1:49', 'youtube_id' => 'AXqylP5AENQ', 'video_source' => 'youtube', 'thumbnail' => 'https://res.cloudinary.com/pnabfi91/image/upload/v1791224271/falhen/portfolio/ysfriy8jlhhkcuzl8j16.jpg', 'is_hero_featured' => false, 'status' => 'live'],
                     ['id' => 7, 'project_name' => 'Wedding Celebration', 'client' => 'Ernie & Emily', 'category' => 'Wedding Film', 'year' => '2024', 'duration' => '1:30', 'youtube_id' => 'zidrFg1ikBc', 'video_source' => 'youtube', 'thumbnail' => 'https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=800&q=80', 'is_hero_featured' => false, 'status' => 'live'],
                     ['id' => 8, 'project_name' => 'Wedding Reels', 'client' => 'Wedding', 'category' => 'Wedding Film', 'year' => '2024', 'duration' => '1:28', 'youtube_id' => 'ezAGweXeQOw', 'video_source' => 'youtube', 'thumbnail' => 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=800&q=80', 'is_hero_featured' => false, 'status' => 'live']
                 ];
@@ -7971,10 +7971,10 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                 <div style="display: flex; align-items: center; gap: 16px; background: #f8fafc; padding: 14px 18px; border-radius: 12px; border: 1px solid var(--card-border);">
                                     <img 
                                         id="portfolio_image_preview" 
-                                        src="<?php echo htmlspecialchars(getCloudinaryUrl(!empty($editingPortfolio['image']) ? $editingPortfolio['image'] : (!empty($editingPortfolio['video_url']) ? getYouTubeThumbnailUrl($editingPortfolio['video_url']) : '/assets/img/portfolio/portfolio_halima.png'))); ?>" 
+                                        src="<?php echo htmlspecialchars(getCloudinaryUrl(!empty($editingPortfolio['image']) ? $editingPortfolio['image'] : (!empty($editingPortfolio['video_url']) ? getYouTubeThumbnailUrl($editingPortfolio['video_url']) : 'https://res.cloudinary.com/pnabfi91/image/upload/v1791224271/falhen/portfolio/ysfriy8jlhhkcuzl8j16.jpg'))); ?>" 
                                         alt="Thumbnail Preview" 
                                         style="width: 90px; height: 60px; border-radius: 8px; object-fit: cover; border: 1px solid #cbd5e1; box-shadow: 0 2px 6px rgba(0,0,0,0.1); flex-shrink: 0;"
-                                        onerror="this.src='/assets/img/portfolio/portfolio_halima.png';"
+                                        onerror="this.src='https://res.cloudinary.com/pnabfi91/image/upload/v1791224271/falhen/portfolio/ysfriy8jlhhkcuzl8j16.jpg';"
                                     >
                                     <div style="display: flex; flex-direction: column; gap: 8px; flex: 1;">
                                         <div style="display: flex; gap: 8px;">
@@ -8382,10 +8382,10 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                 <!-- Thumbnail Container -->
                                 <div style="position: relative; aspect-ratio: 16/10; background: #0f172a; overflow: hidden;">
                                     <img 
-                                        src="<?php echo htmlspecialchars(getCloudinaryUrl($pItem['image'] ?? '/assets/img/portfolio/portfolio_halima.png')); ?>" 
+                                        src="<?php echo htmlspecialchars(getCloudinaryUrl($pItem['image'] ?? 'https://res.cloudinary.com/pnabfi91/image/upload/v1791224271/falhen/portfolio/ysfriy8jlhhkcuzl8j16.jpg')); ?>" 
                                         alt="<?php echo htmlspecialchars($pItem['title']); ?>" 
                                         style="width: 100%; height: 100%; object-fit: cover;"
-                                        onerror="this.src='/assets/img/portfolio/portfolio_halima.png';"
+                                        onerror="this.src='https://res.cloudinary.com/pnabfi91/image/upload/v1791224271/falhen/portfolio/ysfriy8jlhhkcuzl8j16.jpg';"
                                     >
                                     
                                     <!-- Top Left Media Type Tag -->
@@ -9190,7 +9190,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                             <?php foreach ($filteredGalleries as $cg): 
                                 $cgSlug = $cg['slug'] ?? generateSlug($cg['title'] ?? '');
                                 $cgPhotosCount = (int)($cg['photosCount'] ?? count($cg['gallery_photos'] ?? []));
-                                $cgCover = getCloudinaryUrl($cg['image'] ?? $cg['cover'] ?? '/assets/img/portfolio/portfolio_halima.png');
+                                $cgCover = getCloudinaryUrl($cg['image'] ?? $cg['cover'] ?? 'https://res.cloudinary.com/pnabfi91/image/upload/v1791224271/falhen/portfolio/ysfriy8jlhhkcuzl8j16.jpg');
                                 $cgHasDrive = !empty($cg['gdrive_url']);
                             ?>
                                 <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; transition: transform 0.2s, box-shadow 0.2s;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 10px 24px rgba(0,0,0,0.06)';" onmouseout="this.style.transform='none'; this.style.boxShadow='none';">

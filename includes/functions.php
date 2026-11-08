@@ -217,7 +217,7 @@ function getTeamMembers() {
                 'department' => 'Creative',
                 'location' => 'Chicago',
                 'experience' => '15+ years at Falhen',
-                'image' => '/assets/img/team/team_henry.png',
+                'image' => 'https://res.cloudinary.com/pnabfi91/image/upload/v1786712075/falhen/team/ctxjp9mymgqdh2ecg2hu.jpg',
                 'bio' => "Visionary Creative Director and founder of Falhen, where he leads high-end cinematic storytelling and media production. With over 15 years of experience, Henry has transformed a boutique studio into a recognized production house.",
                 'skills' => ['Creative Direction', 'Brand Strategy', 'Concert Development']
             ],
@@ -241,7 +241,7 @@ function getTeamMembers() {
                 'department' => 'Creative',
                 'location' => 'London',
                 'experience' => '5+ years at Falhen',
-                'image' => '/assets/img/portfolio/portfolio_wedding.png',
+                'image' => 'https://res.cloudinary.com/pnabfi91/image/upload/v1786713962/falhen/team/b5v6o8oirs95xihokmgc.jpg',
                 'bio' => "Leading brand partnerships, campaign strategy, and client communications. Lisa connects world-class brands with Falhen's production engine.",
                 'skills' => ['Client Partnerships', 'Marketing Strategy', 'Brand Development']
             ],
@@ -253,7 +253,7 @@ function getTeamMembers() {
                 'department' => 'Strategy',
                 'location' => 'Lagos',
                 'experience' => '10+ years at Falhen',
-                'image' => '/assets/img/portfolio/portfolio_commercial.png',
+                'image' => 'https://res.cloudinary.com/pnabfi91/image/upload/v1786714006/falhen/team/ini79za7jvbjokrf1dup.jpg',
                 'bio' => "With over a decade of experience in the HR industry, Mojisola has a proven track record of enhancing operational efficiency and resource allocation.",
                 'skills' => ['Resource Management', 'Talent Scheduling', 'Budget Optimization']
             ],
@@ -785,9 +785,9 @@ function getPortfolioRepo() {
                 'featured' => true,
                 'client' => 'King David',
                 'location' => 'Chicago',
-                'image' => 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=800&auto=format&fit=crop',
+                'image' => 'https://res.cloudinary.com/pnabfi91/image/upload/v1791227208/falhen/portfolio/ycqetkqltbrf0xctnjoe.jpg',
                 'desc' => 'Commemorative academic graduate portrait session capturing milestone achievements with editorial studio lighting.',
-                'photosCount' => 30
+                'photosCount' => 25
             ],
             [
                 'id' => 2,
@@ -797,7 +797,7 @@ function getPortfolioRepo() {
                 'featured' => true,
                 'client' => 'Halima Ogunde',
                 'location' => 'Lagos',
-                'image' => '/assets/img/portfolio/portfolio_halima.png',
+                'image' => 'https://res.cloudinary.com/pnabfi91/image/upload/v1791224271/falhen/portfolio/ysfriy8jlhhkcuzl8j16.jpg',
                 'desc' => 'A golden-hour pre-wedding & birthday session set in a lush garden estate. Every frame tells the story of elegance, captured with cinematic warmth.',
                 'photosCount' => 30
             ],
@@ -809,7 +809,7 @@ function getPortfolioRepo() {
                 'featured' => true,
                 'client' => 'Demola The Violinist',
                 'location' => 'London',
-                'image' => '/assets/img/portfolio/portfolio_wedding.png',
+                'image' => 'https://res.cloudinary.com/pnabfi91/image/upload/v1791222750/falhen/portfolio/blpzc2fznaqr0czm3ji8.jpg',
                 'desc' => 'Live concert and tour performance capturing electric stage energy, dramatic lighting, and musical virtuosity.',
                 'photosCount' => 30
             ],
@@ -821,7 +821,7 @@ function getPortfolioRepo() {
                 'featured' => false,
                 'client' => 'Dex Million',
                 'location' => 'Atlanta',
-                'image' => 'https://images.unsplash.com/photo-1511795409834-ef04bbd61622?q=80&w=800&auto=format&fit=crop',
+                'image' => 'https://res.cloudinary.com/pnabfi91/image/upload/v1791222920/falhen/portfolio/c5k5xwoa1misejie2oxy.jpg',
                 'desc' => 'Surprise milestone celebration featuring high-profile guests, live music, and candid moment capture.',
                 'photosCount' => 30
             ],
@@ -833,7 +833,7 @@ function getPortfolioRepo() {
                 'featured' => false,
                 'client' => 'Jussoul',
                 'location' => 'California',
-                'image' => '/assets/img/portfolio/portfolio_award.png',
+                'image' => 'https://res.cloudinary.com/pnabfi91/image/upload/v1791226024/falhen/portfolio/ldtm77cjygkwcgijkdqq.jpg',
                 'desc' => 'Acoustic live sessions and winery tour performance captured in intimate 4K resolution.',
                 'photosCount' => 30
             ],
@@ -845,7 +845,7 @@ function getPortfolioRepo() {
                 'featured' => false,
                 'client' => 'Halima Ogunde',
                 'location' => 'Lagos',
-                'image' => '/assets/img/portfolio/portfolio_halima.png',
+                'image' => 'https://res.cloudinary.com/pnabfi91/image/upload/v1791224320/falhen/portfolio/qdkldutyaqhrena0mrza.jpg',
                 'desc' => 'High-fashion portrait and luxury event coverage.',
                 'photosCount' => 30
             ],
@@ -857,7 +857,7 @@ function getPortfolioRepo() {
                 'featured' => false,
                 'client' => 'Darasinmi',
                 'location' => 'Oakbrook',
-                'image' => 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=800&auto=format&fit=crop',
+                'image' => 'https://res.cloudinary.com/pnabfi91/image/upload/v1791226059/falhen/portfolio/lavtrjw84dyapshxdgpl.jpg',
                 'desc' => 'Creative indoor studio portrait session with modern color tones and dramatic contrast.',
                 'photosCount' => 30
             ],
@@ -869,7 +869,7 @@ function getPortfolioRepo() {
                 'featured' => false,
                 'client' => 'Darasinmi Family',
                 'location' => 'Chicago',
-                'image' => 'https://images.unsplash.com/photo-1530103862676-de8c9debad1d?q=80&w=800&auto=format&fit=crop',
+                'image' => 'https://res.cloudinary.com/pnabfi91/image/upload/v1791226059/falhen/portfolio/lavtrjw84dyapshxdgpl.jpg',
                 'desc' => 'Vibrant milestone 10th birthday party photography and celebratory family moments.',
                 'photosCount' => 30
             ],
@@ -881,7 +881,7 @@ function getPortfolioRepo() {
                 'featured' => false,
                 'client' => 'Adetutu Family',
                 'location' => 'Lagos',
-                'image' => '/assets/img/portfolio/portfolio_commercial.png',
+                'image' => 'https://res.cloudinary.com/pnabfi91/image/upload/v1791226088/falhen/portfolio/sfa4gof0yfr0bc14r1eg.jpg',
                 'desc' => 'Traditional cultural celebration and remembrance service photography.',
                 'photosCount' => 30
             ],
@@ -907,7 +907,7 @@ function getPortfolioRepo() {
                 'featured' => true,
                 'client' => 'Demola The Violinist',
                 'location' => 'London',
-                'image' => '/assets/img/portfolio/portfolio_wedding.png',
+                'image' => 'https://res.cloudinary.com/pnabfi91/image/upload/v1791222750/falhen/portfolio/blpzc2fznaqr0czm3ji8.jpg',
                 'video_url' => 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4',
                 'desc' => 'Cinematic live performance video capturing multi-camera stage coverage, dramatic arena lighting, and musical virtuosity.'
             ],
@@ -920,7 +920,7 @@ function getPortfolioRepo() {
                 'featured' => true,
                 'client' => 'Halima & Tunde Ogunde',
                 'location' => 'Cape Town',
-                'image' => '/assets/img/portfolio/portfolio_halima.png',
+                'image' => 'https://res.cloudinary.com/pnabfi91/image/upload/v1791224271/falhen/portfolio/ysfriy8jlhhkcuzl8j16.jpg',
                 'video_url' => 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4',
                 'desc' => 'Luxury destination wedding mini-documentary with aerial drone shots, emotional vows, and cinematic color grading.'
             ],
@@ -946,7 +946,7 @@ function getPortfolioRepo() {
                 'featured' => false,
                 'client' => 'Jussoul Media',
                 'location' => 'Los Angeles',
-                'image' => '/assets/img/portfolio/portfolio_award.png',
+                'image' => 'https://res.cloudinary.com/pnabfi91/image/upload/v1791226024/falhen/portfolio/ldtm77cjygkwcgijkdqq.jpg',
                 'video_url' => 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltdowns.mp4',
                 'desc' => 'Vertical 9:16 social media teaser reel optimized for Instagram and TikTok with dynamic typography.'
             ],
@@ -959,7 +959,7 @@ function getPortfolioRepo() {
                 'featured' => false,
                 'client' => 'Falhen Originals',
                 'location' => 'Lagos',
-                'image' => '/assets/img/portfolio/portfolio_commercial.png',
+                'image' => 'https://res.cloudinary.com/pnabfi91/image/upload/v1791222920/falhen/portfolio/c5k5xwoa1misejie2oxy.jpg',
                 'video_url' => 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/Sintel.mp4',
                 'desc' => 'Award-winning short documentary exploring street art, culture, and creative passion in modern urban cities.'
             ],
@@ -1067,7 +1067,7 @@ function getPortfolioRepo() {
                 'featured' => true,
                 'client' => 'Falhen Global',
                 'location' => 'Lagos & Chicago',
-                'image' => '/assets/img/portfolio/portfolio_award.png',
+                'image' => 'https://res.cloudinary.com/pnabfi91/image/upload/v1786578372/falhen/uploads/r96mxsji9cdogqrkxwoe.jpg',
                 'gdrive_url' => 'https://drive.google.com/drive/folders/falhen-brand-2026',
                 'desc' => 'Complete visual rebrand, corporate media campaign, and multimedia brand guidelines production.'
             ],
@@ -1079,7 +1079,7 @@ function getPortfolioRepo() {
                 'featured' => true,
                 'client' => 'Demola Music',
                 'location' => 'London & New York',
-                'image' => '/assets/img/portfolio/portfolio_wedding.png',
+                'image' => 'https://res.cloudinary.com/pnabfi91/image/upload/v1791222750/falhen/portfolio/blpzc2fznaqr0czm3ji8.jpg',
                 'gdrive_url' => 'https://drive.google.com/drive/folders/demola-tour-2026',
                 'desc' => 'Stage LED visual curation, concert live recording setup, and international promotional assets.'
             ],
@@ -1091,7 +1091,7 @@ function getPortfolioRepo() {
                 'featured' => true,
                 'client' => 'Falhen Originals',
                 'location' => 'Lagos',
-                'image' => '/assets/img/portfolio/portfolio_commercial.png',
+                'image' => 'https://res.cloudinary.com/pnabfi91/image/upload/v1791224320/falhen/portfolio/qdkldutyaqhrena0mrza.jpg',
                 'gdrive_url' => 'https://drive.google.com/drive/folders/urban-culture-doc',
                 'desc' => 'Award-winning short documentary exploring street art, urban music, and creative youth culture.'
             ],

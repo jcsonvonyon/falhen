@@ -893,7 +893,7 @@ $relatedProjects = array_slice($relatedProjects, 0, 3);
     <!-- Project Hero Banner Area (Screenshot 1) -->
     <section class="project-hero-section">
         <div class="project-hero-bg">
-            <img src="<?php echo htmlspecialchars(getCloudinaryUrl($currentProject['image'] ?? '/assets/img/portfolio/portfolio_halima.png')); ?>" alt="<?php echo htmlspecialchars($currentProject['title']); ?>">
+            <img src="<?php echo htmlspecialchars(getCloudinaryUrl($currentProject['image'] ?? 'https://res.cloudinary.com/pnabfi91/image/upload/v1791224271/falhen/portfolio/ysfriy8jlhhkcuzl8j16.jpg')); ?>" alt="<?php echo htmlspecialchars($currentProject['title']); ?>">
             <div class="project-hero-gradient"></div>
         </div>
 
@@ -1016,7 +1016,7 @@ $relatedProjects = array_slice($relatedProjects, 0, 3);
                     <?php foreach ($relatedProjects as $relProj): ?>
                         <a href="/portfolio-project.php?id=<?php echo $relProj['id']; ?>" class="project-card">
                             <div class="project-card-image-wrap">
-                                <img src="<?php echo htmlspecialchars(getCloudinaryUrl($relProj['image'] ?? '/assets/img/portfolio/portfolio_halima.png')); ?>" alt="<?php echo htmlspecialchars($relProj['title']); ?>" onerror="this.src='/assets/img/portfolio/portfolio_halima.png';">
+                                <img src="<?php echo htmlspecialchars(getCloudinaryUrl($relProj['image'] ?? 'https://res.cloudinary.com/pnabfi91/image/upload/v1791224271/falhen/portfolio/ysfriy8jlhhkcuzl8j16.jpg')); ?>" alt="<?php echo htmlspecialchars($relProj['title']); ?>" onerror="this.src='https://res.cloudinary.com/pnabfi91/image/upload/v1791224271/falhen/portfolio/ysfriy8jlhhkcuzl8j16.jpg';">
                             </div>
                             <div class="project-card-info">
                                 <div class="project-card-cat"><?php echo htmlspecialchars($relProj['category'] ?? 'Corporate'); ?></div>

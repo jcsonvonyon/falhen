@@ -1721,7 +1721,7 @@ $featuredAllProjects = array_filter($allProjects, function($item) {
                 <?php foreach ($portfolioProjects as $pItem): ?>
                     <div class="project-card" data-cat="<?php echo htmlspecialchars($pItem['category']); ?>" onclick="window.location.href='/portfolio-project.php?id=<?php echo $pItem['id']; ?>'">
                         <div class="project-card-image-wrap">
-                            <img src="<?php echo htmlspecialchars(getCloudinaryUrl($pItem['image'] ?? '/assets/img/portfolio/portfolio_halima.png')); ?>" alt="<?php echo htmlspecialchars($pItem['title']); ?>" onerror="this.src='/assets/img/portfolio/portfolio_halima.png';">
+                            <img src="<?php echo htmlspecialchars(getCloudinaryUrl($pItem['image'] ?? 'https://res.cloudinary.com/pnabfi91/image/upload/v1791224271/falhen/portfolio/ysfriy8jlhhkcuzl8j16.jpg')); ?>" alt="<?php echo htmlspecialchars($pItem['title']); ?>" onerror="this.src='https://res.cloudinary.com/pnabfi91/image/upload/v1791224271/falhen/portfolio/ysfriy8jlhhkcuzl8j16.jpg';">
                             <?php if (!empty($pItem['featured'])): ?>
                                 <div class="project-star-badge"><i class="fa-solid fa-star"></i></div>
                             <?php endif; ?>
