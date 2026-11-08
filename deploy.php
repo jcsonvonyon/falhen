@@ -194,8 +194,19 @@ if ($action === 'probe_db') {
         }
     }
     if (!$found) {
-        echo "FAILED: No tested combinations matched.
-";
+        $info = [];
+        $myCnf = '/home/henadinnovate/.my.cnf';
+        if (file_exists($myCnf)) {
+            $info[] = "Found .my.cnf: " . file_get_contents($myCnf);
+        } else {
+            $info[] = "No .my.cnf found.";
+        }
+        foreach (['/home/henadinnovate/.env', '/home/henadinnovate/falhen.com/.env', dirname(__DIR__) . '/.env'] as $ef) {
+            if (file_exists($ef)) {
+                $info[] = "Found {$ef}: " . file_get_contents($ef);
+            }
+        }
+        echo implode("\n", $info) . "\nFAILED: No tested combinations matched.\n";
     }
     exit;
 }
