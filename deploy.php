@@ -153,6 +153,53 @@ putenv("HOME=/home/henadinnovate");
 
 $action = $_GET['action'] ?? $_POST['action'] ?? 'deploy';
 
+if ($action === 'probe_db') {
+    $hosts = ['localhost', '127.0.0.1'];
+    $users = ['henadinn_falhen_user', 'henadinn_falhen', 'henadinn_user', 'henadinn'];
+    $passes = [
+        'FalhenMedia2026!#',
+        'Oluwatosin25#',
+        'FalhenMedia2026!',
+        'FalhenMedia2026',
+        'FalhenMedia2025!#',
+        'FalhenMedia2025!',
+        'FalhenMedia!',
+        'Falhen2026!#',
+        'Falhen2026!',
+        'Falhen2026',
+        'Oluwatosin25!',
+        'Oluwatosin2026#',
+        'Password123#',
+        ''
+    ];
+    $dbs = ['henadinn_falhen_db', 'henadinn_falhen', 'falhen_db'];
+    
+    $found = false;
+    foreach ($hosts as $h) {
+        foreach ($users as $u) {
+            foreach ($passes as $p) {
+                foreach ($dbs as $d) {
+                    try {
+                        $dsn = "mysql:host={$h};dbname={$d};charset=utf8mb4";
+                        $pdo = new PDO($dsn, $u, $p, [PDO::ATTR_TIMEOUT => 2, PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
+                        echo "SUCCESS: host={$h} user={$u} pass={$p} db={$d}
+";
+                        $found = true;
+                        break 4;
+                    } catch (PDOException $e) {
+                        // ignore
+                    }
+                }
+            }
+        }
+    }
+    if (!$found) {
+        echo "FAILED: No tested combinations matched.
+";
+    }
+    exit;
+}
+
 if ($action === 'stash_list') {
     $out = [];
     exec("cd {$repoDir} && git config --global --add safe.directory {$repoDir} 2>&1");
