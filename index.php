@@ -12,6 +12,7 @@ require_once __DIR__ . '/includes/functions.php';
 
 $settings  = getSiteSettings();
 $heroMedia = resolveHeroMediaConfig($settings);
+$heroStats = resolveHeroStatsConfig($settings);
 
 require_once __DIR__ . '/includes/header.php';
 
@@ -91,6 +92,26 @@ if ($pdo) {
                     <span class="hero-play-icon"><i class="fa-solid fa-play"></i></span> <?php echo htmlspecialchars($settings['hero_secondary_cta_text'] ?? 'Watch Showreel'); ?>
                 </a>
             </div>
+
+            <?php if (!empty($heroStats['visible']) && $heroStats['placement'] === 'hero'): ?>
+                <div class="hero-stats-dock" id="heroStatsDock" role="region" aria-label="Key Production Metrics">
+                    <div class="hero-stats-grid">
+                        <?php foreach ($heroStats['items'] as $sItem): ?>
+                            <div class="hero-stat-item">
+                                <div class="hero-stat-value">
+                                    <?php if (!empty($sItem['prefix'])): ?><span class="hero-stat-prefix"><?php echo htmlspecialchars($sItem['prefix']); ?></span><?php endif; ?>
+                                    <span class="stat-counter-val" data-target="<?php echo htmlspecialchars($sItem['number']); ?>"><?php echo htmlspecialchars($sItem['number']); ?></span>
+                                    <?php if (!empty($sItem['suffix'])): ?><span class="hero-stat-suffix"><?php echo htmlspecialchars($sItem['suffix']); ?></span><?php endif; ?>
+                                </div>
+                                <div class="hero-stat-label"><?php echo htmlspecialchars($sItem['label']); ?></div>
+                                <?php if (!empty($sItem['sublabel'])): ?>
+                                    <div class="hero-stat-sublabel"><?php echo htmlspecialchars($sItem['sublabel']); ?></div>
+                                <?php endif; ?>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+            <?php endif; ?>
         </div>
     </div>
 </section>
@@ -187,15 +208,13 @@ if ($pdo) {
     </div>
 </section>
 
-<!-- Stats Counter / By the Numbers Section (Synced with Admin > Stats Counter) -->
+<!-- Stats Counter / By the Numbers Section (Synced with Admin > Hero & Stats) -->
 <?php
-$statsVisible = !empty($settings['stats_visible']);
-$statsItemsList = $settings['stats_items'] ?? [];
-if ($statsVisible && !empty($statsItemsList) && is_array($statsItemsList)):
-    $statsBadge = $settings['stats_badge_label'] ?? 'By the Numbers';
-    $statsWhite = $settings['stats_headline_white'] ?? 'A Decade of';
-    $statsRed   = $settings['stats_headline_red'] ?? 'Impact';
-    $statsDesc  = $settings['stats_description'] ?? '';
+if (!empty($heroStats['visible']) && $heroStats['placement'] === 'section'):
+    $statsBadge = $heroStats['badge_label'] ?? 'By the Numbers';
+    $statsWhite = $heroStats['headline_white'] ?? 'A Decade of';
+    $statsRed   = $heroStats['headline_red'] ?? 'Impact';
+    $statsDesc  = $heroStats['description'] ?? '';
 ?>
 <section class="section" id="impact-stats" style="padding-top: 20px;">
     <div class="container">
@@ -216,13 +235,13 @@ if ($statsVisible && !empty($statsItemsList) && is_array($statsItemsList)):
         </div>
 
         <div class="impact-grid">
-            <?php foreach ($statsItemsList as $st): ?>
+            <?php foreach ($heroStats['items'] as $st): ?>
                 <div class="impact-card">
                     <div class="impact-icon-box">
                         <i class="<?php echo htmlspecialchars(!empty($st['icon']) ? $st['icon'] : 'ri-film-line'); ?>"></i>
                     </div>
                     <div class="impact-number">
-                        <?php if (!empty($st['prefix'])): ?><span><?php echo htmlspecialchars($st['prefix']); ?></span><?php endif; ?><?php echo htmlspecialchars($st['number'] ?? '0'); ?><?php if (!empty($st['suffix'])): ?><span class="impact-plus"><?php echo htmlspecialchars($st['suffix']); ?></span><?php endif; ?>
+                        <?php if (!empty($st['prefix'])): ?><span><?php echo htmlspecialchars($st['prefix']); ?></span><?php endif; ?><span class="stat-counter-val" data-target="<?php echo htmlspecialchars($st['number']); ?>"><?php echo htmlspecialchars($st['number'] ?? '0'); ?></span><?php if (!empty($st['suffix'])): ?><span class="impact-plus"><?php echo htmlspecialchars($st['suffix']); ?></span><?php endif; ?>
                     </div>
                     <div class="impact-label"><?php echo htmlspecialchars($st['label'] ?? ''); ?></div>
                     <?php if (!empty($st['sublabel'])): ?>

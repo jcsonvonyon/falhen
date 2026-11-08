@@ -397,6 +397,11 @@ function resolveHeroMediaConfig($settings = null) {
     $showreelModalUrl = 'https://www.youtube-nocookie.com/embed/' . rawurlencode($showreelId) . '?autoplay=1&rel=0&modestbranding=1&playsinline=1';
 
     $rawPoster = !empty($settings['hero_poster_image']) ? trim((string)$settings['hero_poster_image']) : '/assets/img/hero.jpg';
+    $posterIsCloudinary = function_exists('isCloudinaryUrl') && isCloudinaryUrl($rawPoster);
+    $posterPublicId = '';
+    if ($posterIsCloudinary && preg_match('#/upload/(?:[^/]+/)*?(?:v\d+/)?(.+)$#i', $rawPoster, $pm)) {
+        $posterPublicId = $pm[1];
+    }
     $posterDesktop = getResponsiveCloudinaryAsset($rawPoster, 'f_auto,q_auto:good,w_1920,c_fill');
     $posterMobile  = getResponsiveCloudinaryAsset($rawPoster, 'f_auto,q_auto:eco,w_780,c_fill');
     $posterLqip    = getResponsiveCloudinaryAsset($rawPoster, 'f_auto,q_30,w_48,e_blur:200,c_fill');
@@ -478,11 +483,64 @@ function resolveHeroMediaConfig($settings = null) {
         'direct_video_desktop' => $directVideoDesktop,
         'direct_video_mobile'  => $directVideoMobile,
         'poster_raw'           => $rawPoster,
+        'poster_is_cloudinary' => $posterIsCloudinary,
+        'poster_public_id'     => $posterPublicId,
+        'cloud_name'           => defined('CLOUDINARY_CLOUD_NAME') ? CLOUDINARY_CLOUD_NAME : 'pnabfi91',
         'poster_desktop'       => $posterDesktop,
         'poster_mobile'        => $posterMobile,
         'poster_lqip'          => $posterLqip,
         'showreel_id'          => $showreelId,
         'showreel_modal_url'   => $showreelModalUrl
+    ];
+}
+
+/**
+ * Resolve Homepage Hero / Impact Stats Counter Configuration
+ */
+function resolveHeroStatsConfig($settings = null) {
+    if (!is_array($settings)) {
+        $settings = function_exists('getSiteSettings') ? getSiteSettings() : [];
+    }
+
+    $visible = array_key_exists('stats_visible', $settings) ? (bool)$settings['stats_visible'] : true;
+    $rawPlacement = strtolower(trim((string)($settings['stats_placement'] ?? 'hero')));
+    $placement = in_array($rawPlacement, ['hero', 'section'], true) ? $rawPlacement : 'hero';
+
+    $defaultItems = [
+        ['number' => '150', 'suffix' => '+', 'prefix' => '', 'label' => 'Projects Delivered', 'sublabel' => 'Across commercial, film & events', 'icon' => 'ri-film-line'],
+        ['number' => '12',  'suffix' => '+', 'prefix' => '', 'label' => 'Years Experience',   'sublabel' => 'Delivering world-class productions', 'icon' => 'ri-history-line'],
+        ['number' => '7',   'suffix' => '+', 'prefix' => '', 'label' => 'Industries Served',  'sublabel' => 'From tech to luxury to social',      'icon' => 'ri-earth-line']
+    ];
+
+    $rawItems = (isset($settings['stats_items']) && is_array($settings['stats_items']) && !empty($settings['stats_items']))
+        ? $settings['stats_items']
+        : $defaultItems;
+
+    $items = [];
+    foreach ($rawItems as $it) {
+        if (!is_array($it)) continue;
+        $num   = trim((string)($it['number'] ?? ''));
+        $label = trim((string)($it['label'] ?? ''));
+        if ($num === '' && $label === '') continue;
+        $items[] = [
+            'number'   => $num !== '' ? $num : '0',
+            'suffix'   => trim((string)($it['suffix'] ?? '')),
+            'prefix'   => trim((string)($it['prefix'] ?? '')),
+            'label'    => $label,
+            'sublabel' => trim((string)($it['sublabel'] ?? '')),
+            'icon'     => trim((string)($it['icon'] ?? 'ri-film-line')) ?: 'ri-film-line'
+        ];
+    }
+
+    return [
+        'visible'        => $visible && !empty($items),
+        'raw_visible'    => $visible,
+        'placement'      => $placement,
+        'badge_label'    => trim((string)($settings['stats_badge_label'] ?? '')),
+        'headline_white' => trim((string)($settings['stats_headline_white'] ?? 'A Decade of')),
+        'headline_red'   => trim((string)($settings['stats_headline_red'] ?? 'Impact')),
+        'description'    => trim((string)($settings['stats_description'] ?? "The numbers behind Falhen's reputation as one of Africa's most awarded and globally recognised production houses.")),
+        'items'          => $items
     ];
 }
 

@@ -532,45 +532,50 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // 6. Impact Counter Scroll Animation
-  const counterElements = document.querySelectorAll('.impact-number[data-count]');
+  // 6. Impact / Hero Counter Scroll & Load Animation
+  const counterElements = document.querySelectorAll('.stat-counter-val[data-target], .impact-number[data-count]');
   if (counterElements.length > 0) {
-    let animated = false;
+    const animateCounter = (el) => {
+      if (el.dataset.animated === 'true') return;
+      el.dataset.animated = 'true';
+      const rawTarget = el.getAttribute('data-target') || el.getAttribute('data-count');
+      const target = parseInt(rawTarget, 10);
+      if (isNaN(target)) return;
 
-    const animateCounters = () => {
-      counterElements.forEach(counter => {
-        const target = parseInt(counter.getAttribute('data-count'), 10);
-        const duration = 1800; // 1.8s
-        const stepTime = 20;
-        const steps = duration / stepTime;
-        const increment = target / steps;
-        let current = 0;
+      const duration = 1600;
+      const startTime = performance.now();
 
-        const timer = setInterval(() => {
-          current += increment;
-          if (current >= target) {
-            current = target;
-            clearInterval(timer);
-          }
-          counter.innerHTML = Math.floor(current) + '<span class="impact-plus">+</span>';
-        }, stepTime);
-      });
+      const update = (now) => {
+        const elapsed = now - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        // Ease out expo
+        const ease = progress === 1 ? 1 : 1 - Math.pow(2, -10 * progress);
+        const current = Math.floor(ease * target);
+        el.textContent = current.toLocaleString();
+
+        if (progress < 1) {
+          requestAnimationFrame(update);
+        } else {
+          el.textContent = target.toLocaleString();
+        }
+      };
+
+      requestAnimationFrame(update);
     };
 
-    const impactSection = document.querySelector('#impact');
-    if (impactSection && 'IntersectionObserver' in window) {
-      const observer = new IntersectionObserver((entries, obs) => {
+    if ('IntersectionObserver' in window) {
+      const counterObserver = new IntersectionObserver((entries, obs) => {
         entries.forEach(entry => {
-          if (entry.isIntersecting && !animated) {
-            animated = true;
-            animateCounters();
-            obs.disconnect();
+          if (entry.isIntersecting) {
+            animateCounter(entry.target);
+            obs.unobserve(entry.target);
           }
         });
-      }, { threshold: 0.25 });
-      observer.observe(impactSection);
+      }, { threshold: 0.15 });
+
+      counterElements.forEach(el => counterObserver.observe(el));
     } else {
-      animateCounters();
+      counterElements.forEach(animateCounter);
     }
   }
 
