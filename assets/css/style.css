@@ -507,7 +507,7 @@ ul {
   width: max(100vw, 177.78svh);
   height: max(100vh, 56.25vw);
   height: max(100svh, 56.25vw);
-  transform: translate(-50%, -50%) scale(1.08);
+  transform: translate(-50%, -50%) scale(1.16);
   border: 0;
   pointer-events: none !important;
 }
@@ -3481,7 +3481,25 @@ textarea.form-control {
     width: max(100vw, 177.78svh);
     height: max(100vh, 56.25vw);
     height: max(100svh, 56.25vw);
-    transform: translate(-50%, -50%) scale(1.1);
+    transform: translate(-50%, -50%) scale(1.16);
+  }
+
+  .cookie-banner {
+    bottom: 74px !important;
+    left: 12px !important;
+    right: 12px !important;
+    width: auto !important;
+    max-width: none !important;
+    padding: 14px 16px !important;
+    border-radius: 14px !important;
+  }
+
+  .cookie-banner .cookie-header {
+    margin-bottom: 10px !important;
+  }
+
+  .cookie-banner .cookie-manage-link {
+    margin-top: 8px !important;
   }
 
   .hero-title {

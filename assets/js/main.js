@@ -150,11 +150,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 JSON.stringify({ event: 'listening', id: 'falhenHeroBg', channel: 'widget' }),
                 '*'
               );
-              iframe.contentWindow.postMessage(
-                JSON.stringify({ event: 'command', func: 'mute', args: [] }),
-                '*'
-              );
-              if (isInViewport && !isModalOpen) {
+              // Only nudge playVideo if autoplay hasn't kicked in on its own after 2.4s
+              // (avoids triggering YouTube's transient remote-control HUD overlay)
+              if (ticks === 8 && !isPlayingConfirmed && isInViewport && !isModalOpen) {
+                iframe.contentWindow.postMessage(
+                  JSON.stringify({ event: 'command', func: 'mute', args: [] }),
+                  '*'
+                );
                 iframe.contentWindow.postMessage(
                   JSON.stringify({ event: 'command', func: 'playVideo', args: [] }),
                   '*'
@@ -164,9 +166,6 @@ document.addEventListener('DOMContentLoaded', () => {
               iframe.contentWindow.postMessage(JSON.stringify({ method: 'addEventListener', value: 'play' }), '*');
               iframe.contentWindow.postMessage(JSON.stringify({ method: 'addEventListener', value: 'playProgress' }), '*');
               iframe.contentWindow.postMessage(JSON.stringify({ method: 'setVolume', value: 0 }), '*');
-              if (isInViewport && !isModalOpen) {
-                iframe.contentWindow.postMessage(JSON.stringify({ method: 'play' }), '*');
-              }
             }
           } catch (_) {}
         };
@@ -198,7 +197,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const curTime = typeof info.currentTime === 'number' ? info.currentTime : 0;
         const dur = typeof info.duration === 'number' ? info.duration : 0;
 
-        if (state === 1 || curTime > 0.08) {
+        if (state === 1 && curTime > 0.35) {
           revealVideoLayer();
         }
 
