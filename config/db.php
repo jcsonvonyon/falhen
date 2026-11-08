@@ -139,7 +139,44 @@ function initDatabaseSchema($pdo) {
             @$pdo->exec("UPDATE `admin_users` SET `role` = 'Owner / Super Admin', `is_owner` = 1, `status` = 'active', `alt_email` = 'henry@falhen.com' WHERE LOWER(email) = 'henry.falonipe@falhen.com' OR username = 'henry.falonipe'");
         }
 
-        // 4. Run additional project DDL if present
+        // 4. Ensure site_settings, client_download_logs, and system_backups tables exist
+        $pdo->exec("CREATE TABLE IF NOT EXISTS `site_settings` (
+            `setting_key` VARCHAR(100) NOT NULL PRIMARY KEY,
+            `setting_value` LONGTEXT NOT NULL,
+            `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            INDEX `idx_site_settings_key` (`setting_key`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+
+        $pdo->exec("CREATE TABLE IF NOT EXISTS `client_download_logs` (
+            `id` BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            `client_name` VARCHAR(150) NOT NULL DEFAULT 'Client',
+            `client_email` VARCHAR(150) NOT NULL DEFAULT '',
+            `client_phone` VARCHAR(60) DEFAULT NULL,
+            `album_id` INT NOT NULL DEFAULT 0,
+            `album_title` VARCHAR(255) NOT NULL DEFAULT '',
+            `download_type` VARCHAR(100) NOT NULL DEFAULT 'ZIP Archive',
+            `ip_address` VARCHAR(45) DEFAULT NULL,
+            `user_agent` TEXT DEFAULT NULL,
+            `downloaded_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+            INDEX `idx_dl_email` (`client_email`),
+            INDEX `idx_dl_album` (`album_id`),
+            INDEX `idx_dl_date` (`downloaded_at`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+
+        $pdo->exec("CREATE TABLE IF NOT EXISTS `system_backups` (
+            `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            `backup_type` VARCHAR(50) NOT NULL DEFAULT 'auto_deploy',
+            `filename` VARCHAR(255) NOT NULL,
+            `file_size` BIGINT UNSIGNED NOT NULL DEFAULT 0,
+            `items_count` INT UNSIGNED NOT NULL DEFAULT 0,
+            `notes` TEXT DEFAULT NULL,
+            `created_by` VARCHAR(80) NOT NULL DEFAULT 'System',
+            `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+            INDEX `idx_backup_type` (`backup_type`),
+            INDEX `idx_backup_date` (`created_at`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+
+        // 5. Run additional project DDL if present
         $schemaFile = __DIR__ . '/schema.sql';
         if (file_exists($schemaFile)) {
             $sql = file_get_contents($schemaFile);

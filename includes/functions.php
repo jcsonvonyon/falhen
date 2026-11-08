@@ -366,18 +366,59 @@ function getYouTubeThumbnailUrl($urlOrId, $quality = 'hqdefault') {
 }
 
 /**
- * Get Site Settings from config/settings.json
+ * Get Site Settings: Database-First with local file fallback & auto-seeding
  */
 function getSiteSettings() {
-    $file = __DIR__ . '/../config/settings.json';
-    if (file_exists($file)) {
-        $json = file_get_contents($file);
-        $data = json_decode($json, true);
-        if (is_array($data)) {
-            return $data;
+    static $cachedSettings = null;
+    if ($cachedSettings !== null) {
+        return $cachedSettings;
+    }
+
+    $dbSettings = [];
+    $pdo = function_exists('getDBConnection') ? getDBConnection() : null;
+    if ($pdo) {
+        try {
+            $stmt = $pdo->query("SELECT setting_key, setting_value FROM `site_settings`");
+            $rows = $stmt ? $stmt->fetchAll(PDO::FETCH_ASSOC) : [];
+            if (!empty($rows)) {
+                foreach ($rows as $r) {
+                    $k = $r['setting_key'];
+                    $v = $r['setting_value'];
+                    $decoded = json_decode($v, true);
+                    $dbSettings[$k] = (json_last_error() === JSON_ERROR_NONE) ? $decoded : $v;
+                }
+            }
+        } catch (Exception $e) {
+            error_log("Settings DB read error: " . $e->getMessage());
         }
     }
-    return [
+
+    // Read local disk file as base/fallback
+    $file = __DIR__ . '/../config/settings.json';
+    $fileSettings = [];
+    if (file_exists($file)) {
+        $json = file_get_contents($file);
+        $fileSettings = json_decode($json, true) ?: [];
+    }
+
+    // If database has settings, it is canonical!
+    if (!empty($dbSettings)) {
+        $cachedSettings = array_merge($fileSettings, $dbSettings);
+        return $cachedSettings;
+    }
+
+    // If database was empty but file exists, seed database!
+    if (!empty($fileSettings) && $pdo) {
+        try {
+            $ins = $pdo->prepare("INSERT INTO `site_settings` (`setting_key`, `setting_value`) VALUES (?, ?) ON DUPLICATE KEY UPDATE `setting_value` = VALUES(`setting_value`)");
+            foreach ($fileSettings as $k => $v) {
+                $valStr = is_string($v) ? $v : json_encode($v, JSON_UNESCAPED_SLASHES);
+                $ins->execute([$k, $valStr]);
+            }
+        } catch (Exception $e) {}
+    }
+
+    $cachedSettings = !empty($fileSettings) ? $fileSettings : [
         'hero_direct_video_url' => '',
         'hero_youtube_bg' => '',
         'hero_vimeo_bg' => '',
@@ -386,6 +427,8 @@ function getSiteSettings() {
         'hero_title' => 'Cinematic Storytelling & High-Impact Media Production',
         'hero_subtitle' => 'Falhen Media is a premier full-service media production studio crafting high-end corporate films, commercials, live broadcasts, and brand anthems.'
     ];
+
+    return $cachedSettings;
 }
 
 /**
@@ -397,14 +440,115 @@ function getSiteSetting($key, $default = '') {
 }
 
 /**
- * Save Site Settings array to config/settings.json
+ * Save Site Settings array: writes to Database (canonical) AND disk cache
  */
 function saveSiteSettings($newSettings) {
-    $file = __DIR__ . '/../config/settings.json';
     $current = getSiteSettings();
     $updated = array_merge($current, $newSettings);
+
+    // 1. Write to database (canonical persistent store)
+    $pdo = function_exists('getDBConnection') ? getDBConnection() : null;
+    if ($pdo) {
+        try {
+            $ins = $pdo->prepare("INSERT INTO `site_settings` (`setting_key`, `setting_value`) VALUES (?, ?) ON DUPLICATE KEY UPDATE `setting_value` = VALUES(`setting_value`)");
+            foreach ($newSettings as $k => $v) {
+                $valStr = is_string($v) ? $v : json_encode($v, JSON_UNESCAPED_SLASHES);
+                $ins->execute([$k, $valStr]);
+            }
+        } catch (Exception $e) {
+            error_log("Settings DB save error: " . $e->getMessage());
+        }
+    }
+
+    // 2. Write to local JSON file for disk caching and backups
+    $file = __DIR__ . '/../config/settings.json';
     file_put_contents($file, json_encode($updated, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES), LOCK_EX);
+
     return $updated;
+}
+
+/**
+ * Log client download activity into MySQL database
+ */
+function logClientDownload($data) {
+    $pdo = function_exists('getDBConnection') ? getDBConnection() : null;
+    if (!$pdo) return false;
+    try {
+        $stmt = $pdo->prepare("INSERT INTO `client_download_logs` 
+            (`client_name`, `client_email`, `client_phone`, `album_id`, `album_title`, `download_type`, `ip_address`, `user_agent`)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+        return $stmt->execute([
+            $data['client_name'] ?? 'Client',
+            $data['client_email'] ?? '',
+            $data['client_phone'] ?? '',
+            (int)($data['album_id'] ?? 0),
+            $data['album_title'] ?? 'Gallery',
+            $data['download_type'] ?? 'ZIP Archive',
+            $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1',
+            substr($_SERVER['HTTP_USER_AGENT'] ?? '', 0, 500)
+        ]);
+    } catch (Exception $e) {
+        error_log("Error logging client download: " . $e->getMessage());
+        return false;
+    }
+}
+
+/**
+ * Retrieve client download logs with pagination/search
+ */
+function getClientDownloadLogs($limit = 100) {
+    $pdo = function_exists('getDBConnection') ? getDBConnection() : null;
+    if (!$pdo) return [];
+    try {
+        $stmt = $pdo->prepare("SELECT * FROM `client_download_logs` ORDER BY `id` DESC LIMIT ?");
+        $stmt->bindValue(1, (int)$limit, PDO::PARAM_INT);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    } catch (Exception $e) {
+        return [];
+    }
+}
+
+/**
+ * Log system backup snapshot
+ */
+function logSystemBackup($filename, $backupType = 'manual_snapshot', $itemsCount = 0, $notes = '') {
+    $pdo = function_exists('getDBConnection') ? getDBConnection() : null;
+    $filePath = __DIR__ . '/../config/backups/' . basename($filename);
+    $size = file_exists($filePath) ? filesize($filePath) : 0;
+    if (!$pdo) return false;
+    try {
+        $stmt = $pdo->prepare("INSERT INTO `system_backups` 
+            (`backup_type`, `filename`, `file_size`, `items_count`, `notes`, `created_by`)
+            VALUES (?, ?, ?, ?, ?, ?)");
+        $author = $_SESSION['admin_username'] ?? ($_SESSION['staff_username'] ?? 'System/IT');
+        return $stmt->execute([
+            $backupType,
+            basename($filename),
+            $size,
+            $itemsCount,
+            $notes,
+            $author
+        ]);
+    } catch (Exception $e) {
+        return false;
+    }
+}
+
+/**
+ * Retrieve system backup logs
+ */
+function getSystemBackups($limit = 50) {
+    $pdo = function_exists('getDBConnection') ? getDBConnection() : null;
+    if (!$pdo) return [];
+    try {
+        $stmt = $pdo->prepare("SELECT * FROM `system_backups` ORDER BY `id` DESC LIMIT ?");
+        $stmt->bindValue(1, (int)$limit, PDO::PARAM_INT);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    } catch (Exception $e) {
+        return [];
+    }
 }
 
 /**
@@ -2536,6 +2680,11 @@ function hasSectionAccess($section, $role = null, $email = null, $username = nul
     // Personal profile, settings, studio communications, and task board are always accessible to logged-in team members
     if ($section === 'profile' || $section === 'my_profile' || $section === 'comms' || $section === 'tasks' || $section === 'feeds' || $section === 'channels') {
         return true;
+    }
+
+    // Website Dev Logs & Backup History accessible to Super Admin, Owner, and IT roles
+    if ($section === 'dev_logs') {
+        return isAdminUser($role, $email, $username) || stripos($role, 'IT') !== false || stripos($role, 'Developer') !== false || stripos($role, 'Super Admin') !== false || stripos($role, 'Owner') !== false;
     }
 
     // Content Editor cannot access staff_accounts

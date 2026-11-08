@@ -134,6 +134,18 @@ if ($photoIndex >= 0 && isset($photoItems[$photoIndex])) {
     }
 
     $filename = sprintf('%s_Photo_%02d.jpg', $cleanAlbumSlug, $photoIndex + 1);
+
+    if (function_exists('logClientDownload')) {
+        logClientDownload([
+            'client_name'   => $_SESSION['registered_client_name'] ?? 'Authorized Client',
+            'client_email'  => $_SESSION['portal_lookup_email'] ?? ($_SESSION['verified_client_emails'][$albumId] ?? ''),
+            'client_phone'  => $_SESSION['registered_client_phone'] ?? '',
+            'album_id'      => $albumId,
+            'album_title'   => $albumTitle,
+            'download_type' => sprintf('Single Photo #%02d', $photoIndex + 1)
+        ]);
+    }
+
     header('Content-Type: image/jpeg');
     header('Content-Disposition: attachment; filename="' . $filename . '"');
     header('Content-Length: ' . strlen($bytes));
@@ -188,6 +200,17 @@ $zip->close();
 
 $zipFilename = $cleanAlbumSlug . '_Falhen_Gallery.zip';
 $zipSize = filesize($tmpZip);
+
+if (function_exists('logClientDownload')) {
+    logClientDownload([
+        'client_name'   => $_SESSION['registered_client_name'] ?? 'Authorized Client',
+        'client_email'  => $_SESSION['portal_lookup_email'] ?? ($_SESSION['verified_client_emails'][$albumId] ?? ''),
+        'client_phone'  => $_SESSION['registered_client_phone'] ?? '',
+        'album_id'      => $albumId,
+        'album_title'   => $albumTitle,
+        'download_type' => sprintf('Full Gallery ZIP (%d photos)', $addedCount)
+    ]);
+}
 
 header('Content-Type: application/zip');
 header('Content-Disposition: attachment; filename="' . $zipFilename . '"');

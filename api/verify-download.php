@@ -135,6 +135,17 @@ function logClientDownloadEvent(array $entry): void {
         'ip'   => $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1'
     ]);
     @file_put_contents($logFile, json_encode(array_slice($logs, -250), JSON_PRETTY_PRINT));
+
+    if (function_exists('logClientDownload')) {
+        logClientDownload([
+            'client_name'   => $entry['name'] ?? ($entry['client_name'] ?? 'Client'),
+            'client_email'  => $entry['email'] ?? ($entry['client_email'] ?? ''),
+            'client_phone'  => $entry['phone'] ?? ($entry['client_phone'] ?? ''),
+            'album_id'      => (int)($entry['album_id'] ?? 0),
+            'album_title'   => $entry['album_title'] ?? 'Gallery',
+            'download_type' => $entry['event'] ?? ($entry['status'] ?? 'Verification Code Requested')
+        ]);
+    }
 }
 
 // ============================================================================

@@ -12,6 +12,52 @@ require_once __DIR__ . '/../includes/mxroute_auth.php';
 // Enforce admin login
 requireAdmin();
 
+// CSV Exports for Super Admin / IT
+if (isset($_GET['export_download_logs_csv'])) {
+    $logs = function_exists('getClientDownloadLogs') ? getClientDownloadLogs(2000) : [];
+    header('Content-Type: text/csv; charset=utf-8');
+    header('Content-Disposition: attachment; filename="falhen_client_downloads_' . date('Ymd_His') . '.csv"');
+    $out = fopen('php://output', 'w');
+    fputcsv($out, ['Log ID', 'Client Name', 'Client Email', 'Client Phone', 'Album ID', 'Album Title', 'Download Type', 'IP Address', 'Downloaded At']);
+    foreach ($logs as $row) {
+        fputcsv($out, [
+            $row['id'] ?? '',
+            $row['client_name'] ?? '',
+            $row['client_email'] ?? '',
+            $row['client_phone'] ?? '',
+            $row['album_id'] ?? '',
+            $row['album_title'] ?? '',
+            $row['download_type'] ?? '',
+            $row['ip_address'] ?? '',
+            $row['downloaded_at'] ?? ''
+        ]);
+    }
+    fclose($out);
+    exit;
+}
+
+if (isset($_GET['export_backups_csv'])) {
+    $backups = function_exists('getSystemBackups') ? getSystemBackups(500) : [];
+    header('Content-Type: text/csv; charset=utf-8');
+    header('Content-Disposition: attachment; filename="falhen_system_backups_' . date('Ymd_His') . '.csv"');
+    $out = fopen('php://output', 'w');
+    fputcsv($out, ['Backup ID', 'Backup Type', 'Filename', 'File Size (Bytes)', 'Items Count', 'Notes', 'Created By', 'Created At']);
+    foreach ($backups as $row) {
+        fputcsv($out, [
+            $row['id'] ?? '',
+            $row['backup_type'] ?? '',
+            $row['filename'] ?? '',
+            $row['file_size'] ?? '',
+            $row['items_count'] ?? '',
+            $row['notes'] ?? '',
+            $row['created_by'] ?? '',
+            $row['created_at'] ?? ''
+        ]);
+    }
+    fclose($out);
+    exit;
+}
+
 $pdo = getDBConnection();
 $savedSuccess = false;
 $savedMessage = '';
@@ -25,6 +71,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $_SESSION['admin_role'] = 'HR Manager';
     }
 
+    if ($action === 'create_manual_backup') {
+        $backupDir = __DIR__ . '/../config/backups';
+        if (!is_dir($backupDir)) {
+            @mkdir($backupDir, 0755, true);
+        }
+        $settingsFile = __DIR__ . '/../config/settings.json';
+        $filename = 'manual_snapshot_' . date('Ymd_His') . '.json';
+        @copy($settingsFile, $backupDir . '/' . $filename);
+        $settings = getSiteSettings();
+        $itemsCount = count($settings['portfolio_items'] ?? []);
+        if (function_exists('logSystemBackup')) {
+            logSystemBackup($filename, 'manual_snapshot', $itemsCount, 'Manual snapshot initiated from Super Admin panel');
+        }
+        header('Location: index.php?section=dev_logs&backup_created=1');
+        exit;
+    }
+
     if ($action === 'dismiss_clockin_reminder') {
         $_SESSION['dismissed_clockin_reminder'] = true;
         header('Content-Type: application/json');
@@ -34,6 +97,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // RBAC Action to Section Mapping
     $actionSectionMap = [
+        'create_manual_backup'       => 'dev_logs',
         'save_hero'                  => 'hero',
         'save_stats'                 => 'stats',
         'save_bts'                   => 'bts',
@@ -4815,6 +4879,14 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                         <span>Client Galleries</span>
                     </a>
                 </li>
+                <?php if (hasSectionAccess('dev_logs', $userRole, $currentUser['email'] ?? '', $currentUser['username'] ?? '')): ?>
+                <li class="nav-item <?php echo ($activeSection === 'dev_logs') ? 'active' : ''; ?>">
+                    <a href="/admin/index.php?section=dev_logs">
+                        <i class="fa-solid fa-server nav-icon"></i>
+                        <span>Dev Logs & Backups</span>
+                    </a>
+                </li>
+                <?php endif; ?>
                 <li class="nav-item <?php echo ($activeSection === 'team') ? 'active' : ''; ?>">
                     <a href="/admin/index.php?section=team">
                         <i class="fa-solid fa-users nav-icon"></i>
@@ -9279,6 +9351,155 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                     <?php endif; ?>
 
                 <?php endif; ?>
+
+            <!-- SECTION: WEBSITE DEV LOGS & BACKUP HISTORY (IT / SUPER ADMIN) -->
+            <?php elseif ($activeSection === 'dev_logs'):
+                $downloadLogs = function_exists('getClientDownloadLogs') ? getClientDownloadLogs(250) : [];
+                $backupLogs = function_exists('getSystemBackups') ? getSystemBackups(100) : [];
+            ?>
+                <div style="margin-bottom: 28px; display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 16px;">
+                    <div>
+                        <h2 style="font-size: 1.6rem; font-weight: 800; color: #0f172a; margin-bottom: 4px;">Website Dev Logs & Backup History</h2>
+                        <p style="font-size: 0.9rem; color: #64748b; margin: 0;">Super Admin & IT Telemetry: live client download audit trails, system restore points, and exportable CSV records.</p>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                        <a href="index.php?export_download_logs_csv=1" style="background: #2563eb; color: #ffffff; padding: 10px 16px; border-radius: 8px; text-decoration: none; font-size: 0.85rem; font-weight: 700; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(37,99,235,0.2);">
+                            <i class="fa-solid fa-file-csv"></i> Download Downloader CSV
+                        </a>
+                        <a href="index.php?export_backups_csv=1" style="background: #0f172a; color: #ffffff; padding: 10px 16px; border-radius: 8px; text-decoration: none; font-size: 0.85rem; font-weight: 700; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(15,23,42,0.15);">
+                            <i class="fa-solid fa-download"></i> Download Backups CSV
+                        </a>
+                        <form method="POST" action="index.php?section=dev_logs" style="margin: 0;">
+                            <input type="hidden" name="action" value="create_manual_backup">
+                            <button type="submit" style="background: #dc2626; color: #ffffff; border: none; padding: 10px 16px; border-radius: 8px; font-size: 0.85rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(220,38,38,0.25);">
+                                <i class="fa-solid fa-shield-halved"></i> Create Manual Backup Snapshot
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- SUB-MODULE 1: CLIENT DOWNLOADER LOGS -->
+                <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 24px; margin-bottom: 32px; box-shadow: 0 4px 20px rgba(0,0,0,0.03);">
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; padding-bottom: 14px; border-bottom: 1px solid #f1f5f9;">
+                        <div>
+                            <h3 style="font-size: 1.15rem; font-weight: 700; color: #0f172a; margin-bottom: 2px;">
+                                <i class="fa-solid fa-cloud-arrow-down" style="color: #2563eb; margin-right: 8px;"></i>
+                                Client Downloader Telemetry
+                            </h3>
+                            <p style="font-size: 0.82rem; color: #64748b; margin: 0;">Recorded each time a verified client initiates a Single Photo or Bulk Packaged ZIP download.</p>
+                        </div>
+                        <span style="background: #eff6ff; color: #2563eb; font-weight: 700; font-size: 0.8rem; padding: 4px 10px; border-radius: 20px;">
+                            <?php echo count($downloadLogs); ?> Records
+                        </span>
+                    </div>
+
+                    <div style="overflow-x: auto;">
+                        <table style="width: 100%; border-collapse: collapse; font-size: 0.86rem; text-align: left;">
+                            <thead>
+                                <tr style="background: #f8fafc; border-bottom: 2px solid #e2e8f0; color: #475569; font-weight: 700;">
+                                    <th style="padding: 10px 14px;">#</th>
+                                    <th style="padding: 10px 14px;">Timestamp</th>
+                                    <th style="padding: 10px 14px;">Client Name</th>
+                                    <th style="padding: 10px 14px;">Email / Phone</th>
+                                    <th style="padding: 10px 14px;">Gallery Album</th>
+                                    <th style="padding: 10px 14px;">Download Type</th>
+                                    <th style="padding: 10px 14px;">IP Address</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php if (empty($downloadLogs)): ?>
+                                    <tr>
+                                        <td colspan="7" style="padding: 32px 14px; text-align: center; color: #94a3b8;">
+                                            <i class="fa-regular fa-folder-open" style="font-size: 1.8rem; margin-bottom: 8px; display: block; opacity: 0.4;"></i>
+                                            No client download events recorded yet. Downloads via client.falhen.com will appear here in real time.
+                                        </td>
+                                    </tr>
+                                <?php else: ?>
+                                    <?php foreach ($downloadLogs as $dl): ?>
+                                        <tr style="border-bottom: 1px solid #f1f5f9; transition: background 0.15s;" onmouseover="this.style.background='#f8fafc';" onmouseout="this.style.background='transparent';">
+                                            <td style="padding: 10px 14px; font-weight: 700; color: #64748b;"><?php echo (int)($dl['id'] ?? 0); ?></td>
+                                            <td style="padding: 10px 14px; color: #475569; white-space: nowrap;"><?php echo htmlspecialchars($dl['downloaded_at'] ?? 'N/A'); ?></td>
+                                            <td style="padding: 10px 14px; font-weight: 700; color: #0f172a;"><?php echo htmlspecialchars($dl['client_name'] ?? 'Guest'); ?></td>
+                                            <td style="padding: 10px 14px; color: #475569;">
+                                                <div><?php echo htmlspecialchars($dl['client_email'] ?? 'N/A'); ?></div>
+                                                <?php if (!empty($dl['client_phone'])): ?>
+                                                    <div style="font-size: 0.76rem; color: #94a3b8;"><?php echo htmlspecialchars($dl['client_phone']); ?></div>
+                                                <?php endif; ?>
+                                            </td>
+                                            <td style="padding: 10px 14px; font-weight: 600; color: #0f172a;"><?php echo htmlspecialchars($dl['album_title'] ?? ('Album #' . ($dl['album_id'] ?? ''))); ?></td>
+                                            <td style="padding: 10px 14px;">
+                                                <?php if (stripos($dl['download_type'] ?? '', 'single') !== false): ?>
+                                                    <span style="background: #f1f5f9; color: #475569; font-weight: 600; font-size: 0.74rem; padding: 2px 8px; border-radius: 4px;">Single Frame</span>
+                                                <?php else: ?>
+                                                    <span style="background: #fef2f2; color: #dc2626; font-weight: 700; font-size: 0.74rem; padding: 2px 8px; border-radius: 4px;">Full ZIP Album</span>
+                                                <?php endif; ?>
+                                            </td>
+                                            <td style="padding: 10px 14px; font-family: monospace; font-size: 0.78rem; color: #64748b;"><?php echo htmlspecialchars($dl['ip_address'] ?? 'N/A'); ?></td>
+                                        </tr>
+                                    <?php endforeach; ?>
+                                <?php endif; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- SUB-MODULE 2: SYSTEM BACKUP & RESTORE HISTORY -->
+                <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 24px; box-shadow: 0 4px 20px rgba(0,0,0,0.03);">
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; padding-bottom: 14px; border-bottom: 1px solid #f1f5f9;">
+                        <div>
+                            <h3 style="font-size: 1.15rem; font-weight: 700; color: #0f172a; margin-bottom: 2px;">
+                                <i class="fa-solid fa-database" style="color: #dc2626; margin-right: 8px;"></i>
+                                System Backup & Snapshot History
+                            </h3>
+                            <p style="font-size: 0.82rem; color: #64748b; margin: 0;">Automated pre-deploy restore points and administrative manual snapshots stored in config/backups.</p>
+                        </div>
+                        <span style="background: #fef2f2; color: #dc2626; font-weight: 700; font-size: 0.8rem; padding: 4px 10px; border-radius: 20px;">
+                            <?php echo count($backupLogs); ?> Snapshots
+                        </span>
+                    </div>
+
+                    <div style="overflow-x: auto;">
+                        <table style="width: 100%; border-collapse: collapse; font-size: 0.86rem; text-align: left;">
+                            <thead>
+                                <tr style="background: #f8fafc; border-bottom: 2px solid #e2e8f0; color: #475569; font-weight: 700;">
+                                    <th style="padding: 10px 14px;">#</th>
+                                    <th style="padding: 10px 14px;">Timestamp</th>
+                                    <th style="padding: 10px 14px;">Backup Type</th>
+                                    <th style="padding: 10px 14px;">Archive Filename</th>
+                                    <th style="padding: 10px 14px;">File Size</th>
+                                    <th style="padding: 10px 14px;">Galleries Stored</th>
+                                    <th style="padding: 10px 14px;">Author / Notes</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php if (empty($backupLogs)): ?>
+                                    <tr>
+                                        <td colspan="7" style="padding: 32px 14px; text-align: center; color: #94a3b8;">
+                                            <i class="fa-regular fa-clock-rotate-left" style="font-size: 1.8rem; margin-bottom: 8px; display: block; opacity: 0.4;"></i>
+                                            No backup snapshots logged yet. Click "Create Manual Backup Snapshot" above to generate one immediately.
+                                        </td>
+                                    </tr>
+                                <?php else: ?>
+                                    <?php foreach ($backupLogs as $bk): ?>
+                                        <tr style="border-bottom: 1px solid #f1f5f9; transition: background 0.15s;" onmouseover="this.style.background='#f8fafc';" onmouseout="this.style.background='transparent';">
+                                            <td style="padding: 10px 14px; font-weight: 700; color: #64748b;"><?php echo (int)($bk['id'] ?? 0); ?></td>
+                                            <td style="padding: 10px 14px; color: #475569; white-space: nowrap;"><?php echo htmlspecialchars($bk['created_at'] ?? 'N/A'); ?></td>
+                                            <td style="padding: 10px 14px;">
+                                                <span style="background: #f1f5f9; color: #0f172a; font-weight: 700; font-size: 0.74rem; padding: 2px 8px; border-radius: 4px; text-transform: uppercase;">
+                                                    <?php echo htmlspecialchars($bk['backup_type'] ?? 'SNAPSHOT'); ?>
+                                                </span>
+                                            </td>
+                                            <td style="padding: 10px 14px; font-family: monospace; font-size: 0.78rem; color: #2563eb;"><?php echo htmlspecialchars($bk['filename'] ?? 'N/A'); ?></td>
+                                            <td style="padding: 10px 14px; color: #64748b;"><?php echo round(($bk['file_size'] ?? 0) / 1024, 1); ?> KB</td>
+                                            <td style="padding: 10px 14px; font-weight: 700; color: #0f172a;"><?php echo (int)($bk['items_count'] ?? 0); ?> items</td>
+                                            <td style="padding: 10px 14px; color: #64748b;"><?php echo htmlspecialchars($bk['notes'] ?? ($bk['created_by'] ?? 'System')); ?></td>
+                                        </tr>
+                                    <?php endforeach; ?>
+                                <?php endif; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
 
             <!-- SECTION: CAREERS & HIRING MANAGEMENT -->
             <?php elseif ($activeSection === 'careers'):

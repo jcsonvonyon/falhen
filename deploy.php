@@ -200,26 +200,45 @@ exec("cd {$repoDir} && git config --global --add safe.directory {$repoDir} 2>&1"
 exec("cd {$repoDir} && git stash -u 2>&1", $output);
 exec("cd {$repoDir} && git pull origin main 2>&1", $output, $returnVar);
 
-// 3. Re-apply persistent live settings from backup or database if available
-$postDeploySettings = $backupDir . '/settings_latest_live.json';
-if (file_exists($postDeploySettings)) {
-    $liveContent = @file_get_contents($postDeploySettings);
-    $liveData = json_decode($liveContent, true);
-    if (!empty($liveData) && is_array($liveData)) {
-        // If live settings had portfolio items, merge/preserve them
-        $repoSettings = json_decode(@file_get_contents($liveSettingsFile), true) ?: [];
-        if (!empty($liveData['portfolio_items'])) {
-            $repoSettings['portfolio_items'] = $liveData['portfolio_items'];
-        }
-        if (!empty($liveData['registered_clients'])) {
-            $repoSettings['registered_clients'] = array_values(array_unique(array_merge(
-                $repoSettings['registered_clients'] ?? [],
-                $liveData['registered_clients'] ?? []
-            )));
-        }
-        @file_put_contents($liveSettingsFile, json_encode($repoSettings, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES), LOCK_EX);
-        $output[] = "Preserved live client gallery portfolio items and registered clients across deployment.";
+// 3. Re-apply database schema and persist settings
+require_once $repoDir . '/config/db.php';
+require_once $repoDir . '/includes/functions.php';
+
+if (function_exists('initDatabaseSchema')) {
+    try {
+        initDatabaseSchema();
+        $output[] = "Database schema verified & initialized (site_settings, client_download_logs, system_backups).";
+    } catch (Exception $e) {
+        $output[] = "Database schema init notice: " . $e->getMessage();
     }
+}
+
+// 4. Ensure site_settings are synced into MySQL from repository settings.json if empty, or sync repository file from MySQL
+try {
+    $dbSettings = getSiteSettings();
+    $repoSettings = json_decode(@file_get_contents($liveSettingsFile), true) ?: [];
+    
+    // If database has fewer items than the repository restore, sync repository to database
+    $dbCount = count($dbSettings['portfolio_items'] ?? []);
+    $repoCount = count($repoSettings['portfolio_items'] ?? []);
+    
+    if ($dbCount < $repoCount || isset($_GET['sync_to_db'])) {
+        saveSiteSettings($repoSettings);
+        $output[] = "Synced repository settings ({$repoCount} items) to MySQL site_settings database.";
+    } elseif ($dbCount >= $repoCount && $dbCount > 0) {
+        // Database has authoritative live updates/deletions, persist them to disk
+        @file_put_contents($liveSettingsFile, json_encode($dbSettings, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES), LOCK_EX);
+        $output[] = "Preserved authoritative MySQL database settings ({$dbCount} items) to local disk cache.";
+    }
+
+    if (function_exists('logSystemBackup')) {
+        $activeSettings = getSiteSettings();
+        $count = count($activeSettings['portfolio_items'] ?? []);
+        logSystemBackup('settings_pre_deploy_' . date('Ymd_His') . '.json', 'DEPLOY_SNAPSHOT', $count, 'Automated post-deploy database & settings snapshot');
+        $output[] = "Logged system backup snapshot to database.";
+    }
+} catch (Exception $e) {
+    $output[] = "Settings sync notice: " . $e->getMessage();
 }
 
 echo "Command: git pull origin main\n";

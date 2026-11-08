@@ -278,6 +278,63 @@ foreach ($albumsRepo as $alb) {
             --smug-input-bg: rgba(17, 17, 22, 0.85);
         }
 
+        /* High-Contrast Daylight Rules */
+        [data-theme="daylight"] h1,
+        [data-theme="daylight"] h2,
+        [data-theme="daylight"] h3,
+        [data-theme="daylight"] .smug-album-title,
+        [data-theme="daylight"] .smug-directory-title,
+        [data-theme="daylight"] .smug-folder-title {
+            color: #09090b !important;
+        }
+
+        [data-theme="daylight"] .smug-album-meta,
+        [data-theme="daylight"] .smug-directory-subtitle,
+        [data-theme="daylight"] .smug-folder-subtitle {
+            color: #334155 !important;
+        }
+
+        [data-theme="daylight"] .btn-smug-ghost {
+            color: #09090b !important;
+            background: rgba(255, 255, 255, 0.92) !important;
+            border: 1px solid rgba(15, 23, 42, 0.18) !important;
+        }
+
+        [data-theme="daylight"] .btn-smug-ghost:hover {
+            background: #ffffff !important;
+            border-color: #09090b !important;
+            color: #09090b !important;
+        }
+
+        [data-theme="daylight"] .smug-back-link {
+            color: #334155 !important;
+            background: rgba(255, 255, 255, 0.9) !important;
+            border: 1px solid rgba(15, 23, 42, 0.14) !important;
+        }
+
+        [data-theme="daylight"] .smug-back-link:hover {
+            color: #09090b !important;
+            background: #ffffff !important;
+            border-color: #09090b !important;
+        }
+
+        [data-theme="daylight"] .smug-folder-glass-dock {
+            background: rgba(255, 255, 255, 0.92) !important;
+            border-top: 1px solid rgba(15, 23, 42, 0.1) !important;
+        }
+
+        [data-theme="daylight"] .smug-folder-card {
+            background: rgba(255, 255, 255, 0.85) !important;
+            border: 1px solid rgba(15, 23, 42, 0.1) !important;
+            box-shadow: 0 10px 30px -10px rgba(15, 23, 42, 0.08) !important;
+        }
+
+        [data-theme="daylight"] .smug-folder-count-badge {
+            background: rgba(15, 23, 42, 0.06) !important;
+            color: #09090b !important;
+            border: 1px solid rgba(15, 23, 42, 0.1) !important;
+        }
+
         * {
             box-sizing: border-box;
             margin: 0;
@@ -700,35 +757,34 @@ foreach ($albumsRepo as $alb) {
             }
             /* Hide verbose text links and secondary buttons on mobile top bar */
             .smug-nav-link,
-            .smug-nav-cta {
+            .smug-nav-cta,
+            .smug-nav-primary,
+            .smug-nav-download {
                 display: none !important;
             }
             /* Minimalist icon-only Sun/Moon atmosphere switch */
             .smug-theme-toggle {
-                padding: 7px;
-                width: 34px;
-                height: 34px;
-                border-radius: 50%;
-                display: inline-flex;
-                align-items: center;
-                justify-content: center;
-                gap: 0;
+                padding: 0 !important;
+                width: 36px !important;
+                height: 36px !important;
+                border-radius: 50% !important;
+                display: inline-flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+                gap: 0 !important;
             }
             .smug-theme-toggle span {
                 display: none !important;
             }
             /* Keep mobile topbar sleek: logo on left, theme switch on right */
-            .smug-nav-primary {
-                display: none !important;
-            }
             .smug-page-container {
-                padding: 14px 14px 60px;
-                padding-left: max(14px, env(safe-area-inset-left));
-                padding-right: max(14px, env(safe-area-inset-right));
-                width: 100%;
-                max-width: 100vw;
-                box-sizing: border-box;
-                overflow-x: clip;
+                padding: 16px 16px 60px !important;
+                padding-left: max(16px, env(safe-area-inset-left)) !important;
+                padding-right: max(16px, env(safe-area-inset-right)) !important;
+                width: 100% !important;
+                max-width: 100vw !important;
+                box-sizing: border-box !important;
+                overflow-x: clip !important;
             }
             .smug-back-nav-wrap {
                 margin-bottom: 12px;
@@ -738,10 +794,11 @@ foreach ($albumsRepo as $alb) {
                 font-size: 0.8rem;
             }
             .smug-album-title {
-                font-size: clamp(1.4rem, 5.5vw, 1.95rem);
-                line-height: 1.2;
-                word-break: break-word;
-                margin-bottom: 6px;
+                font-size: clamp(1.35rem, 5.5vw, 1.85rem) !important;
+                line-height: 1.25 !important;
+                word-break: break-word !important;
+                overflow-wrap: break-word !important;
+                margin-bottom: 6px !important;
             }
             .smug-album-meta {
                 font-size: 0.8rem;
@@ -1040,7 +1097,7 @@ foreach ($albumsRepo as $alb) {
         .smug-folder-cover {
             position: relative;
             width: 100%;
-            aspect-ratio: 16 / 11;
+            aspect-ratio: 4 / 3;
             overflow: hidden;
             background: var(--smug-surface-solid);
         }
@@ -1049,6 +1106,7 @@ foreach ($albumsRepo as $alb) {
             width: 100%;
             height: 100%;
             object-fit: cover;
+            object-position: center 20% !important;
             display: block;
             transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
         }
