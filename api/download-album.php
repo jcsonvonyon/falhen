@@ -57,15 +57,13 @@ $albumTitle = $currentAlbum['title'] ?? 'Falhen_Client_Gallery';
 $cleanAlbumSlug = preg_replace('/[^a-zA-Z0-9_-]/', '_', $albumTitle);
 $coverImage = getCloudinaryUrl($currentAlbum['image'] ?? $currentAlbum['cover'] ?? 'https://res.cloudinary.com/pnabfi91/image/upload/v1791224271/falhen/portfolio/ysfriy8jlhhkcuzl8j16.jpg');
 
-// Resolve album photos (Google Drive synced -> gallery_photos -> curated fallback)
+// Resolve album photos (prefer Cloudinary gallery_photos -> Google Drive synced -> curated fallback)
 $rawPhotos = [];
-if (!empty($currentAlbum['gdrive_url'])) {
-    $rawPhotos = getGoogleDriveFolderPhotos($currentAlbum['gdrive_url']);
-}
-if (empty($rawPhotos) && !empty($currentAlbum['gallery_photos']) && is_array($currentAlbum['gallery_photos'])) {
+if (!empty($currentAlbum['gallery_photos']) && is_array($currentAlbum['gallery_photos'])) {
     $rawPhotos = $currentAlbum['gallery_photos'];
-}
-if (empty($rawPhotos) && !empty($currentAlbum['photos']) && is_array($currentAlbum['photos'])) {
+} elseif (!empty($currentAlbum['gdrive_url'])) {
+    $rawPhotos = getGoogleDriveFolderPhotos($currentAlbum['gdrive_url']);
+} elseif (!empty($currentAlbum['photos']) && is_array($currentAlbum['photos'])) {
     $rawPhotos = $currentAlbum['photos'];
 }
 if (empty($rawPhotos)) {

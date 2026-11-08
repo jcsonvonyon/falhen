@@ -96,16 +96,13 @@ $downloadToken = $_SESSION['verified_album_tokens'][$currentAlbumId] ?? ($_SESSI
 $clientName = $_SESSION['registered_client_name'] ?? '';
 $clientPhone = $_SESSION['registered_client_phone'] ?? '';
 
-// Fetch photos from Google Drive folder if configured, then sync/transform via Cloudinary
+// Fetch photos: prefer synced/uploaded gallery_photos from Cloudinary, then Google Drive folder
 $rawPhotos = [];
-$hasGdriveSource = !empty($currentAlbum['gdrive_url']);
-if ($hasGdriveSource) {
-    $rawPhotos = getGoogleDriveFolderPhotos($currentAlbum['gdrive_url']);
-}
-
-if (empty($rawPhotos) && !empty($currentAlbum['gallery_photos']) && is_array($currentAlbum['gallery_photos'])) {
+if (!empty($currentAlbum['gallery_photos']) && is_array($currentAlbum['gallery_photos'])) {
     $rawPhotos = $currentAlbum['gallery_photos'];
-} elseif (empty($rawPhotos) && !empty($currentAlbum['photos']) && is_array($currentAlbum['photos'])) {
+} elseif (!empty($currentAlbum['gdrive_url'])) {
+    $rawPhotos = getGoogleDriveFolderPhotos($currentAlbum['gdrive_url']);
+} elseif (!empty($currentAlbum['photos']) && is_array($currentAlbum['photos'])) {
     $rawPhotos = $currentAlbum['photos'];
 }
 

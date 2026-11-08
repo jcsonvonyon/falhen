@@ -163,6 +163,22 @@ function syncDrivePhotoToCloudinary($photoUrl, $albumId = 0, $autoUpload = false
         return getCloudinaryUrl($syncMap[$hashKey]['cloudinary_url'], 'f_auto,q_auto');
     }
 
+    // Also match by Google Drive file ID if applicable
+    $gId = extractGoogleDriveFileId($photoUrl);
+    if (!empty($gId)) {
+        if (!empty($syncMap[$gId]['cloudinary_url'])) {
+            return getCloudinaryUrl($syncMap[$gId]['cloudinary_url'], 'f_auto,q_auto');
+        }
+        if (!empty($syncMap['by_gdrive_id'][$gId]['cloudinary_url'])) {
+            return getCloudinaryUrl($syncMap['by_gdrive_id'][$gId]['cloudinary_url'], 'f_auto,q_auto');
+        }
+        foreach ($syncMap as $entry) {
+            if (is_array($entry) && !empty($entry['gdrive_id']) && $entry['gdrive_id'] === $gId && !empty($entry['cloudinary_url'])) {
+                return getCloudinaryUrl($entry['cloudinary_url'], 'f_auto,q_auto');
+            }
+        }
+    }
+
     // Optional on-demand upload when triggered from admin sync or background sync
     if ($autoUpload && preg_match('/^https?:\/\//i', $photoUrl)) {
         $folder = 'falhen/client_galleries/album_' . (int) $albumId;
