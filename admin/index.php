@@ -9,6 +9,20 @@ require_once __DIR__ . '/../includes/functions.php';
 require_once __DIR__ . '/../includes/smtp_mailer.php';
 require_once __DIR__ . '/../includes/mxroute_auth.php';
 
+// Automated Scheduled Cron Endpoint (cPanel Cron & Webhook)
+if (isset($_GET['cron_backup']) || (php_sapi_name() === 'cli' && in_array('--cron-backup', $argv ?? [], true))) {
+    $token = $_GET['token'] ?? '';
+    if (php_sapi_name() === 'cli' || $token === 'falhen_cron_2026') {
+        $res = function_exists('createFullSystemBackup') ? createFullSystemBackup('SCHEDULED_CRON', 'Automated Scheduled Backup via cPanel Cron') : ['error' => 'Backup function unavailable'];
+        header('Content-Type: application/json');
+        echo json_encode($res, JSON_PRETTY_PRINT);
+        exit;
+    }
+    http_response_code(403);
+    echo json_encode(['success' => false, 'error' => 'Unauthorized cron access token']);
+    exit;
+}
+
 // Enforce admin login
 requireAdmin();
 
@@ -62,7 +76,14 @@ if (isset($_GET['download_backup_file'])) {
     $fn = basename($_GET['download_backup_file']);
     $file = __DIR__ . '/../config/backups/' . $fn;
     if (file_exists($file)) {
-        $mime = str_ends_with($fn, '.json') ? 'application/json' : 'text/csv';
+        $ext = strtolower(pathinfo($fn, PATHINFO_EXTENSION));
+        $mimeTypes = [
+            'json' => 'application/json',
+            'csv'  => 'text/csv',
+            'zip'  => 'application/zip',
+            'sql'  => 'application/sql'
+        ];
+        $mime = $mimeTypes[$ext] ?? 'application/octet-stream';
         header('Content-Type: ' . $mime);
         header('Content-Disposition: attachment; filename="' . $fn . '"');
         header('Content-Length: ' . filesize($file));
@@ -87,7 +108,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $_SESSION['admin_role'] = 'HR Manager';
     }
 
-    if ($action === 'create_full_backup_bundle') {
+    if ($action === 'create_full_backup_bundle' || $action === 'create_full_system_snapshot') {
+        $notes = trim($_POST['notes'] ?? 'Administrative full system snapshot: Codebase + MySQL SQL + Pipeline Manifest');
+        $res = function_exists('createFullSystemBackup') ? createFullSystemBackup('FULL_SYSTEM_SNAPSHOT', $notes) : null;
+        
+        if ($res && !empty($res['success'])) {
+            $_SESSION['last_backup_bundle'] = [
+                'json'         => $res['manifest_json'] ?? '',
+                'codebase_zip' => $res['codebase_zip'] ?? '',
+                'database_sql' => $res['database_sql'] ?? '',
+                'dl_csv'       => $res['dl_csv'] ?? '',
+                'bk_csv'       => $res['bk_csv'] ?? '',
+                'time'         => $res['timestamp'] ?? date('Y-m-d H:i:s')
+            ];
+            header('Location: index.php?section=dev_logs&bundle_created=1');
+            exit;
+        }
+
+        // Fallback bundle generation
         $backupDir = __DIR__ . '/../config/backups';
         if (!is_dir($backupDir)) {
             @mkdir($backupDir, 0755, true);
@@ -95,18 +133,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $ts = date('Ymd_His');
         $settings = getSiteSettings();
         
-        // 1. JSON full snapshot
         $jsonFilename = 'full_backup_' . $ts . '.json';
         $jsonPath = $backupDir . '/' . $jsonFilename;
         @file_put_contents($jsonPath, json_encode($settings, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
 
-        // 2. Log to database & disk FIRST so the new backup appears in the CSV export!
         $itemsCount = count($settings['portfolio_items'] ?? []);
         if (function_exists('logSystemBackup')) {
             logSystemBackup($jsonFilename, 'FULL_BUNDLE', $itemsCount, 'One-Click Full Website & Logs Snapshot (JSON + CSV)');
         }
         
-        // 3. CSV Downloader Telemetry Snapshot
         $dlFilename = 'client_downloads_' . $ts . '.csv';
         $dlPath = $backupDir . '/' . $dlFilename;
         $dlOut = fopen($dlPath, 'w');
@@ -127,7 +162,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         fclose($dlOut);
 
-        // 4. CSV Backups Snapshot
         $bkFilename = 'system_backups_' . $ts . '.csv';
         $bkPath = $backupDir . '/' . $bkFilename;
         $bkOut = fopen($bkPath, 'w');
@@ -155,6 +189,65 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         ];
 
         header('Location: index.php?section=dev_logs&bundle_created=1');
+        exit;
+    }
+
+    if ($action === 'test_db_credentials') {
+        header('Content-Type: application/json');
+        $host = trim($_POST['db_host'] ?? 'localhost');
+        $port = trim($_POST['db_port'] ?? '3306');
+        $name = trim($_POST['db_name'] ?? '');
+        $user = trim($_POST['db_user'] ?? '');
+        $pass = (string)($_POST['db_pass'] ?? '');
+
+        if (function_exists('testCustomDBConnection')) {
+            $testRes = testCustomDBConnection($host, $port, $name, $user, $pass);
+            echo json_encode($testRes);
+        } else {
+            echo json_encode(['success' => false, 'error' => 'testCustomDBConnection function unavailable']);
+        }
+        exit;
+    }
+
+    if ($action === 'save_db_credentials') {
+        header('Content-Type: application/json');
+        $host = trim($_POST['db_host'] ?? 'localhost');
+        $port = trim($_POST['db_port'] ?? '3306');
+        $name = trim($_POST['db_name'] ?? '');
+        $user = trim($_POST['db_user'] ?? '');
+        $pass = (string)($_POST['db_pass'] ?? '');
+
+        // Test credentials first
+        $testRes = function_exists('testCustomDBConnection') ? testCustomDBConnection($host, $port, $name, $user, $pass) : ['success' => false];
+        if (!$testRes['success'] && empty($_POST['force_save'])) {
+            echo json_encode([
+                'success' => false,
+                'can_force' => true,
+                'error' => $testRes['error'] ?? 'Connection test failed. You may force save if needed.'
+            ]);
+            exit;
+        }
+
+        $saved = function_exists('saveDBCredentials') ? saveDBCredentials($host, $port, $name, $user, $pass) : false;
+        if ($saved) {
+            // Force reload connection and re-run table schema init
+            if (function_exists('getDBConnection')) {
+                $freshPdo = getDBConnection(true);
+                if ($freshPdo && function_exists('initDatabaseSchema')) {
+                    initDatabaseSchema($freshPdo);
+                }
+            }
+            echo json_encode(['success' => true, 'message' => 'Database credentials saved and verified successfully.']);
+        } else {
+            echo json_encode(['success' => false, 'error' => 'Failed to write credentials file to disk.']);
+        }
+        exit;
+    }
+
+    if ($action === 'trigger_cron_backup_now') {
+        header('Content-Type: application/json');
+        $res = function_exists('createFullSystemBackup') ? createFullSystemBackup('SCHEDULED_CRON', 'Manual Trigger of Automated Scheduled Backup Pipeline') : ['error' => 'Backup function unavailable'];
+        echo json_encode($res);
         exit;
     }
 
@@ -245,11 +338,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // RBAC Action to Section Mapping
     $actionSectionMap = [
-        'create_manual_backup'       => 'dev_logs',
-        'create_full_backup_bundle'  => 'dev_logs',
-        'sync_db_and_disk'           => 'dev_logs',
-        'optimize_db_tables'         => 'dev_logs',
-        'test_db_diagnostics'        => 'dev_logs',
+        'create_manual_backup'        => 'dev_logs',
+        'create_full_backup_bundle'   => 'dev_logs',
+        'create_full_system_snapshot' => 'dev_logs',
+        'test_db_credentials'         => 'dev_logs',
+        'save_db_credentials'         => 'dev_logs',
+        'trigger_cron_backup_now'     => 'dev_logs',
+        'sync_db_and_disk'            => 'dev_logs',
+        'optimize_db_tables'          => 'dev_logs',
+        'test_db_diagnostics'         => 'dev_logs',
         'save_hero'                  => 'hero',
         'save_stats'                 => 'stats',
         'save_bts'                   => 'bts',
@@ -9536,55 +9633,80 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                 $backupLogs = function_exists('getSystemBackups') ? getSystemBackups(100) : [];
                 $lastBundle = $_SESSION['last_backup_bundle'] ?? null;
                 unset($_SESSION['last_backup_bundle']);
+
+                $curDbHost = defined('DB_HOST') ? DB_HOST : 'localhost';
+                $curDbPort = defined('DB_PORT') ? DB_PORT : '3306';
+                $curDbName = defined('DB_NAME') ? DB_NAME : 'henadinn_falhen_db';
+                $curDbUser = defined('DB_USER') ? DB_USER : 'henadinn_falhen_user';
+                $curDbPass = defined('DB_PASS') ? DB_PASS : '';
             ?>
                 <!-- Header Bar -->
                 <div style="margin-bottom: 24px; display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 16px;">
                     <div>
                         <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 4px;">
-                            <h2 style="font-size: 1.65rem; font-weight: 800; color: #0f172a; margin: 0;">Database &amp; Dev Logs</h2>
+                            <h2 style="font-size: 1.65rem; font-weight: 800; color: #0f172a; margin: 0; letter-spacing: -0.02em;">Website Dev Logs &amp; Backup Pipeline</h2>
                             <span style="background: #eff6ff; color: #2563eb; font-weight: 700; font-size: 0.75rem; padding: 3px 10px; border-radius: 20px; border: 1px solid #bfdbfe;">
                                 <i class="fa-solid fa-server"></i> Account &amp; IT Ops
                             </span>
                         </div>
-                        <p style="font-size: 0.88rem; color: #64748b; margin: 0;">High-availability telemetry, MySQL database health, automated snapshots, and CSV export records.</p>
+                        <p style="font-size: 0.88rem; color: #64748b; margin: 0;">Enterprise telemetry, automated snapshot archives, codebase zips, and MySQL synchronization.</p>
                     </div>
                     <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
                         <form method="POST" action="index.php?section=dev_logs" style="margin: 0;">
-                            <input type="hidden" name="action" value="create_full_backup_bundle">
-                            <button type="submit" style="background: #e11d48; color: #ffffff; border: none; padding: 10px 18px; border-radius: 8px; font-size: 0.85rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 4px 14px rgba(225,29,72,0.25); transition: transform 0.2s;" onmouseover="this.style.transform='translateY(-1px)';" onmouseout="this.style.transform='none';">
-                                <i class="fa-solid fa-cloud-arrow-down"></i> Create Full Backup Bundle
+                            <input type="hidden" name="action" value="create_full_system_snapshot">
+                            <button type="submit" style="background: linear-gradient(135deg, #e11d48, #be123c); color: #ffffff; border: none; padding: 10px 18px; border-radius: 8px; font-size: 0.85rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 4px 14px rgba(225,29,72,0.3); transition: transform 0.2s;" onmouseover="this.style.transform='translateY(-1px)';" onmouseout="this.style.transform='none';">
+                                <i class="fa-solid fa-cloud-arrow-down"></i> Create Full System Snapshot
                             </button>
                         </form>
-                        <a href="index.php?export_download_logs_csv=1" style="background: #2563eb; color: #ffffff; padding: 10px 16px; border-radius: 8px; text-decoration: none; font-size: 0.85rem; font-weight: 700; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(37,99,235,0.2);">
-                            <i class="fa-solid fa-file-csv"></i> Downloader CSV
+                        <button type="button" onclick="toggleDbCredentialsDrawer()" style="background: #0f172a; color: #ffffff; border: none; padding: 10px 16px; border-radius: 8px; font-size: 0.85rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(15,23,42,0.18);">
+                            <i class="fa-solid fa-key"></i> Configure DB Credentials
+                        </button>
+                        <a href="index.php?export_download_logs_csv=1" style="background: #f8fafc; color: #0f172a; border: 1px solid #cbd5e1; padding: 10px 14px; border-radius: 8px; text-decoration: none; font-size: 0.85rem; font-weight: 700; display: inline-flex; align-items: center; gap: 6px;">
+                            <i class="fa-solid fa-file-csv" style="color: #2563eb;"></i> Downloader CSV
                         </a>
-                        <a href="index.php?export_backups_csv=1" style="background: #0f172a; color: #ffffff; padding: 10px 16px; border-radius: 8px; text-decoration: none; font-size: 0.85rem; font-weight: 700; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(15,23,42,0.15);">
-                            <i class="fa-solid fa-download"></i> Backups CSV
+                        <a href="index.php?export_backups_csv=1" style="background: #f8fafc; color: #0f172a; border: 1px solid #cbd5e1; padding: 10px 14px; border-radius: 8px; text-decoration: none; font-size: 0.85rem; font-weight: 700; display: inline-flex; align-items: center; gap: 6px;">
+                            <i class="fa-solid fa-download" style="color: #059669;"></i> Backups CSV
                         </a>
                     </div>
                 </div>
 
                 <?php if ($lastBundle): ?>
-                    <div style="background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 12px; padding: 16px 20px; margin-bottom: 24px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px;">
-                        <div style="display: flex; align-items: center; gap: 12px;">
-                            <div style="width: 40px; height: 40px; border-radius: 50%; background: #059669; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 1.1rem;">
+                    <div style="background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 12px; padding: 18px 22px; margin-bottom: 24px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px; box-shadow: 0 4px 16px rgba(5,150,105,0.08);">
+                        <div style="display: flex; align-items: center; gap: 14px;">
+                            <div style="width: 44px; height: 44px; border-radius: 50%; background: #059669; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">
                                 <i class="fa-solid fa-check"></i>
                             </div>
                             <div>
-                                <h4 style="margin: 0 0 2px 0; font-size: 0.95rem; font-weight: 700; color: #065f46;">Full Backup Bundle Generated Successfully!</h4>
-                                <p style="margin: 0; font-size: 0.82rem; color: #047857;">Generated at <?php echo htmlspecialchars($lastBundle['time']); ?> with direct archive links:</p>
+                                <h4 style="margin: 0 0 4px 0; font-size: 1rem; font-weight: 800; color: #065f46;">Full System Snapshot Generated Successfully!</h4>
+                                <p style="margin: 0; font-size: 0.82rem; color: #047857;">Generated at <?php echo htmlspecialchars($lastBundle['time']); ?>. All archive modules ready for download:</p>
                             </div>
                         </div>
                         <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                            <a href="index.php?download_backup_file=<?php echo urlencode($lastBundle['json']); ?>" style="background: #065f46; color: #fff; text-decoration: none; padding: 6px 12px; border-radius: 6px; font-size: 0.78rem; font-weight: 700; display: inline-flex; align-items: center; gap: 6px;">
-                                <i class="fa-solid fa-file-code"></i> JSON Config
-                            </a>
-                            <a href="index.php?download_backup_file=<?php echo urlencode($lastBundle['dl_csv']); ?>" style="background: #2563eb; color: #fff; text-decoration: none; padding: 6px 12px; border-radius: 6px; font-size: 0.78rem; font-weight: 700; display: inline-flex; align-items: center; gap: 6px;">
-                                <i class="fa-solid fa-file-csv"></i> Downloader CSV
-                            </a>
-                            <a href="index.php?download_backup_file=<?php echo urlencode($lastBundle['bk_csv']); ?>" style="background: #0f172a; color: #fff; text-decoration: none; padding: 6px 12px; border-radius: 6px; font-size: 0.78rem; font-weight: 700; display: inline-flex; align-items: center; gap: 6px;">
-                                <i class="fa-solid fa-file-csv"></i> Backups CSV
-                            </a>
+                            <?php if (!empty($lastBundle['codebase_zip'])): ?>
+                                <a href="index.php?download_backup_file=<?php echo urlencode($lastBundle['codebase_zip']); ?>" style="background: #be123c; color: #fff; text-decoration: none; padding: 7px 14px; border-radius: 6px; font-size: 0.8rem; font-weight: 700; display: inline-flex; align-items: center; gap: 6px;">
+                                    <i class="fa-solid fa-file-zipper"></i> Codebase ZIP
+                                </a>
+                            <?php endif; ?>
+                            <?php if (!empty($lastBundle['database_sql'])): ?>
+                                <a href="index.php?download_backup_file=<?php echo urlencode($lastBundle['database_sql']); ?>" style="background: #4338ca; color: #fff; text-decoration: none; padding: 7px 14px; border-radius: 6px; font-size: 0.8rem; font-weight: 700; display: inline-flex; align-items: center; gap: 6px;">
+                                    <i class="fa-solid fa-database"></i> Database SQL
+                                </a>
+                            <?php endif; ?>
+                            <?php if (!empty($lastBundle['json'])): ?>
+                                <a href="index.php?download_backup_file=<?php echo urlencode($lastBundle['json']); ?>" style="background: #065f46; color: #fff; text-decoration: none; padding: 7px 14px; border-radius: 6px; font-size: 0.8rem; font-weight: 700; display: inline-flex; align-items: center; gap: 6px;">
+                                    <i class="fa-solid fa-file-code"></i> Manifest JSON
+                                </a>
+                            <?php endif; ?>
+                            <?php if (!empty($lastBundle['dl_csv'])): ?>
+                                <a href="index.php?download_backup_file=<?php echo urlencode($lastBundle['dl_csv']); ?>" style="background: #2563eb; color: #fff; text-decoration: none; padding: 7px 14px; border-radius: 6px; font-size: 0.8rem; font-weight: 700; display: inline-flex; align-items: center; gap: 6px;">
+                                    <i class="fa-solid fa-file-csv"></i> Downloader CSV
+                                </a>
+                            <?php endif; ?>
+                            <?php if (!empty($lastBundle['bk_csv'])): ?>
+                                <a href="index.php?download_backup_file=<?php echo urlencode($lastBundle['bk_csv']); ?>" style="background: #0f172a; color: #fff; text-decoration: none; padding: 7px 14px; border-radius: 6px; font-size: 0.8rem; font-weight: 700; display: inline-flex; align-items: center; gap: 6px;">
+                                    <i class="fa-solid fa-file-csv"></i> Backups CSV
+                                </a>
+                            <?php endif; ?>
                         </div>
                     </div>
                 <?php endif; ?>
@@ -9602,7 +9724,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                 <?php endif; ?>
 
                 <!-- SUB-MODULE 0: INTERACTIVE DATABASE MANAGEMENT CONSOLE -->
-                <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 22px; margin-bottom: 28px; box-shadow: 0 4px 20px rgba(0,0,0,0.03);">
+                <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 22px; margin-bottom: 24px; box-shadow: 0 4px 20px rgba(0,0,0,0.03);">
                     <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid #f1f5f9; flex-wrap: wrap; gap: 10px;">
                         <div style="display: flex; align-items: center; gap: 10px;">
                             <div style="width: 36px; height: 36px; border-radius: 8px; background: #fef2f2; color: #dc2626; display: flex; align-items: center; justify-content: center; font-size: 1.05rem;">
@@ -9610,12 +9732,12 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                             </div>
                             <div>
                                 <h3 style="font-size: 1.1rem; font-weight: 800; color: #0f172a; margin: 0;">Interactive Database Console</h3>
-                                <p style="font-size: 0.8rem; color: #64748b; margin: 0;">Direct access to connection telemetry, storage inspector, and optimization routines.</p>
+                                <p style="font-size: 0.8rem; color: #64748b; margin: 0;">Live connection telemetry, storage inspector, credential manager, and defragmentation routines.</p>
                             </div>
                         </div>
                         <div id="dbTelemetryPills" style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
-                            <span style="background: #f1f5f9; color: #475569; font-size: 0.78rem; font-weight: 700; padding: 4px 10px; border-radius: 20px;">
-                                <i class="fa-solid fa-circle" style="color: #22c55e; font-size: 0.5rem; vertical-align: middle; margin-right: 4px;"></i> MySQL PDO Live
+                            <span id="dbLiveStatusPill" style="background: #f1f5f9; color: #475569; font-size: 0.78rem; font-weight: 700; padding: 4px 10px; border-radius: 20px; display: inline-flex; align-items: center; gap: 6px;">
+                                <i class="fa-solid fa-circle-notch fa-spin" style="font-size: 0.65rem; color: #2563eb;"></i> Checking MySQL status...
                             </span>
                         </div>
                     </div>
@@ -9626,6 +9748,9 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                         </button>
                         <button type="button" onclick="toggleTableStorageInspect()" style="background: #f8fafc; color: #0f172a; border: 1px solid #cbd5e1; padding: 9px 15px; border-radius: 8px; font-size: 0.83rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; transition: all 0.2s;">
                             <i class="fa-solid fa-table-cells"></i> Inspect Table Storage
+                        </button>
+                        <button type="button" onclick="toggleDbCredentialsDrawer()" style="background: #eff6ff; color: #2563eb; border: 1px solid #bfdbfe; padding: 9px 15px; border-radius: 8px; font-size: 0.83rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; transition: all 0.2s;">
+                            <i class="fa-solid fa-sliders"></i> Database Credentials Drawer
                         </button>
                         <form method="POST" action="index.php?section=dev_logs" style="margin: 0; display: inline;">
                             <input type="hidden" name="action" value="sync_db_and_disk">
@@ -9639,6 +9764,60 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                 <i class="fa-solid fa-broom"></i> Optimize MySQL Tables
                             </button>
                         </form>
+                    </div>
+
+                    <!-- CREDENTIALS DRAWER (Collapsible) -->
+                    <div id="dbCredentialsDrawer" style="display: none; background: #0f172a; color: #f8fafc; border-radius: 12px; padding: 20px 24px; margin-bottom: 18px; border: 1px solid rgba(255,255,255,0.08);">
+                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 12px;">
+                            <div>
+                                <h4 style="margin: 0 0 2px; font-size: 0.98rem; font-weight: 800; color: #ffffff; display: flex; align-items: center; gap: 8px;">
+                                    <i class="fa-solid fa-lock" style="color: #f59e0b;"></i> MySQL Connection &amp; Authentication Credentials
+                                </h4>
+                                <p style="margin: 0; font-size: 0.8rem; color: #94a3b8;">Overrides .env directly via secured config/db_credentials.json without rebuilding code.</p>
+                            </div>
+                            <span id="dbDrawerStatusPill" style="font-size: 0.75rem; font-family: monospace; padding: 3px 8px; border-radius: 4px; background: rgba(255,255,255,0.08); color: #94a3b8;">
+                                Localhost Unix Socket / TCP
+                            </span>
+                        </div>
+
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin-bottom: 16px;">
+                            <div>
+                                <label style="display: block; font-size: 0.78rem; font-weight: 700; color: #cbd5e1; margin-bottom: 6px;">DB Host</label>
+                                <input type="text" id="inputDbHost" value="<?php echo htmlspecialchars($curDbHost); ?>" style="width: 100%; box-sizing: border-box; background: #1e293b; border: 1px solid #334155; border-radius: 6px; padding: 8px 12px; color: #ffffff; font-size: 0.85rem; font-family: monospace;">
+                            </div>
+                            <div>
+                                <label style="display: block; font-size: 0.78rem; font-weight: 700; color: #cbd5e1; margin-bottom: 6px;">DB Port</label>
+                                <input type="text" id="inputDbPort" value="<?php echo htmlspecialchars($curDbPort); ?>" style="width: 100%; box-sizing: border-box; background: #1e293b; border: 1px solid #334155; border-radius: 6px; padding: 8px 12px; color: #ffffff; font-size: 0.85rem; font-family: monospace;">
+                            </div>
+                            <div>
+                                <label style="display: block; font-size: 0.78rem; font-weight: 700; color: #cbd5e1; margin-bottom: 6px;">Database Name</label>
+                                <input type="text" id="inputDbName" value="<?php echo htmlspecialchars($curDbName); ?>" style="width: 100%; box-sizing: border-box; background: #1e293b; border: 1px solid #334155; border-radius: 6px; padding: 8px 12px; color: #ffffff; font-size: 0.85rem; font-family: monospace;">
+                            </div>
+                            <div>
+                                <label style="display: block; font-size: 0.78rem; font-weight: 700; color: #cbd5e1; margin-bottom: 6px;">DB Username</label>
+                                <input type="text" id="inputDbUser" value="<?php echo htmlspecialchars($curDbUser); ?>" style="width: 100%; box-sizing: border-box; background: #1e293b; border: 1px solid #334155; border-radius: 6px; padding: 8px 12px; color: #ffffff; font-size: 0.85rem; font-family: monospace;">
+                            </div>
+                            <div>
+                                <label style="display: block; font-size: 0.78rem; font-weight: 700; color: #cbd5e1; margin-bottom: 6px;">DB Password</label>
+                                <div style="position: relative;">
+                                    <input type="password" id="inputDbPass" value="<?php echo htmlspecialchars($curDbPass); ?>" style="width: 100%; box-sizing: border-box; background: #1e293b; border: 1px solid #334155; border-radius: 6px; padding: 8px 36px 8px 12px; color: #ffffff; font-size: 0.85rem; font-family: monospace;">
+                                    <button type="button" onclick="togglePassVisibility('inputDbPass', this)" style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #94a3b8; cursor: pointer; padding: 4px;">
+                                        <i class="fa-solid fa-eye"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="dbCredsTestResult" style="display: none; padding: 10px 14px; border-radius: 8px; font-size: 0.82rem; margin-bottom: 14px;"></div>
+
+                        <div style="display: flex; gap: 10px; align-items: center; justify-content: flex-end; flex-wrap: wrap;">
+                            <button type="button" onclick="testCustomDbCreds(this)" style="background: #334155; color: #ffffff; border: none; padding: 8px 14px; border-radius: 6px; font-size: 0.82rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+                                <i class="fa-solid fa-bolt"></i> Test Connection Live
+                            </button>
+                            <button type="button" onclick="saveCustomDbCreds(this)" style="background: #059669; color: #ffffff; border: none; padding: 8px 16px; border-radius: 6px; font-size: 0.82rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+                                <i class="fa-solid fa-floppy-disk"></i> Save &amp; Apply Credentials
+                            </button>
+                        </div>
                     </div>
 
                     <!-- Diagnostics Output Banner (Hidden initially) -->
@@ -9663,80 +9842,63 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                     </div>
                 </div>
 
-                <script>
-                    let cachedDbStats = null;
-                    function runDbDiagnostics(btn) {
-                        const originalHtml = btn.innerHTML;
-                        btn.disabled = true;
-                        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Testing...';
-                        
-                        const fd = new FormData();
-                        fd.append('action', 'test_db_diagnostics');
+                <!-- SUB-MODULE 1: AUTOMATED SCHEDULED BACKUPS (cPanel Cron & Webhook Automation) -->
+                <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 22px; margin-bottom: 24px; box-shadow: 0 4px 20px rgba(0,0,0,0.03);">
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; padding-bottom: 12px; border-bottom: 1px solid #f1f5f9; flex-wrap: wrap; gap: 10px;">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <div style="width: 36px; height: 36px; border-radius: 8px; background: #eff6ff; color: #2563eb; display: flex; align-items: center; justify-content: center; font-size: 1.05rem;">
+                                <i class="fa-solid fa-clock"></i>
+                            </div>
+                            <div>
+                                <h3 style="font-size: 1.1rem; font-weight: 800; color: #0f172a; margin: 0;">Automated Scheduled Backups &amp; Pipeline Automation</h3>
+                                <p style="font-size: 0.8rem; color: #64748b; margin: 0;">Automated cron jobs for scheduled codebase zipping, MySQL database dump, and 30-snapshot rolling retention.</p>
+                            </div>
+                        </div>
+                        <div style="display: flex; gap: 8px; align-items: center;">
+                            <span style="background: #ecfdf5; color: #059669; font-weight: 700; font-size: 0.78rem; padding: 4px 10px; border-radius: 20px; border: 1px solid #a7f3d0;">
+                                <i class="fa-solid fa-shield-halved"></i> Active • Rolling 30 Snapshots
+                            </span>
+                            <button type="button" onclick="triggerScheduledBackupNow(this)" style="background: #2563eb; color: #ffffff; border: none; padding: 6px 12px; border-radius: 6px; font-size: 0.78rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; transition: background 0.2s;">
+                                <i class="fa-solid fa-play"></i> Run Scheduled Backup Now
+                            </button>
+                        </div>
+                    </div>
 
-                        fetch('index.php?section=dev_logs', { method: 'POST', body: fd })
-                            .then(r => r.json())
-                            .then(data => {
-                                btn.disabled = false;
-                                btn.innerHTML = originalHtml;
-                                if (data.success) {
-                                    cachedDbStats = data;
-                                    const banner = document.getElementById('diagnosticsBanner');
-                                    banner.style.display = 'block';
-                                    banner.innerHTML = `
-                                        <div style="display: flex; gap: 20px; align-items: center; flex-wrap: wrap;">
-                                            <div><strong style="color: #0f172a;">Round-Trip Latency:</strong> <span style="color: #16a34a; font-weight: 700;">${data.latency_ms} ms</span></div>
-                                            <div><strong style="color: #0f172a;">Database:</strong> <span style="font-family: monospace;">${data.database}</span></div>
-                                            <div><strong style="color: #0f172a;">Engine Version:</strong> <span style="font-family: monospace;">${data.version}</span></div>
-                                            <div><strong style="color: #0f172a;">Transport:</strong> <span style="font-family: monospace; font-size: 0.8rem; background: #e0f2fe; color: #0369a1; padding: 2px 6px; border-radius: 4px;">${data.active_dsn || 'Unix Socket'}</span></div>
-                                            <div><strong style="color: #0f172a;">Monitored Tables:</strong> <span>${data.tables ? data.tables.length : 0}</span></div>
-                                        </div>
-                                    `;
-                                    renderTableStorage(data.tables);
-                                } else {
-                                    alert('Diagnostic Error: ' + (data.message || 'Failed to ping MySQL.'));
-                                }
-                            })
-                            .catch(err => {
-                                btn.disabled = false;
-                                btn.innerHTML = originalHtml;
-                                alert('Network error while running database diagnostics.');
-                            });
-                    }
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 14px;">
+                        <!-- cPanel CLI Cron Command -->
+                        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px 16px;">
+                            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
+                                <span style="font-size: 0.8rem; font-weight: 700; color: #0f172a;">
+                                    <i class="fa-solid fa-terminal" style="color: #64748b; margin-right: 4px;"></i> Recommended cPanel Cron (Every 24 Hours)
+                                </span>
+                                <button type="button" onclick="copyToClipboard('/usr/local/bin/php /home/henadinnovate/falhen.com/cron/backup.php >/dev/null 2>&1', this)" style="background: #ffffff; border: 1px solid #cbd5e1; padding: 2px 8px; border-radius: 4px; font-size: 0.72rem; font-weight: 600; cursor: pointer; color: #334155;">
+                                    <i class="fa-regular fa-copy"></i> Copy
+                                </button>
+                            </div>
+                            <code style="display: block; background: #0f172a; color: #38bdf8; padding: 8px 12px; border-radius: 6px; font-size: 0.76rem; font-family: monospace; word-break: break-all;">
+                                0 2 * * * /usr/local/bin/php /home/henadinnovate/falhen.com/cron/backup.php >/dev/null 2>&1
+                            </code>
+                        </div>
 
-                    function toggleTableStorageInspect() {
-                        const container = document.getElementById('tableStorageContainer');
-                        if (container.style.display === 'none' || container.style.display === '') {
-                            container.style.display = 'block';
-                            if (!cachedDbStats) {
-                                const btn = document.querySelector('button[onclick*="runDbDiagnostics"]');
-                                if (btn) runDbDiagnostics(btn);
-                            }
-                        } else {
-                            container.style.display = 'none';
-                        }
-                    }
+                        <!-- Webhook URL Command -->
+                        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px 16px;">
+                            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
+                                <span style="font-size: 0.8rem; font-weight: 700; color: #0f172a;">
+                                    <i class="fa-solid fa-globe" style="color: #64748b; margin-right: 4px;"></i> Webhook Trigger URL (Secret Protected)
+                                </span>
+                                <button type="button" onclick="copyToClipboard('https://falhen.com/admin/index.php?cron_backup=1&token=falhen_cron_2026', this)" style="background: #ffffff; border: 1px solid #cbd5e1; padding: 2px 8px; border-radius: 4px; font-size: 0.72rem; font-weight: 600; cursor: pointer; color: #334155;">
+                                    <i class="fa-regular fa-copy"></i> Copy
+                                </button>
+                            </div>
+                            <code style="display: block; background: #0f172a; color: #4ade80; padding: 8px 12px; border-radius: 6px; font-size: 0.76rem; font-family: monospace; word-break: break-all;">
+                                https://falhen.com/admin/index.php?cron_backup=1&token=falhen_cron_2026
+                            </code>
+                        </div>
+                    </div>
+                </div>
 
-                    function renderTableStorage(tables) {
-                        const tbody = document.getElementById('tableStorageTbody');
-                        if (!tbody || !tables || tables.length === 0) return;
-                        let html = '';
-                        tables.forEach(t => {
-                            html += `
-                                <tr style="border-bottom: 1px solid #f1f5f9;">
-                                    <td style="padding: 8px 12px; font-weight: 700; color: #0f172a; font-family: monospace;">${t.name}</td>
-                                    <td style="padding: 8px 12px; color: #334155;">${t.rows.toLocaleString()}</td>
-                                    <td style="padding: 8px 12px; color: #64748b;">${t.data_size} KB</td>
-                                    <td style="padding: 8px 12px; color: #64748b;">${t.index_size} KB</td>
-                                    <td style="padding: 8px 12px; color: #64748b;">${t.updated}</td>
-                                </tr>
-                            `;
-                        });
-                        tbody.innerHTML = html;
-                    }
-                </script>
-
-                <!-- SUB-MODULE 1: CLIENT DOWNLOADER LOGS -->
-                <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 24px; margin-bottom: 32px; box-shadow: 0 4px 20px rgba(0,0,0,0.03);">
+                <!-- SUB-MODULE 2: CLIENT DOWNLOADER LOGS -->
+                <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 24px; margin-bottom: 24px; box-shadow: 0 4px 20px rgba(0,0,0,0.03);">
                     <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; padding-bottom: 14px; border-bottom: 1px solid #f1f5f9;">
                         <div>
                             <h3 style="font-size: 1.15rem; font-weight: 700; color: #0f172a; margin-bottom: 2px;">
@@ -9800,15 +9962,15 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                     </div>
                 </div>
 
-                <!-- SUB-MODULE 2: SYSTEM BACKUP & RESTORE HISTORY -->
+                <!-- SUB-MODULE 3: SYSTEM BACKUP & RESTORE HISTORY -->
                 <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 24px; box-shadow: 0 4px 20px rgba(0,0,0,0.03);">
                     <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; padding-bottom: 14px; border-bottom: 1px solid #f1f5f9;">
                         <div>
                             <h3 style="font-size: 1.15rem; font-weight: 700; color: #0f172a; margin-bottom: 2px;">
-                                <i class="fa-solid fa-database" style="color: #dc2626; margin-right: 8px;"></i>
+                                <i class="fa-solid fa-clock-rotate-left" style="color: #dc2626; margin-right: 8px;"></i>
                                 System Backup &amp; Snapshot History
                             </h3>
-                            <p style="font-size: 0.82rem; color: #64748b; margin: 0;">Automated pre-deploy restore points and administrative manual snapshots stored in config/backups.</p>
+                            <p style="font-size: 0.82rem; color: #64748b; margin: 0;">Automated rolling restore points, codebase zips, and database SQL dumps stored in config/backups.</p>
                         </div>
                         <span style="background: #fef2f2; color: #dc2626; font-weight: 700; font-size: 0.8rem; padding: 4px 10px; border-radius: 20px;">
                             <?php echo count($backupLogs); ?> Snapshots
@@ -9834,25 +9996,35 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                     <tr>
                                         <td colspan="8" style="padding: 32px 14px; text-align: center; color: #94a3b8;">
                                             <i class="fa-regular fa-clock-rotate-left" style="font-size: 1.8rem; margin-bottom: 8px; display: block; opacity: 0.4;"></i>
-                                            No backup snapshots logged yet. Click "Create Full Backup Bundle" above to generate one immediately.
+                                            No backup snapshots logged yet. Click "Create Full System Snapshot" above to generate one immediately.
                                         </td>
                                     </tr>
                                 <?php else: ?>
-                                    <?php foreach ($backupLogs as $bk): ?>
+                                    <?php foreach ($backupLogs as $bk):
+                                        $fsize = (float)($bk['file_size'] ?? 0);
+                                        $sizeStr = $fsize > 1048576 ? round($fsize / 1048576, 2) . ' MB' : round($fsize / 1024, 1) . ' KB';
+                                        $bType = strtoupper($bk['backup_type'] ?? 'SNAPSHOT');
+                                        $badgeBg = '#f1f5f9';
+                                        $badgeColor = '#334155';
+                                        if (str_contains($bType, 'CODEBASE')) { $badgeBg = '#ffe4e6'; $badgeColor = '#be123c'; }
+                                        elseif (str_contains($bType, 'DATABASE') || str_contains($bType, 'SQL')) { $badgeBg = '#ede9fe'; $badgeColor = '#6d28d9'; }
+                                        elseif (str_contains($bType, 'FULL')) { $badgeBg = '#dcfce7'; $badgeColor = '#15803d'; }
+                                        elseif (str_contains($bType, 'CRON')) { $badgeBg = '#e0f2fe'; $badgeColor = '#0369a1'; }
+                                    ?>
                                         <tr style="border-bottom: 1px solid #f1f5f9; transition: background 0.15s;" onmouseover="this.style.background='#f8fafc';" onmouseout="this.style.background='transparent';">
                                             <td style="padding: 10px 14px; font-weight: 700; color: #64748b;"><?php echo (int)($bk['id'] ?? 0); ?></td>
                                             <td style="padding: 10px 14px; color: #475569; white-space: nowrap;"><?php echo htmlspecialchars($bk['created_at'] ?? 'N/A'); ?></td>
                                             <td style="padding: 10px 14px;">
-                                                <span style="background: #f1f5f9; color: #0f172a; font-weight: 700; font-size: 0.74rem; padding: 2px 8px; border-radius: 4px; text-transform: uppercase;">
-                                                    <?php echo htmlspecialchars($bk['backup_type'] ?? 'SNAPSHOT'); ?>
+                                                <span style="background: <?php echo $badgeBg; ?>; color: <?php echo $badgeColor; ?>; font-weight: 700; font-size: 0.72rem; padding: 3px 8px; border-radius: 4px; text-transform: uppercase;">
+                                                    <?php echo htmlspecialchars($bType); ?>
                                                 </span>
                                             </td>
                                             <td style="padding: 10px 14px; font-family: monospace; font-size: 0.78rem; color: #2563eb;"><?php echo htmlspecialchars($bk['filename'] ?? 'N/A'); ?></td>
-                                            <td style="padding: 10px 14px; color: #64748b;"><?php echo round(($bk['file_size'] ?? 0) / 1024, 1); ?> KB</td>
+                                            <td style="padding: 10px 14px; color: #64748b; font-family: monospace;"><?php echo $sizeStr; ?></td>
                                             <td style="padding: 10px 14px; font-weight: 700; color: #0f172a;"><?php echo (int)($bk['items_count'] ?? 0); ?> items</td>
                                             <td style="padding: 10px 14px; color: #64748b;"><?php echo htmlspecialchars($bk['notes'] ?? ($bk['created_by'] ?? 'System')); ?></td>
                                             <td style="padding: 10px 14px; text-align: right;">
-                                                <a href="index.php?download_backup_file=<?php echo urlencode($bk['filename'] ?? ''); ?>" style="color: #2563eb; text-decoration: none; font-weight: 700; font-size: 0.8rem; display: inline-flex; align-items: center; gap: 4px;" title="Direct Download">
+                                                <a href="index.php?download_backup_file=<?php echo urlencode($bk['filename'] ?? ''); ?>" style="background: #f1f5f9; color: #0f172a; padding: 4px 10px; border-radius: 6px; text-decoration: none; font-weight: 700; font-size: 0.78rem; display: inline-flex; align-items: center; gap: 4px;" title="Direct Download">
                                                     <i class="fa-solid fa-download"></i> Download
                                                 </a>
                                             </td>
@@ -9863,6 +10035,321 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                         </table>
                     </div>
                 </div>
+
+                <script>
+                    let cachedDbStats = null;
+
+                    // Non-blocking Toast Notification Engine
+                    function showAdminToast(message, type = 'info', duration = 4000) {
+                        let container = document.getElementById('falhenGlobalToastContainer');
+                        if (!container) {
+                            container = document.createElement('div');
+                            container.id = 'falhenGlobalToastContainer';
+                            container.style.cssText = 'position: fixed; bottom: 24px; right: 24px; z-index: 9999999; display: flex; flex-direction: column; gap: 10px; max-width: 420px; width: 90%; pointer-events: none;';
+                            document.body.appendChild(container);
+                        }
+                        const toast = document.createElement('div');
+                        const bg = type === 'error' ? '#ef4444' : (type === 'success' ? '#10b981' : (type === 'warning' ? '#f59e0b' : '#0f172a'));
+                        const icon = type === 'error' ? 'fa-triangle-exclamation' : (type === 'success' ? 'fa-circle-check' : (type === 'warning' ? 'fa-circle-exclamation' : 'fa-circle-info'));
+                        
+                        toast.style.cssText = `background: ${bg}; color: #ffffff; padding: 14px 18px; border-radius: 12px; font-size: 0.88rem; font-weight: 600; box-shadow: 0 12px 30px rgba(0,0,0,0.3); display: flex; align-items: flex-start; gap: 12px; pointer-events: auto; opacity: 0; transform: translateY(12px); transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1); line-height: 1.4;`;
+                        toast.innerHTML = `
+                            <i class="fa-solid ${icon}" style="font-size: 1.1rem; margin-top: 2px;"></i>
+                            <div style="flex: 1; word-break: break-word;">${message}</div>
+                            <button type="button" style="background: none; border: none; color: rgba(255,255,255,0.7); cursor: pointer; padding: 0 0 0 6px; font-size: 0.9rem;" onclick="this.parentElement.remove()">&times;</button>
+                        `;
+                        container.appendChild(toast);
+                        requestAnimationFrame(() => {
+                            toast.style.opacity = '1';
+                            toast.style.transform = 'translateY(0)';
+                        });
+                        setTimeout(() => {
+                            toast.style.opacity = '0';
+                            toast.style.transform = 'translateY(8px)';
+                            setTimeout(() => toast.remove(), 300);
+                        }, duration);
+                    }
+
+                    function copyToClipboard(text, btn) {
+                        navigator.clipboard.writeText(text).then(() => {
+                            const orig = btn.innerHTML;
+                            btn.innerHTML = '<i class="fa-solid fa-check" style="color: #10b981;"></i> Copied!';
+                            showAdminToast('Copied to clipboard: ' + text, 'success', 2500);
+                            setTimeout(() => { btn.innerHTML = orig; }, 2000);
+                        }).catch(() => {
+                            showAdminToast('Failed to copy. Please manually copy the command.', 'warning');
+                        });
+                    }
+
+                    function togglePassVisibility(inputId, btn) {
+                        const input = document.getElementById(inputId);
+                        if (!input) return;
+                        if (input.type === 'password') {
+                            input.type = 'text';
+                            btn.innerHTML = '<i class="fa-solid fa-eye-slash"></i>';
+                        } else {
+                            input.type = 'password';
+                            btn.innerHTML = '<i class="fa-solid fa-eye"></i>';
+                        }
+                    }
+
+                    function toggleDbCredentialsDrawer() {
+                        const drawer = document.getElementById('dbCredentialsDrawer');
+                        if (!drawer) return;
+                        if (drawer.style.display === 'none' || drawer.style.display === '') {
+                            drawer.style.display = 'block';
+                            drawer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                        } else {
+                            drawer.style.display = 'none';
+                        }
+                    }
+
+                    function testCustomDbCreds(btn) {
+                        const host = document.getElementById('inputDbHost').value;
+                        const port = document.getElementById('inputDbPort').value;
+                        const name = document.getElementById('inputDbName').value;
+                        const user = document.getElementById('inputDbUser').value;
+                        const pass = document.getElementById('inputDbPass').value;
+                        const resBox = document.getElementById('dbCredsTestResult');
+
+                        const origText = btn ? btn.innerHTML : '';
+                        if (btn) {
+                            btn.disabled = true;
+                            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Pinging...';
+                        }
+
+                        const fd = new FormData();
+                        fd.append('action', 'test_db_credentials');
+                        fd.append('db_host', host);
+                        fd.append('db_port', port);
+                        fd.append('db_name', name);
+                        fd.append('db_user', user);
+                        fd.append('db_pass', pass);
+
+                        fetch('index.php?section=dev_logs', { method: 'POST', body: fd })
+                            .then(r => r.json())
+                            .then(data => {
+                                if (btn) {
+                                    btn.disabled = false;
+                                    btn.innerHTML = origText;
+                                }
+                                resBox.style.display = 'block';
+                                if (data.success) {
+                                    resBox.style.background = 'rgba(16, 185, 129, 0.15)';
+                                    resBox.style.border = '1px solid #10b981';
+                                    resBox.style.color = '#34d399';
+                                    resBox.innerHTML = `<strong>✓ Connection Verified!</strong> Round-trip latency: ${data.latency_ms} ms &bull; Engine: ${data.version} &bull; DSN: ${data.dsn}`;
+                                    showAdminToast(`MySQL Connected successfully (${data.latency_ms} ms)`, 'success');
+                                    updateLivePill(true, data.latency_ms);
+                                } else {
+                                    resBox.style.background = 'rgba(239, 68, 68, 0.15)';
+                                    resBox.style.border = '1px solid #ef4444';
+                                    resBox.style.color = '#f87171';
+                                    resBox.innerHTML = `<strong>✕ Connection Failed:</strong> ${data.error || 'Authentication rejected'}`;
+                                    showAdminToast(data.error || 'Connection failed', 'error');
+                                    updateLivePill(false, data.error);
+                                }
+                            })
+                            .catch(err => {
+                                if (btn) {
+                                    btn.disabled = false;
+                                    btn.innerHTML = origText;
+                                }
+                                showAdminToast('Network error while testing credentials', 'error');
+                            });
+                    }
+
+                    function saveCustomDbCreds(btn) {
+                        const host = document.getElementById('inputDbHost').value;
+                        const port = document.getElementById('inputDbPort').value;
+                        const name = document.getElementById('inputDbName').value;
+                        const user = document.getElementById('inputDbUser').value;
+                        const pass = document.getElementById('inputDbPass').value;
+
+                        const origText = btn.innerHTML;
+                        btn.disabled = true;
+                        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Saving...';
+
+                        const fd = new FormData();
+                        fd.append('action', 'save_db_credentials');
+                        fd.append('db_host', host);
+                        fd.append('db_port', port);
+                        fd.append('db_name', name);
+                        fd.append('db_user', user);
+                        fd.append('db_pass', pass);
+
+                        fetch('index.php?section=dev_logs', { method: 'POST', body: fd })
+                            .then(r => r.json())
+                            .then(data => {
+                                btn.disabled = false;
+                                btn.innerHTML = origText;
+                                if (data.success) {
+                                    showAdminToast('✓ Database credentials saved and verified!', 'success');
+                                    setTimeout(() => window.location.reload(), 1200);
+                                } else {
+                                    if (data.can_force) {
+                                        if (confirm(data.error + '\n\nDo you want to save these credentials anyway?')) {
+                                            fd.append('force_save', '1');
+                                            fetch('index.php?section=dev_logs', { method: 'POST', body: fd })
+                                                .then(r => r.json())
+                                                .then(res => {
+                                                    if (res.success) {
+                                                        showAdminToast('Credentials forced saved to config/db_credentials.json', 'warning');
+                                                        setTimeout(() => window.location.reload(), 1200);
+                                                    }
+                                                });
+                                        }
+                                    } else {
+                                        showAdminToast('Error: ' + (data.error || 'Failed to save credentials.'), 'error');
+                                    }
+                                }
+                            })
+                            .catch(err => {
+                                btn.disabled = false;
+                                btn.innerHTML = origText;
+                                showAdminToast('Network error saving credentials', 'error');
+                            });
+                    }
+
+                    function triggerScheduledBackupNow(btn) {
+                        const orig = btn.innerHTML;
+                        btn.disabled = true;
+                        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Archiving...';
+
+                        const fd = new FormData();
+                        fd.append('action', 'trigger_cron_backup_now');
+
+                        fetch('index.php?section=dev_logs', { method: 'POST', body: fd })
+                            .then(r => r.json())
+                            .then(data => {
+                                btn.disabled = false;
+                                btn.innerHTML = orig;
+                                if (data.success) {
+                                    showAdminToast('✓ Scheduled Backup Complete! Codebase ZIP & Database SQL created.', 'success', 5000);
+                                    setTimeout(() => window.location.reload(), 1500);
+                                } else {
+                                    showAdminToast('Backup Notice: ' + (data.error || 'Failed to trigger backup.'), 'warning');
+                                }
+                            })
+                            .catch(() => {
+                                btn.disabled = false;
+                                btn.innerHTML = orig;
+                                showAdminToast('Network error while running scheduled backup', 'error');
+                            });
+                    }
+
+                    function updateLivePill(isSuccess, detail) {
+                        const pill = document.getElementById('dbLiveStatusPill');
+                        if (!pill) return;
+                        if (isSuccess) {
+                            pill.style.background = '#ecfdf5';
+                            pill.style.color = '#059669';
+                            pill.style.border = '1px solid #a7f3d0';
+                            pill.innerHTML = `<i class="fa-solid fa-circle" style="color: #10b981; font-size: 0.5rem; vertical-align: middle;"></i> MySQL Live (${detail} ms)`;
+                        } else {
+                            pill.style.background = '#fef2f2';
+                            pill.style.color = '#dc2626';
+                            pill.style.border = '1px solid #fecaca';
+                            pill.innerHTML = `<i class="fa-solid fa-triangle-exclamation" style="color: #ef4444;"></i> MySQL Auth Required`;
+                        }
+                    }
+
+                    function runDbDiagnostics(btn) {
+                        const originalHtml = btn ? btn.innerHTML : '';
+                        if (btn) {
+                            btn.disabled = true;
+                            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Testing...';
+                        }
+                        
+                        const fd = new FormData();
+                        fd.append('action', 'test_db_diagnostics');
+
+                        fetch('index.php?section=dev_logs', { method: 'POST', body: fd })
+                            .then(r => r.json())
+                            .then(data => {
+                                if (btn) {
+                                    btn.disabled = false;
+                                    btn.innerHTML = originalHtml;
+                                }
+                                if (data.success) {
+                                    cachedDbStats = data;
+                                    updateLivePill(true, data.latency_ms);
+                                    const banner = document.getElementById('diagnosticsBanner');
+                                    banner.style.display = 'block';
+                                    banner.innerHTML = `
+                                        <div style="display: flex; gap: 20px; align-items: center; flex-wrap: wrap;">
+                                            <div><strong style="color: #0f172a;">Round-Trip Latency:</strong> <span style="color: #16a34a; font-weight: 700;">${data.latency_ms} ms</span></div>
+                                            <div><strong style="color: #0f172a;">Database:</strong> <span style="font-family: monospace;">${data.database}</span></div>
+                                            <div><strong style="color: #0f172a;">Engine Version:</strong> <span style="font-family: monospace;">${data.version}</span></div>
+                                            <div><strong style="color: #0f172a;">Transport:</strong> <span style="font-family: monospace; font-size: 0.8rem; background: #e0f2fe; color: #0369a1; padding: 2px 6px; border-radius: 4px;">${data.active_dsn || 'Unix Socket'}</span></div>
+                                            <div><strong style="color: #0f172a;">Monitored Tables:</strong> <span>${data.tables ? data.tables.length : 0}</span></div>
+                                        </div>
+                                    `;
+                                    renderTableStorage(data.tables);
+                                    showAdminToast(`MySQL Diagnostics: Connection live (${data.latency_ms} ms)`, 'success');
+                                } else {
+                                    updateLivePill(false, data.message);
+                                    showAdminToast('Diagnostic Error: ' + (data.message || 'Failed to ping MySQL.'), 'error', 6000);
+                                }
+                            })
+                            .catch(err => {
+                                if (btn) {
+                                    btn.disabled = false;
+                                    btn.innerHTML = originalHtml;
+                                }
+                                showAdminToast('Network error while running database diagnostics.', 'error');
+                            });
+                    }
+
+                    function toggleTableStorageInspect() {
+                        const container = document.getElementById('tableStorageContainer');
+                        if (container.style.display === 'none' || container.style.display === '') {
+                            container.style.display = 'block';
+                            if (!cachedDbStats) {
+                                const btn = document.querySelector('button[onclick*="runDbDiagnostics"]');
+                                if (btn) runDbDiagnostics(btn);
+                            }
+                        } else {
+                            container.style.display = 'none';
+                        }
+                    }
+
+                    function renderTableStorage(tables) {
+                        const tbody = document.getElementById('tableStorageTbody');
+                        if (!tbody || !tables || tables.length === 0) return;
+                        let html = '';
+                        tables.forEach(t => {
+                            html += `
+                                <tr style="border-bottom: 1px solid #f1f5f9;">
+                                    <td style="padding: 8px 12px; font-weight: 700; color: #0f172a; font-family: monospace;">${t.name}</td>
+                                    <td style="padding: 8px 12px; color: #334155;">${t.rows.toLocaleString()}</td>
+                                    <td style="padding: 8px 12px; color: #64748b;">${t.data_size} KB</td>
+                                    <td style="padding: 8px 12px; color: #64748b;">${t.index_size} KB</td>
+                                    <td style="padding: 8px 12px; color: #64748b;">${t.updated}</td>
+                                </tr>
+                            `;
+                        });
+                        tbody.innerHTML = html;
+                    }
+
+                    // Silent background ping on page load
+                    document.addEventListener('DOMContentLoaded', function() {
+                        const fd = new FormData();
+                        fd.append('action', 'test_db_diagnostics');
+                        fetch('index.php?section=dev_logs', { method: 'POST', body: fd })
+                            .then(r => r.json())
+                            .then(data => {
+                                if (data.success) {
+                                    updateLivePill(true, data.latency_ms);
+                                    cachedDbStats = data;
+                                } else {
+                                    updateLivePill(false, data.message);
+                                }
+                            })
+                            .catch(() => {});
+                    });
+                </script>
+
             <!-- SECTION: CAREERS & HIRING MANAGEMENT -->
             <?php elseif ($activeSection === 'careers'):
                 $jobListings = array_values(getCareersRepo());

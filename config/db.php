@@ -38,21 +38,40 @@ if (!function_exists('falhenLoadEnv')) {
 }
 falhenLoadEnv();
 
+// Load custom DB credentials override if present
+$dbCredsFile = __DIR__ . '/db_credentials.json';
+$customDBCreds = file_exists($dbCredsFile) ? json_decode(@file_get_contents($dbCredsFile), true) : null;
+
 $isCpanel = (strpos(__DIR__, 'henadinnovate') !== false || file_exists('/home/henadinnovate'));
-$defaultDbName = $isCpanel ? 'henadinn_falhen_db' : 'falhen_db';
-$defaultDbUser = $isCpanel ? 'henadinn_falhen_user' : 'root';
-$defaultDbPass = $isCpanel ? 'FalhenMedia2026!#' : 'Oluwatosin25#';
-$defaultDbHost = $isCpanel ? 'localhost' : '127.0.0.1';
 
-define('DB_HOST', getenv('DB_HOST') ?: $defaultDbHost);
-define('DB_PORT', getenv('DB_PORT') ?: '3306');
-define('DB_NAME', getenv('DB_NAME') ?: $defaultDbName);
-define('DB_USER', getenv('DB_USER') ?: $defaultDbUser);
-define('DB_PASS', getenv('DB_PASS') ?: $defaultDbPass);
+if (is_array($customDBCreds) && !empty($customDBCreds['user'])) {
+    $resolvedDbHost = $customDBCreds['host'] ?? ($isCpanel ? 'localhost' : '127.0.0.1');
+    $resolvedDbPort = $customDBCreds['port'] ?? '3306';
+    $resolvedDbName = $customDBCreds['name'] ?? ($isCpanel ? 'henadinn_falhen_db' : 'falhen_db');
+    $resolvedDbUser = $customDBCreds['user'] ?? ($isCpanel ? 'henadinn_falhen_user' : 'root');
+    $resolvedDbPass = $customDBCreds['pass'] ?? '';
+} else {
+    $defaultDbName = $isCpanel ? 'henadinn_falhen_db' : 'falhen_db';
+    $defaultDbUser = $isCpanel ? 'henadinn_falhen_user' : 'root';
+    $defaultDbPass = $isCpanel ? 'FalhenMedia2026!#' : 'Oluwatosin25#';
+    $defaultDbHost = $isCpanel ? 'localhost' : '127.0.0.1';
 
-function getDBConnection() {
+    $resolvedDbHost = getenv('DB_HOST') ?: $defaultDbHost;
+    $resolvedDbPort = getenv('DB_PORT') ?: '3306';
+    $resolvedDbName = getenv('DB_NAME') ?: $defaultDbName;
+    $resolvedDbUser = getenv('DB_USER') ?: $defaultDbUser;
+    $resolvedDbPass = getenv('DB_PASS') !== false ? getenv('DB_PASS') : $defaultDbPass;
+}
+
+if (!defined('DB_HOST')) define('DB_HOST', $resolvedDbHost);
+if (!defined('DB_PORT')) define('DB_PORT', $resolvedDbPort);
+if (!defined('DB_NAME')) define('DB_NAME', $resolvedDbName);
+if (!defined('DB_USER')) define('DB_USER', $resolvedDbUser);
+if (!defined('DB_PASS')) define('DB_PASS', $resolvedDbPass);
+
+function getDBConnection($forceNew = false) {
     static $pdo = null;
-    if ($pdo !== null) {
+    if ($pdo !== null && !$forceNew) {
         return $pdo;
     }
 
@@ -232,4 +251,73 @@ function initDatabaseSchema($pdo = null) {
     } catch (Exception $e) {
         error_log("Schema Init Warning: " . $e->getMessage());
     }
+}
+
+/**
+ * Test custom DB connection parameters live
+ */
+function testCustomDBConnection($host, $port, $name, $user, $pass) {
+    $options = [
+        PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
+        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+        PDO::ATTR_TIMEOUT            => 4,
+    ];
+    $candidates = [
+        "mysql:host={$host};dbname={$name};charset=utf8mb4",
+        "mysql:host={$host};port={$port};dbname={$name};charset=utf8mb4",
+    ];
+    if (in_array($host, ['localhost', '127.0.0.1'], true)) {
+        foreach (['/var/lib/mysql/mysql.sock', '/tmp/mysql.sock', '/var/run/mysqld/mysqld.sock'] as $sock) {
+            if (@file_exists($sock)) {
+                $candidates[] = "mysql:unix_socket={$sock};dbname={$name};charset=utf8mb4";
+            }
+        }
+    }
+    $candidates = array_values(array_unique($candidates));
+    $start = microtime(true);
+    $lastErr = null;
+    foreach ($candidates as $dsn) {
+        try {
+            $conn = new PDO($dsn, $user, $pass, $options);
+            if ($conn) {
+                $lat = round((microtime(true) - $start) * 1000, 2);
+                $stmt = $conn->query("SELECT VERSION() as v");
+                $ver = $stmt ? $stmt->fetchColumn() : 'Unknown';
+                return [
+                    'success'    => true,
+                    'latency_ms' => $lat,
+                    'dsn'        => $dsn,
+                    'version'    => $ver
+                ];
+            }
+        } catch (PDOException $e) {
+            $lastErr = $e->getMessage();
+        }
+    }
+    return [
+        'success' => false,
+        'error'   => $lastErr ?: 'Failed to connect with provided credentials'
+    ];
+}
+
+/**
+ * Persist custom DB credentials to config/db_credentials.json
+ */
+function saveDBCredentials($host, $port, $name, $user, $pass) {
+    $creds = [
+        'host'       => trim($host),
+        'port'       => trim($port) ?: '3306',
+        'name'       => trim($name),
+        'user'       => trim($user),
+        'pass'       => (string)$pass,
+        'updated_at' => date('Y-m-d H:i:s'),
+        'updated_by' => $_SESSION['admin_username'] ?? 'Admin'
+    ];
+    $filePath = __DIR__ . '/db_credentials.json';
+    $res = @file_put_contents($filePath, json_encode($creds, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES), LOCK_EX);
+    if ($res !== false) {
+        @chmod($filePath, 0600);
+        return true;
+    }
+    return false;
 }

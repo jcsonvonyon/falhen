@@ -552,34 +552,392 @@ function getClientDownloadLogs($limit = 100) {
 }
 
 /**
- * Log system backup snapshot
+ * Log system backup snapshot to MySQL and local disk ledger
  */
 function logSystemBackup($filename, $backupType = 'manual_snapshot', $itemsCount = 0, $notes = '') {
-    $pdo = function_exists('getDBConnection') ? getDBConnection() : null;
-    $filePath = __DIR__ . '/../config/backups/' . basename($filename);
+    $baseFilename = basename($filename);
+    $filePath = __DIR__ . '/../config/backups/' . $baseFilename;
     $size = file_exists($filePath) ? filesize($filePath) : 0;
-    if (!$pdo) return false;
-    try {
-        $stmt = $pdo->prepare("INSERT INTO `system_backups` 
-            (`backup_type`, `filename`, `file_size`, `items_count`, `notes`, `created_by`)
-            VALUES (?, ?, ?, ?, ?, ?)");
-        $author = $_SESSION['admin_username'] ?? ($_SESSION['staff_username'] ?? 'System/IT');
-        return $stmt->execute([
-            $backupType,
-            basename($filename),
-            $size,
-            $itemsCount,
-            $notes,
-            $author
-        ]);
-    } catch (Exception $e) {
-        return false;
+    $author = $_SESSION['admin_username'] ?? ($_SESSION['staff_username'] ?? 'System/IT');
+    $createdAt = date('Y-m-d H:i:s');
+
+    // 1. Always record in local disk ledger (config/backups/backups_ledger.json)
+    $backupDir = __DIR__ . '/../config/backups';
+    if (!is_dir($backupDir)) {
+        @mkdir($backupDir, 0755, true);
+    }
+    $ledgerPath = $backupDir . '/backups_ledger.json';
+    $ledger = file_exists($ledgerPath) ? json_decode(@file_get_contents($ledgerPath), true) : [];
+    if (!is_array($ledger)) $ledger = [];
+    
+    $record = [
+        'id'          => count($ledger) + 1,
+        'backup_type' => $backupType,
+        'filename'    => $baseFilename,
+        'file_size'   => $size,
+        'items_count' => (int)$itemsCount,
+        'notes'       => $notes,
+        'created_by'  => $author,
+        'created_at'  => $createdAt
+    ];
+    $ledger[] = $record;
+    @file_put_contents($ledgerPath, json_encode($ledger, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES), LOCK_EX);
+
+    // 2. Record to MySQL if connected
+    $pdo = function_exists('getDBConnection') ? getDBConnection() : null;
+    if ($pdo) {
+        try {
+            $stmt = $pdo->prepare("INSERT INTO `system_backups` 
+                (`backup_type`, `filename`, `file_size`, `items_count`, `notes`, `created_by`, `created_at`)
+                VALUES (?, ?, ?, ?, ?, ?, ?)");
+            return $stmt->execute([
+                $backupType,
+                $baseFilename,
+                $size,
+                $itemsCount,
+                $notes,
+                $author,
+                $createdAt
+            ]);
+        } catch (Exception $e) {
+            return true;
+        }
+    }
+    return true;
+}
+
+/**
+ * Create a full codebase ZIP archive
+ */
+function createCodebaseZipArchive($zipFilename) {
+    if (!class_exists('ZipArchive')) {
+        return ['success' => false, 'error' => 'ZipArchive extension not enabled in PHP'];
+    }
+    $backupDir = __DIR__ . '/../config/backups';
+    if (!is_dir($backupDir)) {
+        @mkdir($backupDir, 0755, true);
+    }
+    $zipPath = $backupDir . '/' . basename($zipFilename);
+    $zip = new ZipArchive();
+    if ($zip->open($zipPath, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== true) {
+        return ['success' => false, 'error' => 'Could not create ZIP archive at ' . $zipPath];
+    }
+
+    $projectRoot = realpath(dirname(__DIR__));
+    $skipDirs = [
+        '.git',
+        'node_modules',
+        'config/backups',
+        '.taste-skill'
+    ];
+    $skipExts = ['zip', 'tar', 'gz', 'mp4', 'mov'];
+
+    $filesCount = 0;
+    $iterator = new RecursiveIteratorIterator(
+        new RecursiveDirectoryIterator($projectRoot, RecursiveDirectoryIterator::SKIP_DOTS),
+        RecursiveIteratorIterator::SELF_FIRST
+    );
+
+    foreach ($iterator as $item) {
+        $filePath = $item->getRealPath();
+        $relative = substr($filePath, strlen($projectRoot) + 1);
+        $relativeNormalized = str_replace('\\', '/', $relative);
+
+        $skip = false;
+        foreach ($skipDirs as $sd) {
+            if ($relativeNormalized === $sd || str_starts_with($relativeNormalized, $sd . '/')) {
+                $skip = true;
+                break;
+            }
+        }
+        if ($skip) continue;
+
+        if ($item->isDir()) {
+            $zip->addEmptyDir($relativeNormalized);
+        } elseif ($item->isFile()) {
+            $ext = strtolower(pathinfo($filePath, PATHINFO_EXTENSION));
+            if (in_array($ext, $skipExts, true)) continue;
+            if ($item->getSize() > 20 * 1024 * 1024) continue; // skip files > 20MB
+
+            $zip->addFile($filePath, $relativeNormalized);
+            $filesCount++;
+        }
+    }
+
+    $zip->close();
+    $fsize = file_exists($zipPath) ? filesize($zipPath) : 0;
+    return [
+        'success'     => true,
+        'filename'    => basename($zipFilename),
+        'path'        => $zipPath,
+        'file_size'   => $fsize,
+        'files_count' => $filesCount
+    ];
+}
+
+/**
+ * Dump MySQL database schema and data to SQL file
+ * Falls back to authoritative disk schema reconstruction if MySQL is offline
+ */
+function createDatabaseSqlDump($sqlFilename) {
+    $backupDir = __DIR__ . '/../config/backups';
+    if (!is_dir($backupDir)) {
+        @mkdir($backupDir, 0755, true);
+    }
+    $sqlPath = $backupDir . '/' . basename($sqlFilename);
+    $pdo = function_exists('getDBConnection') ? getDBConnection() : null;
+
+    $out = "-- ==========================================================\n";
+    $out .= "-- Falhen Media Database & Pipeline SQL Dump\n";
+    $out .= "-- Timestamp: " . date('Y-m-d H:i:s') . "\n";
+    $out .= "-- Host: " . (defined('DB_HOST') ? DB_HOST : 'localhost') . "\n";
+    $out .= "-- Database: " . (defined('DB_NAME') ? DB_NAME : 'falhen_db') . "\n";
+    $out .= "-- ==========================================================\n\n";
+    $out .= "SET FOREIGN_KEY_CHECKS=0;\nSET SQL_MODE = 'NO_AUTO_VALUE_ON_ZERO';\n\n";
+
+    $tablesCount = 0;
+    if ($pdo) {
+        try {
+            $tablesStmt = $pdo->query("SHOW TABLES");
+            $tables = $tablesStmt ? $tablesStmt->fetchAll(PDO::FETCH_COLUMN) : [];
+            foreach ($tables as $tbl) {
+                $tablesCount++;
+                $out .= "\n-- Table structure for: `{$tbl}`\n";
+                $out .= "DROP TABLE IF EXISTS `{$tbl}`;\n";
+                $createStmt = $pdo->query("SHOW CREATE TABLE `{$tbl}`");
+                $createRow = $createStmt ? $createStmt->fetch(PDO::FETCH_ASSOC) : null;
+                if ($createRow && isset($createRow['Create Table'])) {
+                    $out .= $createRow['Create Table'] . ";\n\n";
+                }
+
+                $rowsStmt = $pdo->query("SELECT * FROM `{$tbl}`");
+                if ($rowsStmt) {
+                    $rows = $rowsStmt->fetchAll(PDO::FETCH_ASSOC);
+                    if (!empty($rows)) {
+                        $out .= "-- Dumping data for: `{$tbl}` (" . count($rows) . " rows)\n";
+                        foreach ($rows as $r) {
+                            $cols = array_map(function($c) { return "`{$c}`"; }, array_keys($r));
+                            $vals = array_map(function($v) use ($pdo) {
+                                if ($v === null) return 'NULL';
+                                return $pdo->quote($v);
+                            }, array_values($r));
+                            $out .= "INSERT INTO `{$tbl}` (" . implode(', ', $cols) . ") VALUES (" . implode(', ', $vals) . ");\n";
+                        }
+                        $out .= "\n";
+                    }
+                }
+            }
+        } catch (Exception $e) {
+            $out .= "\n-- Warning during live dump: " . $e->getMessage() . "\n";
+        }
+    }
+
+    if ($tablesCount === 0) {
+        $settings = function_exists('getSiteSettings') ? getSiteSettings() : [];
+        $settingsJson = json_encode($settings, JSON_UNESCAPED_SLASHES);
+        $escapedJson = addslashes($settingsJson);
+
+        $out .= "-- AUTHORITATIVE RECONSTRUCTION SCRIPT (Generated from Active Disk State)\n";
+        $out .= "CREATE TABLE IF NOT EXISTS `site_settings` (
+            `id` INT AUTO_INCREMENT PRIMARY KEY,
+            `setting_key` VARCHAR(100) NOT NULL UNIQUE,
+            `setting_value` LONGTEXT NOT NULL,
+            `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;\n\n";
+
+        $out .= "INSERT INTO `site_settings` (`setting_key`, `setting_value`) VALUES ('all_settings', '{$escapedJson}')
+            ON DUPLICATE KEY UPDATE `setting_value` = VALUES(`setting_value`);\n\n";
+
+        $out .= "CREATE TABLE IF NOT EXISTS `client_download_logs` (
+            `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            `client_name` VARCHAR(150) NOT NULL DEFAULT 'Guest',
+            `client_email` VARCHAR(150) NOT NULL,
+            `client_phone` VARCHAR(50) DEFAULT NULL,
+            `album_id` VARCHAR(100) NOT NULL,
+            `album_title` VARCHAR(255) NOT NULL,
+            `download_type` VARCHAR(50) NOT NULL DEFAULT 'single_photo',
+            `ip_address` VARCHAR(45) DEFAULT NULL,
+            `user_agent` TEXT DEFAULT NULL,
+            `downloaded_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+            INDEX `idx_dl_email` (`client_email`),
+            INDEX `idx_dl_album` (`album_id`),
+            INDEX `idx_dl_date` (`downloaded_at`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;\n\n";
+
+        $out .= "CREATE TABLE IF NOT EXISTS `system_backups` (
+            `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            `backup_type` VARCHAR(50) NOT NULL DEFAULT 'auto_deploy',
+            `filename` VARCHAR(255) NOT NULL,
+            `file_size` BIGINT UNSIGNED NOT NULL DEFAULT 0,
+            `items_count` INT UNSIGNED NOT NULL DEFAULT 0,
+            `notes` TEXT DEFAULT NULL,
+            `created_by` VARCHAR(80) NOT NULL DEFAULT 'System',
+            `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+            INDEX `idx_backup_type` (`backup_type`),
+            INDEX `idx_backup_date` (`created_at`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;\n\n";
+
+        $tablesCount = 3;
+    }
+
+    $out .= "SET FOREIGN_KEY_CHECKS=1;\n";
+    @file_put_contents($sqlPath, $out, LOCK_EX);
+    $fsize = file_exists($sqlPath) ? filesize($sqlPath) : 0;
+
+    return [
+        'success'      => true,
+        'filename'     => basename($sqlFilename),
+        'path'         => $sqlPath,
+        'file_size'    => $fsize,
+        'tables_count' => $tablesCount
+    ];
+}
+
+/**
+ * Prune old backups, retaining the latest N archives
+ */
+function pruneOldBackups($retentionLimit = 30) {
+    $backupDir = __DIR__ . '/../config/backups';
+    if (!is_dir($backupDir)) return;
+    $files = scandir($backupDir);
+    $archives = [];
+    foreach ($files as $f) {
+        if ($f === '.' || $f === '..' || $f === 'backups_ledger.json' || $f === '.htaccess') continue;
+        if (preg_match('/\.(zip|sql|json|csv)$/i', $f)) {
+            $archives[] = [
+                'path' => $backupDir . '/' . $f,
+                'time' => filemtime($backupDir . '/' . $f)
+            ];
+        }
+    }
+    usort($archives, function($a, $b) {
+        return $b['time'] - $a['time'];
+    });
+    if (count($archives) > $retentionLimit) {
+        $toDelete = array_slice($archives, $retentionLimit);
+        foreach ($toDelete as $item) {
+            @unlink($item['path']);
+        }
     }
 }
 
 /**
+ * Comprehensive Full Website, Codebase and Pipeline Backup Routine
+ */
+function createFullSystemBackup($backupType = 'FULL_SYSTEM_SNAPSHOT', $notes = '') {
+    $backupDir = __DIR__ . '/../config/backups';
+    if (!is_dir($backupDir)) {
+        @mkdir($backupDir, 0755, true);
+    }
+    $ts = date('Ymd_His');
+    $author = $_SESSION['admin_username'] ?? ($_SESSION['staff_username'] ?? 'System/IT');
+    if (empty($notes)) {
+        $notes = 'Full system snapshot: Codebase ZIP + MySQL SQL Dump + Pipeline Manifest';
+    }
+
+    // 1. Codebase ZIP snapshot
+    $codebaseFile = 'codebase_snapshot_' . $ts . '.zip';
+    $codebaseRes = createCodebaseZipArchive($codebaseFile);
+
+    // 2. Database SQL dump
+    $sqlFile = 'database_dump_' . $ts . '.sql';
+    $sqlRes = createDatabaseSqlDump($sqlFile);
+
+    // 3. Settings & Pipeline Manifest JSON
+    $settings = function_exists('getSiteSettings') ? getSiteSettings() : [];
+    $manifestFile = 'pipeline_manifest_' . $ts . '.json';
+    $manifestPath = $backupDir . '/' . $manifestFile;
+    $manifestData = [
+        'timestamp'        => date('Y-m-d H:i:s'),
+        'backup_type'      => $backupType,
+        'codebase_archive' => $codebaseFile,
+        'codebase_size'    => $codebaseRes['file_size'] ?? 0,
+        'database_dump'    => $sqlFile,
+        'database_size'    => $sqlRes['file_size'] ?? 0,
+        'portfolio_count'  => count($settings['portfolio_items'] ?? []),
+        'bts_count'        => count($settings['bts_items'] ?? []),
+        'brands_count'     => count($settings['brand_logos_items'] ?? []),
+        'clients_count'    => count($settings['registered_clients'] ?? []),
+        'author'           => $author,
+        'php_version'      => PHP_VERSION,
+        'settings'         => $settings
+    ];
+    @file_put_contents($manifestPath, json_encode($manifestData, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES), LOCK_EX);
+
+    // 4. Downloader Telemetry CSV
+    $dlFile = 'client_downloads_' . $ts . '.csv';
+    $dlPath = $backupDir . '/' . $dlFile;
+    $dlHandle = @fopen($dlPath, 'w');
+    if ($dlHandle) {
+        fputcsv($dlHandle, ['Log ID', 'Client Name', 'Client Email', 'Client Phone', 'Album ID', 'Album Title', 'Download Type', 'IP Address', 'Downloaded At']);
+        $logs = function_exists('getClientDownloadLogs') ? getClientDownloadLogs(2000) : [];
+        foreach ($logs as $row) {
+            fputcsv($dlHandle, [
+                $row['id'] ?? '',
+                $row['client_name'] ?? '',
+                $row['client_email'] ?? '',
+                $row['client_phone'] ?? '',
+                $row['album_id'] ?? '',
+                $row['album_title'] ?? '',
+                $row['download_type'] ?? '',
+                $row['ip_address'] ?? '',
+                $row['downloaded_at'] ?? ''
+            ]);
+        }
+        fclose($dlHandle);
+    }
+
+    // 5. System Backups CSV
+    $bkFile = 'system_backups_' . $ts . '.csv';
+    $bkPath = $backupDir . '/' . $bkFile;
+    $bkHandle = @fopen($bkPath, 'w');
+    if ($bkHandle) {
+        fputcsv($bkHandle, ['Backup ID', 'Backup Type', 'Filename', 'File Size (Bytes)', 'Items Count', 'Notes', 'Created By', 'Created At']);
+        $backups = function_exists('getSystemBackups') ? getSystemBackups(500) : [];
+        foreach ($backups as $row) {
+            fputcsv($bkHandle, [
+                $row['id'] ?? '',
+                $row['backup_type'] ?? '',
+                $row['filename'] ?? '',
+                $row['file_size'] ?? '',
+                $row['items_count'] ?? '',
+                $row['notes'] ?? '',
+                $row['created_by'] ?? '',
+                $row['created_at'] ?? ''
+            ]);
+        }
+        fclose($bkHandle);
+    }
+
+    // 6. Log snapshot to MySQL and local ledger
+    $itemsCount = count($settings['portfolio_items'] ?? []);
+    logSystemBackup($manifestFile, $backupType, $itemsCount, $notes);
+    if (!empty($codebaseRes['success'])) {
+        logSystemBackup($codebaseFile, 'CODEBASE_ZIP', $codebaseRes['files_count'] ?? 0, 'Complete codebase ZIP snapshot');
+    }
+    if (!empty($sqlRes['success'])) {
+        logSystemBackup($sqlFile, 'DATABASE_SQL', $sqlRes['tables_count'] ?? 0, 'Full MySQL schema & pipeline data dump');
+    }
+
+    // 7. Auto prune older backups (rolling 30 snapshots)
+    pruneOldBackups(30);
+
+    return [
+        'success'       => true,
+        'timestamp'     => date('Y-m-d H:i:s'),
+        'codebase_zip'  => $codebaseFile,
+        'database_sql'  => $sqlFile,
+        'manifest_json' => $manifestFile,
+        'dl_csv'        => $dlFile,
+        'bk_csv'        => $bkFile,
+        'items_count'   => $itemsCount,
+        'notes'         => $notes
+    ];
+}
+
+/**
  * Retrieve system backup logs with disk scan fallback
- * Merges MySQL records and physical disk archives so history is NEVER empty
+ * Merges MySQL records, ledger entries, and physical disk archives so history is NEVER empty
  */
 function getSystemBackups($limit = 100) {
     $pdo = function_exists('getDBConnection') ? getDBConnection() : null;
@@ -595,15 +953,27 @@ function getSystemBackups($limit = 100) {
         }
     }
 
-    // Disk archive scan fallback and merge
+    // Disk ledger and physical scan fallback
     $backupDir = __DIR__ . '/../config/backups';
+    $ledgerPath = $backupDir . '/backups_ledger.json';
+    $ledger = file_exists($ledgerPath) ? json_decode(@file_get_contents($ledgerPath), true) : [];
+    if (is_array($ledger)) {
+        $existingFilenames = array_map('strtolower', array_column($dbBackups, 'filename'));
+        foreach ($ledger as $item) {
+            if (!in_array(strtolower($item['filename'] ?? ''), $existingFilenames, true)) {
+                $dbBackups[] = $item;
+                $existingFilenames[] = strtolower($item['filename']);
+            }
+        }
+    }
+
     if (is_dir($backupDir)) {
         $files = scandir($backupDir);
         $existingFilenames = array_map('strtolower', array_column($dbBackups, 'filename'));
         $idCounter = count($dbBackups) + 1;
 
         foreach ($files as $file) {
-            if ($file === '.' || $file === '..' || !preg_match('/\.(json|csv)$/i', $file)) {
+            if ($file === '.' || $file === '..' || $file === 'backups_ledger.json' || !preg_match('/\.(json|csv|zip|sql)$/i', $file)) {
                 continue;
             }
             if (in_array(strtolower($file), $existingFilenames, true)) {
@@ -613,7 +983,11 @@ function getSystemBackups($limit = 100) {
             $filePath = $backupDir . '/' . $file;
             $fsize = file_exists($filePath) ? filesize($filePath) : 0;
             $mtime = file_exists($filePath) ? filemtime($filePath) : time();
-            $bType = str_starts_with($file, 'full_backup') ? 'FULL_BUNDLE' : (str_starts_with($file, 'settings_pre_deploy') ? 'DEPLOY_SNAPSHOT' : 'SNAPSHOT');
+            $bType = str_starts_with($file, 'codebase_snapshot') ? 'CODEBASE_ZIP' :
+                    (str_starts_with($file, 'database_dump') ? 'DATABASE_SQL' :
+                    (str_starts_with($file, 'pipeline_manifest') ? 'FULL_SYSTEM' :
+                    (str_starts_with($file, 'full_backup') ? 'FULL_BUNDLE' :
+                    (str_starts_with($file, 'settings_pre_deploy') ? 'DEPLOY_SNAPSHOT' : 'SNAPSHOT'))));
 
             $dbBackups[] = [
                 'id'          => $idCounter++,
@@ -621,10 +995,11 @@ function getSystemBackups($limit = 100) {
                 'filename'    => $file,
                 'file_size'   => $fsize,
                 'items_count' => 0,
-                'notes'       => 'Disk Archive Restore Point',
+                'notes'       => 'Physical Disk Restore Point',
                 'created_by'  => 'System/Disk',
                 'created_at'  => date('Y-m-d H:i:s', $mtime)
             ];
+            $existingFilenames[] = strtolower($file);
         }
     }
 
