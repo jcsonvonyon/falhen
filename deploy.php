@@ -206,6 +206,18 @@ if ($action === 'probe_db') {
                 }
             }
         }
+        $checkDirs = [
+            '/home/henadinnovate/.softaculous',
+            '/home/henadinnovate/falhenmedia.com',
+            '/home/henadinnovate/henadinnovate.com',
+            '/home/henadinnovate/backup-10.15.2025_19-25-41_henavwib/mysql'
+        ];
+        foreach ($checkDirs as $cd) {
+            if (is_dir($cd)) {
+                $subF = @scandir($cd) ?: [];
+                $info[] = "Scandir {$cd}: " . implode(', ', array_diff($subF, ['.', '..']));
+            }
+        }
         $myCnf = '/home/henadinnovate/.my.cnf';
         if (file_exists($myCnf)) {
             $info[] = "Found .my.cnf: " . file_get_contents($myCnf);
