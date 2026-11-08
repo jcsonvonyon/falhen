@@ -70,7 +70,10 @@ function getDBConnection() {
     return $pdo;
 }
 
-function initDatabaseSchema($pdo) {
+function initDatabaseSchema($pdo = null) {
+    if (!$pdo) {
+        $pdo = getDBConnection();
+    }
     if (!$pdo) return;
     static $initialized = false;
     if ($initialized) return;
