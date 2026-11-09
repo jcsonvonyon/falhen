@@ -155,7 +155,7 @@ $action = $_GET['action'] ?? $_POST['action'] ?? 'deploy';
 
 if ($action === 'probe_db') {
     $hosts = ['localhost', '127.0.0.1'];
-    $users = ['henadinn_falhen_user', 'henadinn_falhen', 'henadinn_user', 'henadinn', 'root'];
+    $users = ['henadinn_falhen_user', 'henadinn_falhen', 'henadinn_user', 'henadinn', 'henajjkr_falhen_user', 'henajjkr_falhen', 'henajjkr_user', 'henajjkr', 'root'];
     $passes = [
         'FalhenMedia2026!#',
         'Oluwatosin25#',
@@ -172,7 +172,7 @@ if ($action === 'probe_db') {
         'Password123#',
         ''
     ];
-    $dbs = ['henadinn_falhen_db', 'henadinn_falhen', 'falhen_db'];
+    $dbs = ['henadinn_falhen_db', 'henadinn_falhen', 'henajjkr_falhen_db', 'henajjkr_falhen', 'falhen_db'];
     
     $found = false;
     foreach ($hosts as $h) {
@@ -222,7 +222,7 @@ if ($action === 'probe_db') {
                 $info[] = "Scandir {$cd}: " . implode(', ', array_diff($subF, ['.', '..']));
             }
         }
-        foreach (['/home/henadinnovate/.cpanel/datastore/mysql-db-cache', '/home/henadinnovate/.cpanel/datastore/_DATADIR_'] as $cf) {
+        foreach (['/home/henadinnovate/.cpanel/datastore/mysql-db-count', '/home/henadinnovate/.cpanel/datastore/mysql-db-cache', '/home/henadinnovate/.cpanel/datastore/_DATADIR_'] as $cf) {
             if (file_exists($cf)) {
                 $info[] = "Found {$cf}: " . substr(file_get_contents($cf), 0, 500);
             }
