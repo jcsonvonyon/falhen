@@ -205,11 +205,20 @@ if ($action === 'probe_db') {
                 }
             }
         }
-        $myCnf = '/home/henadinnovate/.my.cnf';
-        if (file_exists($myCnf)) {
-            $info[] = "Found .my.cnf: " . file_get_contents($myCnf);
-        } else {
-            $info[] = "No .my.cnf found.";
+        $dbMetaFiles = [
+            '/var/cpanel/databases/henadinnovate.yaml',
+            '/var/cpanel/databases/henadinnovate.json',
+            '/home/henadinnovate/.cpanel/nvdata/henadinnovate',
+            '/home/henadinnovate/.cpanel/nvdata_cache'
+        ];
+        foreach ($dbMetaFiles as $mf) {
+            if (file_exists($mf) && is_readable($mf)) {
+                $info[] = "Found {$mf}: " . substr(file_get_contents($mf), 0, 1000);
+            }
+        }
+        $nvdir = '/home/henadinnovate/.cpanel/nvdata';
+        if (is_dir($nvdir)) {
+            $info[] = "Scandir {$nvdir}: " . implode(', ', @scandir($nvdir) ?: []);
         }
         $checkDirs = [
             '/home/henadinnovate/.softaculous',
