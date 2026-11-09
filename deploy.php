@@ -153,7 +153,14 @@ putenv("HOME=/home/henadinnovate");
 
 $action = $_GET['action'] ?? $_POST['action'] ?? 'deploy';
 
-if ($action === 'probe_db') {
+if ($action === 'cat_error_log') {
+    foreach ([__DIR__ . '/error_log', __DIR__ . '/admin/error_log', '/home/henadinnovate/falhen.com/error_log'] as $ef) {
+        if (file_exists($ef)) {
+            echo "=== {$ef} ===\n" . substr(file_get_contents($ef), -3000) . "\n";
+        }
+    }
+    exit;
+}
     $hosts = ['localhost', '127.0.0.1'];
     $users = ['henadinnovate_falhen', 'henadinnovate_falhenmedia', 'henadinnovate_hub'];
     $passes = ['FalhenMedia2026!#', 'Oluwatosin25#'];
