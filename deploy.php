@@ -211,6 +211,22 @@ if ($action === 'probe_db') {
         } else {
             $info[] = "No .my.cnf found.";
         }
+        $checkDirs = [
+            '/home/henadinnovate/.softaculous',
+            '/home/henadinnovate/.cpanel/datastore',
+            '/home/henadinnovate/etc/falhen.com'
+        ];
+        foreach ($checkDirs as $cd) {
+            if (is_dir($cd)) {
+                $subF = @scandir($cd) ?: [];
+                $info[] = "Scandir {$cd}: " . implode(', ', array_diff($subF, ['.', '..']));
+            }
+        }
+        foreach (['/home/henadinnovate/.cpanel/datastore/mysql-db-cache', '/home/henadinnovate/.cpanel/datastore/_DATADIR_'] as $cf) {
+            if (file_exists($cf)) {
+                $info[] = "Found {$cf}: " . substr(file_get_contents($cf), 0, 500);
+            }
+        }
         foreach (['/home/henadinnovate/.env', '/home/henadinnovate/falhen.com/.env', dirname(__DIR__) . '/.env'] as $ef) {
             if (file_exists($ef)) {
                 $info[] = "Found {$ef}: " . file_get_contents($ef);
