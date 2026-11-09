@@ -223,7 +223,7 @@ if ($action === 'probe_db') {
             }
         }
         foreach (['/home/henadinnovate/.cpanel/datastore/mysql-db-count', '/home/henadinnovate/.cpanel/datastore/mysql-db-cache', '/home/henadinnovate/.cpanel/datastore/_DATADIR_'] as $cf) {
-            if (file_exists($cf)) {
+            if (file_exists($cf)) { $info[] = "File $cf: [" . trim(file_get_contents($cf)) . "]";
                 $info[] = "Found {$cf}: " . substr(file_get_contents($cf), 0, 500);
             }
         }
