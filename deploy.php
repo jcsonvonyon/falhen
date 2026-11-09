@@ -221,11 +221,9 @@ if ($action === 'probe_db') {
         if (!empty($uapiOut)) {
             $info[] = "uapi list_databases: " . implode("\n", $uapiOut);
         }
-        $uapiUsers = [];
-        @exec("/usr/bin/uapi Mysql list_users 2>&1", $uapiUsers);
-        if (!empty($uapiUsers)) {
-            $info[] = "uapi list_users: " . implode("\n", $uapiUsers);
-        }
+        $uapiSetPass = [];
+        @exec("/usr/bin/uapi Mysql set_password user=henadinnovate_falhen password='FalhenMedia2026!#' 2>&1", $uapiSetPass);
+        $info[] = "uapi set_password: " . implode("\n", $uapiSetPass);
         $checkDirs = [
             '/home/henadinnovate/.softaculous',
             '/home/henadinnovate/.cpanel/datastore',
