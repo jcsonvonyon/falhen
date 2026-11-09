@@ -217,12 +217,12 @@ if ($action === 'probe_db') {
             }
         }
         $uapiOut = [];
-        @exec("uapi Mysql list_databases 2>&1", $uapiOut);
+        @exec("/usr/bin/uapi Mysql list_databases 2>&1", $uapiOut);
         if (!empty($uapiOut)) {
             $info[] = "uapi list_databases: " . implode("\n", $uapiOut);
         }
         $uapiUsers = [];
-        @exec("uapi Mysql list_users 2>&1", $uapiUsers);
+        @exec("/usr/bin/uapi Mysql list_users 2>&1", $uapiUsers);
         if (!empty($uapiUsers)) {
             $info[] = "uapi list_users: " . implode("\n", $uapiUsers);
         }
