@@ -153,14 +153,14 @@ putenv("HOME=/home/henadinnovate");
 
 $action = $_GET['action'] ?? $_POST['action'] ?? 'deploy';
 
-if ($action === 'cat_error_log') {
-    foreach ([__DIR__ . '/error_log', __DIR__ . '/admin/error_log', '/home/henadinnovate/falhen.com/error_log'] as $ef) {
-        if (file_exists($ef)) {
-            echo "=== {$ef} ===\n" . substr(file_get_contents($ef), -3000) . "\n";
-        }
-    }
+if ($action === 'lint_admin') {
+    $out = [];
+    exec("php -l " . escapeshellarg(__DIR__ . '/admin/index.php') . " 2>&1", $out);
+    echo implode("\n", $out);
     exit;
 }
+
+if ($action === 'probe_db') {
     $hosts = ['localhost', '127.0.0.1'];
     $users = ['henadinnovate_falhen', 'henadinnovate_falhenmedia', 'henadinnovate_hub'];
     $passes = ['FalhenMedia2026!#', 'Oluwatosin25#'];
@@ -184,6 +184,7 @@ if ($action === 'cat_error_log') {
     }
     echo "FAILED: Unable to connect\n";
     exit;
+}
 }
 
 if ($action === 'stash_list') {
