@@ -185,7 +185,6 @@ if ($action === 'probe_db') {
     echo "FAILED: Unable to connect\n";
     exit;
 }
-}
 
 if ($action === 'stash_list') {
     $out = [];

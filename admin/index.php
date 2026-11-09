@@ -20984,12 +20984,6 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                 updatePosterPreview('/assets/img/hero.jpg');
             }
         }
-            if (posterInput) {
-                posterInput.value = 'https://res.cloudinary.com/pnabfi91/image/upload/v1786578372/falhen/uploads/r96mxsji9cdogqrkxwoe.jpg';
-                updatePosterPreview(posterInput.value);
-            }
-            syncHeroStageMedia();
-        }
 
         // Stats Section Real-Time Preview
         function updateStatsPreview() {
