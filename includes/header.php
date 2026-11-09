@@ -31,11 +31,60 @@ $currentSlug = preg_replace('/\.php$/', '', $currentPage);
     <title><?php echo isset($pageTitle) ? htmlspecialchars($pageTitle) . ' | Falhen Media' : 'Falhen Video Production | Visual Storytelling'; ?></title>
     <meta name="description" content="Falhen is a full-service media production company specializing in video production, post-production, live streaming, animation, wedding coverage & content strategy.">
     <meta name="keywords" content="video production, photography, concert production, live streaming, animation motion graphics, wedding videography, creative services">
+    <meta name="author" content="Falhen Media">
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
     
-    <!-- Open Graph -->
-    <meta property="og:title" content="<?php echo isset($pageTitle) ? htmlspecialchars($pageTitle) . ' | Falhen Media' : 'Falhen Media | Video Production Agency'; ?>">
-    <meta property="og:description" content="Award-winning visual storytelling for brands worldwide.">
+    <!-- Canonical URL -->
+    <link rel="canonical" href="https://www.falhen.com<?php echo htmlspecialchars(explode('?', $_SERVER['REQUEST_URI'] ?? '/')[0]); ?>">
+
+    <!-- Open Graph Metadata -->
+    <?php
+    $ogImg = !empty($heroMedia['poster_desktop']) ? $heroMedia['poster_desktop'] : 'https://res.cloudinary.com/pnabfi91/image/upload/f_auto,q_auto,w_1200,h_630,c_fill/v1786578372/falhen/uploads/r96mxsji9cdogqrkxwoe.jpg';
+    $ogTitle = isset($pageTitle) ? htmlspecialchars($pageTitle) . ' | Falhen Media' : 'Falhen Video Production | Visual Storytelling';
+    $ogDesc = 'Award-winning visual storytelling and full-service media production for brands worldwide.';
+    ?>
+    <meta property="og:site_name" content="Falhen Media">
+    <meta property="og:title" content="<?php echo $ogTitle; ?>">
+    <meta property="og:description" content="<?php echo $ogDesc; ?>">
+    <meta property="og:url" content="https://www.falhen.com<?php echo htmlspecialchars(explode('?', $_SERVER['REQUEST_URI'] ?? '/')[0]); ?>">
     <meta property="og:type" content="website">
+    <meta property="og:image" content="<?php echo htmlspecialchars($ogImg); ?>">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+
+    <!-- Twitter Card Metadata -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:site" content="@falhenmedia">
+    <meta name="twitter:title" content="<?php echo $ogTitle; ?>">
+    <meta name="twitter:description" content="<?php echo $ogDesc; ?>">
+    <meta name="twitter:image" content="<?php echo htmlspecialchars($ogImg); ?>">
+
+    <!-- Schema.org JSON-LD Structured Data -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "VideoProductionService",
+          "@id": "https://www.falhen.com/#service",
+          "name": "Falhen Media",
+          "url": "https://www.falhen.com",
+          "logo": "https://www.falhen.com/assets/img/icons/logo.png",
+          "image": "https://res.cloudinary.com/pnabfi91/image/upload/v1786578372/falhen/uploads/r96mxsji9cdogqrkxwoe.jpg",
+          "description": "Full-service media production company specializing in commercial video, post-production, live streaming, event cinema & visual storytelling.",
+          "telephone": "+1-312-555-0199",
+          "email": "info@falhen.com",
+          "areaServed": "Global"
+        },
+        {
+          "@type": "WebSite",
+          "@id": "https://www.falhen.com/#website",
+          "url": "https://www.falhen.com",
+          "name": "Falhen Media"
+        }
+      ]
+    }
+    </script>
     
     <!-- Resource Hints & Preloads for Instant Mobile/Slow-Network Paint -->
     <link rel="preconnect" href="https://res.cloudinary.com" crossorigin>

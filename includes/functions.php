@@ -545,6 +545,85 @@ function resolveHeroStatsConfig($settings = null) {
 }
 
 /**
+ * Get Production BTS Repository with authentic Cloudinary photography fallback
+ */
+function getProductionBtsRepo() {
+    $settings = getSiteSettings();
+    $rawItems = $settings['bts_items'] ?? [];
+
+    $authenticBtsDefaults = [
+        [
+            'id' => 1,
+            'title' => 'On set — RedBull Campaign, Dubai 2024',
+            'subtitle' => 'Director reviewing footage on set',
+            'image' => 'https://res.cloudinary.com/pnabfi91/image/upload/v1791380693/falhen/bts/uc34zifoyzeyyqvsm5qj.jpg',
+            'visible' => true
+        ],
+        [
+            'id' => 2,
+            'title' => 'ARRI ALEXA Mini LF — lens prep',
+            'subtitle' => 'Camera rig setup',
+            'image' => 'https://res.cloudinary.com/pnabfi91/image/upload/v1791380709/falhen/bts/yqjuxtubd9ka0gyqw68c.jpg',
+            'visible' => true
+        ],
+        [
+            'id' => 3,
+            'title' => 'Lighting rig — HBO Teaser, Cape Town',
+            'subtitle' => 'Lighting setup',
+            'image' => 'https://res.cloudinary.com/pnabfi91/image/upload/v1791380721/falhen/bts/gmw6x8ccznwrjbhsuhja.jpg',
+            'visible' => true
+        ],
+        [
+            'id' => 4,
+            'title' => 'Aerial Drone Scout — Kenya Safari',
+            'subtitle' => '4K aerial footage capture',
+            'image' => 'https://res.cloudinary.com/pnabfi91/image/upload/v1791380756/falhen/bts/ufjkbvwtqxd5f15uxx5h.jpg',
+            'visible' => true
+        ],
+        [
+            'id' => 5,
+            'title' => 'Post-Production Suite — Color Grading',
+            'subtitle' => 'DaVinci Resolve studio session',
+            'image' => 'https://res.cloudinary.com/pnabfi91/image/upload/v1791380765/falhen/bts/bqpxfuekjfuqrbq1sqed.jpg',
+            'visible' => true
+        ],
+        [
+            'id' => 6,
+            'title' => 'Wedding Cinema Shoot — Sunset',
+            'subtitle' => 'Romantic Golden Hour capture',
+            'image' => 'https://res.cloudinary.com/pnabfi91/image/upload/v1791380777/falhen/bts/hu9buzs1ccakow1eqsna.jpg',
+            'visible' => true
+        ]
+    ];
+
+    if (empty($rawItems) || !is_array($rawItems)) {
+        return $authenticBtsDefaults;
+    }
+
+    $sanitized = [];
+    foreach ($rawItems as $it) {
+        if (!is_array($it)) continue;
+        $img = trim((string)($it['image'] ?? ''));
+        // If image is an unsplash stock url or empty, replace with authentic default counterpart
+        if (empty($img) || strpos($img, 'unsplash.com') !== false) {
+            $defMatch = array_values(array_filter($authenticBtsDefaults, fn($d) => ($d['id'] ?? 0) == ($it['id'] ?? 0)));
+            if (!empty($defMatch)) {
+                $img = $defMatch[0]['image'];
+            }
+        }
+        $sanitized[] = [
+            'id'       => $it['id'] ?? (count($sanitized) + 1),
+            'title'    => trim((string)($it['title'] ?? '')),
+            'subtitle' => trim((string)($it['subtitle'] ?? '')),
+            'image'    => $img ?: '/assets/img/hero.jpg',
+            'visible'  => array_key_exists('visible', $it) ? (bool)$it['visible'] : true
+        ];
+    }
+
+    return !empty($sanitized) ? $sanitized : $authenticBtsDefaults;
+}
+
+/**
  * Get YouTube Thumbnail URL for a video ID or URL
  */
 function getYouTubeThumbnailUrl($urlOrId, $quality = 'hqdefault') {

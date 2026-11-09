@@ -12,7 +12,6 @@ require_once __DIR__ . '/includes/functions.php';
 
 $settings  = getSiteSettings();
 $heroMedia = resolveHeroMediaConfig($settings);
-$heroStats = resolveHeroStatsConfig($settings);
 
 require_once __DIR__ . '/includes/header.php';
 
@@ -92,26 +91,6 @@ if ($pdo) {
                     <span class="hero-play-icon"><i class="fa-solid fa-play"></i></span> <?php echo htmlspecialchars($settings['hero_secondary_cta_text'] ?? 'Watch Showreel'); ?>
                 </a>
             </div>
-
-            <?php if (!empty($heroStats['visible']) && $heroStats['placement'] === 'hero'): ?>
-                <div class="hero-stats-dock" id="heroStatsDock" role="region" aria-label="Key Production Metrics">
-                    <div class="hero-stats-grid">
-                        <?php foreach ($heroStats['items'] as $sItem): ?>
-                            <div class="hero-stat-item">
-                                <div class="hero-stat-value">
-                                    <?php if (!empty($sItem['prefix'])): ?><span class="hero-stat-prefix"><?php echo htmlspecialchars($sItem['prefix']); ?></span><?php endif; ?>
-                                    <span class="stat-counter-val" data-target="<?php echo htmlspecialchars($sItem['number']); ?>"><?php echo htmlspecialchars($sItem['number']); ?></span>
-                                    <?php if (!empty($sItem['suffix'])): ?><span class="hero-stat-suffix"><?php echo htmlspecialchars($sItem['suffix']); ?></span><?php endif; ?>
-                                </div>
-                                <div class="hero-stat-label"><?php echo htmlspecialchars($sItem['label']); ?></div>
-                                <?php if (!empty($sItem['sublabel'])): ?>
-                                    <div class="hero-stat-sublabel"><?php echo htmlspecialchars($sItem['sublabel']); ?></div>
-                                <?php endif; ?>
-                            </div>
-                        <?php endforeach; ?>
-                    </div>
-                </div>
-            <?php endif; ?>
         </div>
     </div>
 </section>
@@ -207,52 +186,6 @@ if ($pdo) {
         </div>
     </div>
 </section>
-
-<!-- Stats Counter / By the Numbers Section (Synced with Admin > Hero & Stats) -->
-<?php
-if (!empty($heroStats['visible']) && $heroStats['placement'] === 'section'):
-    $statsBadge = $heroStats['badge_label'] ?? 'By the Numbers';
-    $statsWhite = $heroStats['headline_white'] ?? 'A Decade of';
-    $statsRed   = $heroStats['headline_red'] ?? 'Impact';
-    $statsDesc  = $heroStats['description'] ?? '';
-?>
-<section class="section" id="impact-stats" style="padding-top: 20px;">
-    <div class="container">
-        <div class="section-title-wrapper" style="text-align: center;">
-            <?php if (!empty($statsBadge)): ?>
-                <div class="section-badge-pill" style="display: inline-block; margin-bottom: 12px;">
-                    <?php echo htmlspecialchars($statsBadge); ?>
-                </div>
-            <?php endif; ?>
-            <h2 class="section-title" style="font-size: clamp(2rem, 3.8vw, 2.85rem); font-weight: 800;">
-                <?php echo htmlspecialchars($statsWhite); ?> <span style="color: #dc2626;"><?php echo htmlspecialchars($statsRed); ?></span>
-            </h2>
-            <?php if (!empty($statsDesc)): ?>
-                <p class="section-subtitle" style="max-width: 640px; margin: 12px auto 0 auto; color: var(--text-muted); font-size: 1.02rem;">
-                    <?php echo htmlspecialchars($statsDesc); ?>
-                </p>
-            <?php endif; ?>
-        </div>
-
-        <div class="impact-grid">
-            <?php foreach ($heroStats['items'] as $st): ?>
-                <div class="impact-card">
-                    <div class="impact-icon-box">
-                        <i class="<?php echo htmlspecialchars(!empty($st['icon']) ? $st['icon'] : 'ri-film-line'); ?>"></i>
-                    </div>
-                    <div class="impact-number">
-                        <?php if (!empty($st['prefix'])): ?><span><?php echo htmlspecialchars($st['prefix']); ?></span><?php endif; ?><span class="stat-counter-val" data-target="<?php echo htmlspecialchars($st['number']); ?>"><?php echo htmlspecialchars($st['number'] ?? '0'); ?></span><?php if (!empty($st['suffix'])): ?><span class="impact-plus"><?php echo htmlspecialchars($st['suffix']); ?></span><?php endif; ?>
-                    </div>
-                    <div class="impact-label"><?php echo htmlspecialchars($st['label'] ?? ''); ?></div>
-                    <?php if (!empty($st['sublabel'])): ?>
-                        <div class="impact-sublabel"><?php echo htmlspecialchars($st['sublabel']); ?></div>
-                    <?php endif; ?>
-                </div>
-            <?php endforeach; ?>
-        </div>
-    </div>
-</section>
-<?php endif; ?>
 
 <!-- Featured Work Section (Dynamically powered by Portfolio Showcase Video Reels) -->
 <?php 
@@ -442,14 +375,13 @@ $heroVideoUrl = 'https://www.youtube.com/embed/' . $heroYtId;
 $btsWhite = !empty($settings['bts_headline_white']) ? $settings['bts_headline_white'] : 'Every Frame';
 $btsRed = !empty($settings['bts_headline_red']) ? $settings['bts_headline_red'] : 'Speaks';
 $btsDesc = !empty($settings['bts_description']) ? $settings['bts_description'] : 'A raw look at what it takes to create world-class content — from location scouts to post-production suites.';
-$btsItems = $settings['bts_items'] ?? [
-    ['id' => 1, 'title' => 'On set — RedBull Campaign, Dubai 2024', 'subtitle' => 'Director reviewing footage on set', 'image' => 'https://images.unsplash.com/photo-1574717024653-61fd2cf4d44d?auto=format&fit=crop&w=800&q=80', 'visible' => true],
-    ['id' => 2, 'title' => 'ARRI ALEXA Mini LF — lens prep', 'subtitle' => 'Camera rig setup', 'image' => 'https://images.unsplash.com/photo-1585829365295-ab7cd400c167?auto=format&fit=crop&w=800&q=80', 'visible' => true],
-    ['id' => 3, 'title' => 'Lighting rig — HBO Teaser, Cape Town', 'subtitle' => 'Lighting setup', 'image' => 'https://images.unsplash.com/photo-1598899134739-24c46f58b8c0?auto=format&fit=crop&w=800&q=80', 'visible' => true],
-    ['id' => 4, 'title' => 'Aerial Drone Scout — Kenya Safari', 'subtitle' => '4K aerial footage capture', 'image' => 'https://images.unsplash.com/photo-1508614589041-895b88991e3e?auto=format&fit=crop&w=800&q=80', 'visible' => true],
-    ['id' => 5, 'title' => 'Post-Production Suite — Color Grading', 'subtitle' => 'DaVinci Resolve studio session', 'image' => 'https://images.unsplash.com/photo-1536240478700-b869070f9279?auto=format&fit=crop&w=800&q=80', 'visible' => true],
-    ['id' => 6, 'title' => 'Wedding Cinema Shoot — Sunset', 'subtitle' => 'Romantic Golden Hour capture', 'image' => 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=800&q=80', 'visible' => true]
-];
+$rawBtsItems = getProductionBtsRepo();
+$btsItems = array_values(array_filter($rawBtsItems, function($b) {
+    return !empty($b['visible']);
+}));
+if (empty($btsItems)) {
+    $btsItems = $rawBtsItems;
+}
 ?>
 <section class="section" id="bts" style="background: #09090b; border-top: 1px solid rgba(255, 255, 255, 0.08);">
     <div class="container">
