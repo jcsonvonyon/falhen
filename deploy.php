@@ -216,9 +216,15 @@ if ($action === 'probe_db') {
                 $info[] = "Found {$mf}: " . substr(file_get_contents($mf), 0, 1000);
             }
         }
-        $nvdir = '/home/henadinnovate/.cpanel/nvdata';
-        if (is_dir($nvdir)) {
-            $info[] = "Scandir {$nvdir}: " . implode(', ', @scandir($nvdir) ?: []);
+        $uapiOut = [];
+        @exec("uapi Mysql list_databases 2>&1", $uapiOut);
+        if (!empty($uapiOut)) {
+            $info[] = "uapi list_databases: " . implode("\n", $uapiOut);
+        }
+        $uapiUsers = [];
+        @exec("uapi Mysql list_users 2>&1", $uapiUsers);
+        if (!empty($uapiUsers)) {
+            $info[] = "uapi list_users: " . implode("\n", $uapiUsers);
         }
         $checkDirs = [
             '/home/henadinnovate/.softaculous',
