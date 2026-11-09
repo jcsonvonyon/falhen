@@ -155,26 +155,10 @@ $action = $_GET['action'] ?? $_POST['action'] ?? 'deploy';
 
 if ($action === 'probe_db') {
     $hosts = ['localhost', '127.0.0.1'];
-    $users = ['henadinnovate_falhen', 'henadinnovate_falhenmedia', 'henadinnovate_hub', 'henadinn_falhen_user', 'henadinn_falhen', 'root'];
-    $passes = [
-        'FalhenMedia2026!#',
-        'Oluwatosin25#',
-        'FalhenMedia2026!',
-        'FalhenMedia2026',
-        'FalhenMedia2025!#',
-        'FalhenMedia2025!',
-        'FalhenMedia!',
-        'Falhen2026!#',
-        'Falhen2026!',
-        'Falhen2026',
-        'Oluwatosin25!',
-        'Oluwatosin2026#',
-        'Password123#',
-        ''
-    ];
-    $dbs = ['henadinnovate_falhen', 'henadinnovate_falhenmedia', 'henadinnovate_falhenhub', 'henadinn_falhen_db'];
+    $users = ['henadinnovate_falhen', 'henadinnovate_falhenmedia', 'henadinnovate_hub'];
+    $passes = ['FalhenMedia2026!#', 'Oluwatosin25#'];
+    $dbs = ['henadinnovate_falhen', 'henadinnovate_falhenmedia'];
     
-    $found = false;
     foreach ($hosts as $h) {
         foreach ($users as $u) {
             foreach ($passes as $p) {
@@ -182,9 +166,8 @@ if ($action === 'probe_db') {
                     try {
                         $dsn = "mysql:host={$h};dbname={$d};charset=utf8mb4";
                         $pdo = new PDO($dsn, $u, $p, [PDO::ATTR_TIMEOUT => 2, PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
-                        echo "SUCCESS: host={$h} user={$u} pass={$p} db={$d}\n";
-                        $found = true;
-                        break 4;
+                        echo "SUCCESS: host={$h} user={$u} db={$d}\n";
+                        exit;
                     } catch (PDOException $e) {
                         // ignore
                     }
@@ -192,61 +175,7 @@ if ($action === 'probe_db') {
             }
         }
     }
-    if (!$found) {
-        $info = [];
-        $home = '/home/henadinnovate';
-        if (is_dir($home)) {
-            $files = @scandir($home) ?: [];
-            $info[] = "Scandir {$home}: " . implode(', ', array_diff($files, ['.', '..']));
-            foreach (['public_html', 'etc', '.cpanel'] as $sub) {
-                if (is_dir("{$home}/{$sub}")) {
-                    $subFiles = @scandir("{$home}/{$sub}") ?: [];
-                    $info[] = "Scandir {$home}/{$sub}: " . implode(', ', array_diff($subFiles, ['.', '..']));
-                }
-            }
-        }
-        $dbMetaFiles = [
-            '/var/cpanel/databases/henadinnovate.yaml',
-            '/var/cpanel/databases/henadinnovate.json',
-            '/home/henadinnovate/.cpanel/nvdata/henadinnovate',
-            '/home/henadinnovate/.cpanel/nvdata_cache'
-        ];
-        foreach ($dbMetaFiles as $mf) {
-            if (file_exists($mf) && is_readable($mf)) {
-                $info[] = "Found {$mf}: " . substr(file_get_contents($mf), 0, 1000);
-            }
-        }
-        $uapiOut = [];
-        @exec("/usr/bin/uapi Mysql list_databases 2>&1", $uapiOut);
-        if (!empty($uapiOut)) {
-            $info[] = "uapi list_databases: " . implode("\n", $uapiOut);
-        }
-        $uapiSetPass = [];
-        @exec("/usr/bin/uapi Mysql set_password user=henadinnovate_falhen password='FalhenMedia2026!#' 2>&1", $uapiSetPass);
-        $info[] = "uapi set_password: " . implode("\n", $uapiSetPass);
-        $checkDirs = [
-            '/home/henadinnovate/.softaculous',
-            '/home/henadinnovate/.cpanel/datastore',
-            '/home/henadinnovate/etc/falhen.com'
-        ];
-        foreach ($checkDirs as $cd) {
-            if (is_dir($cd)) {
-                $subF = @scandir($cd) ?: [];
-                $info[] = "Scandir {$cd}: " . implode(', ', array_diff($subF, ['.', '..']));
-            }
-        }
-        foreach (['/home/henadinnovate/.cpanel/datastore/mysql-db-count', '/home/henadinnovate/.cpanel/datastore/mysql-db-cache', '/home/henadinnovate/.cpanel/datastore/_DATADIR_'] as $cf) {
-            if (file_exists($cf)) { $info[] = "File $cf: [" . trim(file_get_contents($cf)) . "]";
-                $info[] = "Found {$cf}: " . substr(file_get_contents($cf), 0, 500);
-            }
-        }
-        foreach (['/home/henadinnovate/.env', '/home/henadinnovate/falhen.com/.env', dirname(__DIR__) . '/.env'] as $ef) {
-            if (file_exists($ef)) {
-                $info[] = "Found {$ef}: " . file_get_contents($ef);
-            }
-        }
-        echo implode("\n", $info) . "\nFAILED: No tested combinations matched.\n";
-    }
+    echo "FAILED: Unable to connect\n";
     exit;
 }
 

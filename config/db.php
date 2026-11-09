@@ -47,12 +47,12 @@ $isCpanel = (strpos(__DIR__, 'henadinnovate') !== false || file_exists('/home/he
 if (is_array($customDBCreds) && !empty($customDBCreds['user'])) {
     $resolvedDbHost = $customDBCreds['host'] ?? ($isCpanel ? 'localhost' : '127.0.0.1');
     $resolvedDbPort = $customDBCreds['port'] ?? '3306';
-    $resolvedDbName = $customDBCreds['name'] ?? ($isCpanel ? 'henadinn_falhen_db' : 'falhen_db');
-    $resolvedDbUser = $customDBCreds['user'] ?? ($isCpanel ? 'henadinn_falhen_user' : 'root');
+    $resolvedDbName = $customDBCreds['name'] ?? ($isCpanel ? 'henadinnovate_falhen' : 'falhen_db');
+    $resolvedDbUser = $customDBCreds['user'] ?? ($isCpanel ? 'henadinnovate_falhen' : 'root');
     $resolvedDbPass = $customDBCreds['pass'] ?? '';
 } else {
-    $defaultDbName = $isCpanel ? 'henadinn_falhen_db' : 'falhen_db';
-    $defaultDbUser = $isCpanel ? 'henadinn_falhen_user' : 'root';
+    $defaultDbName = $isCpanel ? 'henadinnovate_falhen' : 'falhen_db';
+    $defaultDbUser = $isCpanel ? 'henadinnovate_falhen' : 'root';
     $defaultDbPass = $isCpanel ? 'FalhenMedia2026!#' : 'Oluwatosin25#';
     $defaultDbHost = $isCpanel ? 'localhost' : '127.0.0.1';
 
