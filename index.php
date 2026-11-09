@@ -343,7 +343,7 @@ $heroVideoUrl = 'https://www.youtube.com/embed/' . $heroYtId;
                         <?php endif; ?>
                         <div class="testimonial-footer">
                             <div class="testimonial-author">
-                                <img src="<?php echo htmlspecialchars(getCloudinaryUrl($tCard['avatar'] ?? 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80')); ?>" alt="<?php echo htmlspecialchars($tCard['name']); ?>" class="author-img" onerror="this.src='https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80';">
+                                <img src="<?php echo htmlspecialchars(getCloudinaryUrl($tCard['avatar'] ?? 'https://res.cloudinary.com/pnabfi91/image/upload/v1786712075/falhen/team/ctxjp9mymgqdh2ecg2hu.jpg')); ?>" alt="<?php echo htmlspecialchars($tCard['name']); ?>" class="author-img" onerror="this.onerror=null;this.src='/assets/img/icons/favicon.png';">
                                 <div>
                                     <div class="author-name"><?php echo htmlspecialchars($tCard['name']); ?></div>
                                     <div class="author-role"><?php echo htmlspecialchars(($tCard['role'] ?? '') . (!empty($tCard['company']) ? ', ' . $tCard['company'] : '')); ?></div>

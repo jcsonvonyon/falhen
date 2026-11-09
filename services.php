@@ -30,7 +30,7 @@ if (!empty($dynamicServices)) {
             'slug' => 'video-production',
             'title' => 'Video Production',
             'icon' => 'ri-video-line',
-            'image' => 'https://images.unsplash.com/photo-1574717024653-61fd2cf4d44d?auto=format&fit=crop&w=800&q=80',
+            'image' => 'https://res.cloudinary.com/pnabfi91/image/upload/v1791224271/falhen/portfolio/ysfriy8jlhhkcuzl8j16.jpg',
             'badge' => 'Cinema & TV',
             'desc' => 'Professional video production services from concept to completion, including scripting, filming, and editing with state-of-the-art equipment.',
             'tags' => ['Corporate videos & commercials', '4K & 8K video capture', 'Drone cinematography', 'Multi-camera productions']
@@ -39,7 +39,7 @@ if (!empty($dynamicServices)) {
             'slug' => 'live-streaming',
             'title' => 'Live Streaming',
             'icon' => 'ri-live-line',
-            'image' => 'https://images.unsplash.com/photo-1518173946687-a4c8a383392e?auto=format&fit=crop&w=800&q=80',
+            'image' => 'https://res.cloudinary.com/pnabfi91/image/upload/v1791222750/falhen/portfolio/blpzc2fznaqr0czm3ji8.jpg',
             'badge' => 'Global Broadcast',
             'desc' => 'Seamless live streaming solutions for events, conferences, and broadcasts with professional-grade equipment and technical support.',
             'tags' => ['Multi-platform streaming', 'Real-time graphics & overlays', 'Interactive audience engagement', 'Technical support & monitoring']
@@ -48,7 +48,7 @@ if (!empty($dynamicServices)) {
             'slug' => 'post-production',
             'title' => 'Post Production',
             'icon' => 'ri-edit-line',
-            'image' => 'https://images.unsplash.com/photo-1536240478700-b869070f9279?auto=format&fit=crop&w=800&q=80',
+            'image' => 'https://res.cloudinary.com/pnabfi91/image/upload/v1791380765/falhen/bts/bqpxfuekjfuqrbq1sqed.jpg',
             'badge' => 'DaVinci Resolve HDR',
             'desc' => 'Comprehensive post-production services including editing, color grading, sound design, and visual effects to polish your content.',
             'tags' => ['Professional video editing', 'Color correction & grading', 'Sound design & mixing', 'Visual effects & compositing']
@@ -57,7 +57,7 @@ if (!empty($dynamicServices)) {
             'slug' => 'animation',
             'title' => 'Animation & Motion Graphics',
             'icon' => 'ri-magic-line',
-            'image' => 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&w=800&q=80',
+            'image' => 'https://res.cloudinary.com/pnabfi91/image/upload/v1791380709/falhen/bts/yqjuxtubd9ka0gyqw68c.jpg',
             'badge' => '2D & 3D Design',
             'desc' => 'Creative animation and motion graphics services to enhance your brand storytelling with engaging visual elements.',
             'tags' => ['2D & 3D animation', 'Motion graphics design', 'Logo animations', 'Explainer videos']

@@ -289,7 +289,7 @@ function getTeamMembers() {
                 'department' => 'Strategy',
                 'location' => 'Lagos',
                 'experience' => '4+ years at Falhen',
-                'image' => 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=600&auto=format&fit=crop',
+                'image' => 'https://res.cloudinary.com/pnabfi91/image/upload/v1786713917/falhen/team/z0hyfbfy0z2g5m6q2t6f.jpg',
                 'bio' => "Specialize in identifying emerging market trends and translating them into actionable growth opportunities for client brands.",
                 'skills' => ['Content Strategy', 'Market Analysis', 'Growth Campaigns']
             ],
@@ -301,7 +301,7 @@ function getTeamMembers() {
                 'department' => 'Strategy',
                 'location' => 'Lagos',
                 'experience' => '5+ years at Falhen',
-                'image' => 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?q=80&w=600&auto=format&fit=crop',
+                'image' => 'https://res.cloudinary.com/pnabfi91/image/upload/v1786713958/falhen/team/b9r0j3jqvqflp2x7f64w.jpg',
                 'bio' => "Approach technical infrastructure with a proactive, solutions-driven mindset. My mission is to ensure smooth studio operations.",
                 'skills' => ['IT Support', 'Technical Infrastructure', 'Systems Security']
             ]
@@ -1391,7 +1391,7 @@ function getServicesRepo($includeHidden = false) {
                 'icon' => 'fa-solid fa-film',
                 'short_description' => 'Professional video production services from concept to completion, including scripting, filming, and editing with state-of-the-art equipment.',
                 'detail_description' => 'Our full-service video production team handles every stage of the process — from initial creative briefs and scriptwriting through on-set filming with cinema-grade cameras to the final polished edit.',
-                'image' => 'https://images.unsplash.com/photo-1574717024653-61fd2cf4d44d?auto=format&fit=crop&w=800&q=80',
+                'image' => 'https://res.cloudinary.com/pnabfi91/image/upload/v1791224271/falhen/portfolio/ysfriy8jlhhkcuzl8j16.jpg',
                 'card_features' => ['Corporate videos & commercials', '4K & 8K video capture', 'Drone cinematography', 'Multi-camera productions'],
                 'detail_features' => ['4K & 8K Cinema Capture', 'Drone Aerial Cinematography', 'Multi-Camera Rigs', 'Scriptwriting & Storyboarding']
             ]
@@ -1455,7 +1455,7 @@ function getTestimonialsRepo() {
                 'role' => 'Head of Marketing',
                 'company' => 'RedBull EMEA',
                 'project' => 'Energy Unleashed Campaign',
-                'avatar' => 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80',
+                'avatar' => 'https://res.cloudinary.com/pnabfi91/image/upload/v1786712075/falhen/team/ctxjp9mymgqdh2ecg2hu.jpg',
                 'rating' => 5,
                 'quote' => 'Falhen Media delivered a campaign that exceeded every benchmark we set. The team understood our brand DNA from day one and translated it into visuals that literally stopped people mid-scroll. Our engagement numbers tripled.'
             ],
@@ -1465,7 +1465,7 @@ function getTestimonialsRepo() {
                 'role' => 'Creative Director',
                 'company' => 'Nike Africa',
                 'project' => 'Sprint Series Brand Film',
-                'avatar' => 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=150&q=80',
+                'avatar' => 'https://res.cloudinary.com/pnabfi91/image/upload/v1786714006/falhen/team/ini79za7jvbjokrf1dup.jpg',
                 'rating' => 5,
                 'quote' => "Working with Falhen was genuinely one of the best creative decisions we made this year. They don't just shoot video — they engineer emotion. The final film had our entire team in tears. In the best way."
             ],
@@ -1475,7 +1475,7 @@ function getTestimonialsRepo() {
                 'role' => 'VP of Content',
                 'company' => 'HBO Original',
                 'project' => 'Dark Horizons Series Teaser',
-                'avatar' => 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80',
+                'avatar' => 'https://res.cloudinary.com/pnabfi91/image/upload/v1786713958/falhen/team/b9r0j3jqvqflp2x7f64w.jpg',
                 'rating' => 5,
                 'quote' => 'The teaser Falhen produced for Dark Horizons generated more pre-release buzz than anything we\'d done in five years. Cinematic, punchy, and perfectly on brief. They are our go-to production partner now.'
             ],
@@ -1485,7 +1485,7 @@ function getTestimonialsRepo() {
                 'role' => 'Brand Manager',
                 'company' => 'Sony Music',
                 'project' => 'Next Generation Product Launch',
-                'avatar' => 'https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&w=150&q=80',
+                'avatar' => 'https://res.cloudinary.com/pnabfi91/image/upload/v1786714208/falhen/team/ri0fc0rdmjfvyzx1lihn.jpg',
                 'rating' => 5,
                 'quote' => 'From briefing to final delivery, the Falhen team was exceptional. They pushed back on ideas that weren\'t strong enough and brought solutions we hadn\'t imagined. The launch film is still being shared organically two months later.'
             ],
@@ -1495,7 +1495,7 @@ function getTestimonialsRepo() {
                 'role' => 'Event Director',
                 'company' => 'Ferrari Private Events',
                 'project' => 'Annual Gala Highlight Reel',
-                'avatar' => 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=150&q=80',
+                'avatar' => 'https://res.cloudinary.com/pnabfi91/image/upload/v1786713917/falhen/team/z0hyfbfy0z2g5m6q2t6f.jpg',
                 'rating' => 5,
                 'quote' => 'The same-day highlight reel they produced for our annual gala was breathtaking. Guests were watching it at the closing dinner. I have never seen a production team move that fast without sacrificing a single frame of quality.'
             ],
@@ -1505,7 +1505,7 @@ function getTestimonialsRepo() {
                 'role' => 'Founder',
                 'company' => 'Diallo Cosmetics',
                 'project' => 'Brand Identity Video Series',
-                'avatar' => 'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?auto=format&fit=crop&w=150&q=80',
+                'avatar' => 'https://res.cloudinary.com/pnabfi91/image/upload/v1786714147/falhen/team/xba4ep38ewfdq3chfx1h.jpg',
                 'rating' => 5,
                 'quote' => 'As a growing brand, we needed content that could compete with the big players. Falhen made us look like a global company on a startup budget. Our Instagram reels from that shoot still perform better than anything we\'ve posted since.'
             ]
@@ -1770,7 +1770,7 @@ function getPortfolioRepo() {
                 'featured' => true,
                 'client' => 'Falhen Runway',
                 'location' => 'Paris',
-                'image' => 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=800&auto=format&fit=crop',
+                'image' => 'https://res.cloudinary.com/pnabfi91/image/upload/v1791224271/falhen/portfolio/ysfriy8jlhhkcuzl8j16.jpg',
                 'video_url' => 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
                 'desc' => 'High-energy fashion week highlight reel featuring 4K slow-motion captures, backstage moments, and custom sound design.'
             ],
@@ -1809,7 +1809,7 @@ function getPortfolioRepo() {
                 'featured' => false,
                 'client' => 'Apex Global',
                 'location' => 'Tokyo',
-                'image' => 'https://images.unsplash.com/photo-1505373877841-8d25f7d46678?q=80&w=800&auto=format&fit=crop',
+                'image' => 'https://res.cloudinary.com/pnabfi91/image/upload/v1791222750/falhen/portfolio/blpzc2fznaqr0czm3ji8.jpg',
                 'video_url' => 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyflights.mp4',
                 'desc' => 'Multi-camera live broadcast setup and highlight recap reel for an international corporate keynote.'
             ],
@@ -1847,7 +1847,7 @@ function getPortfolioRepo() {
                 'featured' => true,
                 'client' => 'TechCorp International',
                 'location' => 'Chicago',
-                'image' => 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?q=80&w=800&auto=format&fit=crop',
+                'image' => 'https://res.cloudinary.com/pnabfi91/image/upload/v1791380693/falhen/bts/uc34zifoyzeyyqvsm5qj.jpg',
                 'gdrive_url' => 'https://drive.google.com/drive/folders/tech-summit-2024',
                 'desc' => 'Global technology conference keynote recording, stage visual direction, and corporate livestream coverage.'
             ],
@@ -1859,7 +1859,7 @@ function getPortfolioRepo() {
                 'featured' => true,
                 'client' => 'Elegance Fashion House',
                 'location' => 'Paris & Lagos',
-                'image' => 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=800&auto=format&fit=crop',
+                'image' => 'https://res.cloudinary.com/pnabfi91/image/upload/v1791380709/falhen/bts/yqjuxtubd9ka0gyqw68c.jpg',
                 'gdrive_url' => 'https://drive.google.com/drive/folders/fashion-show-2024',
                 'desc' => 'High-fashion runway showcase, 4K slow-motion captures, and backstage model portraiture.'
             ],
@@ -1871,7 +1871,7 @@ function getPortfolioRepo() {
                 'featured' => true,
                 'client' => 'EcoMotors',
                 'location' => 'Los Angeles',
-                'image' => 'https://images.unsplash.com/photo-1503376780353-7e6692767b70?q=80&w=800&auto=format&fit=crop',
+                'image' => 'https://res.cloudinary.com/pnabfi91/image/upload/v1791380721/falhen/bts/gmw6x8ccznwrjbhsuhja.jpg',
                 'gdrive_url' => 'https://drive.google.com/drive/folders/ecomotors-campaign',
                 'desc' => 'Commercial launch campaign featuring cinematic night automotive tracking shots and digital ad spots.'
             ],
@@ -1883,7 +1883,7 @@ function getPortfolioRepo() {
                 'featured' => false,
                 'client' => 'FitLife Athletics',
                 'location' => 'New York',
-                'image' => 'https://images.unsplash.com/photo-1517838277536-f5f99be501cd?q=80&w=800&auto=format&fit=crop',
+                'image' => 'https://res.cloudinary.com/pnabfi91/image/upload/v1791380756/falhen/bts/ufjkbvwtqxd5f15uxx5h.jpg',
                 'gdrive_url' => 'https://drive.google.com/drive/folders/fitlife-social',
                 'desc' => 'High-intensity athletic promotional reels and vertical social video asset package.'
             ],
@@ -1895,7 +1895,7 @@ function getPortfolioRepo() {
                 'featured' => false,
                 'client' => 'SoundWave Festival',
                 'location' => 'Lagos',
-                'image' => 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?q=80&w=800&auto=format&fit=crop',
+                'image' => 'https://res.cloudinary.com/pnabfi91/image/upload/v1791380765/falhen/bts/bqpxfuekjfuqrbq1sqed.jpg',
                 'gdrive_url' => 'https://drive.google.com/drive/folders/soundwave-fest',
                 'desc' => 'Multi-stage festival coverage, crowd energy captures, and mainstage headliner recap video.'
             ],
@@ -1907,7 +1907,7 @@ function getPortfolioRepo() {
                 'featured' => false,
                 'client' => 'Metro News Network',
                 'location' => 'London',
-                'image' => 'https://images.unsplash.com/photo-1585829365295-ab7cd400c167?q=80&w=800&auto=format&fit=crop',
+                'image' => 'https://res.cloudinary.com/pnabfi91/image/upload/v1791380777/falhen/bts/hu9buzs1ccakow1eqsna.jpg',
                 'gdrive_url' => 'https://drive.google.com/drive/folders/metro-news-show',
                 'desc' => 'State-of-the-art studio set design, multi-camera live broadcast infrastructure, and news graphics package.'
             ],
@@ -1919,7 +1919,7 @@ function getPortfolioRepo() {
                 'featured' => false,
                 'client' => 'Nichelle & Michael',
                 'location' => 'Cape Town',
-                'image' => 'https://images.unsplash.com/photo-1519741497674-611481863552?q=80&w=800&auto=format&fit=crop',
+                'image' => 'https://res.cloudinary.com/pnabfi91/image/upload/v1791224271/falhen/portfolio/ysfriy8jlhhkcuzl8j16.jpg',
                 'gdrive_url' => 'https://drive.google.com/drive/folders/nichelle-michael-wedding',
                 'desc' => 'Luxury oceanfront destination wedding documentary film and comprehensive photo archive.'
             ],
@@ -1931,7 +1931,7 @@ function getPortfolioRepo() {
                 'featured' => true,
                 'client' => 'Roast & Ritual',
                 'location' => 'Seattle',
-                'image' => 'https://images.unsplash.com/photo-1447933601403-0c6688de566e?q=80&w=800&auto=format&fit=crop',
+                'image' => 'https://res.cloudinary.com/pnabfi91/image/upload/v1791222920/falhen/portfolio/c5k5xwoa1misejie2oxy.jpg',
                 'gdrive_url' => 'https://drive.google.com/drive/folders/roast-ritual-story',
                 'desc' => 'Cinematic brand documentary profiling craft coffee roasters and ethical bean sourcing.'
             ],
@@ -1979,7 +1979,7 @@ function getPortfolioRepo() {
                 'featured' => false,
                 'client' => 'Apex Tech',
                 'location' => 'Tokyo',
-                'image' => 'https://images.unsplash.com/photo-1505373877841-8d25f7d46678?q=80&w=800&auto=format&fit=crop',
+                'image' => 'https://res.cloudinary.com/pnabfi91/image/upload/v1791222750/falhen/portfolio/blpzc2fznaqr0czm3ji8.jpg',
                 'gdrive_url' => 'https://drive.google.com/drive/folders/apex-summit-2026',
                 'desc' => 'International tech conference hybrid broadcast stream and multi-lingual video production.'
             ]
@@ -2080,7 +2080,7 @@ function getBlogRepo() {
                 'excerpt' => 'Learn the secrets to creating scroll-stopping social media content that captures attention and drives engagement.',
                 'author' => 'Michael Chen',
                 'role' => 'Creative Director',
-                'image' => 'https://images.unsplash.com/photo-1511795409834-ef04bbd61622?q=80&w=800&auto=format&fit=crop',
+                'image' => 'https://res.cloudinary.com/pnabfi91/image/upload/v1791224271/falhen/portfolio/ysfriy8jlhhkcuzl8j16.jpg',
                 'content' => 'Creating engaging video content for social media platforms requires a strategic blend of visual storytelling, hook optimization, and crisp pacing. In this guide, we break down 10 actionable strategies to elevate your brand\'s video performance across Instagram Reels, TikTok, YouTube Shorts, and LinkedIn.',
                 'featured' => true
             ],
@@ -2632,7 +2632,7 @@ function getStaffAccountsRepo() {
                 'lemfi_tag'     => '@michealotu',
                 'taptap_account'=> '02001234567',
                 'status'        => 'active',
-                'avatar'        => 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=600&auto=format&fit=crop',
+                'avatar'        => 'https://res.cloudinary.com/pnabfi91/image/upload/v1786713917/falhen/team/z0hyfbfy0z2g5m6q2t6f.jpg',
                 'created_at'    => '2024-04-18',
                 'password_hash' => $defaultPasswordHash
             ],

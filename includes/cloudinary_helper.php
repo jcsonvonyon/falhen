@@ -19,8 +19,9 @@ function isCloudinaryUrl($url)
  */
 function getCloudinaryUrl($pathOrUrl, $transform = 'f_auto,q_auto')
 {
-    if (empty($pathOrUrl)) {
-        return 'https://res.cloudinary.com/pnabfi91/image/upload/v1791224271/falhen/portfolio/ysfriy8jlhhkcuzl8j16.jpg';
+    // Brand Protection Sanitizer: Intercept empty, unsplash, or placeholder URLs and resolve to authentic Falhen assets
+    if (empty($pathOrUrl) || preg_match('/(?:unsplash\.com|placeholder|via\.placeholder)/i', (string)$pathOrUrl)) {
+        return 'https://res.cloudinary.com/pnabfi91/image/upload/' . (!empty($transform) ? $transform . '/' : '') . 'v1791224271/falhen/portfolio/ysfriy8jlhhkcuzl8j16.jpg';
     }
 
     $cloudName = CLOUDINARY_CLOUD_NAME;

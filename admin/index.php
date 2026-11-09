@@ -348,7 +348,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'optimize_db_tables'          => 'dev_logs',
         'test_db_diagnostics'         => 'dev_logs',
         'save_hero'                  => 'hero',
-        'save_stats'                 => 'hero',
+        'save_stats'                 => 'stats',
         'save_bts'                   => 'bts',
         'upload_bts_photo'           => 'bts',
         'save_single_featured_item'  => 'portfolio',
@@ -1762,9 +1762,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         saveSiteSettings($heroSettings);
-        $returnTab = in_array($_POST['active_hero_tab'] ?? 'stage', ['stage', 'stats'], true) ? $_POST['active_hero_tab'] : 'stage';
-        $_SESSION['saved_message'] = 'Hero & Stats Counter updated and synced to Cloudinary & landing page.';
-        header('Location: /admin/index.php?section=hero&tab=' . urlencode($returnTab));
+        $_SESSION['saved_message'] = 'Hero section updated and synced successfully.';
+        header('Location: /admin/index.php?section=hero&saved=1');
         exit;
     } else if ($action === 'save_stats') {
         $statsItems = [];
@@ -1794,8 +1793,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'stats_items'          => $statsItems
         ];
         saveSiteSettings($statSettings);
-        $_SESSION['saved_message'] = 'Stats counter updated and synced to landing page.';
-        header('Location: /admin/index.php?section=hero&tab=stats');
+        $_SESSION['saved_message'] = 'Stats counter updated and synced successfully.';
+        header('Location: /admin/index.php?section=stats&saved=1');
         exit;
     } else if ($action === 'save_bts') {
         $btsItems = [];
@@ -2183,7 +2182,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'role' => $role,
                 'company' => $company,
                 'project' => $project,
-                'avatar' => !empty($avatar) ? $avatar : 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80',
+                'avatar' => !empty($avatar) ? $avatar : 'https://res.cloudinary.com/pnabfi91/image/upload/v1786712075/falhen/team/ctxjp9mymgqdh2ecg2hu.jpg',
                 'rating' => $rating,
                 'quote' => $quote
             ];
@@ -5533,11 +5532,15 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
             </div>
             <ul class="nav-list">
                 <li class="nav-item <?php echo ($activeSection === 'hero') ? 'active' : ''; ?>">
-                    <a href="/admin/index.php?section=hero" style="display: flex; align-items: center; justify-content: space-between;">
-                        <span style="display: flex; align-items: center; gap: 10px;">
-                            <i class="fa-solid fa-film nav-icon"></i>
-                            <span>Hero &amp; Stats</span>
-                        </span>
+                    <a href="/admin/index.php?section=hero">
+                        <i class="fa-solid fa-box-archive nav-icon"></i>
+                        <span>Hero</span>
+                    </a>
+                </li>
+                <li class="nav-item <?php echo ($activeSection === 'stats') ? 'active' : ''; ?>">
+                    <a href="/admin/index.php?section=stats">
+                        <i class="fa-solid fa-chart-simple nav-icon"></i>
+                        <span>Stats Counter</span>
                     </a>
                 </li>
                 <li class="nav-item <?php echo ($activeSection === 'bts') ? 'active' : ''; ?>">
@@ -6060,635 +6063,554 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                 </div>
             <?php else: ?>
 
-            <!-- SECTION 1: HERO & STATS CONSOLIDATED MODULE -->
+            <!-- SECTION 1: HERO SECTION -->
             <?php if ($activeSection === 'hero'): ?>
-                <?php
-                $adminHeroMedia = resolveHeroMediaConfig($settings);
-                $adminHeroStats = resolveHeroStatsConfig($settings);
-                $configuredIframeRaw = !empty($settings['hero_youtube_bg'])
-                    ? $settings['hero_youtube_bg']
-                    : ($settings['hero_vimeo_bg'] ?? '');
-                $initialModeLabel = 'Poster Backup Only';
-                $initialModeBg    = '#475569';
-                if ($adminHeroMedia['bg_mode'] === 'youtube') {
-                    $initialModeLabel = 'YouTube · Chromeless (' . $adminHeroMedia['iframe_video_id'] . ')';
-                    $initialModeBg    = '#16a34a';
-                } elseif ($adminHeroMedia['bg_mode'] === 'vimeo') {
-                    $initialModeLabel = 'Vimeo · Chromeless (' . $adminHeroMedia['iframe_video_id'] . ')';
-                    $initialModeBg    = '#0284c7';
-                } elseif ($adminHeroMedia['bg_mode'] === 'direct') {
-                    $initialModeLabel = 'Direct Video · Muted';
-                    $initialModeBg    = '#0d9488';
-                }
-
-                $posterRawVal  = $uploadedCloudinaryUrl ?? $adminHeroMedia['poster_raw'];
-                $posterIsCloud = function_exists('isCloudinaryUrl') && isCloudinaryUrl($posterRawVal);
-                $posterCloudId = $adminHeroMedia['poster_public_id'] ?: basename(parse_url($posterRawVal, PHP_URL_PATH) ?: 'hero.jpg');
-                $cloudAccount  = $adminHeroMedia['cloud_name'] ?? 'pnabfi91';
-
-                $statsVisible   = $adminHeroStats['raw_visible'];
-                $statsPlacement = $adminHeroStats['placement'];
-                $statsBadge     = $adminHeroStats['badge_label'];
-                $statsWhite     = $adminHeroStats['headline_white'];
-                $statsRed       = $adminHeroStats['headline_red'];
-                $statsDesc      = $adminHeroStats['description'];
-                $statsItems     = $adminHeroStats['items'];
-                $activeHeroTab  = $heroInitialTab ?? 'stage';
-
-                $statIconChoices = [
-                    'ri-film-line'      => 'Film & Reels',
-                    'ri-history-line'   => 'Years / History',
-                    'ri-earth-line'     => 'Global / Industries',
-                    'ri-trophy-line'    => 'Awards & Honours',
-                    'ri-star-line'      => 'Rating & Excellence',
-                    'ri-user-star-line' => 'Clients & Talent'
-                ];
-                ?>
-                <form id="heroUnifiedForm" method="POST" action="/admin/index.php?section=hero" enctype="multipart/form-data">
+                <form method="POST" action="/admin/index.php?section=hero" enctype="multipart/form-data">
                     <input type="hidden" name="action" value="save_hero">
-                    <input type="hidden" name="stats_included" value="1">
-                    <input type="hidden" name="active_hero_tab" id="activeHeroTabInput" value="<?php echo htmlspecialchars($activeHeroTab); ?>">
 
                     <div class="section-header-bar">
                         <div>
-                            <h1 class="section-header-title">Hero &amp; Stats</h1>
-                            <p class="section-header-desc">Chromeless background video, Cloudinary backup poster, headline copy, and impact counter</p>
+                            <h1 class="section-header-title">Hero Section</h1>
+                            <p class="section-header-desc">Edit the homepage hero &mdash; background film, poster image, text, and call-to-action buttons</p>
                         </div>
-                        <div style="display: flex; align-items: center; gap: 10px;">
-                            <a href="/" target="_blank" class="btn-header-action" title="Open live homepage">
-                                <i class="fa-solid fa-arrow-up-right-from-square"></i> View Live
-                            </a>
-                            <button type="submit" class="btn-save-primary">
-                                <i class="fa-solid fa-floppy-disk"></i> Save Changes
-                            </button>
-                        </div>
+                        <button type="submit" class="btn-save-primary">
+                            <i class="fa-solid fa-floppy-disk"></i> Save Changes
+                        </button>
                     </div>
 
-                    <!-- Unified Module Switcher -->
-                    <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
-                        <div class="hero-module-subnav" role="tablist" aria-label="Hero module sections">
-                            <button type="button" class="hero-subnav-btn <?php echo $activeHeroTab === 'stage' ? 'active' : ''; ?>" id="heroSubtabStage" onclick="setHeroModuleTab('stage')">
-                                <i class="fa-solid fa-clapperboard" style="font-size: 0.8rem;"></i>
-                                <span>Hero Stage &amp; Copy</span>
-                            </button>
-                            <button type="button" class="hero-subnav-btn <?php echo $activeHeroTab === 'stats' ? 'active' : ''; ?>" id="heroSubtabStats" onclick="setHeroModuleTab('stats')">
-                                <i class="fa-solid fa-chart-simple" style="font-size: 0.8rem;"></i>
-                                <span>Stats Counter</span>
-                                <span id="heroSubtabStatsBadge" class="hero-subnav-pill <?php echo $statsVisible ? 'is-live' : ''; ?>">
-                                    <?php echo $statsVisible ? ($statsPlacement === 'hero' ? 'Hero Bar' : 'Section') : 'Hidden'; ?>
-                                </span>
-                            </button>
-                            <button type="button" class="hero-subnav-btn" id="heroSubtabAll" onclick="setHeroModuleTab('all')">
-                                <i class="fa-solid fa-layer-group" style="font-size: 0.8rem;"></i>
-                                <span>View Both</span>
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- PANEL 1: HERO STAGE, BACKUP POSTER & COPY -->
-                    <div id="heroPanelStage" style="<?php echo ($activeHeroTab === 'stats') ? 'display: none;' : ''; ?>">
-                        <div class="form-grid-two">
-                            <!-- Left Column: Media Stack & Unified Stage Preview -->
-                            <div>
-                                <div class="dashboard-card">
-                                    <div class="card-header-row" style="justify-content: space-between;">
-                                        <div style="display: flex; align-items: center; gap: 10px;">
-                                            <div class="card-icon-badge">
-                                                <i class="fa-solid fa-film"></i>
-                                            </div>
-                                            <div class="card-title-text">Media Stack</div>
-                                        </div>
-                                        <label class="admin-inline-switch" title="Automatically use the Showreel YouTube video when no separate iframe override is set">
-                                            <input
-                                                type="checkbox"
-                                                name="hero_bg_use_showreel"
-                                                id="hero_bg_use_showreel_input"
-                                                value="1"
-                                                <?php echo $adminHeroMedia['use_showreel_bg'] ? 'checked' : ''; ?>
-                                                onchange="syncHeroStageMedia()"
-                                            >
-                                            <span>Auto-sync Showreel</span>
-                                        </label>
+                    <div class="form-grid-two">
+                        <!-- Left Column: Background Film Card -->
+                        <div>
+                            <div class="dashboard-card">
+                                <div class="card-header-row">
+                                    <div class="card-icon-badge">
+                                        <i class="fa-solid fa-film"></i>
                                     </div>
-
-                                    <!-- Primary Video Iframe Input -->
-                                    <div class="form-field">
-                                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; gap: 8px;">
-                                            <label class="form-label-title" style="margin-bottom: 0;">Primary Video Iframe (YouTube or Vimeo)</label>
-                                            <span style="font-size: 0.73rem; color: #64748b;">Autoplay &middot; Muted &middot; Chromeless</span>
-                                        </div>
-                                        <input
-                                            type="text"
-                                            name="hero_video_iframe"
-                                            id="hero_video_iframe_input"
-                                            class="form-text-input"
-                                            placeholder="Optional override URL/ID (defaults to Showreel <?php echo htmlspecialchars($adminHeroMedia['showreel_id']); ?>)"
-                                            value="<?php echo htmlspecialchars($configuredIframeRaw); ?>"
-                                            oninput="syncHeroStageMedia()"
-                                        >
-                                    </div>
-
-                                    <!-- Backup Poster Image URL + Live Preview + Confirmed Cloudinary Sync -->
-                                    <div class="form-field" style="margin-bottom: 12px;">
-                                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; gap: 8px;">
-                                            <label class="form-label-title" style="margin-bottom: 0;">Backup Poster Image</label>
-                                            <span style="font-size: 0.73rem; color: #64748b;">Instant LCP &amp; offline fallback</span>
-                                        </div>
-                                        <div style="display: flex; gap: 8px; align-items: center;">
-                                            <input
-                                                type="text"
-                                                name="hero_poster_image"
-                                                id="hero_poster_image_input"
-                                                class="form-text-input"
-                                                placeholder="https://res.cloudinary.com/<?php echo htmlspecialchars($cloudAccount); ?>/image/upload/..."
-                                                value="<?php echo htmlspecialchars($posterRawVal); ?>"
-                                                oninput="updatePosterPreview(this.value)"
-                                            >
-                                            <label for="heroPosterAjaxFile" id="heroPosterUploadBtn" class="btn-header-action" style="margin: 0; cursor: pointer; height: 40px; flex-shrink: 0;">
-                                                <i class="fa-solid fa-cloud-arrow-up"></i> Upload
-                                            </label>
-                                            <input
-                                                type="file"
-                                                id="heroPosterAjaxFile"
-                                                accept="image/*"
-                                                style="display: none;"
-                                                onchange="uploadHeroAssetAjax(this, 'poster')"
-                                            >
-                                        </div>
-
-                                        <!-- Dedicated Backup Poster Preview + Confirmed Cloudinary Sync Status -->
-                                        <div class="poster-sync-card" id="posterSyncCard">
-                                            <div class="poster-sync-preview-grid">
-                                                <div class="poster-sync-thumb-wrap">
-                                                    <img
-                                                        id="posterPreviewImg"
-                                                        src="<?php echo htmlspecialchars($adminHeroMedia['poster_desktop']); ?>"
-                                                        alt="Backup Poster Preview"
-                                                        onload="handlePosterPreviewLoad(this)"
-                                                        onerror="handlePosterPreviewError(this)"
-                                                    >
-                                                    <span style="position: absolute; bottom: 5px; left: 6px; background: rgba(9, 9, 11, 0.78); color: #f8fafc; font-size: 0.63rem; font-weight: 700; padding: 1px 6px; border-radius: 4px;">
-                                                        Backup Layer
-                                                    </span>
-                                                </div>
-
-                                                <div style="min-width: 0;">
-                                                    <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; margin-bottom: 6px;">
-                                                        <span id="posterCloudinaryPill" class="poster-sync-status-pill <?php echo $posterIsCloud ? 'synced' : 'unsynced'; ?>">
-                                                            <?php if ($posterIsCloud): ?>
-                                                                <i class="fa-solid fa-circle-check"></i> Synced to Cloudinary (<?php echo htmlspecialchars($cloudAccount); ?>)
-                                                            <?php else: ?>
-                                                                <i class="fa-solid fa-triangle-exclamation"></i> Not synced to Cloudinary
-                                                            <?php endif; ?>
-                                                        </span>
-
-                                                        <button
-                                                            type="button"
-                                                            id="syncPosterCloudBtn"
-                                                            class="btn-header-action"
-                                                            style="padding: 4px 10px; font-size: 0.74rem; <?php echo $posterIsCloud ? 'display: none;' : 'display: inline-flex;'; ?>"
-                                                            onclick="syncPosterUrlToCloudinary()"
-                                                        >
-                                                            <i class="fa-solid fa-rotate"></i> Sync to Cloudinary
-                                                        </button>
-                                                    </div>
-
-                                                    <div id="posterPublicIdText" style="font-size: 0.75rem; color: #334155; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="<?php echo htmlspecialchars($posterRawVal); ?>">
-                                                        <?php echo $posterIsCloud ? ('Asset: ' . htmlspecialchars($posterCloudId)) : ('Source: ' . htmlspecialchars($posterRawVal)); ?>
-                                                    </div>
-
-                                                    <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 5px; font-size: 0.72rem; color: #64748b;">
-                                                        <span id="posterResolutionText">Desktop 1920w &middot; Mobile 780w Eco</span>
-                                                        <a
-                                                            id="posterOpenAssetLink"
-                                                            href="<?php echo htmlspecialchars($adminHeroMedia['poster_desktop']); ?>"
-                                                            target="_blank"
-                                                            rel="noopener"
-                                                            style="color: #0f172a; font-weight: 600; text-decoration: none; white-space: nowrap;"
-                                                        >
-                                                            Verify Asset <i class="fa-solid fa-arrow-up-right-from-square" style="font-size: 0.64rem;"></i>
-                                                        </a>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <!-- Optional Direct Stream Override (Clean Disclosure) -->
-                                    <details class="admin-disclosure" <?php echo !empty($settings['hero_direct_video_url']) ? 'open' : ''; ?>>
-                                        <summary>
-                                            <span><i class="fa-solid fa-bolt" style="margin-right: 6px; color: #64748b;"></i> Direct MP4 / WebM Stream Override (Optional)</span>
-                                            <i class="fa-solid fa-chevron-down" style="font-size: 0.72rem; color: #94a3b8;"></i>
-                                        </summary>
-                                        <div style="margin-top: 10px; display: flex; gap: 8px; align-items: center;">
-                                            <input
-                                                type="text"
-                                                name="hero_direct_video_url"
-                                                id="hero_direct_video_input"
-                                                class="form-text-input"
-                                                style="background: #ffffff;"
-                                                placeholder="https://res.cloudinary.com/.../hero.mp4"
-                                                value="<?php echo htmlspecialchars($settings['hero_direct_video_url'] ?? ''); ?>"
-                                                oninput="syncHeroStageMedia()"
-                                            >
-                                            <label for="heroVideoAjaxFile" id="heroVideoUploadBtn" class="btn-header-action" style="margin: 0; cursor: pointer; height: 40px; flex-shrink: 0;">
-                                                <i class="fa-solid fa-video"></i> MP4
-                                            </label>
-                                            <input
-                                                type="file"
-                                                id="heroVideoAjaxFile"
-                                                accept="video/mp4,video/webm"
-                                                style="display: none;"
-                                                onchange="uploadHeroAssetAjax(this, 'video')"
-                                            >
-                                        </div>
-                                    </details>
+                                    <div class="card-title-text">Background Film</div>
                                 </div>
 
-                                <!-- Unified Interactive Desktop, Mobile & Offline Poster Stage Preview -->
-                                <div class="dashboard-card">
-                                    <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 14px; flex-wrap: wrap;">
-                                        <div style="display: flex; align-items: center; gap: 8px;">
-                                            <span class="card-title-text" style="font-size: 0.92rem;">Stage Preview</span>
-                                            <span id="frameModeTag" style="background-color: <?php echo $initialModeBg; ?>; color: #ffffff; font-size: 0.7rem; font-weight: 600; padding: 2px 8px; border-radius: 6px;">
-                                                <?php echo htmlspecialchars($initialModeLabel); ?>
+                                <!-- Direct Video URL -->
+                                <div class="form-field">
+                                    <label class="form-label-title">Direct Video URL (MP4 / WebM)</label>
+                                    <p class="form-label-help">Fastest option &mdash; a direct .mp4 or .webm URL plays instantly via native browser video. Leave blank to use YouTube, Vimeo, or the poster image instead.</p>
+                                    <input 
+                                        type="text" 
+                                        name="hero_direct_video_url" 
+                                        class="form-text-input" 
+                                        placeholder="https://your-cdn.com/hero-bg.mp4"
+                                        value="<?php echo htmlspecialchars($settings['hero_direct_video_url'] ?? ''); ?>"
+                                    >
+                                </div>
+
+                                <!-- Third Party Video Sources -->
+                                <div class="form-field">
+                                    <label class="form-label-title">Third-party video sources</label>
+                                    <p class="form-label-help">Use the Upload Media section below to paste a YouTube or Vimeo link. These fields show what's currently configured.</p>
+
+                                    <div class="info-status-box">
+                                        <i class="fa-brands fa-youtube"></i>
+                                        <span><?php echo !empty($settings['hero_youtube_bg']) ? htmlspecialchars($settings['hero_youtube_bg']) : 'No YouTube background configured'; ?></span>
+                                    </div>
+                                    <div class="info-status-box">
+                                        <i class="fa-brands fa-vimeo"></i>
+                                        <span><?php echo !empty($settings['hero_vimeo_bg']) ? htmlspecialchars($settings['hero_vimeo_bg']) : 'No Vimeo background configured'; ?></span>
+                                    </div>
+                                </div>
+
+                                <!-- Active Background Priority -->
+                                <div class="priority-list-box">
+                                    <div class="priority-title">Active background priority:</div>
+                                    <div class="priority-item <?php echo !empty($settings['hero_direct_video_url']) ? 'active-item' : ''; ?>">
+                                        1. Direct video URL <?php echo !empty($settings['hero_direct_video_url']) ? '(Active)' : '(not set)'; ?>
+                                    </div>
+                                    <div class="priority-item <?php echo (!empty($settings['hero_youtube_bg']) && empty($settings['hero_direct_video_url'])) ? 'active-item' : ''; ?>">
+                                        2. YouTube background
+                                    </div>
+                                    <div class="priority-item <?php echo (!empty($settings['hero_vimeo_bg']) && empty($settings['hero_direct_video_url']) && empty($settings['hero_youtube_bg'])) ? 'active-item' : ''; ?>">
+                                        3. Vimeo background
+                                    </div>
+                                    <div class="priority-item <?php echo (empty($settings['hero_direct_video_url']) && empty($settings['hero_youtube_bg']) && empty($settings['hero_vimeo_bg'])) ? 'active-item' : ''; ?>">
+                                        4. &#10003; Poster image only
+                                    </div>
+                                </div>
+
+                                <!-- Poster Image URL -->
+                                <div class="form-field">
+                                    <label class="form-label-title">Poster / Fallback Image URL</label>
+                                    <p class="form-label-help">Shown while the video loads, and as the hero background when no video is set. Use 1920&times;1080.</p>
+                                    <input 
+                                        type="text" 
+                                        name="hero_poster_image" 
+                                        id="hero_poster_image_input"
+                                        class="form-text-input" 
+                                        placeholder="https://res.cloudinary.com/pnabfi91/image/upload/..."
+                                        value="<?php echo htmlspecialchars($uploadedCloudinaryUrl ?? ($settings['hero_poster_image'] ?? '/assets/img/hero.jpg')); ?>"
+                                        oninput="updatePosterPreview(this.value)"
+                                    >
+
+                                    <!-- Cloudinary CDN Asset Helper Badge & Quick Upload -->
+                                    <div style="background-color: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 10px; padding: 12px 14px; margin-top: 10px;">
+                                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
+                                            <span style="font-size: 0.78rem; font-weight: 700; color: #0284c7; display: inline-flex; align-items: center; gap: 6px;">
+                                                <i class="fa-solid fa-cloud"></i> Cloudinary CDN (<strong>pnabfi91</strong>)
                                             </span>
+                                            <span style="font-size: 0.72rem; background: #e0f2fe; color: #0369a1; padding: 2px 8px; border-radius: 10px; font-weight: 700;">f_auto, q_auto</span>
                                         </div>
-                                        <div class="stage-viewport-tabs" role="tablist" aria-label="Preview viewport">
-                                            <button type="button" class="stage-viewport-tab active" id="stageTabDesktop" onclick="setHeroStageViewport('desktop')">
-                                                <i class="fa-solid fa-desktop"></i> 16:9
-                                            </button>
-                                            <button type="button" class="stage-viewport-tab" id="stageTabMobile" onclick="setHeroStageViewport('mobile')">
-                                                <i class="fa-solid fa-mobile-screen"></i> 9:16
-                                            </button>
-                                            <button type="button" class="stage-viewport-tab" id="stageTabPoster" onclick="setHeroStageViewport('poster')" title="Preview offline/slow-network backup poster state">
-                                                <i class="fa-regular fa-image"></i> Poster
+                                        <p style="font-size: 0.76rem; color: var(--text-muted); margin: 0 0 8px 0;">
+                                            Select any image file to upload directly to your Cloudinary account:
+                                        </p>
+                                        <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                                            <input type="file" name="cloudinary_file" id="cloudinary_direct_input" accept="image/*,video/*" style="font-size: 0.78rem; color: var(--text-secondary);">
+                                            <button type="submit" name="action" value="upload_cloudinary" class="btn-save-primary" style="padding: 6px 12px; font-size: 0.78rem; background-color: #0284c7;">
+                                                <i class="fa-solid fa-cloud-arrow-up"></i> Upload to Cloudinary
                                             </button>
                                         </div>
                                     </div>
+                                </div>
 
-                                    <div class="admin-hero-stage-frame" id="adminHeroStageFrame">
-                                        <img
-                                            id="liveBackgroundImg"
-                                            class="stage-poster"
-                                            src="<?php echo htmlspecialchars($adminHeroMedia['poster_desktop']); ?>"
-                                            alt="Hero Backup Poster"
-                                            onerror="this.onerror=null;this.src='/assets/img/hero.jpg';"
+                                <!-- Poster Image Preview Box -->
+                                <div style="margin-bottom: 24px;">
+                                    <div style="border-radius: 12px; overflow: hidden; background-color: #0f172a; border: 1px solid var(--card-border);">
+                                        <img 
+                                            id="posterPreviewImg" 
+                                            src="<?php echo htmlspecialchars($settings['hero_poster_image'] ?? '/assets/img/hero.jpg'); ?>" 
+                                            alt="Poster Preview"
+                                            style="width: 100%; height: auto; max-height: 260px; object-fit: cover; display: block;"
+                                            onerror="this.src='/assets/img/hero.jpg';"
                                         >
-                                        <div id="adminStageMediaWrap" class="stage-media-wrap">
-                                            <?php if ($adminHeroMedia['bg_mode'] === 'youtube' || $adminHeroMedia['bg_mode'] === 'vimeo'): ?>
-                                                <iframe
-                                                    src="<?php echo htmlspecialchars($adminHeroMedia['iframe_embed_url']); ?>"
-                                                    allow="autoplay; encrypted-media"
-                                                    tabindex="-1"
-                                                    aria-hidden="true"
-                                                ></iframe>
-                                            <?php elseif ($adminHeroMedia['bg_mode'] === 'direct' && !empty($adminHeroMedia['direct_video_desktop'])): ?>
-                                                <video src="<?php echo htmlspecialchars($adminHeroMedia['direct_video_desktop']); ?>" autoplay muted loop playsinline></video>
-                                            <?php endif; ?>
-                                        </div>
-                                        <div class="stage-scrim"></div>
-                                        <div class="stage-copy-overlay" style="padding-bottom: 42px;">
-                                            <div id="previewBadge" style="<?php echo !empty($settings['hero_badge_label']) ? 'display: inline-block;' : 'display: none;'; ?> background: rgba(220, 38, 38, 0.2); border: 1px solid rgba(239, 68, 68, 0.45); color: #fca5a5; font-size: 0.66rem; font-weight: 700; padding: 2px 8px; border-radius: 999px; margin-bottom: 8px;">
-                                                <?php echo htmlspecialchars($settings['hero_badge_label'] ?? ''); ?>
-                                            </div>
-                                            <div style="font-size: 1.22rem; font-weight: 800; line-height: 1.12; color: #ffffff; letter-spacing: -0.02em; margin-bottom: 6px; text-shadow: 0 2px 14px rgba(0,0,0,0.5);">
-                                                <div id="previewLine1"><?php echo htmlspecialchars($settings['hero_headline_line1'] ?? 'Creating what the'); ?></div>
-                                                <div id="previewLine2" style="color: #ef4444;"><?php echo htmlspecialchars($settings['hero_headline_line2'] ?? 'World Watches'); ?></div>
-                                            </div>
-                                            <p id="previewTagline" style="font-size: 0.72rem; color: #e2e8f0; line-height: 1.38; max-width: 330px; margin: 0 auto 10px auto;">
-                                                <?php echo htmlspecialchars($settings['hero_tagline'] ?? "From cinematic campaigns to viral content — we craft the visual stories your audience can't look away from."); ?>
-                                            </p>
-                                            <div style="display: flex; gap: 6px; flex-wrap: wrap; justify-content: center;">
-                                                <span id="previewPrimaryCta" style="background: #dc2626; color: #ffffff; padding: 4px 10px; border-radius: 6px; font-size: 0.66rem; font-weight: 700;">
-                                                    <?php echo htmlspecialchars($settings['hero_primary_cta_text'] ?? 'Explore Our Projects'); ?>
-                                                </span>
-                                                <span id="previewSecondaryCta" style="background: rgba(15, 23, 42, 0.65); border: 1px solid rgba(255,255,255,0.25); color: #ffffff; padding: 4px 10px; border-radius: 6px; font-size: 0.66rem; font-weight: 600;">
-                                                    &#9654; <?php echo htmlspecialchars($settings['hero_secondary_cta_text'] ?? 'Watch Showreel'); ?>
-                                                </span>
-                                            </div>
-                                        </div>
+                                    </div>
+                                </div>
 
-                                        <!-- Miniature Integrated Hero Stats Bar inside Stage Preview -->
-                                        <div id="stageInlineStatsBar" style="position: absolute; left: 0; right: 0; bottom: 0; z-index: 4; background: rgba(9, 9, 11, 0.66); backdrop-filter: blur(8px); border-top: 1px solid rgba(255,255,255,0.1); padding: 6px 12px; display: <?php echo ($statsVisible && $statsPlacement === 'hero') ? 'grid' : 'none'; ?>; grid-template-columns: repeat(<?php echo max(1, count($statsItems)); ?>, 1fr); gap: 6px; text-align: center;">
+                                <!-- Live Background Preview Section -->
+                                <div style="margin-top: 24px; padding-top: 20px; border-top: 1px solid #e2e8f0;">
+                                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px;">
+                                        <h4 style="font-size: 0.92rem; font-weight: 700; color: var(--text-primary); margin: 0;">Live Background Preview</h4>
+                                        <div style="display: flex; align-items: center; gap: 8px;">
+                                            <span style="font-size: 0.78rem; color: var(--text-muted);">Muted autoplay</span>
+                                            <span id="livePreviewBadge" style="background-color: #d97706; color: #ffffff; font-size: 0.72rem; font-weight: 700; padding: 2px 8px; border-radius: 10px;">Poster Only</span>
                                         </div>
                                     </div>
 
-                                    <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 12px; font-size: 0.76rem; color: #64748b;">
-                                        <span>Poster paints at 0ms; chromeless video crossfades once buffered.</span>
-                                        <a href="#" onclick="resetHeroBackgroundDefaults(); return false;" style="color: #64748b; font-weight: 600; text-decoration: none;">
-                                            Reset media
+                                    <!-- Live Preview Frame -->
+                                    <div style="position: relative; border-radius: 14px; overflow: hidden; background-color: #0f172a; aspect-ratio: 16/9; max-height: 240px; display: flex; align-items: center; justify-content: center; margin-bottom: 12px; border: 1px solid var(--card-border);">
+                                        <img 
+                                            id="liveBackgroundImg" 
+                                            src="<?php echo htmlspecialchars($settings['hero_poster_image'] ?? '/assets/img/hero.jpg'); ?>" 
+                                            alt="Live Background"
+                                            style="width: 100%; height: 100%; object-fit: cover;"
+                                            onerror="this.src='/assets/img/hero.jpg';"
+                                        >
+
+                                        <!-- Top Right Mode Tag -->
+                                        <div id="frameModeTag" style="position: absolute; top: 12px; right: 12px; background-color: #d97706; color: #ffffff; font-size: 0.7rem; font-weight: 700; padding: 3px 8px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.3);">
+                                            Poster Only
+                                        </div>
+
+                                        <!-- Bottom Left Live Tag -->
+                                        <div style="position: absolute; bottom: 12px; left: 12px; background-color: rgba(15, 23, 42, 0.85); color: #ffffff; font-size: 0.7rem; font-weight: 700; padding: 3px 8px; border-radius: 6px; display: flex; align-items: center; gap: 6px;">
+                                            <span style="width: 6px; height: 6px; border-radius: 50%; background-color: #ef4444;"></span> Live Preview
+                                        </div>
+                                    </div>
+
+                                    <p style="font-size: 0.78rem; color: var(--text-muted); line-height: 1.45; margin-bottom: 16px;">
+                                        This shows exactly what visitors see on the homepage. The preview reloads automatically when you change the background source.
+                                    </p>
+
+                                    <div style="text-align: left;">
+                                        <a href="#" onclick="resetHeroBackgroundDefaults(); return false;" style="color: var(--text-muted); font-size: 0.82rem; font-weight: 500; text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='var(--text-primary)'" onmouseout="this.style.color='var(--text-muted)'">
+                                            Reset to defaults
                                         </a>
                                     </div>
                                 </div>
                             </div>
+                        </div>
 
-                            <!-- Right Column: Headline Copy & Showreel Modal -->
-                            <div>
-                                <!-- Headline & Call-to-Action Card -->
-                                <div class="dashboard-card">
-                                    <div class="card-header-row">
-                                        <div class="card-icon-badge">
-                                            <i class="fa-solid fa-pen-nib"></i>
-                                        </div>
-                                        <div class="card-title-text">Headline &amp; Call-to-Action</div>
+                        <!-- Right Column: Showreel & Text Copy Cards -->
+                        <div>
+                            <!-- Showreel Modal Video Card -->
+                            <div class="dashboard-card">
+                                <div class="card-header-row">
+                                    <div class="card-icon-badge">
+                                        <i class="fa-solid fa-circle-play"></i>
                                     </div>
+                                    <div class="card-title-text">Showreel Modal Video</div>
+                                </div>
 
-                                    <div class="form-field">
-                                        <label class="form-label-title">Eyebrow Badge <span style="font-weight: 500; color: #94a3b8;">(optional)</span></label>
-                                        <input
-                                            type="text"
-                                            name="hero_badge_label"
-                                            id="hero_badge_label_input"
-                                            class="form-text-input"
-                                            placeholder="e.g. Global Production Studio"
-                                            value="<?php echo htmlspecialchars($settings['hero_badge_label'] ?? ''); ?>"
+                                <div class="form-field">
+                                    <label class="form-label-title">Showreel YouTube Video ID or URL</label>
+                                    <p class="form-label-help">This plays when visitors click 'Watch Showreel'. Paste a YouTube URL or just the 11-character video ID.</p>
+                                    <input 
+                                        type="text" 
+                                        name="showreel_youtube_id" 
+                                        id="showreelInput"
+                                        class="form-text-input" 
+                                        placeholder="Tf8rNMZ-Bw0"
+                                        value="<?php echo htmlspecialchars($settings['showreel_youtube_id'] ?? 'Tf8rNMZ-Bw0'); ?>"
+                                        oninput="updateShowreelPreview(this.value)"
+                                    >
+                                    <div style="font-size: 0.76rem; color: var(--text-muted); margin-top: 6px;" id="resolvedIdText">
+                                        Resolved ID: <strong><?php echo htmlspecialchars($settings['showreel_youtube_id'] ?? 'Tf8rNMZ-Bw0'); ?></strong>
+                                    </div>
+                                </div>
+
+                                <!-- Video Thumbnail Preview Box -->
+                                <div class="video-preview-box">
+                                    <iframe 
+                                        id="showreelIframe"
+                                        src="https://www.youtube.com/embed/<?php echo htmlspecialchars($settings['showreel_youtube_id'] ?? 'Tf8rNMZ-Bw0'); ?>" 
+                                        style="width:100%; height:100%; border:none;" 
+                                        allowfullscreen
+                                    ></iframe>
+                                    <div class="preview-overlay-tag">Hover to preview</div>
+                                </div>
+                            </div>
+
+                            <!-- Text & Copy Card (Exact Mockup Match) -->
+                            <div class="dashboard-card">
+                                <div class="card-header-row">
+                                    <div class="card-icon-badge">
+                                        <span style="font-weight: 700; font-size: 0.95rem;">T</span>
+                                    </div>
+                                    <div class="card-title-text">Text &amp; Copy</div>
+                                </div>
+
+                                <!-- Badge Label -->
+                                <div class="form-field">
+                                    <label class="form-label-title">Badge Label</label>
+                                    <p class="form-label-help">Small pill above the headline &mdash; leave blank to hide it</p>
+                                    <input 
+                                        type="text" 
+                                        name="hero_badge_label" 
+                                        id="hero_badge_label_input"
+                                        class="form-text-input" 
+                                        placeholder=""
+                                        value="<?php echo htmlspecialchars($settings['hero_badge_label'] ?? ''); ?>"
+                                        oninput="updateHeroPreview()"
+                                    >
+                                </div>
+
+                                <!-- Headline Line 1 -->
+                                <div class="form-field">
+                                    <label class="form-label-title">Headline &mdash; Line 1</label>
+                                    <p class="form-label-help">White text, first line of the big headline</p>
+                                    <input 
+                                        type="text" 
+                                        name="hero_headline_line1" 
+                                        id="hero_line1_input"
+                                        class="form-text-input" 
+                                        value="<?php echo htmlspecialchars($settings['hero_headline_line1'] ?? 'Creating what the'); ?>"
+                                        oninput="updateHeroPreview()"
+                                    >
+                                </div>
+
+                                <!-- Headline Line 2 (Red Glow) -->
+                                <div class="form-field">
+                                    <label class="form-label-title">Headline &mdash; Line 2 (Red Glow)</label>
+                                    <p class="form-label-help">Red glowing text, second line</p>
+                                    <input 
+                                        type="text" 
+                                        name="hero_headline_line2" 
+                                        id="hero_line2_input"
+                                        class="form-text-input" 
+                                        value="<?php echo htmlspecialchars($settings['hero_headline_line2'] ?? 'World Watches'); ?>"
+                                        oninput="updateHeroPreview()"
+                                    >
+                                </div>
+
+                                <!-- Tagline / Subheading -->
+                                <div class="form-field">
+                                    <label class="form-label-title">Tagline / Subheading</label>
+                                    <textarea 
+                                        name="hero_tagline" 
+                                        id="hero_tagline_input"
+                                        class="form-text-input" 
+                                        rows="3" 
+                                        style="resize: vertical;"
+                                        oninput="updateHeroPreview()"
+                                    ><?php echo htmlspecialchars($settings['hero_tagline'] ?? "From cinematic campaigns to viral content — we craft the visual stories your audience can't look away from."); ?></textarea>
+                                    <div style="text-align: right; font-size: 0.76rem; color: var(--text-muted); margin-top: 4px;" id="taglineCounter">
+                                        <?php echo strlen($settings['hero_tagline'] ?? "From cinematic campaigns to viral content — we craft the visual stories your audience can't look away from."); ?>/200
+                                    </div>
+                                </div>
+
+                                <!-- Primary CTA & Secondary CTA Buttons Row -->
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;" class="form-field">
+                                    <div>
+                                        <label class="form-label-title">Primary CTA Button</label>
+                                        <input 
+                                            type="text" 
+                                            name="hero_primary_cta_text" 
+                                            id="primary_cta_input"
+                                            class="form-text-input" 
+                                            value="<?php echo htmlspecialchars($settings['hero_primary_cta_text'] ?? 'Explore Our Projects'); ?>"
                                             oninput="updateHeroPreview()"
                                         >
                                     </div>
-
-                                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;" class="form-field">
-                                        <div>
-                                            <label class="form-label-title">Headline &mdash; Line 1</label>
-                                            <input
-                                                type="text"
-                                                name="hero_headline_line1"
-                                                id="hero_line1_input"
-                                                class="form-text-input"
-                                                value="<?php echo htmlspecialchars($settings['hero_headline_line1'] ?? 'Creating what the'); ?>"
-                                                oninput="updateHeroPreview()"
-                                            >
-                                        </div>
-                                        <div>
-                                            <label class="form-label-title">Headline &mdash; Line 2 (Accent)</label>
-                                            <input
-                                                type="text"
-                                                name="hero_headline_line2"
-                                                id="hero_line2_input"
-                                                class="form-text-input"
-                                                value="<?php echo htmlspecialchars($settings['hero_headline_line2'] ?? 'World Watches'); ?>"
-                                                oninput="updateHeroPreview()"
-                                            >
-                                        </div>
-                                    </div>
-
-                                    <div class="form-field">
-                                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
-                                            <label class="form-label-title" style="margin-bottom: 0;">Subheading</label>
-                                            <span style="font-size: 0.74rem; color: var(--text-muted);" id="taglineCounter">
-                                                <?php echo strlen($settings['hero_tagline'] ?? "From cinematic campaigns to viral content — we craft the visual stories your audience can't look away from."); ?>/200
-                                            </span>
-                                        </div>
-                                        <textarea
-                                            name="hero_tagline"
-                                            id="hero_tagline_input"
-                                            class="form-text-input"
-                                            rows="2"
-                                            style="resize: vertical;"
-                                            oninput="updateHeroPreview()"
-                                        ><?php echo htmlspecialchars($settings['hero_tagline'] ?? "From cinematic campaigns to viral content — we craft the visual stories your audience can't look away from."); ?></textarea>
-                                    </div>
-
-                                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;" class="form-field">
-                                        <div>
-                                            <label class="form-label-title">Primary CTA Label</label>
-                                            <input
-                                                type="text"
-                                                name="hero_primary_cta_text"
-                                                id="primary_cta_input"
-                                                class="form-text-input"
-                                                value="<?php echo htmlspecialchars($settings['hero_primary_cta_text'] ?? 'Explore Our Projects'); ?>"
-                                                oninput="updateHeroPreview()"
-                                            >
-                                        </div>
-                                        <div>
-                                            <label class="form-label-title">Primary CTA Link</label>
-                                            <input
-                                                type="text"
-                                                name="hero_primary_cta_url"
-                                                class="form-text-input"
-                                                placeholder="/portfolio.php"
-                                                value="<?php echo htmlspecialchars($settings['hero_primary_cta_url'] ?? '/portfolio.php'); ?>"
-                                            >
-                                        </div>
-                                    </div>
-
-                                    <div class="form-field" style="margin-bottom: 0;">
-                                        <label class="form-label-title">Secondary CTA Label <span style="font-weight: 500; color: #94a3b8;">(opens Showreel modal)</span></label>
-                                        <input
-                                            type="text"
-                                            name="hero_secondary_cta_text"
+                                    <div>
+                                        <label class="form-label-title">Secondary CTA Button</label>
+                                        <input 
+                                            type="text" 
+                                            name="hero_secondary_cta_text" 
                                             id="secondary_cta_input"
-                                            class="form-text-input"
+                                            class="form-text-input" 
                                             value="<?php echo htmlspecialchars($settings['hero_secondary_cta_text'] ?? 'Watch Showreel'); ?>"
                                             oninput="updateHeroPreview()"
                                         >
                                     </div>
                                 </div>
 
-                                <!-- Showreel Modal Video Card -->
-                                <div class="dashboard-card">
-                                    <div class="card-header-row" style="justify-content: space-between;">
-                                        <div style="display: flex; align-items: center; gap: 10px;">
-                                            <div class="card-icon-badge">
-                                                <i class="fa-solid fa-circle-play"></i>
-                                            </div>
-                                            <div class="card-title-text">Showreel Lightbox Video</div>
-                                        </div>
-                                        <span style="font-size: 0.74rem; color: #64748b;" id="resolvedIdText">
-                                            ID: <strong><?php echo htmlspecialchars($adminHeroMedia['showreel_id']); ?></strong>
-                                        </span>
+                                <!-- Hero Live Preview Card (Black Box) -->
+                                <div style="background-color: #0a0e17; border-radius: 14px; padding: 22px; margin-top: 20px; color: #ffffff;">
+                                    <div id="previewBadge" style="<?php echo !empty($settings['hero_badge_label']) ? 'display: inline-block;' : 'display: none;'; ?> background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.3); color: #ef4444; font-size: 0.7rem; font-weight: 700; padding: 3px 8px; border-radius: 12px; margin-bottom: 12px;">
+                                        <?php echo htmlspecialchars($settings['hero_badge_label'] ?? ''); ?>
+                                    </div>
+                                    
+                                    <div style="font-size: 1.45rem; font-weight: 700; line-height: 1.2; margin-bottom: 12px;">
+                                        <div id="previewLine1"><?php echo htmlspecialchars($settings['hero_headline_line1'] ?? 'Creating what the'); ?></div>
+                                        <div id="previewLine2" style="color: #ef4444;"><?php echo htmlspecialchars($settings['hero_headline_line2'] ?? 'World Watches'); ?></div>
                                     </div>
 
-                                    <div class="form-field">
-                                        <label class="form-label-title">YouTube Video ID or URL</label>
-                                        <input
-                                            type="text"
-                                            name="showreel_youtube_id"
-                                            id="showreelInput"
-                                            class="form-text-input"
-                                            placeholder="Tf8rNMZ-Bw0"
-                                            value="<?php echo htmlspecialchars($settings['showreel_youtube_id'] ?? 'Tf8rNMZ-Bw0'); ?>"
-                                            oninput="updateShowreelPreview(this.value)"
-                                        >
-                                    </div>
-
-                                    <div class="video-preview-box" style="margin-bottom: 0;">
-                                        <iframe
-                                            id="showreelIframe"
-                                            src="https://www.youtube-nocookie.com/embed/<?php echo htmlspecialchars($adminHeroMedia['showreel_id']); ?>?rel=0&modestbranding=1"
-                                            style="width:100%; height:100%; border:none;"
-                                            allowfullscreen
-                                        ></iframe>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- PANEL 2: CONSOLIDATED STATS COUNTER (Cleaned Up & Integrated into Hero) -->
-                    <div id="heroPanelStats" style="<?php echo ($activeHeroTab === 'stats') ? '' : 'display: none;'; ?>">
-                        <div class="dashboard-card">
-                            <div style="display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; padding-bottom: 16px; margin-bottom: 18px; border-bottom: 1px solid #f1f5f9;">
-                                <div style="display: flex; align-items: center; gap: 10px;">
-                                    <div class="card-icon-badge">
-                                        <i class="fa-solid fa-chart-simple"></i>
-                                    </div>
-                                    <div>
-                                        <div class="card-title-text">Impact Stats Counter</div>
-                                        <div style="font-size: 0.78rem; color: #64748b;">Render inside the Hero bottom bar or as a standalone homepage section</div>
-                                    </div>
-                                </div>
-
-                                <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
-                                    <label class="admin-inline-switch" style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 6px 12px; border-radius: 8px;">
-                                        <input
-                                            type="checkbox"
-                                            name="stats_visible"
-                                            id="stats_visible_input"
-                                            value="1"
-                                            <?php echo $statsVisible ? 'checked' : ''; ?>
-                                            onchange="renderQuickPreview()"
-                                        >
-                                        <span>Show on Homepage</span>
-                                    </label>
-
-                                    <input type="hidden" name="stats_placement" id="stats_placement_input" value="<?php echo htmlspecialchars($statsPlacement); ?>">
-                                    <div class="stage-viewport-tabs" role="radiogroup" aria-label="Stats counter placement">
-                                        <button
-                                            type="button"
-                                            class="stage-viewport-tab <?php echo $statsPlacement === 'hero' ? 'active' : ''; ?>"
-                                            id="statsPlaceHeroBtn"
-                                            onclick="setStatsPlacement('hero')"
-                                        >
-                                            <i class="fa-solid fa-window-maximize"></i> Inside Hero Bar
-                                        </button>
-                                        <button
-                                            type="button"
-                                            class="stage-viewport-tab <?php echo $statsPlacement === 'section' ? 'active' : ''; ?>"
-                                            id="statsPlaceSectionBtn"
-                                            onclick="setStatsPlacement('section')"
-                                        >
-                                            <i class="fa-solid fa-grip"></i> Standalone Section
-                                        </button>
-                                    </div>
-
-                                    <button type="button" class="btn-header-action" onclick="addNewStatCard()">
-                                        <i class="fa-solid fa-plus"></i> Add Metric
-                                    </button>
-                                </div>
-                            </div>
-
-                            <!-- Compact Studio Metric Rows -->
-                            <div class="stats-table-head">
-                                <span>#</span>
-                                <span>Icon</span>
-                                <span>Prefix</span>
-                                <span>Value</span>
-                                <span>Suffix</span>
-                                <span>Metric Label</span>
-                                <span>Sublabel</span>
-                                <span></span>
-                            </div>
-
-                            <div id="statCardsContainer">
-                                <?php foreach ($statsItems as $i => $item): ?>
-                                    <div class="stat-compact-row stat-card-box">
-                                        <span class="stat-row-index" style="font-size: 0.76rem; font-weight: 700; color: #94a3b8; text-align: center;"><?php echo ($i + 1); ?></span>
-
-                                        <select name="stat_icon[]" class="form-text-input stat-icon-field" onchange="renderQuickPreview()">
-                                            <?php foreach ($statIconChoices as $icVal => $icLabel): ?>
-                                                <option value="<?php echo htmlspecialchars($icVal); ?>" <?php echo ($item['icon'] ?? 'ri-film-line') === $icVal ? 'selected' : ''; ?>>
-                                                    <?php echo htmlspecialchars($icLabel); ?>
-                                                </option>
-                                            <?php endforeach; ?>
-                                        </select>
-
-                                        <input type="text" name="stat_prefix[]" class="form-text-input stat-prefix-field" placeholder="$" value="<?php echo htmlspecialchars($item['prefix'] ?? ''); ?>" oninput="renderQuickPreview()" title="Optional prefix">
-
-                                        <input type="text" name="stat_number[]" class="form-text-input stat-number-field" style="font-weight: 700;" placeholder="150" value="<?php echo htmlspecialchars($item['number'] ?? ''); ?>" oninput="renderQuickPreview()">
-
-                                        <input type="text" name="stat_suffix[]" class="form-text-input stat-suffix-field" placeholder="+" value="<?php echo htmlspecialchars($item['suffix'] ?? '+'); ?>" oninput="renderQuickPreview()" title="Suffix (+, %, K)">
-
-                                        <input type="text" name="stat_label[]" class="form-text-input stat-label-field" placeholder="Projects Delivered" value="<?php echo htmlspecialchars($item['label'] ?? ''); ?>" oninput="renderQuickPreview()">
-
-                                        <input type="text" name="stat_sublabel[]" class="form-text-input stat-sublabel-field" placeholder="Across commercial, film & events" value="<?php echo htmlspecialchars($item['sublabel'] ?? ''); ?>" oninput="renderQuickPreview()">
-
-                                        <button type="button" onclick="removeStatCard(this)" style="width: 32px; height: 32px; border-radius: 7px; border: 1px solid #e2e8f0; background: #ffffff; color: #64748b; cursor: pointer; display: inline-flex; align-items: center; justify-content: center;" title="Remove metric">
-                                            <i class="fa-regular fa-trash-can" style="font-size: 0.8rem;"></i>
-                                        </button>
-                                    </div>
-                                <?php endforeach; ?>
-                            </div>
-
-                            <!-- Standalone Section Header Copy (Cleanly Scoped) -->
-                            <details class="admin-disclosure" id="statsSectionHeaderDisclosure" <?php echo $statsPlacement === 'section' ? 'open' : ''; ?>>
-                                <summary>
-                                    <span><i class="fa-solid fa-heading" style="margin-right: 6px; color: #64748b;"></i> Standalone Section Heading &amp; Copy <span style="font-weight: 500; color: #94a3b8;">(used when "Standalone Section" placement is active)</span></span>
-                                    <i class="fa-solid fa-chevron-down" style="font-size: 0.72rem; color: #94a3b8;"></i>
-                                </summary>
-                                <div style="margin-top: 12px; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px;">
-                                    <div>
-                                        <label class="form-label-title" style="font-size: 0.78rem;">Eyebrow Badge</label>
-                                        <input type="text" name="stats_badge_label" id="stats_badge_input" class="form-text-input" style="background:#fff;" placeholder="By the Numbers" value="<?php echo htmlspecialchars($statsBadge); ?>" oninput="updateStatsPreview()">
-                                    </div>
-                                    <div>
-                                        <label class="form-label-title" style="font-size: 0.78rem;">Headline &mdash; Primary</label>
-                                        <input type="text" name="stats_headline_white" id="stats_white_input" class="form-text-input" style="background:#fff;" value="<?php echo htmlspecialchars($statsWhite); ?>" oninput="updateStatsPreview()">
-                                    </div>
-                                    <div>
-                                        <label class="form-label-title" style="font-size: 0.78rem;">Headline &mdash; Red Accent</label>
-                                        <input type="text" name="stats_headline_red" id="stats_red_input" class="form-text-input" style="background:#fff;" value="<?php echo htmlspecialchars($statsRed); ?>" oninput="updateStatsPreview()">
-                                    </div>
-                                </div>
-                                <div style="margin-top: 10px;">
-                                    <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
-                                        <label class="form-label-title" style="font-size: 0.78rem; margin: 0;">Description</label>
-                                        <span style="font-size: 0.72rem; color: #64748b;" id="statsDescCounter"><?php echo strlen($statsDesc); ?>/300</span>
-                                    </div>
-                                    <textarea name="stats_description" id="stats_desc_input" class="form-text-input" style="background:#fff; resize: vertical;" rows="2" oninput="updateStatsPreview()"><?php echo htmlspecialchars($statsDesc); ?></textarea>
-                                </div>
-                            </details>
-
-                            <!-- Unified Live Dark Frontend Preview -->
-                            <div style="background: #09090b; border: 1px solid #1e293b; border-radius: 12px; padding: 20px 22px; margin-top: 16px; color: #ffffff;">
-                                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; flex-wrap: wrap; gap: 8px;">
-                                    <div style="display: flex; align-items: center; gap: 8px;">
-                                        <span style="font-size: 0.72rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em;">Live Frontend Render Preview</span>
-                                        <span id="statCardsCountBadge" style="font-size: 0.7rem; background: rgba(255,255,255,0.08); color: #e2e8f0; padding: 2px 8px; border-radius: 999px; font-weight: 600;"><?php echo count($statsItems); ?> metrics</span>
-                                    </div>
-                                    <a href="#" onclick="resetStatsDefaults(); return false;" style="color: #94a3b8; font-size: 0.75rem; font-weight: 600; text-decoration: none;">Reset defaults</a>
-                                </div>
-
-                                <div id="statsSectionHeaderPreview" style="text-align: center; margin-bottom: 18px; <?php echo $statsPlacement === 'section' ? '' : 'display: none;'; ?>">
-                                    <div id="statsPreviewBadge" style="<?php echo $statsBadge !== '' ? 'display: inline-block;' : 'display: none;'; ?> background: rgba(220, 38, 38, 0.16); border: 1px solid rgba(220, 38, 38, 0.35); color: #fca5a5; font-size: 0.68rem; font-weight: 700; padding: 2px 10px; border-radius: 999px; margin-bottom: 8px;">
-                                        <?php echo htmlspecialchars($statsBadge); ?>
-                                    </div>
-                                    <div style="font-size: 1.3rem; font-weight: 800; line-height: 1.2;">
-                                        <span id="statsPreviewWhite"><?php echo htmlspecialchars($statsWhite); ?> </span><span id="statsPreviewRed" style="color: #ef4444;"><?php echo htmlspecialchars($statsRed); ?></span>
-                                    </div>
-                                    <p id="statsPreviewDesc" style="font-size: 0.78rem; color: #94a3b8; max-width: 520px; margin: 6px auto 0 auto; line-height: 1.45;">
-                                        <?php echo htmlspecialchars($statsDesc); ?>
+                                    <p id="previewTagline" style="font-size: 0.85rem; color: #94a3b8; line-height: 1.45; margin-bottom: 16px;">
+                                        <?php echo htmlspecialchars($settings['hero_tagline'] ?? "From cinematic campaigns to viral content — we craft the visual stories your audience can't look away from."); ?>
                                     </p>
-                                </div>
 
-                                <div id="quickPreviewGrid" style="display: grid; grid-template-columns: repeat(<?php echo max(1, count($statsItems)); ?>, minmax(0, 1fr)); gap: 12px;"></div>
+                                    <div style="display: flex; gap: 10px;">
+                                        <div id="previewPrimaryCta" style="background-color: #dc2626; color: #ffffff; padding: 8px 14px; border-radius: 6px; font-size: 0.8rem; font-weight: 700;">
+                                            <?php echo htmlspecialchars($settings['hero_primary_cta_text'] ?? 'Explore Our Projects'); ?>
+                                        </div>
+                                        <div id="previewSecondaryCta" style="background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.2); color: #ffffff; padding: 8px 14px; border-radius: 6px; font-size: 0.8rem; font-weight: 600;">
+                                            <?php echo htmlspecialchars($settings['hero_secondary_cta_text'] ?? 'Watch Showreel'); ?>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </form>
 
+            <!-- SECTION: STATS COUNTER -->
+            <?php elseif ($activeSection === 'stats'): ?>
+                <?php 
+                $statsBadge = $settings['stats_badge_label'] ?? 'By the Numbers';
+                $statsWhite = $settings['stats_headline_white'] ?? 'A Decade of';
+                $statsRed = $settings['stats_headline_red'] ?? 'Impact';
+                $statsDesc = $settings['stats_description'] ?? "The numbers behind Falhen's reputation as one of Africa's most awarded and globally recognised production houses.";
+                $statsItems = $settings['stats_items'] ?? [
+                    ['number' => '250', 'suffix' => '+', 'prefix' => '', 'label' => 'Projects Delivered', 'sublabel' => 'Across commercial, film & events', 'icon' => 'ri-film-line'],
+                    ['number' => '12', 'suffix' => '+', 'prefix' => '', 'label' => 'Years Experience', 'sublabel' => 'Delivering world-class productions', 'icon' => 'ri-history-line'],
+                    ['number' => '7', 'suffix' => '+', 'prefix' => '', 'label' => 'Industries Served', 'sublabel' => 'From tech to luxury to social', 'icon' => 'ri-earth-line'],
+                    ['number' => '4', 'suffix' => '+', 'prefix' => '', 'label' => 'Industry Awards', 'sublabel' => 'SHH, Webby & more', 'icon' => 'ri-trophy-line']
+                ];
+                ?>
+                <form id="statsForm" method="POST" action="/admin/index.php?section=stats">
+                    <input type="hidden" name="action" value="save_stats">
+
+                    <div class="section-header-bar">
+                        <div>
+                            <h1 class="section-header-title">Stats Counter</h1>
+                            <p class="section-header-desc">Edit the "By the Numbers" section &mdash; syncs across all devices via Supabase</p>
+                        </div>
+                        <button type="submit" class="btn-save-primary">
+                            <i class="fa-solid fa-floppy-disk"></i> Save Changes
+                        </button>
+                    </div>
+
+                    <div class="form-grid-two">
+                        <!-- Left Column: Section Header & Live Section Preview -->
+                        <div>
+                            <!-- Section Header Card -->
+                            <div class="dashboard-card">
+                                <div class="card-header-row">
+                                    <div class="card-icon-badge">
+                                        <span style="font-weight: 700; font-size: 0.95rem;">T</span>
+                                    </div>
+                                    <div class="card-title-text">Section Header</div>
+                                </div>
+
+                                <!-- Badge Label -->
+                                <div class="form-field">
+                                    <label class="form-label-title">Badge Label</label>
+                                    <p class="form-label-help">Small pill above the headline</p>
+                                    <input 
+                                        type="text" 
+                                        name="stats_badge_label" 
+                                        id="stats_badge_input"
+                                        class="form-text-input" 
+                                        value="<?php echo htmlspecialchars($statsBadge); ?>"
+                                        oninput="updateStatsPreview()"
+                                    >
+                                </div>
+
+                                <!-- Headline - White Part -->
+                                <div class="form-field">
+                                    <label class="form-label-title">Headline &mdash; White Part</label>
+                                    <input 
+                                        type="text" 
+                                        name="stats_headline_white" 
+                                        id="stats_white_input"
+                                        class="form-text-input" 
+                                        value="<?php echo htmlspecialchars($statsWhite); ?>"
+                                        oninput="updateStatsPreview()"
+                                    >
+                                </div>
+
+                                <!-- Headline - Red Part -->
+                                <div class="form-field">
+                                    <label class="form-label-title">Headline &mdash; Red Part</label>
+                                    <input 
+                                        type="text" 
+                                        name="stats_headline_red" 
+                                        id="stats_red_input"
+                                        class="form-text-input" 
+                                        value="<?php echo htmlspecialchars($statsRed); ?>"
+                                        oninput="updateStatsPreview()"
+                                    >
+                                </div>
+
+                                <!-- Description -->
+                                <div class="form-field">
+                                    <label class="form-label-title">Description</label>
+                                    <p class="form-label-help">Shown below the headline on desktop</p>
+                                    <textarea 
+                                        name="stats_description" 
+                                        id="stats_desc_input"
+                                        class="form-text-input" 
+                                        rows="3" 
+                                        style="resize: vertical;"
+                                        oninput="updateStatsPreview()"
+                                    ><?php echo htmlspecialchars($statsDesc); ?></textarea>
+                                    <div style="text-align: right; font-size: 0.76rem; color: var(--text-muted); margin-top: 4px;" id="statsDescCounter">
+                                        <?php echo strlen($statsDesc); ?>/300
+                                    </div>
+                                </div>
+
+                                <!-- Section Live Preview Box (Black Box) -->
+                                <div style="background-color: #0a0e17; border-radius: 14px; padding: 22px; margin-top: 20px; color: #ffffff;">
+                                    <div id="statsPreviewBadge" style="background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.3); color: #ef4444; font-size: 0.7rem; font-weight: 700; padding: 3px 10px; border-radius: 12px; display: inline-block; margin-bottom: 12px;">
+                                        <?php echo htmlspecialchars($statsBadge); ?>
+                                    </div>
+                                    
+                                    <div style="font-size: 1.45rem; font-weight: 700; line-height: 1.2; margin-bottom: 10px;">
+                                        <span id="statsPreviewWhite"><?php echo htmlspecialchars($statsWhite); ?></span>
+                                        <span id="statsPreviewRed" style="color: #ef4444;"><?php echo htmlspecialchars($statsRed); ?></span>
+                                    </div>
+
+                                    <p id="statsPreviewDesc" style="font-size: 0.83rem; color: #94a3b8; line-height: 1.45; margin-bottom: 16px;">
+                                        <?php echo htmlspecialchars($statsDesc); ?>
+                                    </p>
+
+                                    <a href="#" onclick="resetStatsDefaults(); return false;" style="color: #64748b; font-size: 0.8rem; text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='#94a3b8'" onmouseout="this.style.color='#64748b'">
+                                        Reset to defaults
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Right Column: Stat Cards List & Quick Preview -->
+                        <div>
+                            <div class="dashboard-card">
+                                <div class="card-header-row" style="justify-content: space-between;">
+                                    <div style="display: flex; align-items: center; gap: 10px;">
+                                        <div class="card-icon-badge">
+                                            <i class="fa-solid fa-chart-column"></i>
+                                        </div>
+                                        <div class="card-title-text">Stat Cards</div>
+                                    </div>
+                                    <span style="font-size: 0.8rem; color: var(--text-muted); font-weight: 600;" id="statCardsCountBadge"><?php echo count($statsItems); ?> stats</span>
+                                </div>
+
+                                <!-- Dynamic Stat Cards Container -->
+                                <div id="statCardsContainer">
+                                    <?php foreach ($statsItems as $i => $item): ?>
+                                        <div class="stat-card-box" style="background: #ffffff; border: 1px solid var(--card-border); border-radius: 12px; padding: 18px; margin-bottom: 16px;">
+                                            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px;">
+                                                <div style="display: flex; align-items: center; gap: 8px;">
+                                                    <div style="width: 28px; height: 28px; border-radius: 6px; background: rgba(239,68,68,0.1); color: #ef4444; display: flex; align-items: center; justify-content: center; font-size: 0.85rem;">
+                                                        <i class="fa-solid fa-film"></i>
+                                                    </div>
+                                                    <span style="font-size: 0.9rem; font-weight: 700; color: var(--text-primary);">Stat #<?php echo ($i + 1); ?></span>
+                                                </div>
+                                                <div style="display: flex; align-items: center; gap: 8px; color: var(--text-muted);">
+                                                    <button type="button" class="btn-icon-action" style="background: none; border: none; cursor: pointer; color: var(--text-muted);" title="Toggle Collapse"><i class="fa-solid fa-chevron-up"></i></button>
+                                                    <button type="button" class="btn-icon-action" onclick="removeStatCard(this)" style="background: none; border: none; cursor: pointer; color: var(--text-muted);" title="Delete Stat"><i class="fa-regular fa-trash-can"></i></button>
+                                                </div>
+                                            </div>
+
+                                            <!-- Number, Suffix, Prefix 3-Column Row -->
+                                            <div style="display: grid; grid-template-columns: 2fr 1.5fr 1.5fr; gap: 10px; margin-bottom: 12px;">
+                                                <div>
+                                                    <label class="form-label-title" style="font-size: 0.78rem;">Number</label>
+                                                    <input type="text" name="stat_number[]" class="form-text-input stat-number-field" value="<?php echo htmlspecialchars($item['number'] ?? ''); ?>" oninput="renderQuickPreview()">
+                                                </div>
+                                                <div>
+                                                    <label class="form-label-title" style="font-size: 0.78rem;">Suffix</label>
+                                                    <input type="text" name="stat_suffix[]" class="form-text-input stat-suffix-field" placeholder="e.g. + or %" value="<?php echo htmlspecialchars($item['suffix'] ?? '+'); ?>" oninput="renderQuickPreview()">
+                                                </div>
+                                                <div>
+                                                    <label class="form-label-title" style="font-size: 0.78rem;">Prefix</label>
+                                                    <input type="text" name="stat_prefix[]" class="form-text-input stat-prefix-field" placeholder="e.g. $ (optional)" value="<?php echo htmlspecialchars($item['prefix'] ?? ''); ?>" oninput="renderQuickPreview()">
+                                                </div>
+                                            </div>
+
+                                            <!-- Label -->
+                                            <div style="margin-bottom: 12px;">
+                                                <label class="form-label-title" style="font-size: 0.78rem;">Label</label>
+                                                <input type="text" name="stat_label[]" class="form-text-input stat-label-field" value="<?php echo htmlspecialchars($item['label'] ?? ''); ?>" oninput="renderQuickPreview()">
+                                            </div>
+
+                                            <!-- Sublabel -->
+                                            <div style="margin-bottom: 12px;">
+                                                <label class="form-label-title" style="font-size: 0.78rem;">Sublabel</label>
+                                                <p class="form-label-help" style="font-size: 0.72rem; margin-bottom: 4px;">Short description shown below the label</p>
+                                                <input type="text" name="stat_sublabel[]" class="form-text-input stat-sublabel-field" value="<?php echo htmlspecialchars($item['sublabel'] ?? ''); ?>" oninput="renderQuickPreview()">
+                                            </div>
+
+                                            <!-- Icon Selector Dropdown -->
+                                            <div>
+                                                <label class="form-label-title" style="font-size: 0.78rem;">Icon</label>
+                                                <select name="stat_icon[]" class="form-text-input stat-icon-field" onchange="renderQuickPreview()">
+                                                    <option value="ri-film-line" <?php echo ($item['icon'] ?? '') === 'ri-film-line' ? 'selected' : ''; ?>>🎞️ ri-film-line</option>
+                                                    <option value="ri-history-line" <?php echo ($item['icon'] ?? '') === 'ri-history-line' ? 'selected' : ''; ?>>🕒 ri-history-line</option>
+                                                    <option value="ri-earth-line" <?php echo ($item['icon'] ?? '') === 'ri-earth-line' ? 'selected' : ''; ?>>🌐 ri-earth-line</option>
+                                                    <option value="ri-trophy-line" <?php echo ($item['icon'] ?? '') === 'ri-trophy-line' ? 'selected' : ''; ?>>🏆 ri-trophy-line</option>
+                                                    <option value="ri-star-line" <?php echo ($item['icon'] ?? '') === 'ri-star-line' ? 'selected' : ''; ?>>⭐ ri-star-line</option>
+                                                    <option value="ri-user-star-line" <?php echo ($item['icon'] ?? '') === 'ri-user-star-line' ? 'selected' : ''; ?>>👤 ri-user-star-line</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    <?php endforeach; ?>
+                                </div>
+
+                                <!-- Add Stat Button -->
+                                <button type="button" onclick="addNewStatCard()" style="width: 100%; padding: 12px; background: transparent; border: 1px dashed #cbd5e1; border-radius: 10px; color: var(--text-secondary); font-size: 0.88rem; font-weight: 600; cursor: pointer; transition: background 0.2s, border-color 0.2s;" onmouseover="this.style.background='#f8fafc'; this.style.borderColor='#94a3b8';" onmouseout="this.style.background='transparent'; this.style.borderColor='#cbd5e1';">
+                                    + Add Stat
+                                </button>
+                            </div>
+
+                            <!-- Quick Preview Card (Black Box) -->
+                            <div style="background-color: #0a0e17; border-radius: 14px; padding: 22px; margin-top: 24px; color: #ffffff;">
+                                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px;">
+                                    <span style="font-size: 0.72rem; font-weight: 700; color: #64748b; letter-spacing: 0.5px;">QUICK PREVIEW</span>
+                                    <span style="font-size: 0.72rem; color: #ef4444; font-weight: 600; cursor: pointer;">
+                                        <i class="fa-solid fa-expand"></i> Full preview
+                                    </span>
+                                </div>
+
+                                <!-- 2x2 Grid of Stat Cards Preview -->
+                                <div id="quickPreviewGrid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                                    <!-- Rendered dynamically via JS renderQuickPreview() -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+
+
+
             <!-- SECTION: PRODUCTION BTS -->
             <?php elseif ($activeSection === 'bts'): ?>
                 <?php 
-                $btsItems = $settings['bts_items'] ?? [
-                    ['id' => 1, 'title' => 'On set — RedBull Campaign, Dubai 2024', 'subtitle' => 'Director reviewing footage on set', 'image' => 'https://images.unsplash.com/photo-1574717024653-61fd2cf4d44d?auto=format&fit=crop&w=800&q=80', 'visible' => true],
-                    ['id' => 2, 'title' => 'ARRI ALEXA Mini LF — lens prep', 'subtitle' => 'Camera rig setup', 'image' => 'https://images.unsplash.com/photo-1585829365295-ab7cd400c167?auto=format&fit=crop&w=800&q=80', 'visible' => true],
-                    ['id' => 3, 'title' => 'Lighting rig — HBO Teaser, Cape Town', 'subtitle' => 'Lighting setup', 'image' => 'https://images.unsplash.com/photo-1598899134739-24c46f58b8c0?auto=format&fit=crop&w=800&q=80', 'visible' => true],
-                    ['id' => 4, 'title' => 'Aerial Drone Scout — Kenya Safari', 'subtitle' => '4K aerial footage capture', 'image' => 'https://images.unsplash.com/photo-1508614589041-895b88991e3e?auto=format&fit=crop&w=800&q=80', 'visible' => true],
-                    ['id' => 5, 'title' => 'Post-Production Suite — Color Grading', 'subtitle' => 'DaVinci Resolve studio session', 'image' => 'https://images.unsplash.com/photo-1536240478700-b869070f9279?auto=format&fit=crop&w=800&q=80', 'visible' => true],
-                    ['id' => 6, 'title' => 'Wedding Cinema Shoot — Sunset', 'subtitle' => 'Romantic Golden Hour capture', 'image' => 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=800&q=80', 'visible' => true]
-                ];
+                $btsItems = getProductionBtsRepo();
                 ?>
                 <form id="btsForm" method="POST" action="/admin/index.php?section=bts" enctype="multipart/form-data">
                     <input type="hidden" name="action" value="save_bts">
@@ -6860,8 +6782,8 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                     ['id' => 4, 'project_name' => 'Gala Award Night', 'client' => 'Ibadan College of Medicine', 'category' => 'Award Night Documentary', 'year' => '2024', 'duration' => '1:53', 'youtube_id' => 'Tf8rNMZ-Bw0', 'video_source' => 'youtube', 'thumbnail' => 'https://res.cloudinary.com/pnabfi91/image/upload/v1791226024/falhen/portfolio/ldtm77cjygkwcgijkdqq.jpg', 'is_hero_featured' => false, 'status' => 'live'],
                     ['id' => 5, 'project_name' => 'Black History Month', 'client' => 'BMRC', 'category' => 'Commercial Documentary', 'year' => '2024', 'duration' => '2:25', 'youtube_id' => 'Z84AOc_t2Sk', 'video_source' => 'youtube', 'thumbnail' => 'https://res.cloudinary.com/pnabfi91/image/upload/v1791222920/falhen/portfolio/c5k5xwoa1misejie2oxy.jpg', 'is_hero_featured' => false, 'status' => 'live'],
                     ['id' => 6, 'project_name' => 'Wedding Celebration', 'client' => 'Diané & Max', 'category' => 'Wedding Film', 'year' => '2024', 'duration' => '1:49', 'youtube_id' => 'AXqylP5AENQ', 'video_source' => 'youtube', 'thumbnail' => 'https://res.cloudinary.com/pnabfi91/image/upload/v1791224271/falhen/portfolio/ysfriy8jlhhkcuzl8j16.jpg', 'is_hero_featured' => false, 'status' => 'live'],
-                    ['id' => 7, 'project_name' => 'Wedding Celebration', 'client' => 'Ernie & Emily', 'category' => 'Wedding Film', 'year' => '2024', 'duration' => '1:30', 'youtube_id' => 'zidrFg1ikBc', 'video_source' => 'youtube', 'thumbnail' => 'https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=800&q=80', 'is_hero_featured' => false, 'status' => 'live'],
-                    ['id' => 8, 'project_name' => 'Wedding Reels', 'client' => 'Wedding', 'category' => 'Wedding Film', 'year' => '2024', 'duration' => '1:28', 'youtube_id' => 'ezAGweXeQOw', 'video_source' => 'youtube', 'thumbnail' => 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=800&q=80', 'is_hero_featured' => false, 'status' => 'live']
+                    ['id' => 7, 'project_name' => 'Wedding Celebration', 'client' => 'Ernie & Emily', 'category' => 'Wedding Film', 'year' => '2024', 'duration' => '1:30', 'youtube_id' => 'zidrFg1ikBc', 'video_source' => 'youtube', 'thumbnail' => 'https://res.cloudinary.com/pnabfi91/image/upload/v1791224271/falhen/portfolio/ysfriy8jlhhkcuzl8j16.jpg', 'is_hero_featured' => false, 'status' => 'live'],
+                    ['id' => 8, 'project_name' => 'Wedding Reels', 'client' => 'Wedding', 'category' => 'Wedding Film', 'year' => '2024', 'duration' => '1:28', 'youtube_id' => 'ezAGweXeQOw', 'video_source' => 'youtube', 'thumbnail' => 'https://res.cloudinary.com/pnabfi91/image/upload/v1791222750/falhen/portfolio/blpzc2fznaqr0czm3ji8.jpg', 'is_hero_featured' => false, 'status' => 'live']
                 ];
 
                 $editId = (int)($_GET['edit_id'] ?? 0);
@@ -7127,10 +7049,10 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
             <?php elseif ($activeSection === 'services'): ?>
                 <?php 
                 $servicesItems = $settings['services_items'] ?? [
-                    ['id' => 1, 'slug' => 'video-production', 'title' => 'Video Production', 'icon' => 'fa-solid fa-film', 'short_description' => 'Professional video production services from concept to completion, including scripting, filming, and editing with state-of-the-art equipment.', 'detail_description' => 'Our full-service video production team handles every stage of the process...', 'image' => 'https://images.unsplash.com/photo-1574717024653-61fd2cf4d44d?auto=format&fit=crop&w=800&q=80', 'card_features' => ['Corporate videos & commercials', '4K & 8K video capture', 'Drone cinematography', 'Multi-camera productions'], 'detail_features' => ['4K & 8K Cinema Capture', 'Drone Aerial Cinematography', 'Multi-Camera Rigs', 'Scriptwriting & Storyboarding']],
-                    ['id' => 2, 'slug' => 'live-streaming', 'title' => 'Live Streaming', 'icon' => 'fa-solid fa-tower-broadcast', 'short_description' => 'Seamless live streaming solutions for events, conferences, and broadcasts with professional-grade equipment and technical support.', 'detail_description' => 'We broadcast your live events to global audiences...', 'image' => 'https://images.unsplash.com/photo-1518173946687-a4c8a383392e?auto=format&fit=crop&w=800&q=80', 'card_features' => ['Multi-platform streaming', 'Real-time graphics & overlays', 'Interactive audience engagement', 'Technical support & monitoring'], 'detail_features' => ['Multi-Platform Simulcasting', 'Custom Graphic Overlays', 'Low-Latency Broadcast', 'Dedicated On-Site Engineers']],
-                    ['id' => 3, 'slug' => 'post-production', 'title' => 'Post Production', 'icon' => 'fa-solid fa-sliders', 'short_description' => 'Comprehensive post-production services including editing, color grading, sound design, and visual effects to polish your content.', 'detail_description' => 'Transform raw footage into a cinematic masterpiece...', 'image' => 'https://images.unsplash.com/photo-1536240478700-b869070f9279?auto=format&fit=crop&w=800&q=80', 'card_features' => ['Professional video editing', 'Color correction & grading', 'Sound design & mixing', 'Visual effects & compositing'], 'detail_features' => ['DaVinci Resolve Color Grading', 'Spatial Sound & Audio Mixing', 'VFX Compositing & Clean-ups', 'Multi-format Master Export']],
-                    ['id' => 4, 'slug' => 'animation', 'title' => 'Animation & Motion Graphics', 'icon' => 'fa-solid fa-wand-magic-sparkles', 'short_description' => 'Creative animation and motion graphics services to enhance your brand storytelling with engaging visual elements.', 'detail_description' => 'Elevate complex ideas with custom 2D & 3D motion graphics...', 'image' => 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&w=800&q=80', 'card_features' => ['2D & 3D animation', 'Motion graphics design', 'Logo animations', 'Explainer videos'], 'detail_features' => ['3D Product Visualizations', 'Kinetic Typography', 'Custom Logo Bumpers', 'Infographic Explainer Animations']]
+                    ['id' => 1, 'slug' => 'video-production', 'title' => 'Video Production', 'icon' => 'fa-solid fa-film', 'short_description' => 'Professional video production services from concept to completion, including scripting, filming, and editing with state-of-the-art equipment.', 'detail_description' => 'Our full-service video production team handles every stage of the process...', 'image' => 'https://res.cloudinary.com/pnabfi91/image/upload/v1791224271/falhen/portfolio/ysfriy8jlhhkcuzl8j16.jpg', 'card_features' => ['Corporate videos & commercials', '4K & 8K video capture', 'Drone cinematography', 'Multi-camera productions'], 'detail_features' => ['4K & 8K Cinema Capture', 'Drone Aerial Cinematography', 'Multi-Camera Rigs', 'Scriptwriting & Storyboarding']],
+                    ['id' => 2, 'slug' => 'live-streaming', 'title' => 'Live Streaming', 'icon' => 'fa-solid fa-tower-broadcast', 'short_description' => 'Seamless live streaming solutions for events, conferences, and broadcasts with professional-grade equipment and technical support.', 'detail_description' => 'We broadcast your live events to global audiences...', 'image' => 'https://res.cloudinary.com/pnabfi91/image/upload/v1791222750/falhen/portfolio/blpzc2fznaqr0czm3ji8.jpg', 'card_features' => ['Multi-platform streaming', 'Real-time graphics & overlays', 'Interactive audience engagement', 'Technical support & monitoring'], 'detail_features' => ['Multi-Platform Simulcasting', 'Custom Graphic Overlays', 'Low-Latency Broadcast', 'Dedicated On-Site Engineers']],
+                    ['id' => 3, 'slug' => 'post-production', 'title' => 'Post Production', 'icon' => 'fa-solid fa-sliders', 'short_description' => 'Comprehensive post-production services including editing, color grading, sound design, and visual effects to polish your content.', 'detail_description' => 'Transform raw footage into a cinematic masterpiece...', 'image' => 'https://res.cloudinary.com/pnabfi91/image/upload/v1791380765/falhen/bts/bqpxfuekjfuqrbq1sqed.jpg', 'card_features' => ['Professional video editing', 'Color correction & grading', 'Sound design & mixing', 'Visual effects & compositing'], 'detail_features' => ['DaVinci Resolve Color Grading', 'Spatial Sound & Audio Mixing', 'VFX Compositing & Clean-ups', 'Multi-format Master Export']],
+                    ['id' => 4, 'slug' => 'animation', 'title' => 'Animation & Motion Graphics', 'icon' => 'fa-solid fa-wand-magic-sparkles', 'short_description' => 'Creative animation and motion graphics services to enhance your brand storytelling with engaging visual elements.', 'detail_description' => 'Elevate complex ideas with custom 2D & 3D motion graphics...', 'image' => 'https://res.cloudinary.com/pnabfi91/image/upload/v1791380709/falhen/bts/yqjuxtubd9ka0gyqw68c.jpg', 'card_features' => ['2D & 3D animation', 'Motion graphics design', 'Logo animations', 'Explainer videos'], 'detail_features' => ['3D Product Visualizations', 'Kinetic Typography', 'Custom Logo Bumpers', 'Infographic Explainer Animations']]
                 ];
 
                 $editId = (int)($_GET['edit_id'] ?? 0);
@@ -7211,7 +7133,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                 <div style="position: relative; width: 380px; aspect-ratio: 16/9; border-radius: 14px; overflow: hidden; background: #0f172a; border: 1px solid #e2e8f0; margin-bottom: 8px;" class="service-img-wrap">
                                     <img 
                                         id="service_img_preview" 
-                                        src="<?php echo htmlspecialchars(getCloudinaryUrl($editingService['image'] ?? 'https://images.unsplash.com/photo-1574717024653-61fd2cf4d44d?auto=format&fit=crop&w=800&q=80')); ?>" 
+                                        src="<?php echo htmlspecialchars(getCloudinaryUrl($editingService['image'] ?? 'https://res.cloudinary.com/pnabfi91/image/upload/v1791224271/falhen/portfolio/ysfriy8jlhhkcuzl8j16.jpg')); ?>" 
                                         alt="Service Image Preview"
                                         style="width: 100%; height: 100%; object-fit: cover;"
                                         onerror="this.src='/assets/img/hero.jpg';"
@@ -7292,7 +7214,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                 </div>
 
                                 <?php
-                                $curImg = getCloudinaryUrl($editingService['image'] ?? 'https://images.unsplash.com/photo-1574717024653-61fd2cf4d44d?auto=format&fit=crop&w=800&q=80');
+                                $curImg = getCloudinaryUrl($editingService['image'] ?? 'https://res.cloudinary.com/pnabfi91/image/upload/v1791224271/falhen/portfolio/ysfriy8jlhhkcuzl8j16.jpg');
                                 $focalDesktop = $editingService['focal_point_desktop'] ?? 'center center';
                                 $focalMobile = $editingService['focal_point_mobile'] ?? 'center center';
                                 ?>
@@ -7695,10 +7617,10 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                     <div style="display: flex; align-items: center; gap: 12px; background: #f8fafc; padding: 10px 14px; border-radius: 12px; border: 1px solid var(--card-border);">
                                         <img 
                                             id="testimonial_avatar_preview" 
-                                            src="<?php echo htmlspecialchars(getCloudinaryUrl($editingTestimonial['avatar'] ?? 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80')); ?>" 
+                                            src="<?php echo htmlspecialchars(getCloudinaryUrl($editingTestimonial['avatar'] ?? 'https://res.cloudinary.com/pnabfi91/image/upload/v1786712075/falhen/team/ctxjp9mymgqdh2ecg2hu.jpg')); ?>" 
                                             alt="Avatar Preview" 
                                             style="width: 44px; height: 44px; border-radius: 50%; object-fit: cover; border: 2px solid #ffffff; box-shadow: 0 2px 6px rgba(0,0,0,0.1); flex-shrink: 0;"
-                                            onerror="this.src='https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80';"
+                                            onerror="this.onerror=null;this.src='/assets/img/icons/favicon.png';"
                                         >
                                         <div style="display: flex; flex-direction: column; gap: 6px; flex: 1;">
                                             <div style="display: flex; gap: 8px;">
@@ -7795,10 +7717,10 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                             <!-- Top Info Row: Avatar, Name, Role & Company -->
                             <div style="display: flex; align-items: center; gap: 12px;">
                                 <img 
-                                    src="<?php echo htmlspecialchars(getCloudinaryUrl($tItem['avatar'] ?? 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80')); ?>" 
+                                    src="<?php echo htmlspecialchars(getCloudinaryUrl($tItem['avatar'] ?? 'https://res.cloudinary.com/pnabfi91/image/upload/v1786712075/falhen/team/ctxjp9mymgqdh2ecg2hu.jpg')); ?>" 
                                     alt="<?php echo htmlspecialchars($tItem['name']); ?>" 
                                     style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 1px solid #cbd5e1;"
-                                    onerror="this.src='https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80';"
+                                    onerror="this.onerror=null;this.src='/assets/img/icons/favicon.png';"
                                 >
                                 <div>
                                     <div style="font-size: 1rem; font-weight: 700; color: #0f172a; line-height: 1.3;">
@@ -10822,7 +10744,27 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                     showAdminToast(`MySQL Diagnostics: Connection live (${data.latency_ms} ms)`, 'success');
                                 } else {
                                     updateLivePill(false, data.message);
-                                    showAdminToast('Diagnostic Error: ' + (data.message || 'Failed to ping MySQL.'), 'error', 6000);
+                                    const banner = document.getElementById('diagnosticsBanner');
+                                    if (banner) {
+                                        banner.style.display = 'block';
+                                        banner.style.background = '#fef2f2';
+                                        banner.style.borderColor = '#fecaca';
+                                        banner.innerHTML = `
+                                            <div style="display: flex; gap: 14px; align-items: flex-start; justify-content: space-between; flex-wrap: wrap;">
+                                                <div>
+                                                    <div style="font-weight: 700; color: #dc2626; margin-bottom: 4px; display: flex; align-items: center; gap: 6px;">
+                                                        <i class="fa-solid fa-triangle-exclamation"></i> MySQL Connection Notice
+                                                    </div>
+                                                    <div style="font-family: monospace; font-size: 0.8rem; color: #7f1d1d; word-break: break-word;">${data.message || 'Access Denied / Offline'}</div>
+                                                    <div style="font-size: 0.76rem; color: #991b1b; margin-top: 6px;">The system is currently running safely in <strong>Disk Fallback Mode</strong>. You can update or test credentials using the Credentials Drawer below.</div>
+                                                </div>
+                                                <button type="button" onclick="toggleDbCredentialsDrawer()" style="background: #dc2626; color: #ffffff; border: none; padding: 6px 12px; border-radius: 6px; font-size: 0.78rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+                                                    <i class="fa-solid fa-key"></i> Edit Credentials
+                                                </button>
+                                            </div>
+                                        `;
+                                    }
+                                    showAdminToast('MySQL Notice: ' + (data.message || 'Failed to ping MySQL.'), 'warning', 6000);
                                 }
                             })
                             .catch(err => {
@@ -21031,26 +20973,17 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
             if (taglineCounter) taglineCounter.innerText = taglineVal.length + '/200';
         }
 
-        // Live Poster Image Preview Updater
-        function updatePosterPreview(url) {
-            const targetUrl = (url || '').trim() || '/assets/img/hero.jpg';
-            const posterImg = document.getElementById('posterPreviewImg');
-            const liveImg = document.getElementById('liveBackgroundImg');
-            
-            if (posterImg) posterImg.src = targetUrl;
-            if (liveImg) liveImg.src = targetUrl;
-        }
-
         // Reset Background Film to defaults
         function resetHeroBackgroundDefaults() {
-            const iframeInput = document.getElementById('hero_video_iframe_input');
-            const directVideoInput = document.getElementById('hero_direct_video_input');
-            const useShowreelCheck = document.getElementById('hero_bg_use_showreel_input');
+            const directVideoInput = document.querySelector('input[name="hero_direct_video_url"]');
             const posterInput = document.getElementById('hero_poster_image_input');
             
-            if (iframeInput) iframeInput.value = '';
             if (directVideoInput) directVideoInput.value = '';
-            if (useShowreelCheck) useShowreelCheck.checked = true;
+            if (posterInput) {
+                posterInput.value = '/assets/img/hero.jpg';
+                updatePosterPreview('/assets/img/hero.jpg');
+            }
+        }
             if (posterInput) {
                 posterInput.value = 'https://res.cloudinary.com/pnabfi91/image/upload/v1786578372/falhen/uploads/r96mxsji9cdogqrkxwoe.jpg';
                 updatePosterPreview(posterInput.value);
@@ -21650,10 +21583,10 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
 
             const count = grid.querySelectorAll('.bts-photo-card').length + 1;
             const sampleImages = [
-                'https://images.unsplash.com/photo-1574717024653-61fd2cf4d44d?auto=format&fit=crop&w=800&q=80',
-                'https://images.unsplash.com/photo-1585829365295-ab7cd400c167?auto=format&fit=crop&w=800&q=80',
-                'https://images.unsplash.com/photo-1598899134739-24c46f58b8c0?auto=format&fit=crop&w=800&q=80',
-                'https://images.unsplash.com/photo-1508614589041-895b88991e3e?auto=format&fit=crop&w=800&q=80'
+                'https://res.cloudinary.com/pnabfi91/image/upload/v1791380693/falhen/bts/uc34zifoyzeyyqvsm5qj.jpg',
+                'https://res.cloudinary.com/pnabfi91/image/upload/v1791380709/falhen/bts/yqjuxtubd9ka0gyqw68c.jpg',
+                'https://res.cloudinary.com/pnabfi91/image/upload/v1791380721/falhen/bts/gmw6x8ccznwrjbhsuhja.jpg',
+                'https://res.cloudinary.com/pnabfi91/image/upload/v1791380756/falhen/bts/ufjkbvwtqxd5f15uxx5h.jpg'
             ];
             const randomImg = sampleImages[Math.floor(Math.random() * sampleImages.length)];
 
@@ -22114,7 +22047,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                 <p style="font-size: 0.84rem; color: #64748b; margin-top: 0; margin-bottom: 12px;">
                     Paste one or more image links or Google Drive share URLs below (<strong>one URL per line</strong>). They will automatically convert to direct image previews:
                 </p>
-                <textarea id="driveUrlsTextarea" rows="6" placeholder="https://drive.google.com/file/d/.../view&#10;https://images.unsplash.com/...&#10;https://res.cloudinary.com/..." class="form-text-input" style="width: 100%; box-sizing: border-box; font-family: monospace; font-size: 0.82rem; padding: 10px; line-height: 1.5; resize: vertical;"></textarea>
+                <textarea id="driveUrlsTextarea" rows="6" placeholder="https://drive.google.com/file/d/.../view&#10;https://res.cloudinary.com/...&#10;https://lh3.googleusercontent.com/..." class="form-text-input" style="width: 100%; box-sizing: border-box; font-family: monospace; font-size: 0.82rem; padding: 10px; line-height: 1.5; resize: vertical;"></textarea>
             </div>
             <div style="padding: 14px 24px; background: #f8fafc; border-top: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: flex-end; gap: 10px;">
                 <button type="button" onclick="closeDriveUrlsModal()" class="btn-live-site" style="padding: 8px 18px; font-size: 0.85rem;">Cancel</button>

@@ -114,14 +114,14 @@ if (!empty($gdrivePhotos)) {
             '/assets/img/portfolio/king_david_02.jpg',
             '/assets/img/portfolio/king_david_03.jpg',
             $coverImage,
-            'https://images.unsplash.com/photo-1523240795612-9a054b0db644?q=80&w=1200&auto=format&fit=crop',
-            'https://images.unsplash.com/photo-1541339907198-e08756dedf3f?q=80&w=1200&auto=format&fit=crop',
-            'https://images.unsplash.com/photo-1627556704290-2b1f5853ff78?q=80&w=1200&auto=format&fit=crop',
-            'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=1200&auto=format&fit=crop',
-            'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=1200&auto=format&fit=crop',
-            'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=1200&auto=format&fit=crop',
-            'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?q=80&w=1200&auto=format&fit=crop',
-            'https://images.unsplash.com/photo-1571260899304-425eee4c7efc?q=80&w=1200&auto=format&fit=crop'
+            'https://res.cloudinary.com/pnabfi91/image/upload/v1794096443/falhen/client-galleries/king-david-grad-shoot/king-david-grad-shoot-01.jpg',
+            'https://res.cloudinary.com/pnabfi91/image/upload/v1794096445/falhen/client-galleries/king-david-grad-shoot/king-david-grad-shoot-02.jpg',
+            'https://res.cloudinary.com/pnabfi91/image/upload/v1794096448/falhen/client-galleries/king-david-grad-shoot/king-david-grad-shoot-03.jpg',
+            'https://res.cloudinary.com/pnabfi91/image/upload/v1794096450/falhen/client-galleries/king-david-grad-shoot/king-david-grad-shoot-04.jpg',
+            'https://res.cloudinary.com/pnabfi91/image/upload/v1794096452/falhen/client-galleries/king-david-grad-shoot/king-david-grad-shoot-05.jpg',
+            'https://res.cloudinary.com/pnabfi91/image/upload/v1794096454/falhen/client-galleries/king-david-grad-shoot/king-david-grad-shoot-06.jpg',
+            'https://res.cloudinary.com/pnabfi91/image/upload/v1794096456/falhen/client-galleries/king-david-grad-shoot/king-david-grad-shoot-07.jpg',
+            'https://res.cloudinary.com/pnabfi91/image/upload/v1794096458/falhen/client-galleries/king-david-grad-shoot/king-david-grad-shoot-08.jpg'
         ];
     } elseif ($clientId === 3 || strpos($clientName, 'demola') !== false || strpos($clientTitle, 'demola') !== false) {
         // Demola The Violinist - Live Concert Tour
@@ -203,9 +203,9 @@ $totalPhotoCount = count($clientPhotos);
             '/assets/img/portfolio/king_david_01.jpg',
             '/assets/img/portfolio/king_david_02.jpg',
             '/assets/img/portfolio/king_david_03.jpg',
-            'https://images.unsplash.com/photo-1523240795612-9a054b0db644?q=80&w=1200&auto=format&fit=crop',
-            'https://images.unsplash.com/photo-1541339907198-e08756dedf3f?q=80&w=1200&auto=format&fit=crop',
-            'https://images.unsplash.com/photo-1627556704290-2b1f5853ff78?q=80&w=1200&auto=format&fit=crop'
+            'https://res.cloudinary.com/pnabfi91/image/upload/v1794096443/falhen/client-galleries/king-david-grad-shoot/king-david-grad-shoot-01.jpg',
+            'https://res.cloudinary.com/pnabfi91/image/upload/v1794096445/falhen/client-galleries/king-david-grad-shoot/king-david-grad-shoot-02.jpg',
+            'https://res.cloudinary.com/pnabfi91/image/upload/v1794096448/falhen/client-galleries/king-david-grad-shoot/king-david-grad-shoot-03.jpg'
         ];
 
         function handlePhotoFallback(imgEl, idx) {
