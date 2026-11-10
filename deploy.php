@@ -143,7 +143,7 @@ if ($providedKey !== $secretKey) {
     exit;
 }
 
-header('Content-Type: text/plain');
+header('Content-Type: text/plain; charset=UTF-8');
 ini_set('display_errors', '1');
 ini_set('display_startup_errors', '1');
 error_reporting(E_ALL);
@@ -190,24 +190,6 @@ if ($action === 'stash_list') {
     $out = [];
     exec("cd {$repoDir} && git config --global --add safe.directory {$repoDir} 2>&1");
     exec("cd {$repoDir} && git stash list 2>&1", $out);
-    echo implode("\n", $out);
-    exit;
-}
-
-if ($action === 'stash_cat') {
-    $stashIdx = (int)($_GET['stash'] ?? 0);
-    $out = [];
-    exec("cd {$repoDir} && git config --global --add safe.directory {$repoDir} 2>&1");
-    exec("cd {$repoDir} && git show stash@{{$stashIdx}}:config/settings.json 2>&1", $out);
-    echo implode("\n", $out);
-    exit;
-}
-
-if ($action === 'stash_diff') {
-    $stashIdx = (int)($_GET['stash'] ?? 0);
-    $out = [];
-    exec("cd {$repoDir} && git config --global --add safe.directory {$repoDir} 2>&1");
-    exec("cd {$repoDir} && git stash show -p stash@{{$stashIdx}} 2>&1", $out);
     echo implode("\n", $out);
     exit;
 }
