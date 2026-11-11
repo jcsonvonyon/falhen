@@ -153,6 +153,48 @@ putenv("HOME=/home/henadinnovate");
 
 $action = $_GET['action'] ?? $_POST['action'] ?? 'deploy';
 
+if ($action === 'cat_error_log') {
+    $logFiles = [
+        __DIR__ . '/error_log',
+        __DIR__ . '/admin/error_log',
+        '/home/henadinnovate/falhen.com/error_log',
+        '/home/henadinnovate/logs/falhen_com.php.error.log',
+    ];
+    foreach ($logFiles as $ef) {
+        if (@is_readable($ef)) {
+            echo "=== {$ef} ===\n" . substr((string)@file_get_contents($ef), -4000) . "\n";
+        }
+    }
+    exit;
+}
+
+if ($action === 'diag_admin') {
+    $out = [];
+    $adminFile = __DIR__ . '/admin/index.php';
+    exec("cd " . escapeshellarg($repoDir) . " && git config --global --add safe.directory " . escapeshellarg($repoDir) . " 2>&1");
+    exec("cd " . escapeshellarg($repoDir) . " && git rev-parse --short HEAD 2>&1", $headOut);
+    exec("cd " . escapeshellarg($repoDir) . " && git status --short 2>&1", $statusOut);
+    exec("php -v 2>&1", $phpVerOut);
+    exec("php -l " . escapeshellarg($adminFile) . " 2>&1", $lintOut);
+
+    echo "HEAD: " . implode(' ', $headOut) . "\n";
+    echo "PHP: " . ($phpVerOut[0] ?? 'unknown') . "\n";
+    echo "LINT: " . implode("\n", $lintOut) . "\n";
+    foreach (['admin/index.php', 'admin/login.php', 'deploy.php', 'config/db.php', 'config/db_credentials.json'] as $rel) {
+        $p = __DIR__ . '/' . $rel;
+        if (file_exists($p)) {
+            echo sprintf("STAT %-28s perms=%o size=%d\n", $rel, fileperms($p) & 0777, filesize($p));
+        } else {
+            echo sprintf("STAT %-28s MISSING\n", $rel);
+        }
+    }
+    echo "GIT STATUS:\n" . (empty($statusOut) ? "(clean)\n" : implode("\n", $statusOut) . "\n");
+    require_once $repoDir . '/config/db.php';
+    $pdo = function_exists('getDBConnection') ? getDBConnection() : null;
+    echo "DB_CONN: " . ($pdo ? 'OK (' . ($GLOBALS['falhen_db_active_dsn'] ?? 'connected') . ')' : 'FAILED (' . ($GLOBALS['falhen_db_last_error'] ?? 'unknown') . ')') . "\n";
+    exit;
+}
+
 if ($action === 'lint_admin') {
     $out = [];
     exec("php -l " . escapeshellarg(__DIR__ . '/admin/index.php') . " 2>&1", $out);
@@ -217,6 +259,14 @@ if (file_exists($liveSettingsFile)) {
 exec("cd {$repoDir} && git config --global --add safe.directory {$repoDir} 2>&1", $output);
 exec("cd {$repoDir} && git stash -u 2>&1", $output);
 exec("cd {$repoDir} && git pull origin main 2>&1", $output, $returnVar);
+
+// Ensure LiteSpeed suEXEC-compatible file permissions on core entrypoints
+foreach (['admin/index.php', 'admin/login.php', 'deploy.php', 'config/db.php', 'includes/functions.php'] as $relFile) {
+    $fullPath = $repoDir . '/' . $relFile;
+    if (file_exists($fullPath)) {
+        @chmod($fullPath, 0644);
+    }
+}
 
 // 3. Re-apply database schema and persist settings
 require_once $repoDir . '/config/db.php';

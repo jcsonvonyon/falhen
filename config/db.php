@@ -125,7 +125,8 @@ function getDBConnection($forceNew = false) {
 
     // Secondary fallback: if authentication failed (1045), probe known cPanel passwords
     if ($lastException && strpos($lastException->getMessage(), '1045') !== false) {
-        $altPasses = array_values(array_filter(array_unique([
+        $altPasses = array_values(array_unique([
+            DB_PASS,
             'FalhenMedia2026!#',
             'Oluwatosin25#',
             'FalhenMedia2026!',
@@ -139,31 +140,55 @@ function getDBConnection($forceNew = false) {
             'Oluwatosin2026#',
             'Password123#',
             ''
-        ]), function($p) { return $p !== DB_PASS; }));
+        ]));
 
-        $altUsers = array_unique([DB_USER, 'henadinn_falhen_user', 'henadinn_falhen', 'henadinn_user', 'henadinn']);
-        
+        $altUsers = array_values(array_unique([
+            DB_USER,
+            'henadinnovate_falhen',
+            'henadinnovate_falhenmedia',
+            'henadinn_falhen_user',
+            'henadinn_falhen',
+            'henadinn_user',
+            'henadinn'
+        ]));
+        $altDbs = array_values(array_unique([
+            DB_NAME,
+            'henadinnovate_falhen',
+            'henadinnovate_falhenmedia'
+        ]));
+
         foreach ($altPasses as $candPass) {
             foreach ($altUsers as $candUser) {
-                foreach ($dsnCandidates as $dsn) {
-                    try {
-                        $conn = new PDO($dsn, $candUser, $candPass, [
-                            PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
-                            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-                            PDO::ATTR_EMULATE_PREPARES   => false,
-                            PDO::ATTR_TIMEOUT            => 2,
-                        ]);
-                        if ($conn) {
-                            $pdo = $conn;
-                            $GLOBALS['falhen_db_active_dsn'] = $dsn;
-                            if (function_exists('saveDBCredentials')) {
-                                saveDBCredentials(DB_HOST, DB_PORT, DB_NAME, $candUser, $candPass);
-                            }
-                            initDatabaseSchema($pdo);
-                            return $pdo;
+                foreach ($altDbs as $candDb) {
+                    $candDsns = [
+                        "mysql:host=localhost;dbname={$candDb};charset=utf8mb4",
+                        "mysql:host=127.0.0.1;port=" . DB_PORT . ";dbname={$candDb};charset=utf8mb4",
+                    ];
+                    foreach ($cpanelSockets as $sock) {
+                        if (@file_exists($sock)) {
+                            array_unshift($candDsns, "mysql:unix_socket={$sock};dbname={$candDb};charset=utf8mb4");
                         }
-                    } catch (PDOException $e) {
-                        $lastException = $e;
+                    }
+                    foreach (array_unique($candDsns) as $dsn) {
+                        try {
+                            $conn = new PDO($dsn, $candUser, $candPass, [
+                                PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
+                                PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+                                PDO::ATTR_EMULATE_PREPARES   => false,
+                                PDO::ATTR_TIMEOUT            => 2,
+                            ]);
+                            if ($conn) {
+                                $pdo = $conn;
+                                $GLOBALS['falhen_db_active_dsn'] = $dsn;
+                                if (function_exists('saveDBCredentials')) {
+                                    saveDBCredentials(DB_HOST, DB_PORT, $candDb, $candUser, $candPass);
+                                }
+                                initDatabaseSchema($pdo);
+                                return $pdo;
+                            }
+                        } catch (PDOException $e) {
+                            $lastException = $e;
+                        }
                     }
                 }
             }
