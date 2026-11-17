@@ -14,7 +14,8 @@
         "Removed redundant duplicate top-bar action buttons",
         "Full support for iPad (3-col) and Mobile (2-col) touch targets",
         "Strict suppression of hidden and deleted albums",
-        "Removal of legacy hardcoded fallback arrays"
+        "Removal of legacy hardcoded fallback arrays",
+        "Removed Frame # badges from all existing and upcoming gallery pictures for a pristine visual experience"
       ]
     },
     "cloudinary_sync_engine": {

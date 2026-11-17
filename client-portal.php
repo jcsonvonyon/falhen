@@ -713,10 +713,7 @@ foreach ($albumsRepo as $alb) {
                 background: linear-gradient(180deg, rgba(0,0,0,0) 50%, rgba(0,0,0,0.7) 100%) !important;
                 padding: 8px 10px !important;
                 pointer-events: auto !important;
-            }
-            .smug-glass-badge {
-                font-size: 0.68rem !important;
-                padding: 4px 8px !important;
+                justify-content: flex-end !important;
             }
             .smug-glass-btn {
                 width: 32px !important;
@@ -892,7 +889,7 @@ foreach ($albumsRepo as $alb) {
             background: linear-gradient(180deg, rgba(0, 0, 0, 0.02) 40%, rgba(0, 0, 0, 0.65) 100%);
             display: flex;
             align-items: flex-end;
-            justify-content: space-between;
+            justify-content: flex-end;
             padding: 14px 16px;
             opacity: 0;
             transition: opacity 0.28s ease, backdrop-filter 0.28s ease;
@@ -1945,13 +1942,10 @@ foreach ($albumsRepo as $alb) {
                     <article class="smug-photo-card <?php echo $mosaicClass; ?>" onclick="openDynamicFullView(<?php echo $pIdx; ?>)">
                         <div class="smug-card-media-wrap">
                             <img src="<?php echo htmlspecialchars($item['masonry_url']); ?>"
-                                 alt="<?php echo htmlspecialchars(($currentAlbum['title'] ?? 'Gallery') . ' — Frame ' . $item['number']); ?>"
+                                 alt="<?php echo htmlspecialchars(($currentAlbum['title'] ?? 'Gallery') . ' — Photo ' . $item['number']); ?>"
                                  loading="lazy">
                         </div>
                         <div class="smug-photo-glass-overlay">
-                            <span class="smug-glass-badge">
-                                <i class="fa-solid fa-camera"></i> Frame #<?php echo str_pad((string)$item['number'], 2, '0', STR_PAD_LEFT); ?>
-                            </span>
                             <div class="smug-glass-actions">
                                 <button type="button"
                                         class="smug-glass-btn"
@@ -2683,7 +2677,7 @@ foreach ($albumsRepo as $alb) {
             requireVerification((token) => {
                 const activeToken = token || downloadToken;
                 const url = `/api/download-album.php?album_id=${currentAlbumId}&photo_index=${item.index}&token=${encodeURIComponent(activeToken)}`;
-                showToast(`Downloading Frame #${item.number}...`);
+                showToast('Downloading high-resolution photo...');
                 initiateBrowserDownload(url);
             });
         }
