@@ -2342,7 +2342,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $gdriveUrl = trim(strip_tags($_POST['gdrive_url'] ?? ''));
         $slug = generateSlug(!empty($_POST['slug']) ? $_POST['slug'] : $title);
         $seoTitle = trim(strip_tags($_POST['seo_title'] ?? ''));
+        $seoTitle = preg_replace('/\s*\|\s*Falhen\s*(Media|Productions)?\s*$/i', '', $seoTitle);
+        $seoTitle = preg_replace('/\s*-\s*Falhen\s*(Media|Productions)?\s*$/i', '', $seoTitle);
+
         $seoDesc = trim(strip_tags($_POST['seo_desc'] ?? ''));
+        if (stripos($seoDesc, 'Browse the exclusive photo gallery') !== false || stripos($seoDesc, '| Falhen') !== false) {
+            $seoDesc = '';
+        }
         $seoKeywords = trim(strip_tags($_POST['seo_keywords'] ?? ''));
         $featured = !empty($_POST['featured']);
 
@@ -9402,8 +9408,14 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
 
                 <?php if ($subAction === 'add' || $editingGalleryId !== null): 
                     $curSlug = $editingGallery['slug'] ?? generateSlug($editingGallery['title'] ?? '');
-                    $curSeoTitle = $editingGallery['seo_title'] ?? ($editingGallery['title'] ?? '');
-                    $curSeoDesc = $editingGallery['seo_desc'] ?? '';
+                    $rawSeoTitle = $editingGallery['seo_title'] ?? ($editingGallery['title'] ?? '');
+                    $curSeoTitle = preg_replace('/\s*\|\s*Falhen\s*(Media|Productions)?\s*$/i', '', (string)$rawSeoTitle);
+                    $curSeoTitle = preg_replace('/\s*-\s*Falhen\s*(Media|Productions)?\s*$/i', '', (string)$curSeoTitle);
+                    $rawSeoDesc = $editingGallery['seo_desc'] ?? '';
+                    if (stripos($rawSeoDesc, 'Browse the exclusive photo gallery') !== false || stripos($rawSeoDesc, '| Falhen') !== false) {
+                        $rawSeoDesc = '';
+                    }
+                    $curSeoDesc = preg_replace('/\s*\|\s*Falhen\s*(Media|Productions)?\s*$/i', '', (string)$rawSeoDesc);
                     $curPhotos = $editingGallery['gallery_photos'] ?? [];
                 ?>
                     <!-- EDIT / ADD CLIENT GALLERY FORM VIEW -->

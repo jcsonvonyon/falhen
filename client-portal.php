@@ -87,7 +87,16 @@ if ($isClientsView) {
     $albumClient = $currentAlbum['client'] ?? 'Private Client';
 
     $seoTitle = !empty($currentAlbum['seo_title']) ? $currentAlbum['seo_title'] : $albumTitle;
-    $seoDesc = !empty($currentAlbum['seo_desc']) ? $currentAlbum['seo_desc'] : "Explore and download the curated {$albumCategory} photo collection for {$albumClient}. Instant proofs, editorial gallery & full digital delivery.";
+    // Strip brand suffix to adhere strictly to /seo-meta-optimizer & prevent repetitive clutter
+    $seoTitle = preg_replace('/\s*\|\s*Falhen\s*(Media|Productions)?\s*$/i', '', (string)$seoTitle);
+    $seoTitle = preg_replace('/\s*-\s*Falhen\s*(Media|Productions)?\s*$/i', '', (string)$seoTitle);
+
+    $rawDesc = !empty($currentAlbum['seo_desc']) ? $currentAlbum['seo_desc'] : '';
+    // Replace default/legacy boilerplate with high-converting, benefit-driven description
+    if (empty($rawDesc) || stripos($rawDesc, 'Browse the exclusive photo gallery') !== false || stripos($rawDesc, '| Falhen') !== false) {
+        $rawDesc = "Explore and download the curated {$albumCategory} photo collection for {$albumClient}. Instant proofs, editorial gallery & full digital delivery.";
+    }
+    $seoDesc = preg_replace('/\s*\|\s*Falhen\s*(Media|Productions)?\s*$/i', '', (string)$rawDesc);
     $seoKeywords = !empty($currentAlbum['seo_keywords']) ? $currentAlbum['seo_keywords'] : "{$albumCategory}, client gallery, high resolution, photo download";
     $pageTitle = htmlspecialchars($seoTitle);
 }
