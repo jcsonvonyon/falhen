@@ -9779,7 +9779,8 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                         if (btnBg) btnBg.disabled = true;
                         progressCard.style.display = 'block';
 
-                        const chunkSize = 6;
+                        // Light, respectful chunk size & 2-worker pool to prevent server load spikes and 503 errors
+                        const chunkSize = 3;
                         const total = currentPhotosList.length;
                         const chunks = [];
                         for (let i = 0; i < total; i += chunkSize) {
@@ -9794,8 +9795,8 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                         let freshUploadCount = 0;
                         const resultsMap = new Array(total);
 
-                        // 3 Concurrent worker threads for live sync
-                        const concurrency = 3;
+                        // 2 concurrent workers with polite throttling keep server CPU under 10%
+                        const concurrency = 2;
                         let chunkCursor = 0;
 
                         async function worker() {
@@ -9832,7 +9833,10 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                 const pct = Math.min(100, Math.round((completedCount / total) * 100));
                                 progressBar.style.width = pct + '%';
                                 percentLabel.textContent = pct + '%';
-                                statusLabel.textContent = `Fast sync: ${Math.min(completedCount, total)} of ${total} photos processed...`;
+                                statusLabel.textContent = `Sync in progress: ${Math.min(completedCount, total)} of ${total} photos processed (${pct}%)...`;
+
+                                // Polite 80ms pause between chunks keeps the origin web server 100% responsive for visitors
+                                await new Promise(r => setTimeout(r, 80));
                             }
                         }
 

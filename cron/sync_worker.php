@@ -15,6 +15,11 @@ require_once __DIR__ . '/../config/db.php';
 require_once __DIR__ . '/../config/cloudinary.php';
 require_once __DIR__ . '/../includes/cloudinary_helper.php';
 
+// CRITICAL: Ensure session lock is NEVER held by background worker!
+if (session_status() === PHP_SESSION_ACTIVE) {
+    session_write_close();
+}
+
 // Auth verification for HTTP invocation
 $isCli = (php_sapi_name() === 'cli');
 if (!$isCli) {
@@ -89,6 +94,9 @@ foreach (array_slice($photos, $processed) as $rawPhoto) {
         @file_put_contents($jobsFile, json_encode($jobs, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES), LOCK_EX);
         echo "Progress: {$processed}/{$total} (" . $job['percent'] . "%)\n";
     }
+
+    // Polite CPU & I/O throttle so background worker never spikes server load or slows down web visitors
+    usleep(100000); // 100ms pause
 }
 
 $job['status'] = 'completed';

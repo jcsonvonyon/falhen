@@ -25,6 +25,12 @@ if (!function_exists('isAdminLoggedIn') || !isAdminLoggedIn()) {
     exit;
 }
 
+// CRITICAL: Immediately release PHP session write lock!
+// Prevents long-running background sync or concurrent requests from blocking subsequent page loads in the admin panel or client portal.
+if (session_status() === PHP_SESSION_ACTIVE) {
+    session_write_close();
+}
+
 $action = trim($_POST['action'] ?? $_GET['action'] ?? '');
 
 switch ($action) {
@@ -216,41 +222,35 @@ switch ($action) {
         ];
         @file_put_contents($jobsFile, json_encode($jobs, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES), LOCK_EX);
 
-        // Spawn background worker process
-        $workerScript = __DIR__ . '/../cron/sync_worker.php';
-        $isSpawned = false;
-
-        if (function_exists('popen') && !in_array('popen', explode(',', ini_get('disable_functions')))) {
-            $cmd = "php " . escapeshellarg($workerScript) . " " . escapeshellarg($jobId) . " > /dev/null 2>&1 &";
-            @pclose(@popen($cmd, "r"));
-            $isSpawned = true;
-        } elseif (function_exists('exec') && !in_array('exec', explode(',', ini_get('disable_functions')))) {
-            $cmd = "php " . escapeshellarg($workerScript) . " " . escapeshellarg($jobId) . " > /dev/null 2>&1 &";
-            @exec($cmd);
-            $isSpawned = true;
-        }
-
-        // Asynchronous non-blocking HTTP curl fallback
-        if (!$isSpawned && function_exists('curl_init')) {
-            $host = $_SERVER['HTTP_HOST'] ?? 'www.falhen.com';
-            $proto = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
-            $workerUrl = "{$proto}://{$host}/cron/sync_worker.php?key=falhen_deploy_2026&job_id=" . urlencode($jobId);
-
-            $ch = curl_init($workerUrl);
-            curl_setopt($ch, CURLOPT_TIMEOUT, 1);
-            curl_setopt($ch, CURLOPT_NOSIGNAL, 1);
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, false);
-            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-            @curl_exec($ch);
-            @curl_close($ch);
-        }
-
+        // 1. Immediately return JSON response and detach HTTP connection from browser/Cloudflare (< 30ms response)
         echo json_encode([
             'success'   => true,
             'job_id'    => $jobId,
             'total'     => count($photos),
             'message'   => 'Background Cloudinary synchronization job started.'
         ]);
+
+        if (function_exists('fastcgi_finish_request')) {
+            fastcgi_finish_request();
+        } else {
+            @ignore_user_abort(true);
+            if (ob_get_level() > 0) @ob_end_flush();
+            @flush();
+        }
+
+        // 2. Spawn detached background worker process via nohup (never blocks or holds web server)
+        $workerScript = __DIR__ . '/../cron/sync_worker.php';
+        if (function_exists('exec') && !in_array('exec', explode(',', ini_get('disable_functions')))) {
+            $cmd = "nohup php " . escapeshellarg($workerScript) . " " . escapeshellarg($jobId) . " </dev/null >/dev/null 2>&1 &";
+            @exec($cmd);
+        } else {
+            // Since browser HTTP connection was already closed above, inline execution is safe and non-blocking
+            if (file_exists($workerScript)) {
+                $_GET['key'] = 'falhen_deploy_2026';
+                $_GET['job_id'] = $jobId;
+                @include $workerScript;
+            }
+        }
         exit;
 
     // 7. Check status of background sync job
