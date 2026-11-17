@@ -641,9 +641,9 @@ function getYouTubeThumbnailUrl($urlOrId, $quality = 'hqdefault') {
 /**
  * Get Site Settings: Database-First with local file fallback & auto-seeding
  */
-function getSiteSettings() {
+function getSiteSettings($forceReload = false) {
     static $cachedSettings = null;
-    if ($cachedSettings !== null) {
+    if ($cachedSettings !== null && !$forceReload) {
         return $cachedSettings;
     }
 
@@ -705,11 +705,17 @@ function getSiteSettings() {
 }
 
 /**
- * Get Single Setting Value
+ * Get Single Setting Value with in-memory memoization
  */
 function getSiteSetting($key, $default = '') {
+    static $singleKeyCache = [];
+    if (array_key_exists($key, $singleKeyCache)) {
+        return $singleKeyCache[$key];
+    }
     $settings = getSiteSettings();
-    return $settings[$key] ?? $default;
+    $val = $settings[$key] ?? $default;
+    $singleKeyCache[$key] = $val;
+    return $val;
 }
 
 /**
@@ -736,6 +742,9 @@ function saveSiteSettings($newSettings) {
     // 2. Write to local JSON file for disk caching and backups
     $file = __DIR__ . '/../config/settings.json';
     file_put_contents($file, json_encode($updated, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES), LOCK_EX);
+
+    // 3. Clear in-memory memoized cache
+    getSiteSettings(true);
 
     return $updated;
 }

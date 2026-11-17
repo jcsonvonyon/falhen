@@ -1298,16 +1298,70 @@ foreach ($albumsRepo as $alb) {
             color: #000000;
         }
 
-        .smug-image-holder {
+        .smug-slider-viewport {
             flex: 1;
+            height: 100%;
+            width: 100%;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            touch-action: pan-y;
+            user-select: none;
+        }
+
+        .smug-slider-track {
+            position: relative;
+            width: 100%;
             height: 100%;
             display: flex;
             align-items: center;
             justify-content: center;
-            user-select: none;
-            cursor: zoom-in;
+            will-change: transform;
+            transform: translate3d(0, 0, 0);
         }
 
+        .smug-slide-frame {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            pointer-events: none;
+            opacity: 0;
+            visibility: hidden;
+            will-change: transform, opacity;
+            transform: translate3d(0, 0, 0);
+        }
+
+        .smug-slide-frame.frame-current {
+            opacity: 1;
+            visibility: visible;
+            pointer-events: auto;
+            transform: translate3d(0, 0, 0);
+            cursor: zoom-in;
+            z-index: 2;
+        }
+
+        .smug-slide-frame.frame-prev {
+            opacity: 1;
+            visibility: visible;
+            transform: translate3d(-100%, 0, 0);
+            z-index: 1;
+        }
+
+        .smug-slide-frame.frame-next {
+            opacity: 1;
+            visibility: visible;
+            transform: translate3d(100%, 0, 0);
+            z-index: 1;
+        }
+
+        .smug-slide-frame.zoomed,
         .smug-image-holder.zoomed {
             cursor: zoom-out;
             overflow: auto;
@@ -1318,9 +1372,14 @@ foreach ($albumsRepo as $alb) {
             max-height: 82vh;
             max-width: 90vw;
             object-fit: contain;
-            transition: opacity 0.22s ease, transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+            border-radius: 4px;
+            user-select: none;
+            -webkit-user-drag: none;
+            pointer-events: auto;
+            transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
+        .smug-slide-frame.zoomed .smug-lightbox-img,
         .smug-image-holder.zoomed .smug-lightbox-img {
             max-height: none;
             max-width: none;
@@ -1425,6 +1484,7 @@ foreach ($albumsRepo as $alb) {
                 height: calc(100vh - 52px);
                 overflow: hidden;
             }
+            .smug-slider-viewport,
             .smug-image-holder {
                 height: 100%;
                 width: 100%;
@@ -1441,6 +1501,7 @@ foreach ($albumsRepo as $alb) {
                 box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
                 object-fit: contain;
             }
+            .smug-slide-frame.zoomed .smug-lightbox-img,
             .smug-image-holder.zoomed .smug-lightbox-img {
                 max-height: none !important;
                 max-width: none !important;
@@ -1879,11 +1940,21 @@ foreach ($albumsRepo as $alb) {
             <button type="button" class="smug-nav-arrow" onclick="prevPhoto()" aria-label="Previous">
                 <i class="fa-solid fa-chevron-left"></i>
             </button>
-            <div class="smug-image-holder" id="imageHolder" onclick="toggleLightboxZoom()">
-                <img id="lightboxMainImg"
-                     class="smug-lightbox-img"
-                     src="<?php echo htmlspecialchars($photoItems[0]['full_url'] ?? $coverImage); ?>"
-                     alt="Fullscreen photo">
+            <div class="smug-slider-viewport" id="sliderViewport">
+                <div class="smug-slider-track" id="sliderTrack">
+                    <div class="smug-slide-frame frame-prev" id="slideFramePrev">
+                        <img class="smug-lightbox-img" id="lightboxPrevImg" src="" alt="Previous photo">
+                    </div>
+                    <div class="smug-slide-frame frame-current" id="slideFrameCurrent" onclick="handleFrameClick(event)">
+                        <img id="lightboxMainImg"
+                             class="smug-lightbox-img"
+                             src="<?php echo htmlspecialchars($photoItems[0]['full_url'] ?? $coverImage); ?>"
+                             alt="Fullscreen photo">
+                    </div>
+                    <div class="smug-slide-frame frame-next" id="slideFrameNext">
+                        <img class="smug-lightbox-img" id="lightboxNextImg" src="" alt="Next photo">
+                    </div>
+                </div>
             </div>
             <button type="button" class="smug-nav-arrow" onclick="nextPhoto()" aria-label="Next">
                 <i class="fa-solid fa-chevron-right"></i>
@@ -1892,9 +1963,10 @@ foreach ($albumsRepo as $alb) {
 
         <div class="smug-thumbs-rail" id="thumbsRail">
             <?php foreach ($photoItems as $item): ?>
-                <div class="smug-thumb <?php echo ($item['index'] === 0) ? 'active' : ''; ?>"
+                <div id="thumb-<?php echo (int)$item['index']; ?>"
+                     class="smug-thumb <?php echo ($item['index'] === 0) ? 'active' : ''; ?>"
                      onclick="goToPhoto(<?php echo (int)$item['index']; ?>)">
-                    <img src="<?php echo htmlspecialchars($item['masonry_url']); ?>" alt="Frame <?php echo (int)$item['number']; ?>" loading="lazy">
+                    <img src="<?php echo htmlspecialchars($item['thumb_url'] ?? $item['masonry_url']); ?>" alt="Frame <?php echo (int)$item['number']; ?>" loading="lazy">
                 </div>
             <?php endforeach; ?>
         </div>
@@ -1991,12 +2063,103 @@ foreach ($albumsRepo as $alb) {
             setTimeout(() => toast.classList.remove('show'), 3600);
         }
 
-        // ================= DYNAMIC LIGHTBOX & SLIDESHOW =================
+        // ================= DYNAMIC LIGHTBOX & HARDWARE-ACCELERATED SLIDER =================
+        let isTransitioning = false;
+        let ignoreNextClick = false;
+        const preloadedUrls = new Set();
+
+        function getBestPhotoUrl(item) {
+            if (!item) return '';
+            const isMobile = window.innerWidth <= 768;
+            return (isMobile && item.mobile_url) ? item.mobile_url : (item.full_url || item.masonry_url);
+        }
+
+        function preloadUrl(url) {
+            if (!url || preloadedUrls.has(url)) return;
+            preloadedUrls.add(url);
+            const img = new Image();
+            img.src = url;
+        }
+
+        function preloadSurroundingPhotos(idx) {
+            if (!galleryItems || galleryItems.length <= 1) return;
+            const count = galleryItems.length;
+            const next1 = (idx + 1) % count;
+            const next2 = (idx + 2) % count;
+            const prev1 = (idx - 1 + count) % count;
+            const prev2 = (idx - 2 + count) % count;
+
+            preloadUrl(getBestPhotoUrl(galleryItems[next1]));
+            preloadUrl(getBestPhotoUrl(galleryItems[prev1]));
+            preloadUrl(getBestPhotoUrl(galleryItems[next2]));
+            preloadUrl(getBestPhotoUrl(galleryItems[prev2]));
+        }
+
+        let currentActiveThumb = null;
+        function updateLightboxUI() {
+            const counter = document.getElementById('lightboxCounter');
+            if (counter) {
+                counter.textContent = `Photo ${currentPhotoIndex + 1} of ${galleryItems.length}`;
+            }
+
+            // O(1) active thumbnail switch without DOM layout thrashing
+            if (!currentActiveThumb) {
+                currentActiveThumb = document.getElementById('thumb-0');
+            }
+            if (currentActiveThumb) {
+                currentActiveThumb.classList.remove('active');
+            }
+            const targetThumb = document.getElementById('thumb-' + currentPhotoIndex);
+            if (targetThumb) {
+                targetThumb.classList.add('active');
+                targetThumb.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+                currentActiveThumb = targetThumb;
+            }
+        }
+
+        function updateFramesContent() {
+            if (!galleryItems || galleryItems.length === 0) return;
+            const count = galleryItems.length;
+            const curItem = galleryItems[currentPhotoIndex];
+            const prevIdx = (currentPhotoIndex - 1 + count) % count;
+            const nextIdx = (currentPhotoIndex + 1) % count;
+
+            const mainImg = document.getElementById('lightboxMainImg');
+            const prevImg = document.getElementById('lightboxPrevImg');
+            const nextImg = document.getElementById('lightboxNextImg');
+
+            if (mainImg) {
+                const targetSrc = getBestPhotoUrl(curItem);
+                if (mainImg.src !== targetSrc) {
+                    mainImg.src = targetSrc;
+                }
+            }
+            if (prevImg) {
+                prevImg.src = getBestPhotoUrl(galleryItems[prevIdx]);
+            }
+            if (nextImg) {
+                nextImg.src = getBestPhotoUrl(galleryItems[nextIdx]);
+            }
+
+            updateLightboxUI();
+            preloadSurroundingPhotos(currentPhotoIndex);
+        }
+
+        function updateLightboxView() {
+            updateFramesContent();
+        }
+
         function openDynamicFullView(idx) {
             if (!galleryItems || galleryItems.length === 0) return;
             if (idx < 0 || idx >= galleryItems.length) idx = 0;
             currentPhotoIndex = idx;
-            updateLightboxView();
+            resetLightboxZoom();
+            const track = document.getElementById('sliderTrack');
+            if (track) {
+                track.style.transition = 'none';
+                track.style.transform = 'translate3d(0, 0, 0)';
+            }
+            updateFramesContent();
             document.getElementById('smugLightbox').style.display = 'flex';
             document.body.style.overflow = 'hidden';
         }
@@ -2004,63 +2167,108 @@ foreach ($albumsRepo as $alb) {
         function closeDynamicFullView() {
             stopSlideshow();
             resetLightboxZoom();
+            const track = document.getElementById('sliderTrack');
+            if (track) {
+                track.style.transition = 'none';
+                track.style.transform = 'translate3d(0, 0, 0)';
+            }
             document.getElementById('smugLightbox').style.display = 'none';
             document.body.style.overflow = '';
         }
 
+        function slideToPhoto(targetIdx, direction) {
+            if (!galleryItems || galleryItems.length <= 1) return;
+            const track = document.getElementById('sliderTrack');
+            if (!track) return;
+
+            resetLightboxZoom();
+
+            // If an animation is already running, snap and commit instantly
+            if (isTransitioning) {
+                track.style.transition = 'none';
+                track.style.transform = 'translate3d(0, 0, 0)';
+                currentPhotoIndex = targetIdx;
+                updateFramesContent();
+                isTransitioning = false;
+                return;
+            }
+
+            if (direction === undefined || direction === 0) {
+                currentPhotoIndex = targetIdx;
+                updateFramesContent();
+                return;
+            }
+
+            isTransitioning = true;
+            const offset = (direction > 0) ? -100 : 100;
+
+            track.style.transition = 'transform 0.28s cubic-bezier(0.22, 1, 0.36, 1)';
+            track.style.transform = `translate3d(${offset}%, 0, 0)`;
+
+            let slideFinished = false;
+            const finishSlide = () => {
+                if (slideFinished) return;
+                slideFinished = true;
+                track.removeEventListener('transitionend', finishSlide);
+                track.style.transition = 'none';
+                track.style.transform = 'translate3d(0, 0, 0)';
+                currentPhotoIndex = targetIdx;
+                updateFramesContent();
+                void track.offsetWidth; // force reflow
+                isTransitioning = false;
+            };
+
+            track.addEventListener('transitionend', finishSlide, { once: true });
+            setTimeout(finishSlide, 320);
+        }
+
         function nextPhoto() {
-            currentPhotoIndex = (currentPhotoIndex + 1) % galleryItems.length;
-            updateLightboxView();
+            if (!galleryItems || galleryItems.length === 0) return;
+            const targetIdx = (currentPhotoIndex + 1) % galleryItems.length;
+            slideToPhoto(targetIdx, 1);
         }
 
         function prevPhoto() {
-            currentPhotoIndex = (currentPhotoIndex - 1 + galleryItems.length) % galleryItems.length;
-            updateLightboxView();
+            if (!galleryItems || galleryItems.length === 0) return;
+            const targetIdx = (currentPhotoIndex - 1 + galleryItems.length) % galleryItems.length;
+            slideToPhoto(targetIdx, -1);
         }
 
         function goToPhoto(idx) {
-            currentPhotoIndex = idx;
-            updateLightboxView();
+            if (idx === currentPhotoIndex) return;
+            if (idx < 0 || idx >= galleryItems.length) return;
+            const direction = idx > currentPhotoIndex ? 1 : -1;
+            if (Math.abs(idx - currentPhotoIndex) === 1 ||
+                (currentPhotoIndex === 0 && idx === galleryItems.length - 1) ||
+                (currentPhotoIndex === galleryItems.length - 1 && idx === 0)) {
+                slideToPhoto(idx, direction);
+            } else {
+                currentPhotoIndex = idx;
+                resetLightboxZoom();
+                updateFramesContent();
+            }
         }
 
-        function updateLightboxView() {
-            const item = galleryItems[currentPhotoIndex];
-            const img = document.getElementById('lightboxMainImg');
-            resetLightboxZoom();
-
-            img.style.opacity = '0.35';
-            img.style.transform = 'scale(0.985)';
-            setTimeout(() => {
-                img.src = item.full_url;
-                img.style.opacity = '1';
-                img.style.transform = 'scale(1)';
-            }, 60);
-
-            document.getElementById('lightboxCounter').textContent =
-                `Photo ${currentPhotoIndex + 1} of ${galleryItems.length}`;
-
-            const thumbs = document.querySelectorAll('#thumbsRail .smug-thumb');
-            thumbs.forEach((t, i) => {
-                if (i === currentPhotoIndex) {
-                    t.classList.add('active');
-                    t.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-                } else {
-                    t.classList.remove('active');
-                }
-            });
+        function handleFrameClick(e) {
+            if (ignoreNextClick) {
+                ignoreNextClick = false;
+                return;
+            }
+            toggleLightboxZoom();
         }
 
         function toggleLightboxZoom() {
-            const holder = document.getElementById('imageHolder');
+            const frame = document.getElementById('slideFrameCurrent');
             const label = document.getElementById('zoomLabel');
-            holder.classList.toggle('zoomed');
-            label.textContent = holder.classList.contains('zoomed') ? 'Reset' : 'Zoom';
+            if (!frame) return;
+            frame.classList.toggle('zoomed');
+            if (label) label.textContent = frame.classList.contains('zoomed') ? 'Reset' : 'Zoom';
         }
 
         function resetLightboxZoom() {
-            const holder = document.getElementById('imageHolder');
+            const frame = document.getElementById('slideFrameCurrent');
             const label = document.getElementById('zoomLabel');
-            if (holder) holder.classList.remove('zoomed');
+            if (frame) frame.classList.remove('zoomed');
             if (label) label.textContent = 'Zoom';
         }
 
@@ -2075,8 +2283,8 @@ foreach ($albumsRepo as $alb) {
         function startSlideshow() {
             const icon = document.getElementById('slideshowIcon');
             const label = document.getElementById('slideshowLabel');
-            icon.className = 'fa-solid fa-pause';
-            label.textContent = 'Pause';
+            if (icon) icon.className = 'fa-solid fa-pause';
+            if (label) label.textContent = 'Pause';
             slideshowTimer = setInterval(nextPhoto, 3800);
             showToast('Slideshow started');
         }
@@ -2106,43 +2314,92 @@ foreach ($albumsRepo as $alb) {
             }
         });
 
-        // Enhanced Touch Gestures (Swipe Left/Right, Swipe Down to Close, Double-Tap Zoom)
+        // Enhanced Real-Time Touch Gestures (1:1 Drag, Spring Physics, Swipe Down Dismiss)
         let touchStartX = 0;
         let touchStartY = 0;
         let touchStartTime = 0;
+        let isTouchDragging = false;
         let lastTapTime = 0;
-        const stage = document.getElementById('lightboxStage');
-        const mainImg = document.getElementById('lightboxMainImg');
 
-        if (stage) {
-            stage.addEventListener('touchstart', e => {
+        const viewport = document.getElementById('sliderViewport');
+        const trackEl = document.getElementById('sliderTrack');
+
+        if (viewport && trackEl) {
+            viewport.addEventListener('touchstart', e => {
+                const frame = document.getElementById('slideFrameCurrent');
+                if (frame && frame.classList.contains('zoomed')) return;
+
                 if (e.touches && e.touches.length === 1) {
                     touchStartX = e.touches[0].clientX;
                     touchStartY = e.touches[0].clientY;
                     touchStartTime = Date.now();
+                    isTouchDragging = false;
                 }
             }, { passive: true });
 
-            stage.addEventListener('touchend', e => {
-                if (e.changedTouches && e.changedTouches.length === 1) {
-                    const diffX = e.changedTouches[0].clientX - touchStartX;
-                    const diffY = e.changedTouches[0].clientY - touchStartY;
-                    const elapsed = Date.now() - touchStartTime;
+            viewport.addEventListener('touchmove', e => {
+                const frame = document.getElementById('slideFrameCurrent');
+                if (frame && frame.classList.contains('zoomed')) return;
+                if (!e.touches || e.touches.length !== 1) return;
 
-                    // If user is currently zoomed in, allow free pan without navigating
-                    const holder = document.getElementById('imageHolder');
-                    if (holder && holder.classList.contains('zoomed')) return;
+                const currentX = e.touches[0].clientX;
+                const currentY = e.touches[0].clientY;
+                const diffX = currentX - touchStartX;
+                const diffY = currentY - touchStartY;
 
-                    // Horizontal swipe to next / prev frame
-                    if (Math.abs(diffX) > 42 && Math.abs(diffX) > Math.abs(diffY) * 1.3) {
-                        if (diffX < 0) {
-                            nextPhoto();
-                        } else {
-                            prevPhoto();
-                        }
+                if (!isTouchDragging && Math.abs(diffX) > 8 && Math.abs(diffX) > Math.abs(diffY)) {
+                    isTouchDragging = true;
+                    ignoreNextClick = true;
+                }
+
+                if (isTouchDragging) {
+                    if (e.cancelable) e.preventDefault();
+                    trackEl.style.transition = 'none';
+                    trackEl.style.transform = `translate3d(${diffX}px, 0, 0)`;
+                }
+            }, { passive: false });
+
+            viewport.addEventListener('touchend', e => {
+                const frame = document.getElementById('slideFrameCurrent');
+                if (frame && frame.classList.contains('zoomed')) return;
+                if (!e.changedTouches || e.changedTouches.length !== 1) return;
+
+                const diffX = e.changedTouches[0].clientX - touchStartX;
+                const diffY = e.changedTouches[0].clientY - touchStartY;
+                const elapsed = Date.now() - touchStartTime;
+                const velocity = Math.abs(diffX) / (elapsed || 1);
+
+                if (isTouchDragging) {
+                    isTouchDragging = false;
+                    setTimeout(() => { ignoreNextClick = false; }, 100);
+
+                    const threshold = window.innerWidth * 0.18;
+                    if (diffX < -threshold || (diffX < -25 && velocity > 0.45)) {
+                        const targetIdx = (currentPhotoIndex + 1) % galleryItems.length;
+                        trackEl.style.transition = 'transform 0.22s cubic-bezier(0.22, 1, 0.36, 1)';
+                        trackEl.style.transform = 'translate3d(-100%, 0, 0)';
+                        setTimeout(() => {
+                            trackEl.style.transition = 'none';
+                            trackEl.style.transform = 'translate3d(0, 0, 0)';
+                            currentPhotoIndex = targetIdx;
+                            updateFramesContent();
+                        }, 230);
+                    } else if (diffX > threshold || (diffX > 25 && velocity > 0.45)) {
+                        const targetIdx = (currentPhotoIndex - 1 + galleryItems.length) % galleryItems.length;
+                        trackEl.style.transition = 'transform 0.22s cubic-bezier(0.22, 1, 0.36, 1)';
+                        trackEl.style.transform = 'translate3d(100%, 0, 0)';
+                        setTimeout(() => {
+                            trackEl.style.transition = 'none';
+                            trackEl.style.transform = 'translate3d(0, 0, 0)';
+                            currentPhotoIndex = targetIdx;
+                            updateFramesContent();
+                        }, 230);
+                    } else {
+                        trackEl.style.transition = 'transform 0.22s cubic-bezier(0.22, 1, 0.36, 1)';
+                        trackEl.style.transform = 'translate3d(0, 0, 0)';
                     }
-                    // Quick vertical swipe down to dismiss lightbox (iOS/Android gesture)
-                    else if (diffY > 90 && Math.abs(diffY) > Math.abs(diffX) * 1.6 && elapsed < 400) {
+                } else {
+                    if (diffY > 80 && Math.abs(diffY) > Math.abs(diffX) * 1.5 && elapsed < 350) {
                         closeDynamicFullView();
                     }
                 }
@@ -2150,10 +2407,11 @@ foreach ($albumsRepo as $alb) {
         }
 
         // Double-tap on image to toggle zoom
-        if (mainImg) {
-            mainImg.addEventListener('touchend', function(e) {
+        const currentFrameEl = document.getElementById('slideFrameCurrent');
+        if (currentFrameEl) {
+            currentFrameEl.addEventListener('touchend', function(e) {
                 const now = Date.now();
-                if (now - lastTapTime < 320) {
+                if (now - lastTapTime < 300) {
                     e.preventDefault();
                     toggleLightboxZoom();
                 }

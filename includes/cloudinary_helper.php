@@ -28,8 +28,10 @@ function getCloudinaryUrl($pathOrUrl, $transform = 'f_auto,q_auto')
 
     // If it's already a full Cloudinary URL
     if (isCloudinaryUrl($pathOrUrl)) {
-        if (!empty($transform) && strpos($pathOrUrl, '/upload/') !== false && strpos($pathOrUrl, $transform) === false) {
-            return str_replace('/upload/', '/upload/' . $transform . '/', $pathOrUrl);
+        if (!empty($transform) && strpos($pathOrUrl, '/upload/') !== false) {
+            // Strip any existing transformations between /upload/ and /v\d+/ to allow clean transformation changes
+            $cleanUrl = preg_replace('#/upload/(?:[a-zA-Z0-9_,:]+/)+(v\d+/)#', '/upload/$1', $pathOrUrl);
+            return str_replace('/upload/', '/upload/' . $transform . '/', $cleanUrl);
         }
         return $pathOrUrl;
     }
@@ -213,16 +215,28 @@ function buildClientGalleryPhotoItems(array $rawPhotos, $albumId = 0)
     $items = [];
     foreach (array_values($rawPhotos) as $idx => $rawUrl) {
         $syncedUrl = syncDrivePhotoToCloudinary($rawUrl, $albumId, false);
+        $thumbUrl = isCloudinaryUrl($syncedUrl)
+            ? getCloudinaryUrl($syncedUrl, 'f_auto,q_auto:eco,w_180,h_120,c_fill')
+            : (strpos($syncedUrl, 'lh3.googleusercontent.com/d/') !== false
+                ? preg_replace('/=w\d+.*$/', '=w180-h120-p', $syncedUrl)
+                : $syncedUrl);
+
         $masonryUrl = isCloudinaryUrl($syncedUrl)
             ? getCloudinaryUrl($syncedUrl, 'f_auto,q_auto:eco,w_800,c_limit')
             : (strpos($syncedUrl, 'lh3.googleusercontent.com/d/') !== false
-                ? preg_replace('/=w\d+$/', '=w800', $syncedUrl)
+                ? preg_replace('/=w\d+.*$/', '=w800', $syncedUrl)
+                : $syncedUrl);
+
+        $mobileUrl = isCloudinaryUrl($syncedUrl)
+            ? getCloudinaryUrl($syncedUrl, 'f_auto,q_auto:good,w_1200,c_limit')
+            : (strpos($syncedUrl, 'lh3.googleusercontent.com/d/') !== false
+                ? preg_replace('/=w\d+.*$/', '=w1200', $syncedUrl)
                 : $syncedUrl);
 
         $fullViewUrl = isCloudinaryUrl($syncedUrl)
             ? getCloudinaryUrl($syncedUrl, 'f_auto,q_auto:good,w_1920,c_limit')
             : (strpos($syncedUrl, 'lh3.googleusercontent.com/d/') !== false
-                ? preg_replace('/=w\d+$/', '=w1920', $syncedUrl)
+                ? preg_replace('/=w\d+.*$/', '=w1920', $syncedUrl)
                 : $syncedUrl);
 
         // Assign deterministic natural aspect ratio for editorial Masonry variety
@@ -233,7 +247,9 @@ function buildClientGalleryPhotoItems(array $rawPhotos, $albumId = 0)
             'index' => $idx,
             'number' => $idx + 1,
             'raw_url' => $rawUrl,
+            'thumb_url' => $thumbUrl,
             'masonry_url' => $masonryUrl,
+            'mobile_url' => $mobileUrl,
             'full_url' => $fullViewUrl,
             'download_url' => "/api/download-album.php?album_id=" . (int) $albumId . "&photo_index=" . $idx,
             'aspect_ratio' => $aspectRatio,
