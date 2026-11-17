@@ -1756,8 +1756,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $heroSettings['stats_placement']      = in_array($rawPlacement, ['hero', 'section'], true) ? $rawPlacement : 'hero';
             $heroSettings['stats_badge_label']    = trim(strip_tags((string)($_POST['stats_badge_label'] ?? '')));
             $heroSettings['stats_headline_white'] = trim(strip_tags((string)($_POST['stats_headline_white'] ?? 'A Decade of')));
-            $heroSettings['stats_headline_red']   => trim(strip_tags((string)($_POST['stats_headline_red'] ?? 'Impact')));
-            $heroSettings['stats_description']    => trim(strip_tags((string)($_POST['stats_description'] ?? "The numbers behind Falhen's reputation as one of Africa's most awarded and globally recognised production houses.")));
+            $heroSettings['stats_headline_red']   = trim(strip_tags((string)($_POST['stats_headline_red'] ?? 'Impact')));
+            $heroSettings['stats_description']    = trim(strip_tags((string)($_POST['stats_description'] ?? "The numbers behind Falhen's reputation as one of Africa's most awarded and globally recognised production houses.")));
             $heroSettings['stats_items']          = $statsItems;
         }
 
