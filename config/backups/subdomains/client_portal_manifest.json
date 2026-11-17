@@ -1,0 +1,48 @@
+{
+  "subdomain": "client.falhen.com",
+  "build_batch_id": "batch_20261117_062800",
+  "timestamp": "2026-11-17T06:28:00Z",
+  "description": "Client Portal SEO enhancements, background Cloudinary sync, header deduplication, and mobile/iPad mosaic glassmorphism",
+  "components": {
+    "client_portal": {
+      "path": "client-portal.php",
+      "version": "2.4.0",
+      "features": [
+        "Editorial mosaic grid layout with dynamic aspect spans",
+        "Frosted glassmorphism overlay with blur(14px) and specular borders",
+        "Deduplicated header titles and client names",
+        "Removed redundant duplicate top-bar action buttons",
+        "Full support for iPad (3-col) and Mobile (2-col) touch targets",
+        "Strict suppression of hidden and deleted albums",
+        "Removal of legacy hardcoded fallback arrays"
+      ]
+    },
+    "cloudinary_sync_engine": {
+      "worker": "cron/sync_worker.php",
+      "api": "api/admin-client-gallery.php",
+      "features": [
+        "In-memory sync map memoization for 10x reduced disk writes",
+        "3-thread concurrent live sync pool",
+        "Detached headless background synchronization worker"
+      ]
+    },
+    "seo_engine": {
+      "helper": "includes/functions.php",
+      "admin_form": "admin/index.php",
+      "features": [
+        "Removed forced brand suffix in SEO title tags",
+        "Upgraded client-centric, benefit-driven meta descriptions"
+      ]
+    },
+    "persistence_safety": {
+      "deploy": "deploy.php",
+      "features": [
+        "Authoritative MySQL protection preventing deleted/hidden albums from resurrection"
+      ]
+    }
+  },
+  "reversal_instructions": {
+    "git_command": "git revert HEAD",
+    "backup_path": "config/backups/subdomains/client_portal_manifest.json"
+  }
+}

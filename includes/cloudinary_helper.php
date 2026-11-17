@@ -194,7 +194,11 @@ function syncDrivePhotoToCloudinary($photoUrl, $albumId = 0, $autoUpload = false
                 'album_id' => (int) $albumId,
                 'synced_at' => date('c')
             ];
-            @file_put_contents($mapFile, json_encode($syncMap, JSON_PRETTY_PRINT));
+            $isDirty = true;
+        if ($index % 8 === 0) {
+            @file_put_contents($mapFile, json_encode($syncMap, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES), LOCK_EX);
+            $isDirty = false;
+        }
             return getCloudinaryUrl($uploaded['url'], 'f_auto,q_auto');
         }
     }
@@ -320,11 +324,22 @@ function syncSinglePhotoToCloudinary($photoUrlOrFile, $slug = 'general', $index 
     $folder = 'falhen/client-galleries/' . $cleanSlug;
     $publicId = $cleanSlug . '-' . str_pad((string) $index, 2, '0', STR_PAD_LEFT);
 
-    // Check persistent map cache
+    // In-memory persistent map cache with atomic shutdown flush
+    static $syncMap = null;
+    static $isDirty = false;
     $mapFile = __DIR__ . '/../config/cloudinary_sync_map.json';
-    $syncMap = file_exists($mapFile) ? @json_decode(file_get_contents($mapFile), true) : [];
-    if (!is_array($syncMap)) {
-        $syncMap = [];
+
+    if ($syncMap === null) {
+        $syncMap = file_exists($mapFile) ? @json_decode(file_get_contents($mapFile), true) : [];
+        if (!is_array($syncMap)) {
+            $syncMap = [];
+        }
+        register_shutdown_function(function() use (&$syncMap, &$isDirty, $mapFile) {
+            if ($isDirty && !empty($syncMap)) {
+                @file_put_contents($mapFile, json_encode($syncMap, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES), LOCK_EX);
+                $isDirty = false;
+            }
+        });
     }
 
     $gdriveId = extractGoogleDriveFileId($photoUrlOrFile);
@@ -390,7 +405,11 @@ function syncSinglePhotoToCloudinary($photoUrlOrFile, $slug = 'general', $index 
             $syncMap['by_gdrive_id'][$gdriveId] = $record;
         }
 
-        @file_put_contents($mapFile, json_encode($syncMap, JSON_PRETTY_PRINT));
+        $isDirty = true;
+        if ($index % 8 === 0) {
+            @file_put_contents($mapFile, json_encode($syncMap, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES), LOCK_EX);
+            $isDirty = false;
+        }
         return [
             'success'   => true,
             'url'       => $res['url'],

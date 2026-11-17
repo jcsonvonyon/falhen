@@ -9402,7 +9402,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
 
                 <?php if ($subAction === 'add' || $editingGalleryId !== null): 
                     $curSlug = $editingGallery['slug'] ?? generateSlug($editingGallery['title'] ?? '');
-                    $curSeoTitle = $editingGallery['seo_title'] ?? (($editingGallery['title'] ?? '') . ' | Falhen Media');
+                    $curSeoTitle = $editingGallery['seo_title'] ?? ($editingGallery['title'] ?? '');
                     $curSeoDesc = $editingGallery['seo_desc'] ?? '';
                     $curPhotos = $editingGallery['gallery_photos'] ?? [];
                 ?>
@@ -9542,8 +9542,8 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                         <!-- Google SERP Live Snippet Preview -->
                                         <div style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 12px; margin-top: 10px;">
                                             <div style="font-size: 0.7rem; color: #202124; margin-bottom: 2px;">client.falhen.com &rsaquo; album &rsaquo; <span id="serp_slug_preview" style="color:#5f6368;"><?php echo htmlspecialchars($curSlug); ?></span></div>
-                                            <div id="serp_title_preview" style="color: #1a0dab; font-size: 0.95rem; font-weight: 500; text-decoration: none; line-height: 1.25; margin-bottom: 4px;"><?php echo htmlspecialchars($curSeoTitle); ?></div>
-                                            <div id="serp_desc_preview" style="color: #4d5156; font-size: 0.78rem; line-height: 1.4;"><?php echo htmlspecialchars($curSeoDesc ?: 'Explore your private photography gallery delivered in high-resolution by Falhen Media.'); ?></div>
+                                            <div id="serp_title_preview" style="color: #1a0dab; font-size: 0.95rem; font-weight: 500; text-decoration: none; line-height: 1.25; margin-bottom: 4px;"><?php echo htmlspecialchars($curSeoTitle ?: 'Client Gallery'); ?></div>
+                                            <div id="serp_desc_preview" style="color: #4d5156; font-size: 0.78rem; line-height: 1.4;"><?php echo htmlspecialchars($curSeoDesc ?: 'Explore private photography collection delivered in editorial high-resolution.'); ?></div>
                                         </div>
                                     </div>
 
@@ -9576,8 +9576,11 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                         </div>
 
                                         <div style="display: flex; gap: 8px; margin-bottom: 14px;">
-                                            <button type="button" onclick="startCloudinarySync()" id="btn_start_sync" style="flex: 1; background: #dc2626; color: #fff; border: none; border-radius: 8px; padding: 10px 14px; font-size: 0.84rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px;">
-                                                <i class="fa-solid fa-bolt"></i> Sync All to Cloudinary CDN
+                                            <button type="button" onclick="startCloudinarySync()" id="btn_start_sync" style="flex: 1.2; background: #dc2626; color: #fff; border: none; border-radius: 8px; padding: 10px 14px; font-size: 0.84rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px;">
+                                                <i class="fa-solid fa-bolt"></i> Fast Concurrent Sync
+                                            </button>
+                                            <button type="button" onclick="startBackgroundCloudinarySync()" id="btn_bg_sync" style="flex: 1; background: #0f172a; color: #fff; border: none; border-radius: 8px; padding: 10px 14px; font-size: 0.84rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px;" title="Runs synchronization asynchronously in background so you can close this tab">
+                                                <i class="fa-solid fa-clock-rotate-left"></i> Sync in Background
                                             </button>
                                         </div>
 
@@ -9646,12 +9649,12 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                         const seoDescInp = document.getElementById('cg_seo_desc_input');
 
                         if (!seoTitleInp.dataset.manualEdit && title) {
-                            seoTitleInp.value = (title + ' | Falhen Media').substring(0, 60);
+                            seoTitleInp.value = title.substring(0, 60);
                         }
 
                         document.getElementById('serp_slug_preview').textContent = slug || 'gallery';
-                        document.getElementById('serp_title_preview').textContent = seoTitleInp.value || 'Client Gallery | Falhen Media';
-                        document.getElementById('serp_desc_preview').textContent = seoDescInp.value || 'Explore your private photography gallery delivered in high-resolution by Falhen Media.';
+                        document.getElementById('serp_title_preview').textContent = seoTitleInp.value || 'Client Gallery';
+                        document.getElementById('serp_desc_preview').textContent = seoDescInp.value || 'Explore private photography collection delivered in editorial high-resolution.';
 
                         document.getElementById('seo_title_count').textContent = `${seoTitleInp.value.length}/60`;
                         document.getElementById('seo_desc_count').textContent = `${seoDescInp.value.length}/160`;
@@ -9754,63 +9757,160 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
 
                         const slug = document.getElementById('cg_slug_input').value.trim() || 'gallery';
                         const btn = document.getElementById('btn_start_sync');
+                        const btnBg = document.getElementById('btn_bg_sync');
                         const progressCard = document.getElementById('sync_progress_card');
                         const progressBar = document.getElementById('sync_progress_bar');
                         const percentLabel = document.getElementById('sync_percent_label');
                         const statusLabel = document.getElementById('sync_status_label');
 
                         btn.disabled = true;
+                        if (btnBg) btnBg.disabled = true;
                         progressCard.style.display = 'block';
 
-                        const chunkSize = 4;
-                        let syncedCount = 0;
-                        let duplicateCount = 0;
-                        let freshUploadCount = 0;
+                        const chunkSize = 6;
                         const total = currentPhotosList.length;
-                        const updatedPhotos = [];
-
+                        const chunks = [];
                         for (let i = 0; i < total; i += chunkSize) {
-                            const chunk = currentPhotosList.slice(i, i + chunkSize);
-                            statusLabel.textContent = `Syncing photos ${i + 1}–${Math.min(i + chunkSize, total)} of ${total}...`;
-
-                            try {
-                                const fd = new FormData();
-                                fd.append('action', 'sync_chunk');
-                                fd.append('slug', slug);
-                                fd.append('start_index', i + 1);
-                                chunk.forEach(url => fd.append('photos[]', url));
-
-                                const resp = await fetch('/api/admin-client-gallery.php', { method: 'POST', body: fd });
-                                const res = await resp.json();
-
-                                if (res.success && res.results) {
-                                    res.results.forEach(r => {
-                                        updatedPhotos.push(r.synced_url || r.original_url);
-                                        if (r.duplicate || r.cached) {
-                                            duplicateCount++;
-                                        } else {
-                                            freshUploadCount++;
-                                        }
-                                    });
-                                } else {
-                                    chunk.forEach(u => updatedPhotos.push(u));
-                                }
-                            } catch (e) {
-                                chunk.forEach(u => updatedPhotos.push(u));
-                            }
-
-                            syncedCount += chunk.length;
-                            const pct = Math.min(100, Math.round((syncedCount / total) * 100));
-                            progressBar.style.width = pct + '%';
-                            percentLabel.textContent = pct + '%';
+                            chunks.push({
+                                index: i,
+                                photos: currentPhotosList.slice(i, i + chunkSize)
+                            });
                         }
 
-                        currentPhotosList = updatedPhotos;
+                        let completedCount = 0;
+                        let duplicateCount = 0;
+                        let freshUploadCount = 0;
+                        const resultsMap = new Array(total);
+
+                        // 3 Concurrent worker threads for live sync
+                        const concurrency = 3;
+                        let chunkCursor = 0;
+
+                        async function worker() {
+                            while (chunkCursor < chunks.length) {
+                                const currentChunkIndex = chunkCursor++;
+                                const chunkItem = chunks[currentChunkIndex];
+                                const startIdx = chunkItem.index;
+                                const chunkPhotos = chunkItem.photos;
+
+                                try {
+                                    const fd = new FormData();
+                                    fd.append('action', 'sync_chunk');
+                                    fd.append('slug', slug);
+                                    fd.append('start_index', startIdx + 1);
+                                    chunkPhotos.forEach(url => fd.append('photos[]', url));
+
+                                    const resp = await fetch('/api/admin-client-gallery.php', { method: 'POST', body: fd });
+                                    const res = await resp.json();
+
+                                    if (res.success && res.results) {
+                                        res.results.forEach((r, rIdx) => {
+                                            resultsMap[startIdx + rIdx] = r.synced_url || r.original_url;
+                                            if (r.duplicate || r.cached) duplicateCount++;
+                                            else freshUploadCount++;
+                                        });
+                                    } else {
+                                        chunkPhotos.forEach((u, rIdx) => { resultsMap[startIdx + rIdx] = u; });
+                                    }
+                                } catch (e) {
+                                    chunkPhotos.forEach((u, rIdx) => { resultsMap[startIdx + rIdx] = u; });
+                                }
+
+                                completedCount += chunkPhotos.length;
+                                const pct = Math.min(100, Math.round((completedCount / total) * 100));
+                                progressBar.style.width = pct + '%';
+                                percentLabel.textContent = pct + '%';
+                                statusLabel.textContent = `Fast sync: ${Math.min(completedCount, total)} of ${total} photos processed...`;
+                            }
+                        }
+
+                        const pool = [];
+                        for (let w = 0; w < Math.min(concurrency, chunks.length); w++) {
+                            pool.push(worker());
+                        }
+                        await Promise.all(pool);
+
+                        currentPhotosList = resultsMap.filter(Boolean);
                         document.getElementById('gallery_photos_json').value = JSON.stringify(currentPhotosList);
                         renderPhotosGrid(currentPhotosList);
-                        statusLabel.textContent = `All ${total} photos processed! (${duplicateCount} existing duplicates preserved, ${freshUploadCount} fresh uploads).`;
+                        statusLabel.textContent = `All ${total} photos processed swiftly! (${duplicateCount} cached/duplicates preserved, ${freshUploadCount} fresh uploads).`;
                         btn.disabled = false;
-                        btn.innerHTML = '<i class="fa-solid fa-circle-check"></i> Cloudinary Sync Complete';
+                        if (btnBg) btnBg.disabled = false;
+                        btn.innerHTML = '<i class="fa-solid fa-circle-check"></i> Concurrent Sync Complete';
+                    }
+
+                    async function startBackgroundCloudinarySync() {
+                        if (!currentPhotosList || currentPhotosList.length === 0) {
+                            alert('Please fetch photos from Google Drive first or upload files.');
+                            return;
+                        }
+
+                        const slug = document.getElementById('cg_slug_input').value.trim() || 'gallery';
+                        const albumIdInput = document.querySelector('input[name="id"]');
+                        const albumId = albumIdInput ? albumIdInput.value : 0;
+                        const btn = document.getElementById('btn_bg_sync');
+                        const btnSync = document.getElementById('btn_start_sync');
+                        const progressCard = document.getElementById('sync_progress_card');
+                        const progressBar = document.getElementById('sync_progress_bar');
+                        const percentLabel = document.getElementById('sync_percent_label');
+                        const statusLabel = document.getElementById('sync_status_label');
+
+                        btn.disabled = true;
+                        btnSync.disabled = true;
+                        progressCard.style.display = 'block';
+                        statusLabel.textContent = 'Spawning headless background synchronization job...';
+
+                        try {
+                            const fd = new FormData();
+                            fd.append('action', 'start_background_sync');
+                            fd.append('slug', slug);
+                            fd.append('album_id', albumId);
+                            currentPhotosList.forEach(url => fd.append('photos[]', url));
+
+                            const resp = await fetch('/api/admin-client-gallery.php', { method: 'POST', body: fd });
+                            const data = await resp.json();
+
+                            if (data.success && data.job_id) {
+                                const jobId = data.job_id;
+                                statusLabel.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Background Job [${jobId}] running. You can close this tab or navigate away anytime!`;
+                                
+                                const pollTimer = setInterval(async () => {
+                                    try {
+                                        const pResp = await fetch(`/api/admin-client-gallery.php?action=check_sync_job&job_id=${encodeURIComponent(jobId)}`);
+                                        const pData = await pResp.json();
+                                        if (pData.success) {
+                                            const pct = pData.percent || 0;
+                                            progressBar.style.width = pct + '%';
+                                            percentLabel.textContent = pct + '%';
+                                            statusLabel.textContent = `Background worker: ${pData.processed} of ${pData.total} photos synced (${pct}%)...`;
+
+                                            if (pData.status === 'completed' || pct >= 100) {
+                                                clearInterval(pollTimer);
+                                                statusLabel.textContent = `Background sync complete! ${pData.total} photos uploaded.`;
+                                                if (pData.synced_photos && pData.synced_photos.length > 0) {
+                                                    currentPhotosList = pData.synced_photos;
+                                                    document.getElementById('gallery_photos_json').value = JSON.stringify(currentPhotosList);
+                                                    renderPhotosGrid(currentPhotosList);
+                                                }
+                                                btn.disabled = false;
+                                                btnSync.disabled = false;
+                                                btn.innerHTML = '<i class="fa-solid fa-circle-check"></i> Background Job Complete';
+                                            }
+                                        }
+                                    } catch (err) {
+                                        console.error('Job poll error:', err);
+                                    }
+                                }, 3000);
+                            } else {
+                                alert(data.message || 'Could not start background job.');
+                                btn.disabled = false;
+                                btnSync.disabled = false;
+                            }
+                        } catch (e) {
+                            alert('Network error while starting background sync.');
+                            btn.disabled = false;
+                            btnSync.disabled = false;
+                        }
                     }
 
                     function renderPhotosGrid(photos) {

@@ -301,12 +301,14 @@ try {
         }
     }
     
-    if ($dbCount < $repoCount || isset($_GET['sync_to_db'])) {
+    // If MySQL is completely uninitialized ($dbCount === 0) or user explicitly requests ?sync_to_db=1
+    if (($dbCount === 0 && $repoCount > 0) || isset($_GET['sync_to_db']) || isset($_GET['force_repo_seed'])) {
         if (function_exists('saveSiteSettings')) {
             saveSiteSettings($repoSettings);
         }
-        $output[] = "Synced repository settings ({$repoCount} items) to MySQL site_settings database.";
+        $output[] = "Initialized empty database with repository settings ({$repoCount} items).";
     } else {
+        // Authoritative MySQL settings are preserved 100%! Deleted or hidden albums stay deleted/hidden across all builds & deploys!
         if (function_exists('saveSiteSettings')) {
             saveSiteSettings($mergedSettings);
         }

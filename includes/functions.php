@@ -1578,19 +1578,22 @@ function generateClientGallerySeo($title, $category = 'Gallery', $client = '', $
     $cleanClient = trim(strip_tags((string)$client));
     $slug = generateSlug($cleanTitle);
     
-    // 1. Title Tag: 50-60 chars optimal, brand hook, primary keyword up front
-    $brandSuffix = ' | Falhen Media';
-    $primaryHook = $cleanTitle;
-    if (strlen($primaryHook . $brandSuffix) > 60) {
-        $availableLen = 60 - strlen($brandSuffix);
-        $primaryHook = substr($primaryHook, 0, $availableLen);
-        $primaryHook = rtrim($primaryHook, ' -');
+    // 1. Title Tag: 50-60 chars optimal, primary keyword up front, no forced brand boilerplate
+    $seoTitle = $cleanTitle;
+    if (strlen($seoTitle) < 45 && strpos(strtolower($seoTitle), strtolower($cleanCat)) === false) {
+        $candidate = "{$cleanTitle} — {$cleanCat} Collection";
+        if (strlen($candidate) <= 60) {
+            $seoTitle = $candidate;
+        }
     }
-    $seoTitle = $primaryHook . $brandSuffix;
+    if (strlen($seoTitle) > 60) {
+        $seoTitle = substr($seoTitle, 0, 60);
+        $seoTitle = rtrim($seoTitle, ' -');
+    }
     
-    // 2. Meta Description: 150-160 chars optimal with power trigger & CTA
-    $baseClient = $cleanClient ?: 'Falhen Media clients';
-    $rawDesc = "View and download the exclusive {$cleanCat} photography gallery for {$baseClient}. Curated and delivered in editorial quality by Falhen Media. Explore frames ✓";
+    // 2. Meta Description: 150-160 chars optimal, action verb, client benefit, clear CTA
+    $targetClient = $cleanClient ?: 'Private Client';
+    $rawDesc = "Explore and download the high-resolution {$cleanCat} photo collection for {$targetClient}. Editorial curation, proofs, and secure digital client access ✓";
     if (strlen($rawDesc) > 160) {
         $rawDesc = substr($rawDesc, 0, 157) . '...';
     }

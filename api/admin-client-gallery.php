@@ -186,6 +186,95 @@ switch ($action) {
         echo json_encode($res);
         exit;
 
+    // 6. Start headless background sync job for large albums (100-300+ photos)
+    case 'start_background_sync':
+        $slug = trim($_POST['slug'] ?? 'gallery');
+        $albumId = (int)($_POST['album_id'] ?? 0);
+        $photos = $_POST['photos'] ?? [];
+
+        if (!is_array($photos) || empty($photos)) {
+            echo json_encode(['success' => false, 'message' => 'No photo list provided for background synchronization.']);
+            exit;
+        }
+
+        $jobId = 'sync_' . substr(md5(uniqid(mt_rand(), true)), 0, 10);
+        $jobsFile = __DIR__ . '/../config/cloudinary_sync_jobs.json';
+        $jobs = file_exists($jobsFile) ? @json_decode(file_get_contents($jobsFile), true) : [];
+        if (!is_array($jobs)) $jobs = [];
+
+        $jobs[$jobId] = [
+            'job_id'        => $jobId,
+            'slug'          => $slug,
+            'album_id'      => $albumId,
+            'total'         => count($photos),
+            'processed'     => 0,
+            'percent'       => 0,
+            'status'        => 'queued',
+            'started_at'    => date('c'),
+            'photos'        => array_values($photos),
+            'synced_photos' => []
+        ];
+        @file_put_contents($jobsFile, json_encode($jobs, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES), LOCK_EX);
+
+        // Spawn background worker process
+        $workerScript = __DIR__ . '/../cron/sync_worker.php';
+        $isSpawned = false;
+
+        if (function_exists('popen') && !in_array('popen', explode(',', ini_get('disable_functions')))) {
+            $cmd = "php " . escapeshellarg($workerScript) . " " . escapeshellarg($jobId) . " > /dev/null 2>&1 &";
+            @pclose(@popen($cmd, "r"));
+            $isSpawned = true;
+        } elseif (function_exists('exec') && !in_array('exec', explode(',', ini_get('disable_functions')))) {
+            $cmd = "php " . escapeshellarg($workerScript) . " " . escapeshellarg($jobId) . " > /dev/null 2>&1 &";
+            @exec($cmd);
+            $isSpawned = true;
+        }
+
+        // Asynchronous non-blocking HTTP curl fallback
+        if (!$isSpawned && function_exists('curl_init')) {
+            $host = $_SERVER['HTTP_HOST'] ?? 'www.falhen.com';
+            $proto = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+            $workerUrl = "{$proto}://{$host}/cron/sync_worker.php?key=falhen_deploy_2026&job_id=" . urlencode($jobId);
+
+            $ch = curl_init($workerUrl);
+            curl_setopt($ch, CURLOPT_TIMEOUT, 1);
+            curl_setopt($ch, CURLOPT_NOSIGNAL, 1);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, false);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+            @curl_exec($ch);
+            @curl_close($ch);
+        }
+
+        echo json_encode([
+            'success'   => true,
+            'job_id'    => $jobId,
+            'total'     => count($photos),
+            'message'   => 'Background Cloudinary synchronization job started.'
+        ]);
+        exit;
+
+    // 7. Check status of background sync job
+    case 'check_sync_job':
+        $jobId = trim($_GET['job_id'] ?? $_POST['job_id'] ?? '');
+        $jobsFile = __DIR__ . '/../config/cloudinary_sync_jobs.json';
+        $jobs = file_exists($jobsFile) ? @json_decode(file_get_contents($jobsFile), true) : [];
+
+        if (empty($jobId) || empty($jobs[$jobId])) {
+            echo json_encode(['success' => false, 'message' => 'Job ID not found.']);
+            exit;
+        }
+
+        $job = $jobs[$jobId];
+        echo json_encode([
+            'success'       => true,
+            'status'        => $job['status'] ?? 'unknown',
+            'total'         => (int)($job['total'] ?? 0),
+            'processed'     => (int)($job['processed'] ?? 0),
+            'percent'       => (int)($job['percent'] ?? 0),
+            'synced_photos' => $job['synced_photos'] ?? []
+        ]);
+        exit;
+
     default:
         http_response_code(400);
         echo json_encode([

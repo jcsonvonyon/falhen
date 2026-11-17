@@ -18,12 +18,10 @@ $masterPortfolioItems = getPortfolioRepo();
 $albumsRepo = [];
 
 foreach ($masterPortfolioItems as $item) {
-    if (($item['media_type'] ?? 'photo') === 'photo' || !isset($item['media_type'])) {
-        $albumsRepo[(int)$item['id']] = $item;
+    if (!empty($item['hidden']) || !empty($item['is_hidden']) || !empty($item['deleted']) || ($item['status'] ?? '') === 'hidden' || ($item['visibility'] ?? '') === 'hidden') {
+        continue; // Strictly respect hidden and deleted album status
     }
-}
-if (empty($albumsRepo)) {
-    foreach ($masterPortfolioItems as $item) {
+    if (($item['media_type'] ?? 'photo') === 'photo' || !isset($item['media_type'])) {
         $albumsRepo[(int)$item['id']] = $item;
     }
 }
@@ -84,9 +82,13 @@ if ($isClientsView) {
     $seoKeywords = "client galleries, photography delivery, client portal, falhen media, weddings, portraits, commercial, corporate";
     $pageTitle = $seoTitle;
 } else {
-    $seoTitle = !empty($currentAlbum['seo_title']) ? $currentAlbum['seo_title'] : ($currentAlbum['title'] ?? 'Client Gallery') . " — Client Portal | Falhen Media";
-    $seoDesc = !empty($currentAlbum['seo_desc']) ? $currentAlbum['seo_desc'] : "Explore the exclusive " . ($currentAlbum['category'] ?? 'photography') . " gallery for " . ($currentAlbum['client'] ?? 'clients') . ". Curated and delivered in high-resolution by Falhen Media.";
-    $seoKeywords = !empty($currentAlbum['seo_keywords']) ? $currentAlbum['seo_keywords'] : (($currentAlbum['category'] ?? 'Photography') . ", client gallery, high resolution, download, falhen media");
+    $albumTitle = $currentAlbum['title'] ?? 'Client Gallery';
+    $albumCategory = $currentAlbum['category'] ?? 'Photography';
+    $albumClient = $currentAlbum['client'] ?? 'Private Client';
+
+    $seoTitle = !empty($currentAlbum['seo_title']) ? $currentAlbum['seo_title'] : $albumTitle;
+    $seoDesc = !empty($currentAlbum['seo_desc']) ? $currentAlbum['seo_desc'] : "Explore and download the curated {$albumCategory} photo collection for {$albumClient}. Instant proofs, editorial gallery & full digital delivery.";
+    $seoKeywords = !empty($currentAlbum['seo_keywords']) ? $currentAlbum['seo_keywords'] : "{$albumCategory}, client gallery, high resolution, photo download";
     $pageTitle = htmlspecialchars($seoTitle);
 }
 
@@ -107,48 +109,7 @@ if (!empty($currentAlbum['gallery_photos']) && is_array($currentAlbum['gallery_p
 }
 
 if (empty($rawPhotos)) {
-    $cNameLower = strtolower(trim($currentAlbum['client'] ?? ''));
-    $cTitleLower = strtolower(trim($currentAlbum['title'] ?? ''));
-    if ($currentAlbumId === 1 || strpos($cNameLower, 'king david') !== false || strpos($cTitleLower, 'king david') !== false) {
-        $rawPhotos = [
-            'https://res.cloudinary.com/pnabfi91/image/upload/v1794096443/falhen/client-galleries/king-david-grad-shoot/king-david-grad-shoot-01.jpg',
-            'https://res.cloudinary.com/pnabfi91/image/upload/v1794096445/falhen/client-galleries/king-david-grad-shoot/king-david-grad-shoot-02.jpg',
-            'https://res.cloudinary.com/pnabfi91/image/upload/v1794096448/falhen/client-galleries/king-david-grad-shoot/king-david-grad-shoot-03.jpg',
-            'https://res.cloudinary.com/pnabfi91/image/upload/v1794096450/falhen/client-galleries/king-david-grad-shoot/king-david-grad-shoot-04.jpg',
-            'https://res.cloudinary.com/pnabfi91/image/upload/v1794096452/falhen/client-galleries/king-david-grad-shoot/king-david-grad-shoot-05.jpg',
-            'https://res.cloudinary.com/pnabfi91/image/upload/v1794096454/falhen/client-galleries/king-david-grad-shoot/king-david-grad-shoot-06.jpg',
-            'https://res.cloudinary.com/pnabfi91/image/upload/v1794096456/falhen/client-galleries/king-david-grad-shoot/king-david-grad-shoot-07.jpg',
-            'https://res.cloudinary.com/pnabfi91/image/upload/v1794096458/falhen/client-galleries/king-david-grad-shoot/king-david-grad-shoot-08.jpg',
-            'https://res.cloudinary.com/pnabfi91/image/upload/v1794096459/falhen/client-galleries/king-david-grad-shoot/king-david-grad-shoot-09.jpg',
-            'https://res.cloudinary.com/pnabfi91/image/upload/v1794096461/falhen/client-galleries/king-david-grad-shoot/king-david-grad-shoot-10.jpg',
-            'https://res.cloudinary.com/pnabfi91/image/upload/v1794096464/falhen/client-galleries/king-david-grad-shoot/king-david-grad-shoot-11.jpg',
-            'https://res.cloudinary.com/pnabfi91/image/upload/v1794096466/falhen/client-galleries/king-david-grad-shoot/king-david-grad-shoot-12.jpg',
-            'https://res.cloudinary.com/pnabfi91/image/upload/v1794096468/falhen/client-galleries/king-david-grad-shoot/king-david-grad-shoot-13.jpg',
-            'https://res.cloudinary.com/pnabfi91/image/upload/v1794096470/falhen/client-galleries/king-david-grad-shoot/king-david-grad-shoot-14.jpg',
-            'https://res.cloudinary.com/pnabfi91/image/upload/v1794096472/falhen/client-galleries/king-david-grad-shoot/king-david-grad-shoot-15.jpg',
-            'https://res.cloudinary.com/pnabfi91/image/upload/v1794096475/falhen/client-galleries/king-david-grad-shoot/king-david-grad-shoot-16.jpg',
-            'https://res.cloudinary.com/pnabfi91/image/upload/v1794096477/falhen/client-galleries/king-david-grad-shoot/king-david-grad-shoot-17.jpg',
-            'https://res.cloudinary.com/pnabfi91/image/upload/v1794096478/falhen/client-galleries/king-david-grad-shoot/king-david-grad-shoot-18.jpg',
-            'https://res.cloudinary.com/pnabfi91/image/upload/v1794096480/falhen/client-galleries/king-david-grad-shoot/king-david-grad-shoot-19.jpg',
-            'https://res.cloudinary.com/pnabfi91/image/upload/v1794096482/falhen/client-galleries/king-david-grad-shoot/king-david-grad-shoot-20.jpg',
-            'https://res.cloudinary.com/pnabfi91/image/upload/v1794096483/falhen/client-galleries/king-david-grad-shoot/king-david-grad-shoot-21.jpg',
-            'https://res.cloudinary.com/pnabfi91/image/upload/v1794096485/falhen/client-galleries/king-david-grad-shoot/king-david-grad-shoot-22.jpg',
-            'https://res.cloudinary.com/pnabfi91/image/upload/v1794096487/falhen/client-galleries/king-david-grad-shoot/king-david-grad-shoot-23.jpg',
-            'https://res.cloudinary.com/pnabfi91/image/upload/v1794096488/falhen/client-galleries/king-david-grad-shoot/king-david-grad-shoot-24.jpg',
-            'https://res.cloudinary.com/pnabfi91/image/upload/v1794096490/falhen/client-galleries/king-david-grad-shoot/king-david-grad-shoot-25.jpg'
-        ];
-    } else {
-        $rawPhotos = [
-            $coverImage,
-            'https://res.cloudinary.com/pnabfi91/image/upload/v1791224271/falhen/portfolio/ysfriy8jlhhkcuzl8j16.jpg',
-            'https://res.cloudinary.com/pnabfi91/image/upload/v1791222750/falhen/portfolio/blpzc2fznaqr0czm3ji8.jpg',
-            'https://res.cloudinary.com/pnabfi91/image/upload/v1791222920/falhen/portfolio/c5k5xwoa1misejie2oxy.jpg',
-            'https://res.cloudinary.com/pnabfi91/image/upload/v1791226024/falhen/portfolio/ldtm77cjygkwcgijkdqq.jpg',
-            'https://res.cloudinary.com/pnabfi91/image/upload/v1791224320/falhen/portfolio/qdkldutyaqhrena0mrza.jpg',
-            'https://res.cloudinary.com/pnabfi91/image/upload/v1791226059/falhen/portfolio/lavtrjw84dyapshxdgpl.jpg',
-            'https://res.cloudinary.com/pnabfi91/image/upload/v1791226088/falhen/portfolio/sfa4gof0yfr0bc14r1eg.jpg'
-        ];
-    }
+    $rawPhotos = !empty($coverImage) ? [$coverImage] : [];
 }
 
 $photoItems = buildClientGalleryPhotoItems($rawPhotos, $currentAlbumId);
@@ -665,25 +626,27 @@ foreach ($albumsRepo as $alb) {
             color: var(--smug-text-primary);
         }
 
-        /* SmugMug Pure Masonry / Justified Gallery Grid */
+        /* ================= EDITORIAL MOSAIC GRID WITH FROSTED GLASSMORPHISM ================= */
         .smug-gallery-grid {
-            column-count: 4;
-            column-gap: 14px;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            grid-auto-flow: dense;
+            gap: 16px;
             width: 100%;
             box-sizing: border-box;
         }
 
         @media (max-width: 1280px) {
             .smug-gallery-grid {
-                column-count: 3;
-                column-gap: 12px;
+                grid-template-columns: repeat(3, 1fr);
+                gap: 14px;
             }
         }
 
         @media (max-width: 900px) {
             .smug-gallery-grid {
-                column-count: 2;
-                column-gap: 10px;
+                grid-template-columns: repeat(2, 1fr);
+                gap: 12px;
             }
         }
 
@@ -696,8 +659,15 @@ foreach ($albumsRepo as $alb) {
                 padding: 20px 20px 60px;
             }
             .smug-gallery-grid {
-                column-count: 3 !important;
-                column-gap: 12px !important;
+                grid-template-columns: repeat(3, 1fr) !important;
+                gap: 12px !important;
+            }
+            .smug-photo-card.mosaic-lead {
+                grid-column: span 2 !important;
+                grid-row: span 2 !important;
+            }
+            .smug-photo-card.mosaic-wide {
+                grid-column: span 2 !important;
             }
             .smug-folders-grid {
                 grid-template-columns: repeat(2, 1fr) !important;
@@ -714,23 +684,35 @@ foreach ($albumsRepo as $alb) {
         /* Mobile Phone Responsiveness (<= 640px) */
         @media (max-width: 640px) {
             .smug-gallery-grid {
-                column-count: 2 !important;
-                column-gap: 8px !important;
+                grid-template-columns: repeat(2, 1fr) !important;
+                gap: 10px !important;
                 width: 100% !important;
             }
+            .smug-photo-card.mosaic-lead {
+                grid-column: span 2 !important;
+                grid-row: span 1 !important;
+            }
+            .smug-photo-card.mosaic-wide {
+                grid-column: span 2 !important;
+            }
             .smug-photo-card {
-                margin-bottom: 8px !important;
-                border-radius: 8px !important;
+                border-radius: 12px !important;
+                box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08) !important;
             }
-            .smug-photo-card img {
-                border-radius: 8px !important;
+            .smug-photo-glass-overlay {
+                opacity: 1 !important;
+                background: linear-gradient(180deg, rgba(0,0,0,0) 50%, rgba(0,0,0,0.7) 100%) !important;
+                padding: 8px 10px !important;
+                pointer-events: auto !important;
             }
-            .smug-photo-overlay {
-                padding: 8px !important;
+            .smug-glass-badge {
+                font-size: 0.68rem !important;
+                padding: 4px 8px !important;
             }
-            .smug-overlay-num {
-                font-size: 0.7rem !important;
-                padding: 2px 6px !important;
+            .smug-glass-btn {
+                width: 32px !important;
+                height: 32px !important;
+                font-size: 0.76rem !important;
             }
             .smug-topbar {
                 padding: 10px 14px;
@@ -831,77 +813,147 @@ foreach ($albumsRepo as $alb) {
         }
 
         .smug-photo-card {
-            break-inside: avoid;
-            margin-bottom: 14px;
             position: relative;
-            border-radius: 4px;
+            border-radius: 16px;
             overflow: hidden;
-            background: #111116;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid var(--smug-border-light);
             cursor: pointer;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.04);
+            transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.35s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.25s ease;
+            will-change: transform;
+        }
+
+        [data-theme="noir"] .smug-photo-card {
+            background: rgba(15, 23, 42, 0.45);
+            border-color: rgba(255, 255, 255, 0.08);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.35);
+        }
+
+        .smug-photo-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 16px 36px rgba(0, 0, 0, 0.12);
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+
+        [data-theme="noir"] .smug-photo-card:hover {
+            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55);
+            border-color: rgba(255, 255, 255, 0.22);
+        }
+
+        .smug-photo-card.mosaic-lead {
+            grid-column: span 2;
+            grid-row: span 2;
+        }
+
+        .smug-photo-card.mosaic-wide {
+            grid-column: span 2;
+        }
+
+        .smug-photo-card.mosaic-tall {
+            grid-row: span 2;
+        }
+
+        .smug-photo-card .smug-card-media-wrap {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .smug-photo-card img {
             width: 100%;
-            height: auto;
+            height: 100%;
+            object-fit: cover;
             display: block;
-            transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
         .smug-photo-card:hover img {
-            transform: scale(1.02);
+            transform: scale(1.035);
         }
 
-        /* Subtle minimal hover overlay */
+        /* Authentic Frosted Glassmorphism Overlay */
+        .smug-photo-glass-overlay,
         .smug-photo-overlay {
             position: absolute;
             inset: 0;
-            background: linear-gradient(180deg, rgba(0,0,0,0) 50%, rgba(0,0,0,0.7) 100%);
-            opacity: 0;
-            transition: opacity 0.25s ease;
+            background: linear-gradient(180deg, rgba(0, 0, 0, 0.02) 40%, rgba(0, 0, 0, 0.65) 100%);
             display: flex;
             align-items: flex-end;
             justify-content: space-between;
-            padding: 16px;
+            padding: 14px 16px;
+            opacity: 0;
+            transition: opacity 0.28s ease, backdrop-filter 0.28s ease;
+            pointer-events: none;
         }
 
+        .smug-photo-card:hover .smug-photo-glass-overlay,
         .smug-photo-card:hover .smug-photo-overlay {
             opacity: 1;
+            pointer-events: auto;
         }
 
+        /* Glassmorphism Floating Badge */
+        .smug-glass-badge,
         .smug-overlay-num {
-            font-size: 0.78rem;
-            font-weight: 600;
-            color: rgba(255, 255, 255, 0.85);
-            letter-spacing: 0.5px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            border-radius: 24px;
+            background: rgba(255, 255, 255, 0.22);
+            backdrop-filter: blur(14px) saturate(180%);
+            -webkit-backdrop-filter: blur(14px) saturate(180%);
+            border: 1px solid rgba(255, 255, 255, 0.35);
+            color: #ffffff;
+            font-size: 0.76rem;
+            font-weight: 700;
+            letter-spacing: 0.4px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
         }
 
+        [data-theme="noir"] .smug-glass-badge,
+        [data-theme="noir"] .smug-overlay-num {
+            background: rgba(15, 23, 42, 0.65);
+            border-color: rgba(255, 255, 255, 0.18);
+        }
+
+        .smug-glass-actions,
         .smug-overlay-actions {
             display: flex;
             align-items: center;
             gap: 8px;
         }
 
+        .smug-glass-btn,
         .smug-overlay-btn {
-            background: rgba(0, 0, 0, 0.6);
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            color: #ffffff;
-            width: 34px;
-            height: 34px;
+            width: 38px;
+            height: 38px;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 0.8rem;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(14px) saturate(180%);
+            -webkit-backdrop-filter: blur(14px) saturate(180%);
+            border: 1px solid rgba(255, 255, 255, 0.35);
+            color: #ffffff;
+            font-size: 0.88rem;
             cursor: pointer;
-            transition: all 0.2s ease;
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
+        .smug-glass-btn:hover,
         .smug-overlay-btn:hover {
             background: #ffffff;
-            color: #000000;
-            border-color: #ffffff;
+            color: #0f172a;
+            transform: scale(1.1);
+            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
         }
 
         /* CLIENTS DIRECTORY VIEW (?view=clients) */
@@ -1735,17 +1787,6 @@ foreach ($albumsRepo as $alb) {
                     <i class="fa-regular fa-folder"></i>
                     <span>Galleries</span>
                 </a>
-                <?php if (!$isClientsView): ?>
-                    <button type="button" class="smug-nav-cta smug-nav-slideshow" onclick="openDynamicFullView(0)" title="Start Slideshow">
-                        <i class="fa-solid fa-play"></i>
-                        <span>Slideshow</span>
-                    </button>
-                    <button type="button" class="smug-nav-primary smug-nav-download" onclick="triggerBulkDownload()" title="Download All Photos">
-                        <i class="fa-solid fa-cloud-arrow-down"></i>
-                        <span class="btn-text-full">Download All</span>
-                        <span class="btn-text-short">Download</span>
-                    </button>
-                <?php endif; ?>
             </div>
         </div>
     </header>
@@ -1845,9 +1886,14 @@ foreach ($albumsRepo as $alb) {
                     <h1 class="smug-album-title"><?php echo htmlspecialchars($currentAlbum['title']); ?></h1>
                     <div class="smug-album-meta">
                         <span><?php echo $totalPhotos; ?> Photos</span>
+                        <?php if (!empty($currentAlbum['category'])): ?>
+                            <span class="dot">·</span>
+                            <span><?php echo htmlspecialchars(normalizeCategoryName($currentAlbum['category'])); ?></span>
+                        <?php endif; ?>
                         <?php 
                         $dispClient = trim($currentAlbum['client'] ?? ($clientName ?: ''));
-                        if (!empty($dispClient) && strcasecmp($dispClient, trim($currentAlbum['title'])) !== 0): ?>
+                        // Deduplicate: only display client name if it is NOT already part of the album title
+                        if (!empty($dispClient) && stripos($currentAlbum['title'] ?? '', $dispClient) === false): ?>
                             <span class="dot">·</span>
                             <span><?php echo htmlspecialchars($dispClient); ?></span>
                         <?php endif; ?>
@@ -1865,7 +1911,7 @@ foreach ($albumsRepo as $alb) {
                 <div class="smug-header-actions">
                     <button type="button" class="btn-smug-action btn-smug-primary" onclick="triggerBulkDownload()">
                         <i class="fa-solid fa-cloud-arrow-down"></i>
-                        <span>Download Gallery (<?php echo $totalPhotos; ?>)</span>
+                        <span>Download Gallery</span>
                     </button>
                     <button type="button" class="btn-smug-action btn-smug-ghost" onclick="openDynamicFullView(0)">
                         <i class="fa-solid fa-play"></i>
@@ -1874,26 +1920,42 @@ foreach ($albumsRepo as $alb) {
                 </div>
             </div>
 
-            <!-- Pure Masonry Photography Grid (SmugMug style) -->
+            <!-- Editorial Mosaic Photography Grid with Frosted Glassmorphism -->
             <main class="smug-gallery-grid" id="smugMasonryGrid">
-                <?php foreach ($photoItems as $item): ?>
-                    <article class="smug-photo-card" onclick="openDynamicFullView(<?php echo (int)$item['index']; ?>)">
-                        <img src="<?php echo htmlspecialchars($item['masonry_url']); ?>"
-                             alt="<?php echo htmlspecialchars($currentAlbum['title'] . ' — Frame ' . $item['number']); ?>"
-                             loading="lazy">
-                        <div class="smug-photo-overlay">
-                            <span class="smug-overlay-num">Frame #<?php echo str_pad((string)$item['number'], 2, '0', STR_PAD_LEFT); ?></span>
-                            <div class="smug-overlay-actions">
+                <?php foreach ($photoItems as $item): 
+                    $pIdx = (int)$item['index'];
+                    $mosaicClass = 'mosaic-item';
+                    if ($pIdx % 7 === 0 && $pIdx > 0) {
+                        $mosaicClass .= ' mosaic-lead';
+                    } elseif ($pIdx % 5 === 0 && $pIdx > 0) {
+                        $mosaicClass .= ' mosaic-wide';
+                    } elseif ($pIdx % 3 === 0) {
+                        $mosaicClass .= ' mosaic-tall';
+                    }
+                ?>
+                    <article class="smug-photo-card <?php echo $mosaicClass; ?>" onclick="openDynamicFullView(<?php echo $pIdx; ?>)">
+                        <div class="smug-card-media-wrap">
+                            <img src="<?php echo htmlspecialchars($item['masonry_url']); ?>"
+                                 alt="<?php echo htmlspecialchars(($currentAlbum['title'] ?? 'Gallery') . ' — Frame ' . $item['number']); ?>"
+                                 loading="lazy">
+                        </div>
+                        <div class="smug-photo-glass-overlay">
+                            <span class="smug-glass-badge">
+                                <i class="fa-solid fa-camera"></i> Frame #<?php echo str_pad((string)$item['number'], 2, '0', STR_PAD_LEFT); ?>
+                            </span>
+                            <div class="smug-glass-actions">
                                 <button type="button"
-                                        class="smug-overlay-btn"
+                                        class="smug-glass-btn"
                                         title="View Fullscreen"
-                                        onclick="event.stopPropagation(); openDynamicFullView(<?php echo (int)$item['index']; ?>);">
+                                        onclick="event.stopPropagation(); openDynamicFullView(<?php echo $pIdx; ?>);"
+                                        aria-label="View Fullscreen">
                                     <i class="fa-solid fa-expand"></i>
                                 </button>
                                 <button type="button"
-                                        class="smug-overlay-btn"
+                                        class="smug-glass-btn"
                                         title="Download Photo"
-                                        onclick="event.stopPropagation(); triggerSinglePhotoDownload(<?php echo (int)$item['index']; ?>);">
+                                        onclick="event.stopPropagation(); triggerSinglePhotoDownload(<?php echo $pIdx; ?>);"
+                                        aria-label="Download Photo">
                                     <i class="fa-solid fa-arrow-down"></i>
                                 </button>
                             </div>
