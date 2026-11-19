@@ -1,6 +1,6 @@
 <?php
 /**
- * Falhen Media - Dynamic Staff Handbook PDF / Print Generator
+ * Falhen Productions - Dynamic Staff Handbook PDF / Print Generator
  */
 session_start();
 require_once __DIR__ . '/../includes/functions.php';
@@ -34,7 +34,7 @@ $handbookAckAt = $handbookData['acknowledged_at'] ?? date('Y-m-d H:i:s');
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Staff Handbook & Policies - <?php echo htmlspecialchars($userFullName); ?> | Falhen Media</title>
+    <title>Staff Handbook & Policies - <?php echo htmlspecialchars($userFullName); ?> | Falhen Productions</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         @page { size: A4; margin: 18mm; }

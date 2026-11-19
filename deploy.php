@@ -1,6 +1,6 @@
 <?php
 /**
- * Falhen Media - cPanel Git Auto-Deployment Script
+ * Falhen Productions - cPanel Git Auto-Deployment Script
  */
 
 // Secret key protection to prevent unauthorized access
@@ -18,7 +18,7 @@ if ($providedKey !== $secretKey) {
         <head>
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>Falhen Media &mdash; cPanel Git Deployment</title>
+            <title>Falhen Productions &mdash; cPanel Git Deployment</title>
             <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
             <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
             <style>
@@ -192,6 +192,14 @@ if ($action === 'diag_admin') {
     require_once $repoDir . '/config/db.php';
     $pdo = function_exists('getDBConnection') ? getDBConnection() : null;
     echo "DB_CONN: " . ($pdo ? 'OK (' . ($GLOBALS['falhen_db_active_dsn'] ?? 'connected') . ')' : 'FAILED (' . ($GLOBALS['falhen_db_last_error'] ?? 'unknown') . ')') . "\n";
+    exit;
+}
+
+if ($action === 'lint_client') {
+    $out = [];
+    exec("php -l " . escapeshellarg(__DIR__ . '/client-portal.php') . " 2>&1", $out);
+    exec("php -d display_errors=1 -r 'try { require \"" . __DIR__ . "/client-portal.php\"; } catch (Throwable \$e) { echo \"FATAL: \" . \$e->getMessage() . \" on line \" . \$e->getLine() . \" in \" . \$e->getFile() . \"\n\" . \$e->getTraceAsString(); }' 2>&1", $runOut);
+    echo "LINT:\n" . implode("\n", $out) . "\n\nRUN:\n" . implode("\n", $runOut);
     exit;
 }
 

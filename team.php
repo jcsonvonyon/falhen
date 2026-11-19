@@ -1,9 +1,16 @@
 <?php
-// team.php - Dedicated Team Overview Page matching falhen.com/team screenshots
+// team.php - Dedicated Team Overview Page
 require_once __DIR__ . '/includes/functions.php';
+require_once __DIR__ . '/includes/seo_helper.php';
 
 $teamMembers = getTeamMembers();
-$pageTitle = "Meet the Team — Falhen Media";
+
+$seo = getSeoConfig('about', [
+    'title'       => 'Meet the Creative Crew | Falhen Productions',
+    'description' => 'Meet the award-winning filmmakers, creative directors, cinematographers, and editors behind Falhen Productions.',
+    'canonical'   => getSiteBaseUrl() . '/team',
+    'keywords'    => 'video production team, film crew, cinematographers, creative directors, Falhen Productions'
+]);
 
 $totalMembersCount = count($teamMembers);
 
@@ -52,19 +59,21 @@ $avgYears = ($totalMembersCount > 0 && $totalYears > 0) ? round($totalYears / $t
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <!-- Google tag (gtag.js) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-LJ91C0YXCH"></script>
-    <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-
-      gtag('config', 'G-LJ91C0YXCH');
-    </script>
-
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?php echo htmlspecialchars($pageTitle); ?></title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    
+    <?php require_once __DIR__ . '/includes/analytics.php'; ?>
+    <?php renderSeoHeadTags($seo); ?>
+    <?php 
+    renderSchemaJsonLd('global', [
+        'canonical' => getSiteBaseUrl() . '/team',
+        'breadcrumbs' => [
+            ['name' => 'Home', 'url' => getSiteBaseUrl() . '/'],
+            ['name' => 'About', 'url' => getSiteBaseUrl() . '/about'],
+            ['name' => 'Team', 'url' => getSiteBaseUrl() . '/team']
+        ]
+    ]); 
+    ?>
     
     <!-- Favicon -->
     <link rel="icon" type="image/png" href="/assets/img/icons/favicon.png">
@@ -74,7 +83,8 @@ $avgYears = ($totalMembersCount > 0 && $totalYears > 0) ? round($totalYears / $t
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"></noscript>
     <link rel="stylesheet" href="/assets/css/style.css">
     <style>
         body {
@@ -658,7 +668,7 @@ $avgYears = ($totalMembersCount > 0 && $totalYears > 0) ? round($totalYears / $t
 
         <!-- Footer Bar -->
         <div class="team-footer-bar">
-            <div>© 2026 Falhen Media. All rights reserved.</div>
+            <div>© 2026 Falhen Productions. All rights reserved.</div>
             <div class="team-footer-links">
                 <a href="/">Home</a>
                 <a href="/index.php#about">About</a>

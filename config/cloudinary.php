@@ -1,7 +1,7 @@
 <?php
 /**
  * Cloudinary CDN Configuration
- * Falhen Media
+ * Falhen Productions
  */
 
 define('CLOUDINARY_CLOUD_NAME', getenv('CLOUDINARY_CLOUD_NAME') ?: 'pnabfi91');

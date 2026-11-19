@@ -1,5 +1,5 @@
 /* ==========================================================================
-   FALHEN MEDIA — BRAND STYLESHEET
+   FALHEN PRODUCTIONS — BRAND STYLESHEET
    Replicated to match falhen.com exact visual design & stage lighting hero
    ========================================================================== */
 
@@ -432,6 +432,10 @@ ul {
   font-size: 1.6rem;
   color: #fff;
   cursor: pointer;
+  background: transparent;
+  border: none;
+  padding: 4px;
+  line-height: 1;
 }
 
 .mobile-nav-icon,
@@ -3253,6 +3257,10 @@ textarea.form-control {
   color: #fff;
   font-size: 2rem;
   cursor: pointer;
+  background: transparent;
+  border: none;
+  padding: 0;
+  line-height: 1;
 }
 
 /* --- Responsive Media Queries --- */
@@ -3503,10 +3511,11 @@ textarea.form-control {
   }
 
   .hero-title {
-    font-size: clamp(2.2rem, 9vw, 2.8rem);
+    font-size: clamp(1.95rem, 8.5vw, 2.8rem);
     line-height: 1.08;
     letter-spacing: -0.03em;
     margin-bottom: 16px;
+    word-break: break-word;
   }
 
   .stories-heading,
@@ -3528,6 +3537,16 @@ textarea.form-control {
     width: 100% !important;
     max-width: 100% !important;
     margin-top: 24px !important;
+  }
+
+  @media (max-width: 360px) {
+    .hero-actions {
+      flex-direction: column !important;
+      gap: 8px !important;
+    }
+    .hero-actions .btn {
+      width: 100% !important;
+    }
   }
 
   .hero-actions .btn {

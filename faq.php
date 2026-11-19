@@ -1,6 +1,13 @@
 <?php
 // faq.php - Frequently Asked Questions page with Answer Engine Optimization (AEO) and Schema.org FAQPage JSON-LD
-$pageTitle = "Frequently Asked Questions — Video Production & Services | Falhen Media";
+require_once __DIR__ . '/includes/seo_helper.php';
+
+$seo = getSeoConfig('faq', [
+    'title'       => 'Frequently Asked Questions | Falhen Productions',
+    'description' => 'Frequently asked questions about Falhen Productions video production, commercial cinematography, pricing, timeline, equipment capabilities, and deliverables.',
+    'canonical'   => getSiteBaseUrl() . '/faq',
+    'keywords'    => 'video production FAQ, hiring a video production agency, cinematography pricing, live streaming FAQ, Falhen Productions questions'
+]);
 
 // 20 FAQs categorized across 5 areas matching falhen.com/faq
 $faqCategories = [
@@ -17,7 +24,7 @@ $faqs = [
     [
         'id' => 1,
         'cat' => 'Services',
-        'q' => 'What video production services does Falhen Media offer?',
+        'q' => 'What video production services does Falhen Productions offer?',
         'a' => 'We offer end-to-end video production including commercial films, brand videos, corporate documentaries, event coverage, live streaming, post-production, animation and motion graphics, photography, and content strategy. Every project is handled by a dedicated team of producers, cinematographers, editors, and creative strategists.'
     ],
     [
@@ -49,7 +56,7 @@ $faqs = [
     [
         'id' => 6,
         'cat' => 'Process',
-        'q' => 'How does the video production process work at Falhen Media?',
+        'q' => 'How does the video production process work at Falhen Productions?',
         'a' => 'Our process follows 4 structured phases: 1) Concept & Strategy (creative brief, scriptwriting, storyboards), 2) Pre-Production (location scouting, casting, scheduling), 3) Production (on-set filming with cinema gear), and 4) Post-Production (editing, color grading, sound design, and revisions).'
     ],
     [
@@ -101,7 +108,7 @@ $faqs = [
     [
         'id' => 14,
         'cat' => 'Logistics',
-        'q' => 'Where is Falhen Media located, and do you travel internationally?',
+        'q' => 'Where is Falhen Productions located, and do you travel internationally?',
         'a' => 'Our headquarters is located in Oakbrook, IL (Greater Chicago Area). We frequently film on location across North America, Europe, Africa, and Asia, having completed projects in over 40 countries.'
     ],
     [
@@ -165,20 +172,20 @@ $jsonLdSchema = [
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <!-- Google tag (gtag.js) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-LJ91C0YXCH"></script>
-    <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-
-      gtag('config', 'G-LJ91C0YXCH');
-    </script>
-
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?php echo htmlspecialchars($pageTitle); ?></title>
-    <meta name="description" content="Frequently asked questions about Falhen Media video production, commercial photography, pricing, production timeline, equipment, and deliverables.">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    
+    <?php require_once __DIR__ . '/includes/analytics.php'; ?>
+    <?php renderSeoHeadTags($seo); ?>
+    <?php 
+    renderSchemaJsonLd('global', [
+        'canonical' => getSiteBaseUrl() . '/faq',
+        'breadcrumbs' => [
+            ['name' => 'Home', 'url' => getSiteBaseUrl() . '/'],
+            ['name' => 'FAQ', 'url' => getSiteBaseUrl() . '/faq']
+        ]
+    ]); 
+    ?>
 
     <!-- Answer Engine Optimization (AEO) Structured Data Schema -->
     <script type="application/ld+json">
@@ -193,7 +200,8 @@ $jsonLdSchema = [
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"></noscript>
     <link rel="stylesheet" href="/assets/css/style.css">
 
     <style>
@@ -628,7 +636,7 @@ $jsonLdSchema = [
 
         <!-- Footer Bar -->
         <div class="faq-footer-bar">
-            <div>© 2026 Falhen Media. All rights reserved.</div>
+            <div>© 2026 Falhen Productions. All rights reserved.</div>
             <div class="faq-footer-links">
                 <a href="/">Home</a>
                 <a href="/about.php">About</a>

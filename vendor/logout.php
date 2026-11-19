@@ -1,7 +1,7 @@
 <?php
 /**
  * Vendor Portal Logout
- * Falhen Media
+ * Falhen Productions
  */
 require_once __DIR__ . '/../includes/functions.php';
 

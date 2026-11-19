@@ -1,25 +1,22 @@
 <?php
-// terms.php - Terms of Service page matching falhen.com/terms
-$pageTitle = "Terms of Service — Falhen Media";
+// terms.php - Terms of Service page
+require_once __DIR__ . '/includes/seo_helper.php';
+
+$seo = getSeoConfig('terms', [
+    'title'       => 'Terms of Service | Falhen Productions',
+    'description' => 'Terms of Service governing the use of the Falhen Productions website, media licensing, client engagements, and production services.',
+    'canonical'   => getSiteBaseUrl() . '/terms'
+]);
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <!-- Google tag (gtag.js) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-LJ91C0YXCH"></script>
-    <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-
-      gtag('config', 'G-LJ91C0YXCH');
-    </script>
-
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?php echo htmlspecialchars($pageTitle); ?></title>
-    <meta name="description" content="Terms of Service governing the use of Falhen Media website and engagement of video production, photography, and creative media services.">
-
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    
+    <?php require_once __DIR__ . '/includes/analytics.php'; ?>
+    <?php renderSeoHeadTags($seo); ?>
+    
     <!-- Favicon -->
     <link rel="icon" type="image/png" href="/assets/img/icons/favicon.png">
     <link rel="shortcut icon" type="image/png" href="/assets/img/icons/favicon.png">
@@ -28,7 +25,8 @@ $pageTitle = "Terms of Service — Falhen Media";
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"></noscript>
     <link rel="stylesheet" href="/assets/css/style.css">
 
     <style>
@@ -313,7 +311,7 @@ $pageTitle = "Terms of Service — Falhen Media";
             </div>
 
             <h1 class="terms-hero-title">Terms of Service</h1>
-            <p class="terms-hero-subtitle">These Terms of Service govern your use of the Falhen Media website and your engagement of our professional media production services. Please read them carefully before using our services.</p>
+            <p class="terms-hero-subtitle">These Terms of Service govern your use of the Falhen Productions website and your engagement of our professional media production services. Please read them carefully before using our services.</p>
 
             <div class="terms-meta-row">
                 <span><i class="fa-regular fa-calendar"></i> Effective: 1 January 2024</span>
@@ -354,7 +352,7 @@ $pageTitle = "Terms of Service — Falhen Media";
         <section class="legal-section-block" id="sec-1">
             <h2 class="legal-section-heading">1. Acceptance of Terms</h2>
             <div class="legal-sub-heading">1.1 Agreement</div>
-            <p class="legal-paragraph">By accessing our website, requesting a quote, or engaging Falhen Media for any services, you agree to be bound by these Terms of Service and all applicable laws and regulations of the United States. If you do not agree with any part of these terms, you may not use our services.</p>
+            <p class="legal-paragraph">By accessing our website, requesting a quote, or engaging Falhen Productions for any services, you agree to be bound by these Terms of Service and all applicable laws and regulations of the United States. If you do not agree with any part of these terms, you may not use our services.</p>
 
             <div class="legal-sub-heading">1.2 Capacity</div>
             <p class="legal-paragraph">By accepting these terms, you represent that you are at least 18 years of age and have the legal authority to enter into binding agreements on behalf of yourself or the organisation you represent.</p>
@@ -367,20 +365,20 @@ $pageTitle = "Terms of Service — Falhen Media";
         <section class="legal-section-block" id="sec-2">
             <h2 class="legal-section-heading">2. Services</h2>
             <div class="legal-sub-heading">2.1 Scope of Services</div>
-            <p class="legal-paragraph">Falhen Media provides professional video production, photography, live streaming, post-production, animation, content strategy, and related creative media services. The specific scope, deliverables, timeline, and fees for each engagement are defined in a separate Statement of Work (SOW) or project proposal agreed upon in writing.</p>
+            <p class="legal-paragraph">Falhen Productions provides professional video production, photography, live streaming, post-production, animation, content strategy, and related creative media services. The specific scope, deliverables, timeline, and fees for each engagement are defined in a separate Statement of Work (SOW) or project proposal agreed upon in writing.</p>
 
             <div class="legal-sub-heading">2.2 Service Modifications</div>
             <p class="legal-paragraph">We reserve the right to modify, suspend, or discontinue any service at any time with reasonable notice. We will not be liable to you or any third party for any modification, suspension, or discontinuation of services, except where such modification constitutes a material breach of an existing project agreement.</p>
 
             <div class="legal-sub-heading">2.3 Subcontractors</div>
-            <p class="legal-paragraph">Falhen Media may engage qualified subcontractors or freelancers to assist in delivering services. We remain responsible for the quality and delivery of all work product regardless of whether subcontractors are used.</p>
+            <p class="legal-paragraph">Falhen Productions may engage qualified subcontractors or freelancers to assist in delivering services. We remain responsible for the quality and delivery of all work product regardless of whether subcontractors are used.</p>
         </section>
 
         <!-- Section 3 -->
         <section class="legal-section-block" id="sec-3">
             <h2 class="legal-section-heading">3. Client Obligations</h2>
             <div class="legal-sub-heading">3.1 Timely Cooperation</div>
-            <p class="legal-paragraph">You agree to provide all necessary materials, approvals, access, and information required for us to deliver the agreed services in a timely manner. Delays caused by your failure to provide required inputs may result in revised timelines and additional costs, for which Falhen Media shall not be liable.</p>
+            <p class="legal-paragraph">You agree to provide all necessary materials, approvals, access, and information required for us to deliver the agreed services in a timely manner. Delays caused by your failure to provide required inputs may result in revised timelines and additional costs, for which Falhen Productions shall not be liable.</p>
 
             <div class="legal-sub-heading">3.2 Accuracy of Information</div>
             <p class="legal-paragraph">You are responsible for ensuring that all information, content, and materials you provide to us are accurate, complete, and do not infringe any third-party rights. You warrant that you have all necessary rights, licences, and permissions to use any materials you supply.</p>
@@ -415,13 +413,13 @@ $pageTitle = "Terms of Service — Falhen Media";
         <section class="legal-section-block" id="sec-5">
             <h2 class="legal-section-heading">5. Intellectual Property</h2>
             <div class="legal-sub-heading">5.1 Ownership of Deliverables</div>
-            <p class="legal-paragraph">Upon receipt of full and final payment, Falhen Media assigns to you all rights, title, and interest in the final deliverables produced specifically for your project under a work-for-hire arrangement to the extent permitted by US copyright law (17 U.S.C. § 101). This assignment does not include underlying tools, templates, pre-existing works, or third-party licensed elements.</p>
+            <p class="legal-paragraph">Upon receipt of full and final payment, Falhen Productions assigns to you all rights, title, and interest in the final deliverables produced specifically for your project under a work-for-hire arrangement to the extent permitted by US copyright law (17 U.S.C. § 101). This assignment does not include underlying tools, templates, pre-existing works, or third-party licensed elements.</p>
 
             <div class="legal-sub-heading">5.2 Licence Prior to Full Payment</div>
-            <p class="legal-paragraph">Prior to receipt of full payment, Falhen Media grants you a limited, non-exclusive, non-transferable licence to use deliverables solely for internal review and approval purposes. No commercial use is permitted until full payment is received.</p>
+            <p class="legal-paragraph">Prior to receipt of full payment, Falhen Productions grants you a limited, non-exclusive, non-transferable licence to use deliverables solely for internal review and approval purposes. No commercial use is permitted until full payment is received.</p>
 
-            <div class="legal-sub-heading">5.3 Falhen Media Portfolio Rights</div>
-            <p class="legal-paragraph">Unless you request otherwise in writing prior to project commencement, Falhen Media retains the right to display completed work in our portfolio, website, social media channels, and marketing materials for the purpose of promoting our services.</p>
+            <div class="legal-sub-heading">5.3 Falhen Productions Portfolio Rights</div>
+            <p class="legal-paragraph">Unless you request otherwise in writing prior to project commencement, Falhen Productions retains the right to display completed work in our portfolio, website, social media channels, and marketing materials for the purpose of promoting our services.</p>
 
             <div class="legal-sub-heading">5.4 Third-Party Content</div>
             <p class="legal-paragraph">Any music, stock footage, fonts, or other third-party content incorporated into deliverables is subject to the applicable third-party licence terms. You are responsible for ensuring continued compliance with those licences after delivery, including any renewal or expansion of usage rights.</p>
@@ -444,13 +442,13 @@ $pageTitle = "Terms of Service — Falhen Media";
         <section class="legal-section-block" id="sec-7">
             <h2 class="legal-section-heading">7. Cancellation & Termination</h2>
             <div class="legal-sub-heading">7.1 Client Cancellation</div>
-            <p class="legal-paragraph">If you cancel a project after work has commenced, you remain liable for all fees for work completed to the date of cancellation, plus any non-recoverable expenses incurred. Deposits are non-refundable unless Falhen Media is in material breach of the project agreement.</p>
+            <p class="legal-paragraph">If you cancel a project after work has commenced, you remain liable for all fees for work completed to the date of cancellation, plus any non-recoverable expenses incurred. Deposits are non-refundable unless Falhen Productions is in material breach of the project agreement.</p>
 
             <div class="legal-sub-heading">7.2 Termination for Cause</div>
             <p class="legal-paragraph">Either party may terminate the project agreement immediately upon written notice if the other party: (a) materially breaches the agreement and fails to remedy that breach within 14 days of receiving written notice; (b) becomes insolvent or files for bankruptcy protection; or (c) engages in fraudulent or illegal conduct.</p>
 
             <div class="legal-sub-heading">7.3 Effect of Termination</div>
-            <p class="legal-paragraph">Upon termination, all outstanding fees become immediately due and payable. Falhen Media will deliver all completed work product upon receipt of full payment for work performed to the date of termination.</p>
+            <p class="legal-paragraph">Upon termination, all outstanding fees become immediately due and payable. Falhen Productions will deliver all completed work product upon receipt of full payment for work performed to the date of termination.</p>
         </section>
 
         <!-- Section 8 -->
@@ -460,17 +458,17 @@ $pageTitle = "Terms of Service — Falhen Media";
             <p class="legal-paragraph">Each party represents and warrants that: (a) it has the full right, power, and authority to enter into and perform its obligations under these terms; (b) its performance will not violate any applicable law or regulation; and (c) it will comply with all applicable US federal and state laws in connection with these terms.</p>
 
             <div class="legal-sub-heading">8.2 Disclaimer of Warranties</div>
-            <p class="legal-paragraph">EXCEPT AS EXPRESSLY SET OUT IN THESE TERMS, FALHEN MEDIA PROVIDES ALL SERVICES "AS IS" AND DISCLAIMS ALL WARRANTIES, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT, TO THE FULLEST EXTENT PERMITTED BY APPLICABLE LAW.</p>
+            <p class="legal-paragraph">EXCEPT AS EXPRESSLY SET OUT IN THESE TERMS, FALHEN PRODUCTIONS PROVIDES ALL SERVICES "AS IS" AND DISCLAIMS ALL WARRANTIES, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT, TO THE FULLEST EXTENT PERMITTED BY APPLICABLE LAW.</p>
         </section>
 
         <!-- Section 9 -->
         <section class="legal-section-block" id="sec-9">
             <h2 class="legal-section-heading">9. Limitation of Liability</h2>
             <div class="legal-sub-heading">9.1 Exclusion of Consequential Loss</div>
-            <p class="legal-paragraph">TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW, FALHEN MEDIA SHALL NOT BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES, INCLUDING LOSS OF PROFITS, REVENUE, DATA, GOODWILL, OR BUSINESS OPPORTUNITIES, ARISING OUT OF OR IN CONNECTION WITH OUR SERVICES OR THESE TERMS, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGES.</p>
+            <p class="legal-paragraph">TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW, FALHEN PRODUCTIONS SHALL NOT BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES, INCLUDING LOSS OF PROFITS, REVENUE, DATA, GOODWILL, OR BUSINESS OPPORTUNITIES, ARISING OUT OF OR IN CONNECTION WITH OUR SERVICES OR THESE TERMS, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGES.</p>
 
             <div class="legal-sub-heading">9.2 Cap on Liability</div>
-            <p class="legal-paragraph">Our total aggregate liability to you for any claim arising out of or in connection with a project shall not exceed the total fees paid by you to Falhen Media for that specific project in the 12 months preceding the claim.</p>
+            <p class="legal-paragraph">Our total aggregate liability to you for any claim arising out of or in connection with a project shall not exceed the total fees paid by you to Falhen Productions for that specific project in the 12 months preceding the claim.</p>
 
             <div class="legal-sub-heading">9.3 Force Majeure</div>
             <p class="legal-paragraph">Neither party shall be liable for delays or failures in performance resulting from circumstances beyond their reasonable control, including natural disasters, pandemics, acts of government, power failures, internet outages, or labour disputes. The affected party must notify the other within 5 business days of the force majeure event.</p>
@@ -483,7 +481,7 @@ $pageTitle = "Terms of Service — Falhen Media";
         <section class="legal-section-block" id="sec-10">
             <h2 class="legal-section-heading">10. Indemnification</h2>
             <div class="legal-sub-heading">10.1 Client Indemnification</div>
-            <p class="legal-paragraph">You agree to indemnify, defend, and hold harmless Falhen Media and its officers, directors, employees, and agents from and against any claims, liabilities, damages, losses, and expenses (including reasonable attorneys' fees) arising out of or in connection with: (a) your breach of these terms; (b) your use of our deliverables in violation of applicable law; (c) any materials you provide that infringe third-party rights; or (d) your negligence or wilful misconduct.</p>
+            <p class="legal-paragraph">You agree to indemnify, defend, and hold harmless Falhen Productions and its officers, directors, employees, and agents from and against any claims, liabilities, damages, losses, and expenses (including reasonable attorneys' fees) arising out of or in connection with: (a) your breach of these terms; (b) your use of our deliverables in violation of applicable law; (c) any materials you provide that infringe third-party rights; or (d) your negligence or wilful misconduct.</p>
         </section>
 
         <!-- Section 11 -->
@@ -503,7 +501,7 @@ $pageTitle = "Terms of Service — Falhen Media";
             <p class="legal-paragraph">The collection and processing of personal data in connection with these terms is governed by our Privacy Policy, which is incorporated herein by reference. Both parties agree to comply with all applicable data protection laws, including the GDPR (where applicable), CCPA/CPRA, and other applicable US state privacy laws.</p>
 
             <div class="legal-sub-heading">12.2 Data Processing Agreement</div>
-            <p class="legal-paragraph">Where Falhen Media processes personal data on your behalf as a data processor, the parties will enter into a separate Data Processing Agreement (DPA) in accordance with GDPR Article 28 and applicable US law requirements.</p>
+            <p class="legal-paragraph">Where Falhen Productions processes personal data on your behalf as a data processor, the parties will enter into a separate Data Processing Agreement (DPA) in accordance with GDPR Article 28 and applicable US law requirements.</p>
         </section>
 
         <!-- Section 13 -->
@@ -519,7 +517,7 @@ $pageTitle = "Terms of Service — Falhen Media";
             <p class="legal-paragraph">If informal resolution fails, any dispute, claim, or controversy arising out of or relating to these terms shall be resolved by binding arbitration administered by the American Arbitration Association (AAA) under its Commercial Arbitration Rules. The arbitration shall be conducted in English. The arbitrator's decision shall be final and binding and may be entered as a judgment in any court of competent jurisdiction.</p>
 
             <div class="legal-sub-heading">13.4 Class Action Waiver</div>
-            <p class="legal-paragraph">YOU AND FALHEN MEDIA AGREE THAT EACH MAY BRING CLAIMS AGAINST THE OTHER ONLY IN YOUR OR ITS INDIVIDUAL CAPACITY AND NOT AS A PLAINTIFF OR CLASS MEMBER IN ANY PURPORTED CLASS OR REPRESENTATIVE PROCEEDING.</p>
+            <p class="legal-paragraph">YOU AND FALHEN PRODUCTIONS AGREE THAT EACH MAY BRING CLAIMS AGAINST THE OTHER ONLY IN YOUR OR ITS INDIVIDUAL CAPACITY AND NOT AS A PLAINTIFF OR CLASS MEMBER IN ANY PURPORTED CLASS OR REPRESENTATIVE PROCEEDING.</p>
 
             <div class="legal-sub-heading">13.5 Exceptions</div>
             <p class="legal-paragraph">Notwithstanding the arbitration clause, either party may seek emergency injunctive or other equitable relief from a court of competent jurisdiction to prevent irreparable harm pending arbitration.</p>
@@ -529,7 +527,7 @@ $pageTitle = "Terms of Service — Falhen Media";
         <section class="legal-section-block" id="sec-14">
             <h2 class="legal-section-heading">14. General Provisions</h2>
             <div class="legal-sub-heading">14.1 Entire Agreement</div>
-            <p class="legal-paragraph">These Terms of Service, together with any project proposal, SOW, or DPA, constitute the entire agreement between you and Falhen Media with respect to the subject matter hereof and supersede all prior agreements, representations, and understandings.</p>
+            <p class="legal-paragraph">These Terms of Service, together with any project proposal, SOW, or DPA, constitute the entire agreement between you and Falhen Productions with respect to the subject matter hereof and supersede all prior agreements, representations, and understandings.</p>
 
             <div class="legal-sub-heading">14.2 Severability</div>
             <p class="legal-paragraph">If any provision of these terms is found to be unenforceable by a court of competent jurisdiction, that provision shall be modified to the minimum extent necessary to make it enforceable, and the remaining provisions will continue in full force and effect.</p>
@@ -538,7 +536,7 @@ $pageTitle = "Terms of Service — Falhen Media";
             <p class="legal-paragraph">Failure to enforce any provision of these terms shall not constitute a waiver of our right to enforce that provision in the future. No waiver shall be effective unless made in writing.</p>
 
             <div class="legal-sub-heading">14.4 Assignment</div>
-            <p class="legal-paragraph">You may not assign or transfer your rights or obligations under these terms without our prior written consent. Falhen Media may assign these terms in connection with a merger, acquisition, or sale of all or substantially all of our assets.</p>
+            <p class="legal-paragraph">You may not assign or transfer your rights or obligations under these terms without our prior written consent. Falhen Productions may assign these terms in connection with a merger, acquisition, or sale of all or substantially all of our assets.</p>
 
             <div class="legal-sub-heading">14.5 Contact</div>
             <p class="legal-paragraph">For questions about these Terms of Service, please contact us at: <span style="color: #ef4444;">legal@falhen.com</span> | <span style="color: #ef4444;">hello@falhen.com</span>.</p>

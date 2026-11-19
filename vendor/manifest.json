@@ -1,8 +1,8 @@
 {
   "id": "/vendor/",
-  "name": "Falhen Media Vendor Portal",
+  "name": "Falhen Productions Vendor Portal",
   "short_name": "Falhen Crew",
-  "description": "Mobile Production Call Sheets, Shoot Schedules & Gigs for Falhen Media Talent & Crew",
+  "description": "Mobile Production Call Sheets, Shoot Schedules & Gigs for Falhen Productions Talent & Crew",
   "start_url": "/vendor/index.php",
   "scope": "/vendor/",
   "display": "standalone",

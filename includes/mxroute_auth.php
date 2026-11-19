@@ -1,6 +1,6 @@
 <?php
 /**
- * Falhen Media - MXroute Protocol Authentication & Domain Gating Engine
+ * Falhen Productions - MXroute Protocol Authentication & Domain Gating Engine
  * 
  * Implements RFC-compliant IMAP SSL protocol authentication against MXroute mail nodes
  * (e.g. sunfire.mxrouting.net:993) with zero-dependency socket fallback and strict

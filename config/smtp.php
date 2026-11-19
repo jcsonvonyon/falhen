@@ -1,7 +1,7 @@
 <?php
 /**
  * SMTP & Resend Mailer Configuration
- * Falhen Media
+ * Falhen Productions
  */
 
 // Auto-load .env configuration if present
@@ -62,7 +62,7 @@ define('SMTP_SECURE', strtolower(getenv('SMTP_SECURE') ?: 'ssl')); // 'ssl' (por
 // Sender Identity
 // Note: Domain must be verified on resend.com, or use onboarding@resend.dev for initial sandbox tests
 define('SMTP_FROM_EMAIL', getenv('SMTP_FROM_EMAIL') ?: 'noreply@falhen.com');
-define('SMTP_FROM_NAME', getenv('SMTP_FROM_NAME') ?: 'Falhen Media');
+define('SMTP_FROM_NAME', getenv('SMTP_FROM_NAME') ?: 'Falhen Productions');
 
 // Mail Driver Preference:
 // 'resend' = Attempts Resend REST API first (fastest, immune to blocked SMTP ports), falls back to Socket SMTP, then PHP mail()

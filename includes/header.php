@@ -9,103 +9,53 @@ if (!headers_sent()) {
     header('Referrer-Policy: strict-origin-when-cross-origin');
 }
 
+require_once __DIR__ . '/seo_helper.php';
+
 $currentPage = basename($_SERVER['PHP_SELF']);
 $currentSlug = preg_replace('/\.php$/', '', $currentPage);
+$activePageKey = ($currentSlug === 'index' || $currentSlug === '') ? 'home' : $currentSlug;
+
+$pageSeo = getSeoConfig($activePageKey, [
+    'title'       => $pageTitle ?? null,
+    'description' => $pageDescription ?? null,
+    'canonical'   => $pageCanonical ?? null,
+    'image'       => !empty($heroMedia['poster_desktop']) ? $heroMedia['poster_desktop'] : null
+]);
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <!-- Google tag (gtag.js) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-LJ91C0YXCH"></script>
-    <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-
-      gtag('config', 'G-LJ91C0YXCH');
-    </script>
-
+    <?php require_once __DIR__ . '/analytics.php'; ?>
+    
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta name="theme-color" content="#09090b">
-    <title><?php echo isset($pageTitle) ? htmlspecialchars($pageTitle) . ' | Falhen Media' : 'Falhen Video Production | Visual Storytelling'; ?></title>
-    <meta name="description" content="Falhen is a full-service media production company specializing in video production, post-production, live streaming, animation, wedding coverage & content strategy.">
-    <meta name="keywords" content="video production, photography, concert production, live streaming, animation motion graphics, wedding videography, creative services">
-    <meta name="author" content="Falhen Media">
-    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
     
-    <!-- Canonical URL -->
-    <link rel="canonical" href="https://www.falhen.com<?php echo htmlspecialchars(explode('?', $_SERVER['REQUEST_URI'] ?? '/')[0]); ?>">
-
-    <!-- Open Graph Metadata -->
-    <?php
-    $ogImg = !empty($heroMedia['poster_desktop']) ? $heroMedia['poster_desktop'] : 'https://res.cloudinary.com/pnabfi91/image/upload/f_auto,q_auto,w_1200,h_630,c_fill/v1786578372/falhen/uploads/r96mxsji9cdogqrkxwoe.jpg';
-    $ogTitle = isset($pageTitle) ? htmlspecialchars($pageTitle) . ' | Falhen Media' : 'Falhen Video Production | Visual Storytelling';
-    $ogDesc = 'Award-winning visual storytelling and full-service media production for brands worldwide.';
+    <?php renderSeoHeadTags($pageSeo); ?>
+    <?php 
+    renderSchemaJsonLd('global', [
+        'canonical' => $pageSeo['canonical']
+    ]); 
     ?>
-    <meta property="og:site_name" content="Falhen Media">
-    <meta property="og:title" content="<?php echo $ogTitle; ?>">
-    <meta property="og:description" content="<?php echo $ogDesc; ?>">
-    <meta property="og:url" content="https://www.falhen.com<?php echo htmlspecialchars(explode('?', $_SERVER['REQUEST_URI'] ?? '/')[0]); ?>">
-    <meta property="og:type" content="website">
-    <meta property="og:image" content="<?php echo htmlspecialchars($ogImg); ?>">
-    <meta property="og:image:width" content="1200">
-    <meta property="og:image:height" content="630">
-
-    <!-- Twitter Card Metadata -->
-    <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:site" content="@falhenmedia">
-    <meta name="twitter:title" content="<?php echo $ogTitle; ?>">
-    <meta name="twitter:description" content="<?php echo $ogDesc; ?>">
-    <meta name="twitter:image" content="<?php echo htmlspecialchars($ogImg); ?>">
-
-    <!-- Schema.org JSON-LD Structured Data -->
-    <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@graph": [
-        {
-          "@type": "VideoProductionService",
-          "@id": "https://www.falhen.com/#service",
-          "name": "Falhen Media",
-          "url": "https://www.falhen.com",
-          "logo": "https://www.falhen.com/assets/img/icons/logo.png",
-          "image": "https://res.cloudinary.com/pnabfi91/image/upload/v1786578372/falhen/uploads/r96mxsji9cdogqrkxwoe.jpg",
-          "description": "Full-service media production company specializing in commercial video, post-production, live streaming, event cinema & visual storytelling.",
-          "telephone": "+1-312-555-0199",
-          "email": "info@falhen.com",
-          "areaServed": "Global"
-        },
-        {
-          "@type": "WebSite",
-          "@id": "https://www.falhen.com/#website",
-          "url": "https://www.falhen.com",
-          "name": "Falhen Media"
-        }
-      ]
-    }
-    </script>
     
-    <!-- Resource Hints & Preloads for Instant Mobile/Slow-Network Paint -->
+    <!-- Essential High-Priority Resource Hints (Trimmed to avoid >4 preconnect penalty) -->
     <link rel="preconnect" href="https://res.cloudinary.com" crossorigin>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
-    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+
     <?php if (!empty($heroMedia) && is_array($heroMedia)): ?>
-        <?php if (($heroMedia['iframe_provider'] ?? '') === 'youtube'): ?>
-            <link rel="preconnect" href="https://www.youtube-nocookie.com" crossorigin>
-        <?php elseif (($heroMedia['iframe_provider'] ?? '') === 'vimeo'): ?>
-            <link rel="preconnect" href="https://player.vimeo.com" crossorigin>
-        <?php endif; ?>
         <link rel="preload" as="image" href="<?php echo htmlspecialchars($heroMedia['poster_mobile']); ?>" media="(max-width: 768px)" fetchpriority="high">
         <link rel="preload" as="image" href="<?php echo htmlspecialchars($heroMedia['poster_desktop']); ?>" media="(min-width: 769px)" fetchpriority="high">
     <?php endif; ?>
 
-    <!-- Google Fonts & Icon Libraries -->
+    <!-- Google Fonts (With display=swap) -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@4.2.0/fonts/remixicon.css">
+
+    <!-- Non-blocking Icon Libraries (Eliminates 850ms Render-Blocking Penalty) -->
+    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"></noscript>
+    <link rel="preload" href="https://cdn.jsdelivr.net/npm/remixicon@4.2.0/fonts/remixicon.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@4.2.0/fonts/remixicon.css"></noscript>
     
     <!-- Favicon -->
     <link rel="icon" type="image/png" href="/assets/img/icons/favicon.png">
@@ -113,7 +63,7 @@ $currentSlug = preg_replace('/\.php$/', '', $currentPage);
     <link rel="apple-touch-icon" href="/assets/img/icons/favicon.png">
 
     <!-- Stylesheet -->
-    <link rel="stylesheet" href="/assets/css/style.css?v=<?php echo file_exists(__DIR__ . '/../assets/css/style.css') ? filemtime(__DIR__ . '/../assets/css/style.css') : '2.2'; ?>">
+    <link rel="stylesheet" href="/assets/css/style.css?v=<?php echo file_exists(__DIR__ . '/../assets/css/style.css') ? filemtime(__DIR__ . '/../assets/css/style.css') : '2.3'; ?>">
 </head>
 <body>
 
@@ -121,8 +71,8 @@ $currentSlug = preg_replace('/\.php$/', '', $currentPage);
 <header class="header">
     <div class="container nav-container">
         <!-- Logo -->
-        <a href="/" class="logo-mark" aria-label="Falhen Home">
-            <img src="/assets/img/icons/logo.png" alt="Falhen Logo" class="logo-img" style="height: 48px; width: auto; object-fit: contain;">
+        <a href="/" class="logo-mark" aria-label="Falhen Productions Home">
+            <img src="/assets/img/icons/logo.png" alt="Falhen Productions Logo" class="logo-img" style="height: 48px; width: auto; object-fit: contain;">
         </a>
         
         <!-- Centered Navigation -->
@@ -327,8 +277,8 @@ $currentSlug = preg_replace('/\.php$/', '', $currentPage);
             </a>
         </div>
         
-        <div class="nav-toggle" id="navToggle">
-            <i class="fa-solid fa-bars"></i>
-        </div>
+        <button type="button" class="nav-toggle" id="navToggle" aria-label="Toggle navigation menu" aria-expanded="false" aria-controls="mainNav">
+            <i class="fa-solid fa-bars" aria-hidden="true"></i>
+        </button>
     </div>
 </header>

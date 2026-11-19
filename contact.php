@@ -28,7 +28,8 @@ $servicesList = [
     'Wedding & Events'
 ];
 
-$pageTitle = "Contact Us — Falhen Media";
+$pageTitle = "Contact Falhen Productions | Start Your Production Today";
+$pageDescription = "Ready to bring your vision to screen? Contact Falhen Productions for commercial video, multicam live streaming, or creative consultation. Inquire today.";
 require_once __DIR__ . '/includes/header.php';
 ?>
 
@@ -686,30 +687,30 @@ require_once __DIR__ . '/includes/header.php';
 
                     <div class="contact-form-row">
                         <div class="contact-field-group">
-                            <label class="contact-field-label">Full Name *</label>
-                            <input type="text" name="full_name" class="contact-field-control" required placeholder="John Doe">
+                            <label class="contact-field-label" for="contactFullName">Full Name *</label>
+                            <input type="text" name="full_name" id="contactFullName" class="contact-field-control" autocomplete="name" required placeholder="John Doe">
                         </div>
 
                         <div class="contact-field-group">
-                            <label class="contact-field-label">Email Address *</label>
-                            <input type="email" name="email" class="contact-field-control" required placeholder="john@example.com">
+                            <label class="contact-field-label" for="contactEmail">Email Address *</label>
+                            <input type="email" name="email" id="contactEmail" class="contact-field-control" autocomplete="email" required placeholder="john@example.com">
                         </div>
                     </div>
 
                     <div class="contact-form-row">
                         <div class="contact-field-group">
-                            <label class="contact-field-label">Phone Number</label>
-                            <input type="tel" name="phone" class="contact-field-control" placeholder="+1 (331) 465-1119">
+                            <label class="contact-field-label" for="contactPhone">Phone Number</label>
+                            <input type="tel" name="phone" id="contactPhone" class="contact-field-control" autocomplete="tel" placeholder="+1 (331) 465-1119">
                         </div>
 
                         <div class="contact-field-group">
-                            <label class="contact-field-label">Company Name</label>
-                            <input type="text" name="company" class="contact-field-control" placeholder="Your Company">
+                            <label class="contact-field-label" for="contactCompany">Company Name</label>
+                            <input type="text" name="company" id="contactCompany" class="contact-field-control" autocomplete="organization" placeholder="Your Company">
                         </div>
                     </div>
 
                     <div class="contact-field-group" style="text-align: left;">
-                        <label class="contact-field-label">Service Interested In *</label>
+                        <label class="contact-field-label" for="serviceTypeSelect">Service Interested In *</label>
                         <select name="service_type" id="serviceTypeSelect" class="contact-field-control" required>
                             <option value="">Select a service</option>
                             <?php foreach ($servicesList as $srv): 
@@ -726,7 +727,7 @@ require_once __DIR__ . '/includes/header.php';
                     </div>
 
                     <div class="contact-field-group" style="text-align: left;">
-                        <label class="contact-field-label">Project Details *</label>
+                        <label class="contact-field-label" for="projectDetailsTextarea">Project Details *</label>
                         <textarea name="project_details" id="projectDetailsTextarea" class="contact-field-control" rows="5" maxlength="500" required placeholder="Tell us about your project, timeline, and budget..."></textarea>
                         <div class="char-counter-text" id="charCounterText">0/500 characters</div>
                     </div>

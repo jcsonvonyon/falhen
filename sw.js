@@ -1,5 +1,5 @@
 /**
- * Falhen Media — Lightweight Offline & Slow-Network Service Worker
+ * Falhen Productions — Lightweight Offline & Slow-Network Service Worker
  * Caches core landing shell, responsive Hero backup poster, and direct stream clips
  * for instant repeat loads even on slow 2G/3G or offline networks.
  */

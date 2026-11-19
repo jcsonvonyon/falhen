@@ -1,7 +1,7 @@
 <?php
 /**
  * Cloudinary Media Helper & API Handler
- * Falhen Media
+ * Falhen Productions
  */
 
 require_once __DIR__ . '/../config/cloudinary.php';

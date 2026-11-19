@@ -1,7 +1,7 @@
 <?php
 /**
  * api/admin-client-gallery.php
- * Falhen Media — Admin AJAX Endpoint for Client Galleries Management
+ * Falhen Productions — Admin AJAX Endpoint for Client Galleries Management
  * - Google Drive API v3 photo extraction
  * - Cloudinary chunked synchronization with SEO-friendly public IDs
  * - Automated SEO keyword strategy and meta optimization generator

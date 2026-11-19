@@ -2,7 +2,7 @@
 /**
  * api/admin-flow-test.php
  * R5: Super Admin Restricted Backend Flow Testing Suite
- * Strictly accessible ONLY to authenticated Falhen Media Super Admins.
+ * Strictly accessible ONLY to authenticated Falhen Productions Super Admins.
  * Verifies:
  *   1. R1: Subdomain Routing (client.falhen.com & /dashboard?view=client)
  *   2. R2: Responsive Masonry & Dynamic Full View across Mobile, Tablet, Desktop

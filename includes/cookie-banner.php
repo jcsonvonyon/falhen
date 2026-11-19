@@ -41,11 +41,11 @@
             <!-- Option 2: Analytics -->
             <div class="cookie-option-item">
                 <div class="cookie-option-info">
-                    <strong class="cookie-option-name">Analytics</strong>
+                    <strong class="cookie-option-name" id="cookieAnalyticsLabel">Analytics</strong>
                     <p class="cookie-option-desc">Google Analytics — pseudonymised traffic data.</p>
                 </div>
-                <label class="cookie-switch">
-                    <input type="checkbox" id="cookieAnalyticsToggle" checked>
+                <label class="cookie-switch" for="cookieAnalyticsToggle">
+                    <input type="checkbox" id="cookieAnalyticsToggle" aria-labelledby="cookieAnalyticsLabel" checked>
                     <span class="cookie-slider"></span>
                 </label>
             </div>
@@ -53,11 +53,11 @@
             <!-- Option 3: Functional -->
             <div class="cookie-option-item">
                 <div class="cookie-option-info">
-                    <strong class="cookie-option-name">Functional</strong>
+                    <strong class="cookie-option-name" id="cookieFunctionalLabel">Functional</strong>
                     <p class="cookie-option-desc">Language & theme preferences.</p>
                 </div>
-                <label class="cookie-switch">
-                    <input type="checkbox" id="cookieFunctionalToggle" checked>
+                <label class="cookie-switch" for="cookieFunctionalToggle">
+                    <input type="checkbox" id="cookieFunctionalToggle" aria-labelledby="cookieFunctionalLabel" checked>
                     <span class="cookie-slider"></span>
                 </label>
             </div>
@@ -65,11 +65,11 @@
             <!-- Option 4: Marketing -->
             <div class="cookie-option-item">
                 <div class="cookie-option-info">
-                    <strong class="cookie-option-name">Marketing</strong>
+                    <strong class="cookie-option-name" id="cookieMarketingLabel">Marketing</strong>
                     <p class="cookie-option-desc">Facebook Pixel, LinkedIn & Google Ads.</p>
                 </div>
-                <label class="cookie-switch">
-                    <input type="checkbox" id="cookieMarketingToggle">
+                <label class="cookie-switch" for="cookieMarketingToggle">
+                    <input type="checkbox" id="cookieMarketingToggle" aria-labelledby="cookieMarketingLabel">
                     <span class="cookie-slider"></span>
                 </label>
             </div>

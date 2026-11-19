@@ -1,5 +1,5 @@
 /**
- * Falhen Media — Main JavaScript Logic (Font Awesome Icons)
+ * Falhen Productions — Main JavaScript Logic (Font Awesome Icons)
  */
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -265,13 +265,23 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
 
+    const isMobileViewport = () => window.innerWidth <= 768;
+
     const preferredDirectStream = () => {
-      const isMobile = window.innerWidth <= 768;
+      const isMobile = isMobileViewport();
       return (isMobile && directMobile) ? directMobile : (directDesktop || directMobile);
     };
 
     const bootHeroMedia = () => {
       if (isMounted) return;
+
+      // CWV Mobile LCP Optimization (Option A):
+      // On mobile screens (<= 768px), keep the fast, preloaded responsive picture poster active
+      // to guarantee sub-2.0s LCP and eliminate 2.5MB+ of background YouTube iframe bandwidth.
+      if (isMobileViewport()) {
+        return;
+      }
+
       const directUrl = preferredDirectStream();
 
       // Offline guard: never mount a dead third-party iframe while offline
@@ -300,6 +310,13 @@ document.addEventListener('DOMContentLoaded', () => {
     requestAnimationFrame(() => {
       setTimeout(bootHeroMedia, 50);
     });
+
+    // Boot media if resized from mobile to desktop
+    window.addEventListener('resize', () => {
+      if (!isMounted && !isMobileViewport()) {
+        bootHeroMedia();
+      }
+    }, { passive: true });
 
     // Automatically mount & crossfade video if user starts offline and regains connectivity
     window.addEventListener('online', () => {
@@ -423,6 +440,15 @@ document.addEventListener('DOMContentLoaded', () => {
         modalIframe.src = finalModalUrl;
         modal.classList.add('active');
         if (heroMediaController) heroMediaController.onModalOpen();
+
+        // GA4 Telemetry: Track Video Reel Playback
+        if (typeof window.falhenTrack === 'function') {
+          window.falhenTrack('video_start', {
+            video_url: videoUrl,
+            event_category: 'Engagement',
+            event_label: 'Showreel Lightbox Played'
+          });
+        }
       }
     });
   });
@@ -501,6 +527,14 @@ document.addEventListener('DOMContentLoaded', () => {
             inquiryForm.reset();
             const charCount = document.getElementById('charCount');
             if (charCount) charCount.textContent = '0/500';
+
+            // GA4 Telemetry: Track Lead Generation
+            if (typeof window.falhenTrack === 'function') {
+              window.falhenTrack('generate_lead', {
+                event_category: 'Conversion',
+                event_label: 'Contact Inquiry Submitted'
+              });
+            }
           } else {
             formFeedback.className = 'badge';
             formFeedback.style.background = 'rgba(239, 68, 68, 0.15)';
@@ -1150,16 +1184,23 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     });
 
+    let servicesScrollTicking = false;
     servicesGrid.addEventListener('scroll', () => {
-      if (window.innerWidth <= 768) {
-        const scrollPos = servicesGrid.scrollLeft;
-        const cardWidth = servicesGrid.clientWidth;
-        if (cardWidth > 0) {
-          const newIndex = Math.round(scrollPos / cardWidth);
-          updateActiveServicesDot(newIndex);
-        }
+      if (!servicesScrollTicking) {
+        requestAnimationFrame(() => {
+          if (window.innerWidth <= 768) {
+            const scrollPos = servicesGrid.scrollLeft;
+            const cardWidth = servicesGrid.clientWidth;
+            if (cardWidth > 0) {
+              const newIndex = Math.round(scrollPos / cardWidth);
+              updateActiveServicesDot(newIndex);
+            }
+          }
+          servicesScrollTicking = false;
+        });
+        servicesScrollTicking = true;
       }
-    });
+    }, { passive: true });
   }
 
   // 13. Mobile Team Swiping Carousel Handler
@@ -1213,16 +1254,23 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     });
 
+    let teamScrollTicking = false;
     teamGrid.addEventListener('scroll', () => {
-      if (window.innerWidth <= 768) {
-        const scrollPos = teamGrid.scrollLeft;
-        const cardWidth = teamGrid.clientWidth;
-        if (cardWidth > 0) {
-          const newIndex = Math.round(scrollPos / cardWidth);
-          updateActiveTeamDot(newIndex);
-        }
+      if (!teamScrollTicking) {
+        requestAnimationFrame(() => {
+          if (window.innerWidth <= 768) {
+            const scrollPos = teamGrid.scrollLeft;
+            const cardWidth = teamGrid.clientWidth;
+            if (cardWidth > 0) {
+              const newIndex = Math.round(scrollPos / cardWidth);
+              updateActiveTeamDot(newIndex);
+            }
+          }
+          teamScrollTicking = false;
+        });
+        teamScrollTicking = true;
       }
-    });
+    }, { passive: true });
   }
 
   // 14. Mobile Bottom Dock Scroll Top Button
@@ -1235,4 +1283,17 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     });
   }
+
+  // 15. GA4 Outbound Call & Email Conversion Telemetry
+  document.addEventListener('click', (e) => {
+    const link = e.target.closest('a[href^="tel:"], a[href^="mailto:"]');
+    if (link && typeof window.falhenTrack === 'function') {
+      const isTel = link.href.startsWith('tel:');
+      window.falhenTrack('contact_click', {
+        event_category: 'Contact',
+        contact_type: isTel ? 'phone' : 'email',
+        event_label: link.href.replace(/^(tel|mailto):/, '')
+      });
+    }
+  });
 });

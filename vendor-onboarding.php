@@ -1,6 +1,6 @@
 <?php
 /**
- * Falhen Media - Vendor & Contractor Onboarding Portal
+ * Falhen Productions - Vendor & Contractor Onboarding Portal
  * Multi-Step Onboarding Process (Role, Policy, Legal Agreements, Tax & Info, Done)
  */
 require_once __DIR__ . '/includes/functions.php';
@@ -12,8 +12,8 @@ $csrfToken = generateCSRFToken();
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vendor Onboarding | Falhen Media</title>
-    <meta name="description" content="Complete your secure onboarding process to formalize your engagement with Falhen Media.">
+    <title>Vendor Onboarding | Falhen Productions</title>
+    <meta name="description" content="Complete your secure onboarding process to formalize your engagement with Falhen Productions.">
     <link rel="icon" type="image/png" href="/assets/img/icons/favicon.png">
     
     <!-- Fonts -->
@@ -726,8 +726,8 @@ $csrfToken = generateCSRFToken();
 
     <!-- BRAND BAR -->
     <div class="onboarding-brand-bar">
-        <a href="/" class="brand-logo" aria-label="Falhen Media">
-            <img src="/assets/img/icons/logo.png" alt="Falhen Media" onerror="this.src='/assets/falhenmedia_logo.png'">
+        <a href="/" class="brand-logo" aria-label="Falhen Productions">
+            <img src="/assets/img/icons/logo.png" alt="Falhen Productions" onerror="this.src='/assets/falhenmedia_logo.png'">
         </a>
         <a href="/" class="back-site-link">
             <i class="fa-solid fa-arrow-left"></i> Back to website
@@ -740,7 +740,7 @@ $csrfToken = generateCSRFToken();
             <div class="badge-vendor" id="introBadge">
                 <i class="fa-solid fa-building-user"></i> Vendor Onboarding
             </div>
-            <h1 class="onboarding-title" id="introTitle">Join the Falhen Media Team</h1>
+            <h1 class="onboarding-title" id="introTitle">Join the Falhen Productions Team</h1>
             <p class="onboarding-subtitle" id="introSubtitle">Complete this secure onboarding process to formalize your engagement. Takes about 5 minutes.</p>
         </div>
 
@@ -803,7 +803,7 @@ $csrfToken = generateCSRFToken();
             <div class="step-panel active" id="stepPanel1">
                 <div class="step-header">
                     <h2 class="step-title">What will you be doing?</h2>
-                    <p class="step-desc">Select the role that best describes your engagement with Falhen Media.</p>
+                    <p class="step-desc">Select the role that best describes your engagement with Falhen Productions.</p>
                 </div>
 
                 <div class="role-cards-grid">
@@ -813,7 +813,7 @@ $csrfToken = generateCSRFToken();
                             <i class="fa-solid fa-camera"></i>
                         </div>
                         <h3 class="role-card-title">Photographer / Videographer</h3>
-                        <p class="role-card-desc">Independent contractor providing photo or video services for Falhen Media.</p>
+                        <p class="role-card-desc">Independent contractor providing photo or video services for Falhen Productions.</p>
                     </div>
 
                     <!-- Card 2: Intern -->
@@ -831,7 +831,7 @@ $csrfToken = generateCSRFToken();
                             <i class="fa-solid fa-heart"></i>
                         </div>
                         <h3 class="role-card-title">Volunteer</h3>
-                        <p class="role-card-desc">Unpaid contributor supporting Falhen Media productions.</p>
+                        <p class="role-card-desc">Unpaid contributor supporting Falhen Productions productions.</p>
                     </div>
                 </div>
 
@@ -846,7 +846,7 @@ $csrfToken = generateCSRFToken();
             <div class="step-panel" id="stepPanel2">
                 <div class="step-header">
                     <h2 class="step-title">Workplace Policy</h2>
-                    <p class="step-desc">Read and acknowledge Falhen Media's intellectual property and conduct policy.</p>
+                    <p class="step-desc">Read and acknowledge Falhen Productions's intellectual property and conduct policy.</p>
                 </div>
 
                 <div class="policy-scroll-box">
@@ -1028,7 +1028,7 @@ $csrfToken = generateCSRFToken();
                                 <span style="display: inline-flex; align-items: center; gap: 4px; font-size: 0.78rem; color: var(--success); font-weight: 700;">
                                     <i class="fa-solid fa-circle-check"></i> Verified Digital ID
                                 </span>
-                                <div style="font-size: 0.72rem; color: var(--slate-400); margin-top: 2px;">Falhen Media Digital Engine</div>
+                                <div style="font-size: 0.72rem; color: var(--slate-400); margin-top: 2px;">Falhen Productions Digital Engine</div>
                             </div>
                         </div>
                     </div>
@@ -1147,7 +1147,7 @@ $csrfToken = generateCSRFToken();
                         <div>
                             <div style="font-weight: 700; color: #15803d; font-size: 0.95rem; margin-bottom: 4px;">Secure Direct Deposit via Stripe</div>
                             <div style="color: #166534; font-size: 0.85rem; line-height: 1.55;">
-                                No bank details are collected here. After your onboarding is approved, Falhen Media will email you a secure link to connect your bank account through <strong>Stripe</strong> — your routing and account numbers are tokenized and never stored on our systems.
+                                No bank details are collected here. After your onboarding is approved, Falhen Productions will email you a secure link to connect your bank account through <strong>Stripe</strong> — your routing and account numbers are tokenized and never stored on our systems.
                             </div>
                         </div>
                     </div>
@@ -1173,7 +1173,7 @@ $csrfToken = generateCSRFToken();
                     <!-- Additional Notes -->
                     <div style="margin-bottom: 24px;">
                         <label class="form-label">Additional Notes <span style="font-size: 0.82rem; font-weight: 500; color: #64748b;">(optional)</span></label>
-                        <textarea name="additional_notes" id="fieldNotes" class="form-control" rows="3" placeholder="Anything else Falhen Media should know..." maxlength="500" oninput="updateNotesCount(this.value)"></textarea>
+                        <textarea name="additional_notes" id="fieldNotes" class="form-control" rows="3" placeholder="Anything else Falhen Productions should know..." maxlength="500" oninput="updateNotesCount(this.value)"></textarea>
                         <div style="font-size: 0.75rem; color: #94a3b8; margin-top: 5px;" id="notesCounter">0/500 characters</div>
                     </div>
 
@@ -1195,7 +1195,7 @@ $csrfToken = generateCSRFToken();
                         <i class="fa-solid fa-check"></i>
                     </div>
                     <h2 class="onboarding-title" style="font-size: 2rem;">Onboarding Complete!</h2>
-                    <p class="onboarding-subtitle">Welcome to the Falhen Media team. Your vendor profile and signed agreements have been officially recorded.</p>
+                    <p class="onboarding-subtitle">Welcome to the Falhen Productions team. Your vendor profile and signed agreements have been officially recorded.</p>
 
                     <div class="done-ref-card">
                         <div class="done-ref-row">
@@ -1242,11 +1242,11 @@ $csrfToken = generateCSRFToken();
             'photographer_videographer': `
                 <div class="policy-item">
                     <div class="policy-item-title"><i class="fa-solid fa-file-contract"></i> 1. Master Services Agreement (MSA) &bull; Independent Contractor Terms</div>
-                    <p>This Master Services Agreement governs all cinematography, photography, lighting, and post-production engagements commissioned by Falhen Media Ltd. The Contractor acts strictly as an independent service provider and is responsible for professional deliverable quality, adherence to shoot call-sheets, and prompt footage delivery.</p>
+                    <p>This Master Services Agreement governs all cinematography, photography, lighting, and post-production engagements commissioned by Falhen Productions Ltd. The Contractor acts strictly as an independent service provider and is responsible for professional deliverable quality, adherence to shoot call-sheets, and prompt footage delivery.</p>
                 </div>
                 <div class="policy-item">
                     <div class="policy-item-title"><i class="fa-solid fa-certificate"></i> 2. Intellectual Property &amp; Work-Made-For-Hire Assignment</div>
-                    <p>All RAW camera media, photographs, B-roll reels, audio stems, and project files captured during production are "Work Made for Hire". Falhen Media Ltd and its clients retain exclusive worldwide copyright, commercial distribution rights, and synchronization licenses across all media platforms in perpetuity.</p>
+                    <p>All RAW camera media, photographs, B-roll reels, audio stems, and project files captured during production are "Work Made for Hire". Falhen Productions Ltd and its clients retain exclusive worldwide copyright, commercial distribution rights, and synchronization licenses across all media platforms in perpetuity.</p>
                 </div>
                 <div class="policy-item">
                     <div class="policy-item-title"><i class="fa-solid fa-lock"></i> 3. Comprehensive Non-Disclosure Agreement (NDA)</div>
@@ -1256,11 +1256,11 @@ $csrfToken = generateCSRFToken();
             'intern': `
                 <div class="policy-item">
                     <div class="policy-item-title"><i class="fa-solid fa-graduation-cap"></i> 1. Internship Mentorship &amp; Practical Training Terms</div>
-                    <p>This engagement is established to provide structured experiential training in video production, camera operation, audio engineering, and studio operations under the direct supervision of Falhen Media Senior Producers.</p>
+                    <p>This engagement is established to provide structured experiential training in video production, camera operation, audio engineering, and studio operations under the direct supervision of Falhen Productions Senior Producers.</p>
                 </div>
                 <div class="policy-item">
                     <div class="policy-item-title"><i class="fa-solid fa-certificate"></i> 2. Intellectual Property &amp; Deliverables Assignment</div>
-                    <p>All creative works, edit cuts, and project collateral developed during the internship term shall be the sole property of Falhen Media Ltd, with reasonable portfolio attribution granted upon formal approval.</p>
+                    <p>All creative works, edit cuts, and project collateral developed during the internship term shall be the sole property of Falhen Productions Ltd, with reasonable portfolio attribution granted upon formal approval.</p>
                 </div>
                 <div class="policy-item">
                     <div class="policy-item-title"><i class="fa-solid fa-lock"></i> 3. Non-Disclosure &amp; Studio Confidentiality</div>
@@ -1270,11 +1270,11 @@ $csrfToken = generateCSRFToken();
             'volunteer': `
                 <div class="policy-item">
                     <div class="policy-item-title"><i class="fa-solid fa-heart"></i> 1. Volunteer Production Contributor Terms</div>
-                    <p>The Volunteer acknowledges that this engagement is voluntary community and creative production support, provided without expectation of regular employment wages. Falhen Media provides on-set catering, safety gear, and assigned travel stipends as applicable.</p>
+                    <p>The Volunteer acknowledges that this engagement is voluntary community and creative production support, provided without expectation of regular employment wages. Falhen Productions provides on-set catering, safety gear, and assigned travel stipends as applicable.</p>
                 </div>
                 <div class="policy-item">
                     <div class="policy-item-title"><i class="fa-solid fa-certificate"></i> 2. Media Release &amp; Creative Attribution</div>
-                    <p>The Volunteer grants Falhen Media permission to record, photograph, and include volunteer contributions in company documentary and behind-the-scenes materials.</p>
+                    <p>The Volunteer grants Falhen Productions permission to record, photograph, and include volunteer contributions in company documentary and behind-the-scenes materials.</p>
                 </div>
                 <div class="policy-item">
                     <div class="policy-item-title"><i class="fa-solid fa-lock"></i> 3. Non-Disclosure &amp; Set Confidentiality</div>
@@ -1411,12 +1411,12 @@ $csrfToken = generateCSRFToken();
 
             if (currentStep === 5) {
                 if (introBadge) introBadge.innerHTML = '<i class="fa-solid fa-circle-check"></i> Onboarding Complete';
-                if (introTitle) introTitle.innerText = 'Welcome to Falhen Media!';
+                if (introTitle) introTitle.innerText = 'Welcome to Falhen Productions!';
                 if (introSubtitle) introSubtitle.innerText = 'Your vendor profile has been recorded and your signed agreement is ready for download.';
                 window.scrollTo({ top: 60, behavior: 'smooth' });
             } else {
                 if (introBadge) introBadge.innerHTML = '<i class="fa-solid fa-building-user"></i> Vendor Onboarding';
-                if (introTitle) introTitle.innerText = 'Join the Falhen Media Team';
+                if (introTitle) introTitle.innerText = 'Join the Falhen Productions Team';
                 if (introSubtitle) introSubtitle.innerText = 'Complete this secure onboarding process to formalize your engagement. Takes about 5 minutes.';
                 window.scrollTo({ top: 120, behavior: 'smooth' });
             }

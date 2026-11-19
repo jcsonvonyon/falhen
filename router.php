@@ -9,6 +9,12 @@ if ($uri === '/index.php') {
     exit;
 }
 
+// Route sitemap.xml to dynamic sitemap.php
+if ($uri === '/sitemap.xml') {
+    require __DIR__ . '/sitemap.php';
+    return;
+}
+
 // Redirect direct .php requests to clean extensionless URLs (e.g. /contact.php -> /contact)
 if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'GET' && preg_match('#^/(.+)\.php$#', $uri, $matches) && !str_starts_with($uri, '/api/')) {
     $cleanPath = '/' . $matches[1];
@@ -87,5 +93,7 @@ if (is_dir($filePath) && file_exists(rtrim($filePath, '/') . '/index.php')) {
     return;
 }
 
-// Fallback to default behavior
-return false;
+// 5. Branded 404 Fallback
+http_response_code(404);
+require __DIR__ . '/404.php';
+return;

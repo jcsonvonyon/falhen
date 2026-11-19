@@ -1,5 +1,5 @@
 /**
- * Falhen Media - Vendor Production Portal Service Worker
+ * Falhen Productions - Vendor Production Portal Service Worker
  * Version: 1.0.0
  */
 

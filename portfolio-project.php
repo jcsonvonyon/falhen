@@ -1,6 +1,7 @@
 <?php
 // portfolio-project.php - Dedicated Project / Production Case Study Showcase matching readdy.ai reference
 require_once __DIR__ . '/includes/functions.php';
+require_once __DIR__ . '/includes/seo_helper.php';
 
 $masterPortfolioItems = getPortfolioRepo();
 $projectsRepo = [];
@@ -17,8 +18,10 @@ if (empty($projectsRepo)) {
     }
 }
 
-$projectId = isset($_GET['id']) ? (int)$_GET['id'] : key($projectsRepo);
+$hasRequestedId = isset($_GET['id']);
+$projectId = $hasRequestedId ? (int)$_GET['id'] : key($projectsRepo);
 $currentProject = null;
+
 if (isset($projectsRepo[$projectId])) {
     $currentProject = $projectsRepo[$projectId];
 } else {
@@ -28,12 +31,31 @@ if (isset($projectsRepo[$projectId])) {
             break;
         }
     }
-    if (!$currentProject) {
-        $currentProject = reset($projectsRepo);
-    }
 }
 
-$pageTitle = htmlspecialchars($currentProject['title']) . " — Case Study | Falhen Media";
+// Strict 404 Check: If ID was explicitly provided but does not exist, return genuine 404 (eliminates GSC Soft-404)
+if (!$currentProject) {
+    http_response_code(404);
+    require __DIR__ . '/404.php';
+    exit;
+}
+
+$cleanCanonical = getSiteBaseUrl() . '/portfolio-project?id=' . (int)$currentProject['id'];
+$cleanDesc = !empty($currentProject['desc']) ? strip_tags($currentProject['desc']) : 'Step inside ' . ($currentProject['title'] ?? 'Falhen Productions') . ' — Production and creative direction showcase by Falhen Productions.';
+$cleanDesc = mb_substr(preg_replace('/\s+/', ' ', $cleanDesc), 0, 160);
+$servicesRaw = !empty($currentProject['services']) 
+    ? $currentProject['services'] 
+    : (!empty($currentProject['keywords']) ? $currentProject['keywords'] : 'Video Production, Photography, AV Production, Content Strategy, live production, creative services, event design, event management');
+
+$projectImg = getCloudinaryUrl($currentProject['image'] ?? '');
+
+$seo = getSeoConfig('portfolio', [
+    'title'       => htmlspecialchars($currentProject['title']) . ' — Case Study',
+    'description' => $cleanDesc,
+    'canonical'   => $cleanCanonical,
+    'keywords'    => $servicesRaw,
+    'image'       => $projectImg
+]);
 
 // Fetch related/more projects (excluding current project)
 $relatedProjects = [];
@@ -54,61 +76,56 @@ $relatedProjects = array_slice($relatedProjects, 0, 3);
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <!-- Google tag (gtag.js) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-LJ91C0YXCH"></script>
-    <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-      gtag('config', 'G-LJ91C0YXCH');
-    </script>
-
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?php echo $pageTitle; ?></title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     
+    <?php require_once __DIR__ . '/includes/analytics.php'; ?>
+    <?php renderSeoHeadTags($seo); ?>
+    
+    <!-- Schema.org JSON-LD Structured Data: Case Study / Watch Page -->
     <?php 
-    $servicesRaw = !empty($currentProject['services']) 
-        ? $currentProject['services'] 
-        : (!empty($currentProject['keywords']) ? $currentProject['keywords'] : 'Video Production, Photography, AV Production, Content Strategy, live production, creative services, event design, event management');
-    $cleanDesc = !empty($currentProject['desc']) ? strip_tags($currentProject['desc']) : 'Step inside ' . ($currentProject['title'] ?? 'Falhen Media') . ' — Production and creative direction showcase by Falhen Media.';
-    $cleanDesc = mb_substr(preg_replace('/\s+/', ' ', $cleanDesc), 0, 160);
-    ?>
-    <meta name="description" content="<?php echo htmlspecialchars($cleanDesc); ?>">
-    <meta name="keywords" content="<?php echo htmlspecialchars($servicesRaw); ?>">
-
-    <!-- Schema.org JSON-LD Structured Data (Fed by Services & Keywords) -->
-    <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "CreativeWork",
-      "name": <?php echo json_encode($currentProject['title']); ?>,
-      "headline": <?php echo json_encode($currentProject['title']); ?>,
-      "description": <?php echo json_encode($cleanDesc); ?>,
-      "image": <?php echo json_encode(getCloudinaryUrl($currentProject['image'] ?? '')); ?>,
-      "creator": {
-        "@type": "Organization",
-        "name": "Falhen Media",
-        "url": "https://falhen.com"
-      },
-      "provider": {
-        "@type": "Organization",
-        "name": <?php echo json_encode(!empty($currentProject['client']) ? $currentProject['client'] : "Falhen Media"); ?>
-      },
-      "keywords": <?php echo json_encode($servicesRaw); ?>,
-      "genre": <?php echo json_encode($currentProject['category'] ?? "Events"); ?>,
-      "dateCreated": <?php echo json_encode(!empty($currentProject['year']) ? (string)$currentProject['year'] : "2026"); ?>
+    $isVideo = !empty($currentProject['video_url']) || !empty($currentProject['youtube_id']) || ($currentProject['media_type'] ?? '') === 'video';
+    if ($isVideo) {
+        $ytId = !empty($currentProject['youtube_id']) ? $currentProject['youtube_id'] : extractYouTubeId($currentProject['video_url'] ?? '');
+        renderSchemaJsonLd('video_watch', [
+            'canonical' => $cleanCanonical,
+            'video' => [
+                'title' => $currentProject['title'],
+                'description' => $cleanDesc,
+                'thumbnail' => $projectImg,
+                'embed_url' => $ytId ? 'https://www.youtube-nocookie.com/embed/' . rawurlencode($ytId) : ($currentProject['video_url'] ?? ''),
+                'content_url' => $cleanCanonical,
+                'upload_date' => !empty($currentProject['year']) ? $currentProject['year'] . '-01-01T08:00:00+00:00' : '2026-01-01T08:00:00+00:00'
+            ],
+            'breadcrumbs' => [
+                ['name' => 'Home', 'url' => getSiteBaseUrl() . '/'],
+                ['name' => 'Portfolio', 'url' => getSiteBaseUrl() . '/portfolio'],
+                ['name' => $currentProject['title'], 'url' => $cleanCanonical]
+            ]
+        ]);
+    } else {
+        renderSchemaJsonLd('global', [
+            'canonical' => $cleanCanonical,
+            'breadcrumbs' => [
+                ['name' => 'Home', 'url' => getSiteBaseUrl() . '/'],
+                ['name' => 'Portfolio', 'url' => getSiteBaseUrl() . '/portfolio'],
+                ['name' => $currentProject['title'], 'url' => $cleanCanonical]
+            ]
+        ]);
     }
-    </script>
+    ?>
     
     <!-- Favicon -->
     <link rel="icon" type="image/png" href="/assets/img/icons/favicon.png">
+    <link rel="shortcut icon" type="image/png" href="/assets/img/icons/favicon.png">
+    <link rel="apple-touch-icon" href="/assets/img/icons/favicon.png">
     
     <!-- Google Fonts & FontAwesome -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"></noscript>
     
     <!-- Main Style -->
     <link rel="stylesheet" href="/assets/css/style.css">
@@ -876,7 +893,7 @@ $relatedProjects = array_slice($relatedProjects, 0, 3);
             </a>
             
             <a href="/" class="nav-center-logo">
-                <img src="/assets/img/logo/falhen_logo_white.png" alt="Falhen Media" onerror="this.src='/assets/img/icons/favicon.png';">
+                <img src="/assets/img/logo/falhen_logo_white.png" alt="Falhen Productions" onerror="this.src='/assets/img/icons/favicon.png';">
             </a>
 
             <div class="nav-right-actions">
@@ -1038,7 +1055,7 @@ $relatedProjects = array_slice($relatedProjects, 0, 3);
 
     <!-- Footer Bar -->
     <footer class="project-footer-bar">
-        <div>&copy; <?php echo date('Y'); ?> Falhen Media. All rights reserved.</div>
+        <div>&copy; <?php echo date('Y'); ?> Falhen Productions. All rights reserved.</div>
         <div class="project-footer-links">
             <a href="/">Home</a>
             <a href="/about.php">About</a>

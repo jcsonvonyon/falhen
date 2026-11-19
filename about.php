@@ -1,8 +1,14 @@
 <?php
-// about.php - About Us page matching falhen.com/about screenshots
+// about.php - About Us page
 require_once __DIR__ . '/includes/functions.php';
+require_once __DIR__ . '/includes/seo_helper.php';
 
-$pageTitle = "About Us — Falhen Media";
+$seo = getSeoConfig('about', [
+    'title'       => 'About Falhen Productions | Vision, Team & Storytelling',
+    'description' => 'Meet the directors, cinematographers, and creative producers behind Falhen Productions. Over 12 years of crafting high-impact visual narratives globally.',
+    'canonical'   => getSiteBaseUrl() . '/about',
+    'keywords'    => 'about Falhen Productions, video production team, cinematography crew, film directors, media production agency'
+]);
 
 // All 8 Team Members Data for the About Page grid
 $rawMembers = getTeamMembers();
@@ -24,29 +30,32 @@ foreach ($rawMembers as $m) {
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <!-- Google tag (gtag.js) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-LJ91C0YXCH"></script>
-    <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-
-      gtag('config', 'G-LJ91C0YXCH');
-    </script>
-
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?php echo htmlspecialchars($pageTitle); ?></title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    
+    <?php require_once __DIR__ . '/includes/analytics.php'; ?>
+    <?php renderSeoHeadTags($seo); ?>
+    <?php 
+    renderSchemaJsonLd('global', [
+        'canonical' => getSiteBaseUrl() . '/about',
+        'breadcrumbs' => [
+            ['name' => 'Home', 'url' => getSiteBaseUrl() . '/'],
+            ['name' => 'About Us', 'url' => getSiteBaseUrl() . '/about']
+        ]
+    ]); 
+    ?>
     
     <!-- Favicon -->
     <link rel="icon" type="image/png" href="/assets/img/icons/favicon.png">
     <link rel="shortcut icon" type="image/png" href="/assets/img/icons/favicon.png">
     <link rel="apple-touch-icon" href="/assets/img/icons/favicon.png">
 
+    <!-- Preconnects & Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"></noscript>
     <link rel="stylesheet" href="/assets/css/style.css">
     <style>
         body {
@@ -938,7 +947,7 @@ foreach ($rawMembers as $m) {
     <!-- Hero Section -->
     <section class="about-hero-section">
         <div class="about-container">
-            <h1 class="about-hero-title">About Falhen Media</h1>
+            <h1 class="about-hero-title">About Falhen Productions</h1>
             <p class="about-hero-subtitle">A passionate team of storytellers, creators, and innovators dedicated to transforming ideas into captivating visual experiences.</p>
         </div>
     </section>
@@ -949,7 +958,7 @@ foreach ($rawMembers as $m) {
             <div class="who-we-are-grid">
                 <div>
                     <h2 class="who-we-are-title">Creating Impact Through Visual Storytelling</h2>
-                    <p class="who-we-are-p">Founded with a vision to revolutionize digital media production, Falhen Media has grown into a leading creative agency specializing in video production, content creation, and brand storytelling. Our team combines technical expertise with artistic vision to deliver exceptional results.</p>
+                    <p class="who-we-are-p">Founded with a vision to revolutionize digital media production, Falhen Productions has grown into a leading creative agency specializing in video production, content creation, and brand storytelling. Our team combines technical expertise with artistic vision to deliver exceptional results.</p>
                     <p class="who-we-are-p">We believe that every brand has a unique story to tell, and our mission is to help you tell yours in the most compelling way possible. From concept development to final delivery, we work closely with our clients to ensure their vision comes to life.</p>
                     <p class="who-we-are-p">Our commitment to excellence, innovation, and client satisfaction has earned us recognition in the industry and the trust of brands worldwide.</p>
 
@@ -1081,18 +1090,18 @@ foreach ($rawMembers as $m) {
 
                         <div class="form-row-2col">
                             <div class="about-form-field">
-                                <label>Your Name *</label>
-                                <input type="text" name="full_name" required placeholder="John Smith">
+                                <label for="aboutFullName">Your Name *</label>
+                                <input type="text" name="full_name" id="aboutFullName" autocomplete="name" required placeholder="John Smith">
                             </div>
                             <div class="about-form-field">
-                                <label>Email Address *</label>
-                                <input type="email" name="email" required placeholder="john@company.com">
+                                <label for="aboutEmail">Email Address *</label>
+                                <input type="email" name="email" id="aboutEmail" autocomplete="email" required placeholder="john@company.com">
                             </div>
                         </div>
 
                         <div class="about-form-field">
-                            <label>Service Interested In</label>
-                            <select name="service_type">
+                            <label for="aboutServiceType">Service Interested In</label>
+                            <select name="service_type" id="aboutServiceType">
                                 <option value="">Select a service...</option>
                                 <option value="Video Production">Video Production</option>
                                 <option value="Live Streaming">Live Streaming</option>
@@ -1105,7 +1114,7 @@ foreach ($rawMembers as $m) {
                         </div>
 
                         <div class="about-form-field">
-                            <label>Message *</label>
+                            <label for="aboutMsgTextarea">Message *</label>
                             <textarea name="project_details" id="aboutMsgTextarea" rows="4" maxlength="500" required placeholder="Tell us about your project..."></textarea>
                             <div style="font-size: 0.78rem; color: #71717a; margin-top: 6px; text-align: right;" id="aboutCharCounter">0/500</div>
                         </div>
@@ -1117,7 +1126,7 @@ foreach ($rawMembers as $m) {
 
             <!-- Footer Bar -->
             <div class="about-footer-bar" style="margin-top: 24px;">
-                <div>© 2026 Falhen Media. All rights reserved.</div>
+                <div>© 2026 Falhen Productions. All rights reserved.</div>
                 <div class="about-footer-links">
                     <a href="/">Home</a>
                     <a href="/portfolio">Portfolio</a>

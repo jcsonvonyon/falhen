@@ -1,7 +1,7 @@
 <?php
 /**
  * api/submit_vendor_onboarding.php - Handle Vendor / Contractor Onboarding Submission
- * Falhen Media
+ * Falhen Productions
  */
 require_once __DIR__ . '/../includes/functions.php';
 require_once __DIR__ . '/../includes/smtp_mailer.php';
@@ -103,7 +103,7 @@ $signatureName = sanitizeInput($input['signature_name'] ?? $fullName);
 $signatureDate = sanitizeInput($input['signature_date'] ?? date('Y-m-d'));
 
 if (!$workplacePolicyAgreed) {
-    sendJSONResponse(false, 'You must review and agree to the Falhen Media Workplace Policies to proceed.');
+    sendJSONResponse(false, 'You must review and agree to the Falhen Productions Workplace Policies to proceed.');
 }
 
 if (!$ndaAgreed || !$msaAgreed) {
@@ -160,7 +160,7 @@ try {
     error_log("Failed to dispatch vendor onboarding email to {$email}: " . $e->getMessage());
 }
 
-sendJSONResponse(true, 'Vendor onboarding submitted successfully! Welcome to the Falhen Media team.', [
+sendJSONResponse(true, 'Vendor onboarding submitted successfully! Welcome to the Falhen Productions team.', [
     'reference_code' => $refCode,
     'role_label'     => $saved['role_label'] ?? 'Vendor',
     'full_name'      => $fullName,

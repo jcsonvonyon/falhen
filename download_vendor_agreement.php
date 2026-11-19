@@ -1,6 +1,6 @@
 <?php
 /**
- * Falhen Media - Official Vendor & Contractor Onboarding Agreement PDF / Print Document
+ * Falhen Productions - Official Vendor & Contractor Onboarding Agreement PDF / Print Document
  */
 require_once __DIR__ . '/includes/functions.php';
 
@@ -38,7 +38,7 @@ $status = ucfirst($vendor['status'] ?? 'Active');
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vendor Engagement Agreement - <?php echo htmlspecialchars($fullName); ?> (<?php echo htmlspecialchars($refCode); ?>) | Falhen Media</title>
+    <title>Vendor Engagement Agreement - <?php echo htmlspecialchars($fullName); ?> (<?php echo htmlspecialchars($refCode); ?>) | Falhen Productions</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -258,7 +258,7 @@ $status = ucfirst($vendor['status'] ?? 'Active');
                 <p class="doc-subtitle">Formal Onboarding, Master Services Agreement (MSA) &amp; Non-Disclosure Agreement (NDA)</p>
             </div>
             <div class="logo-box">
-                <img src="/assets/img/icons/logo.png" alt="Falhen Media Logo" onerror="this.src='/assets/falhenmedia_logo.png'">
+                <img src="/assets/img/icons/logo.png" alt="Falhen Productions Logo" onerror="this.src='/assets/falhenmedia_logo.png'">
             </div>
         </div>
 
@@ -317,7 +317,7 @@ $status = ucfirst($vendor['status'] ?? 'Active');
         <!-- SIGNATURES -->
         <div class="signature-card">
             <div class="sig-col">
-                <div class="sig-title">For: Falhen Media Ltd</div>
+                <div class="sig-title">For: Falhen Productions Ltd</div>
                 <?php 
                 $counterSigner = getAuthorizedCounterSigner();
                 $csName = $counterSigner['full_name'] ?? 'Oluwatosin Ligali';
@@ -334,7 +334,7 @@ $status = ucfirst($vendor['status'] ?? 'Active');
                 <?php endif; ?>
                 <div class="sig-line"></div>
                 <div style="font-weight: 700; font-size: 0.88rem;"><?php echo htmlspecialchars($csName); ?></div>
-                <div class="sig-subtext"><?php echo htmlspecialchars($csTitle); ?> &bull; Falhen Media Ltd</div>
+                <div class="sig-subtext"><?php echo htmlspecialchars($csTitle); ?> &bull; Falhen Productions Ltd</div>
                 <div class="verification-badge">
                     <i class="fa-solid fa-circle-check"></i> Authorized Counter-Signature
                 </div>
@@ -360,7 +360,7 @@ $status = ucfirst($vendor['status'] ?? 'Active');
 
         <!-- FOOTER -->
         <div style="margin-top: 36px; padding-top: 18px; border-top: 1px solid #e2e8f0; font-size: 0.75rem; color: #94a3b8; display: flex; justify-content: space-between; align-items: center;">
-            <div>Falhen Media Ltd &bull; 6 Olorunfunmi Street, Pedro, Gbagada, Lagos, Nigeria</div>
+            <div>Falhen Productions Ltd &bull; 6 Olorunfunmi Street, Pedro, Gbagada, Lagos, Nigeria</div>
             <div>Recorded at <?php echo htmlspecialchars($createdAt); ?> &bull; System Verified</div>
         </div>
     </div>

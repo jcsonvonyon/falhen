@@ -1,7 +1,7 @@
 <?php
 /**
  * cron/sync_worker.php
- * Falhen Media — Headless Cloudinary Background Synchronization Worker
+ * Falhen Productions — Headless Cloudinary Background Synchronization Worker
  * Allows albums with 200+ photos to sync in the background without holding browser tabs open.
  */
 

@@ -1,6 +1,6 @@
 <?php
 /**
- * Falhen Media Automated Scheduled Backup Utility (cPanel Cron & Webhook)
+ * Falhen Productions Automated Scheduled Backup Utility (cPanel Cron & Webhook)
  */
 require_once __DIR__ . '/../config/db.php';
 require_once __DIR__ . '/../includes/functions.php';

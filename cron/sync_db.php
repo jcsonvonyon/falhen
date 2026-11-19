@@ -1,6 +1,6 @@
 <?php
 /**
- * Falhen Media Database Sync Worker
+ * Falhen Productions Database Sync Worker
  * Bi-Directional Data Synchronization Engine (JSON <-> MySQL)
  */
 
@@ -14,7 +14,7 @@ if (!$pdo) {
     exit(0);
 }
 
-echo "[" . date('Y-m-d H:i:s') . "] Starting Falhen Media Database Synchronization Worker..." . PHP_EOL;
+echo "[" . date('Y-m-d H:i:s') . "] Starting Falhen Productions Database Synchronization Worker..." . PHP_EOL;
 
 // 1. Sync Staff Accounts Repository
 $staffRepo = getStaffAccountsRepo();

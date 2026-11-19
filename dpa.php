@@ -1,25 +1,22 @@
 <?php
-// dpa.php - Data Processing Agreement matching falhen.com/dpa
-$pageTitle = "Data Processing Agreement (DPA) — Falhen Media";
+// dpa.php - Data Processing Agreement
+require_once __DIR__ . '/includes/seo_helper.php';
+
+$seo = getSeoConfig('dpa', [
+    'title'       => 'Data Processing Agreement (DPA) | Falhen Productions',
+    'description' => 'Data Processing Agreement (DPA) governing how Falhen Productions processes client personal data under GDPR Article 28 and privacy laws.',
+    'canonical'   => getSiteBaseUrl() . '/dpa'
+]);
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <!-- Google tag (gtag.js) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-LJ91C0YXCH"></script>
-    <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-
-      gtag('config', 'G-LJ91C0YXCH');
-    </script>
-
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?php echo htmlspecialchars($pageTitle); ?></title>
-    <meta name="description" content="Data Processing Agreement (DPA) governing how Falhen Media processes personal data under GDPR Article 28, UK GDPR, and US privacy laws.">
-
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    
+    <?php require_once __DIR__ . '/includes/analytics.php'; ?>
+    <?php renderSeoHeadTags($seo); ?>
+    
     <!-- Favicon -->
     <link rel="icon" type="image/png" href="/assets/img/icons/favicon.png">
     <link rel="shortcut icon" type="image/png" href="/assets/img/icons/favicon.png">
@@ -28,7 +25,8 @@ $pageTitle = "Data Processing Agreement (DPA) — Falhen Media";
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"></noscript>
     <link rel="stylesheet" href="/assets/css/style.css">
 
     <style>
@@ -514,7 +512,7 @@ $pageTitle = "Data Processing Agreement (DPA) — Falhen Media";
             </div>
 
             <h1 class="dpa-hero-title">Data Processing Agreement</h1>
-            <p class="dpa-hero-subtitle">This Data Processing Agreement (DPA) governs how Falhen Media processes personal data on behalf of enterprise clients in compliance with GDPR Article 28, the UK GDPR, and applicable US privacy laws.</p>
+            <p class="dpa-hero-subtitle">This Data Processing Agreement (DPA) governs how Falhen Productions processes personal data on behalf of enterprise clients in compliance with GDPR Article 28, the UK GDPR, and applicable US privacy laws.</p>
 
             <div class="dpa-meta-row">
                 <span><i class="fa-regular fa-calendar"></i> Effective: 1 January 2024</span>
@@ -592,14 +590,14 @@ $pageTitle = "Data Processing Agreement (DPA) — Falhen Media";
         <section class="legal-section-block" id="sec-1">
             <h2 class="legal-section-heading">1. Definitions</h2>
             <div class="legal-sub-heading">1.1 Key Terms</div>
-            <p class="legal-paragraph"><strong>"Controller"</strong> means the entity that determines the purposes and means of processing personal data (the Client). <strong>"Processor"</strong> means Falhen Media, which processes personal data on behalf of the Controller. <strong>"Data Subject"</strong> means any identified or identifiable natural person whose personal data is processed. <strong>"Personal Data,"</strong> <strong>"Processing,"</strong> <strong>"Supervisory Authority,"</strong> and <strong>"Data Breach"</strong> have the meanings given in the GDPR. <strong>"GDPR"</strong> means Regulation (EU) 2016/679 of the European Parliament and of the Council. <strong>"Services"</strong> means the media production and related services provided by Falhen Media under the main service agreement.</p>
+            <p class="legal-paragraph"><strong>"Controller"</strong> means the entity that determines the purposes and means of processing personal data (the Client). <strong>"Processor"</strong> means Falhen Productions, which processes personal data on behalf of the Controller. <strong>"Data Subject"</strong> means any identified or identifiable natural person whose personal data is processed. <strong>"Personal Data,"</strong> <strong>"Processing,"</strong> <strong>"Supervisory Authority,"</strong> and <strong>"Data Breach"</strong> have the meanings given in the GDPR. <strong>"GDPR"</strong> means Regulation (EU) 2016/679 of the European Parliament and of the Council. <strong>"Services"</strong> means the media production and related services provided by Falhen Productions under the main service agreement.</p>
         </section>
 
         <!-- Section 2 -->
         <section class="legal-section-block" id="sec-2">
             <h2 class="legal-section-heading">2. Subject Matter & Duration</h2>
             <div class="legal-sub-heading">2.1 Subject Matter</div>
-            <p class="legal-paragraph">This Data Processing Agreement ("DPA") governs the processing of personal data by Falhen Media (Processor) on behalf of the Client (Controller) in connection with the provision of Services under the main service agreement between the parties.</p>
+            <p class="legal-paragraph">This Data Processing Agreement ("DPA") governs the processing of personal data by Falhen Productions (Processor) on behalf of the Client (Controller) in connection with the provision of Services under the main service agreement between the parties.</p>
 
             <div class="legal-sub-heading">2.2 Duration</div>
             <p class="legal-paragraph">This DPA is effective from the date the main service agreement is signed and remains in force for the duration of the Services. Upon termination or expiry of the main service agreement, this DPA shall automatically terminate, subject to the data deletion and return obligations in Section 9.</p>
@@ -609,10 +607,10 @@ $pageTitle = "Data Processing Agreement (DPA) — Falhen Media";
         <section class="legal-section-block" id="sec-3">
             <h2 class="legal-section-heading">3. Nature & Purpose of Processing</h2>
             <div class="legal-sub-heading">3.1 Nature of Processing</div>
-            <p class="legal-paragraph">Falhen Media processes personal data solely to the extent necessary to deliver the agreed Services, which may include: storing and managing client contact information; processing talent, crew, and vendor personal data for production purposes; managing client gallery access and authentication; and communicating project updates and deliverables.</p>
+            <p class="legal-paragraph">Falhen Productions processes personal data solely to the extent necessary to deliver the agreed Services, which may include: storing and managing client contact information; processing talent, crew, and vendor personal data for production purposes; managing client gallery access and authentication; and communicating project updates and deliverables.</p>
 
             <div class="legal-sub-heading">3.2 Purpose Limitation</div>
-            <p class="legal-paragraph">Falhen Media shall process personal data only for the specific purposes set out in this DPA and the main service agreement, and for no other purpose, unless required by applicable law. Falhen Media shall promptly notify the Controller if, in its opinion, an instruction from the Controller infringes applicable data protection law.</p>
+            <p class="legal-paragraph">Falhen Productions shall process personal data only for the specific purposes set out in this DPA and the main service agreement, and for no other purpose, unless required by applicable law. Falhen Productions shall promptly notify the Controller if, in its opinion, an instruction from the Controller infringes applicable data protection law.</p>
         </section>
 
         <!-- Section 4 -->
@@ -629,48 +627,48 @@ $pageTitle = "Data Processing Agreement (DPA) — Falhen Media";
         <section class="legal-section-block" id="sec-5">
             <h2 class="legal-section-heading">5. Processor Obligations</h2>
             <div class="legal-sub-heading">5.1 Confidentiality</div>
-            <p class="legal-paragraph">Falhen Media shall ensure that all personnel authorized to process personal data have committed themselves to confidentiality or are under an appropriate statutory obligation of confidentiality.</p>
+            <p class="legal-paragraph">Falhen Productions shall ensure that all personnel authorized to process personal data have committed themselves to confidentiality or are under an appropriate statutory obligation of confidentiality.</p>
 
             <div class="legal-sub-heading">5.2 Security Measures</div>
-            <p class="legal-paragraph">Falhen Media shall implement appropriate technical and organizational measures to ensure a level of security appropriate to the risk, including encryption in transit and at rest, access controls, vulnerability management, and regular security assessments.</p>
+            <p class="legal-paragraph">Falhen Productions shall implement appropriate technical and organizational measures to ensure a level of security appropriate to the risk, including encryption in transit and at rest, access controls, vulnerability management, and regular security assessments.</p>
         </section>
 
         <!-- Section 6 -->
         <section class="legal-section-block" id="sec-6">
             <h2 class="legal-section-heading">6. Sub-Processors</h2>
             <div class="legal-sub-heading">6.1 Authorization</div>
-            <p class="legal-paragraph">The Controller provides general authorization for Falhen Media to engage third-party sub-processors to assist in delivering the Services. Current sub-processors include cloud hosting providers (AWS, Google Cloud), media asset management systems, and payment processors.</p>
+            <p class="legal-paragraph">The Controller provides general authorization for Falhen Productions to engage third-party sub-processors to assist in delivering the Services. Current sub-processors include cloud hosting providers (AWS, Google Cloud), media asset management systems, and payment processors.</p>
 
             <div class="legal-sub-heading">6.2 Sub-Processor Obligations</div>
-            <p class="legal-paragraph">Falhen Media shall impose data protection terms on any sub-processor it engages that provide at least the same level of protection as those set out in this DPA.</p>
+            <p class="legal-paragraph">Falhen Productions shall impose data protection terms on any sub-processor it engages that provide at least the same level of protection as those set out in this DPA.</p>
         </section>
 
         <!-- Section 7 -->
         <section class="legal-section-block" id="sec-7">
             <h2 class="legal-section-heading">7. International Data Transfers</h2>
             <div class="legal-sub-heading">7.1 Transfer Safeguards</div>
-            <p class="legal-paragraph">Where personal data originating in the European Economic Area (EEA), the UK, or Switzerland is transferred outside these regions, Falhen Media shall rely on valid transfer mechanisms, such as the EU Standard Contractual Clauses (SCCs) or the UK International Data Transfer Addendum (IDTA).</p>
+            <p class="legal-paragraph">Where personal data originating in the European Economic Area (EEA), the UK, or Switzerland is transferred outside these regions, Falhen Productions shall rely on valid transfer mechanisms, such as the EU Standard Contractual Clauses (SCCs) or the UK International Data Transfer Addendum (IDTA).</p>
         </section>
 
         <!-- Section 8 -->
         <section class="legal-section-block" id="sec-8">
             <h2 class="legal-section-heading">8. Personal Data Breach Notification</h2>
             <div class="legal-sub-heading">8.1 Notification SLA</div>
-            <p class="legal-paragraph">Falhen Media shall notify the Controller without undue delay, and in any event within 48 hours, after becoming aware of a personal data breach affecting the Controller's personal data.</p>
+            <p class="legal-paragraph">Falhen Productions shall notify the Controller without undue delay, and in any event within 48 hours, after becoming aware of a personal data breach affecting the Controller's personal data.</p>
         </section>
 
         <!-- Section 9 -->
         <section class="legal-section-block" id="sec-9">
             <h2 class="legal-section-heading">9. Data Return & Deletion</h2>
             <div class="legal-sub-heading">9.1 Deletion or Return</div>
-            <p class="legal-paragraph">Upon termination of the Services, Falhen Media shall, at the choice of the Controller, delete or return all personal data to the Controller, unless applicable law requires continued storage.</p>
+            <p class="legal-paragraph">Upon termination of the Services, Falhen Productions shall, at the choice of the Controller, delete or return all personal data to the Controller, unless applicable law requires continued storage.</p>
         </section>
 
         <!-- Section 10 -->
         <section class="legal-section-block" id="sec-10">
             <h2 class="legal-section-heading">10. Audit Rights</h2>
             <div class="legal-sub-heading">10.1 Compliance Audits</div>
-            <p class="legal-paragraph">Falhen Media shall make available to the Controller all information necessary to demonstrate compliance with GDPR Article 28 and allow for and contribute to audits conducted by the Controller or an independent auditor.</p>
+            <p class="legal-paragraph">Falhen Productions shall make available to the Controller all information necessary to demonstrate compliance with GDPR Article 28 and allow for and contribute to audits conducted by the Controller or an independent auditor.</p>
         </section>
 
         <!-- Section 11 -->
@@ -694,18 +692,18 @@ $pageTitle = "Data Processing Agreement (DPA) — Falhen Media";
             <p class="legal-paragraph">Enterprise clients requiring a countersigned DPA for their compliance records should contact <span style="color: #ef4444;">legal@falhen.com</span> with the subject line <strong>"DPA Request — [Company Name]"</strong>. We will provide a countersigned copy within 5 business days. This page constitutes the standard terms of our DPA; individual enterprise agreements may include additional or modified terms by mutual written agreement.</p>
 
             <div class="legal-sub-heading">13.2 Effective Date</div>
-            <p class="legal-paragraph">This DPA is effective as of the date the main service agreement between the parties is signed, or the date the Client first engages Falhen Media's services, whichever is earlier.</p>
+            <p class="legal-paragraph">This DPA is effective as of the date the main service agreement between the parties is signed, or the date the Client first engages Falhen Productions's services, whichever is earlier.</p>
         </section>
 
         <!-- Execution Box -->
         <div class="execution-box">
             <div class="execution-title">EXECUTION</div>
-            <p class="execution-desc">This DPA is incorporated into and forms part of the main service agreement between Falhen Media and the Client. By signing the main service agreement, both parties agree to be bound by the terms of this DPA. For a countersigned standalone copy, contact <span style="color: #ef4444;">legal@falhen.com</span>.</p>
+            <p class="execution-desc">This DPA is incorporated into and forms part of the main service agreement between Falhen Productions and the Client. By signing the main service agreement, both parties agree to be bound by the terms of this DPA. For a countersigned standalone copy, contact <span style="color: #ef4444;">legal@falhen.com</span>.</p>
 
             <div class="signatures-grid">
                 <div class="sig-card">
                     <div class="sig-role-badge">DATA PROCESSOR</div>
-                    <h3 class="sig-party-name">Falhen Media</h3>
+                    <h3 class="sig-party-name">Falhen Productions</h3>
                     <p class="sig-party-sub">legal@falhen.com</p>
                     <div class="sig-line">Authorised Signatory</div>
                 </div>

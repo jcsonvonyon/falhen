@@ -1,27 +1,49 @@
 <?php
-// team-single.php - Team Member Detail Page matching falhen.com screenshots
+// team-single.php - Team Member Detail Page
 require_once __DIR__ . '/includes/functions.php';
+require_once __DIR__ . '/includes/seo_helper.php';
 
-$id = isset($_GET['id']) ? (int)$_GET['id'] : 1;
+$hasId = isset($_GET['id']);
+$id = $hasId ? (int)$_GET['id'] : 1;
 $member = getTeamMemberById($id);
-$pageTitle = $member['name'] . " — " . $member['role'] . " | Falhen Media";
+
+if (!$member) {
+    http_response_code(404);
+    require __DIR__ . '/404.php';
+    exit;
+}
+
+$cleanCanonical = getSiteBaseUrl() . '/team-single?id=' . (int)$member['id'];
+$cleanDesc = !empty($member['bio']) ? strip_tags($member['bio']) : 'Meet ' . $member['name'] . ', ' . $member['role'] . ' at Falhen Productions.';
+$cleanDesc = mb_substr(preg_replace('/\s+/', ' ', $cleanDesc), 0, 160);
+
+$seo = getSeoConfig('about', [
+    'title'       => $member['name'] . ' — ' . $member['role'],
+    'description' => $cleanDesc,
+    'canonical'   => $cleanCanonical,
+    'image'       => $member['image'] ?? '',
+    'keywords'    => $member['name'] . ', ' . $member['role'] . ', filmmaker, Falhen Productions'
+]);
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <!-- Google tag (gtag.js) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-LJ91C0YXCH"></script>
-    <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-
-      gtag('config', 'G-LJ91C0YXCH');
-    </script>
-
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?php echo htmlspecialchars($pageTitle); ?></title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    
+    <?php require_once __DIR__ . '/includes/analytics.php'; ?>
+    <?php renderSeoHeadTags($seo); ?>
+    <?php 
+    renderSchemaJsonLd('global', [
+        'canonical' => $cleanCanonical,
+        'breadcrumbs' => [
+            ['name' => 'Home', 'url' => getSiteBaseUrl() . '/'],
+            ['name' => 'About', 'url' => getSiteBaseUrl() . '/about'],
+            ['name' => 'Team', 'url' => getSiteBaseUrl() . '/team'],
+            ['name' => $member['name'], 'url' => $cleanCanonical]
+        ]
+    ]); 
+    ?>
     
     <!-- Favicon -->
     <link rel="icon" type="image/png" href="/assets/img/icons/favicon.png">
@@ -31,7 +53,8 @@ $pageTitle = $member['name'] . " — " . $member['role'] . " | Falhen Media";
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"></noscript>
     <link rel="stylesheet" href="/assets/css/style.css">
     <style>
         body {
@@ -416,14 +439,14 @@ $pageTitle = $member['name'] . " — " . $member['role'] . " | Falhen Media";
             <div class="rest-team-card">
                 <div class="rest-team-left">
                     <h3>Meet the Rest of the Team</h3>
-                    <p>Discover the diverse talents and perspectives that make Falhen Media a global creative force.</p>
+                    <p>Discover the diverse talents and perspectives that make Falhen Productions a global creative force.</p>
                 </div>
                 <a href="/team.php" class="btn-view-full-team"><i class="fa-solid fa-users"></i> View Full Team</a>
             </div>
 
             <!-- Footer Bar -->
             <div class="member-footer-bar">
-                <div>© 2026 Falhen Media. All rights reserved.</div>
+                <div>© 2026 Falhen Productions. All rights reserved.</div>
                 <div class="member-footer-links">
                     <a href="/">Home</a>
                     <a href="/index.php#about">About</a>

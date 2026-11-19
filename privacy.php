@@ -1,25 +1,22 @@
 <?php
-// privacy.php - Privacy Policy Page matching falhen.com/privacy screenshots
-$pageTitle = "Privacy Policy — Falhen Media";
+// privacy.php - Privacy Policy Page
+require_once __DIR__ . '/includes/seo_helper.php';
+
+$seo = getSeoConfig('privacy', [
+    'title'       => 'Privacy Policy | Falhen Productions',
+    'description' => 'Privacy Policy explaining how Falhen Productions collects, uses, and protects client personal data under GDPR, UK GDPR, and US privacy laws.',
+    'canonical'   => getSiteBaseUrl() . '/privacy'
+]);
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <!-- Google tag (gtag.js) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-LJ91C0YXCH"></script>
-    <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-
-      gtag('config', 'G-LJ91C0YXCH');
-    </script>
-
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?php echo htmlspecialchars($pageTitle); ?></title>
-    <meta name="description" content="Privacy Policy explaining how Falhen Media collects, uses, and protects personal data under GDPR, UK GDPR, CCPA/CPRA, and US privacy laws.">
-
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    
+    <?php require_once __DIR__ . '/includes/analytics.php'; ?>
+    <?php renderSeoHeadTags($seo); ?>
+    
     <!-- Favicon -->
     <link rel="icon" type="image/png" href="/assets/img/icons/favicon.png">
     <link rel="shortcut icon" type="image/png" href="/assets/img/icons/favicon.png">
@@ -28,7 +25,8 @@ $pageTitle = "Privacy Policy — Falhen Media";
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"></noscript>
     <link rel="stylesheet" href="/assets/css/style.css">
 
     <style>
@@ -562,7 +560,7 @@ $pageTitle = "Privacy Policy — Falhen Media";
             </div>
 
             <h1 class="privacy-hero-title">Privacy Policy</h1>
-            <p class="privacy-hero-subtitle">This Privacy Policy explains how Falhen Media collects, uses, stores, and protects your personal information in compliance with the GDPR, UK GDPR, CCPA/CPRA, and applicable US privacy laws.</p>
+            <p class="privacy-hero-subtitle">This Privacy Policy explains how Falhen Productions collects, uses, stores, and protects your personal information in compliance with the GDPR, UK GDPR, CCPA/CPRA, and applicable US privacy laws.</p>
 
             <div class="privacy-meta-row">
                 <span><i class="fa-regular fa-calendar"></i> Effective: 1 January 2024</span>
@@ -610,10 +608,10 @@ $pageTitle = "Privacy Policy — Falhen Media";
         <section class="legal-section-block" id="sec-1">
             <h2 class="legal-section-heading">1. Introduction & Identity of the Data Controller</h2>
             <div class="legal-sub-heading">1.1 Who We Are</div>
-            <p class="legal-paragraph">Falhen Media ("we," "us," or "our") is the data controller responsible for the personal data collected through this website and in connection with our services. We are committed to protecting your privacy and processing your personal data in accordance with the General Data Protection Regulation (EU) 2016/679 ("GDPR"), the UK GDPR, the California Consumer Privacy Act (CCPA/CPRA), and all other applicable US federal and state privacy laws.</p>
+            <p class="legal-paragraph">Falhen Productions ("we," "us," or "our") is the data controller responsible for the personal data collected through this website and in connection with our services. We are committed to protecting your privacy and processing your personal data in accordance with the General Data Protection Regulation (EU) 2016/679 ("GDPR"), the UK GDPR, the California Consumer Privacy Act (CCPA/CPRA), and all other applicable US federal and state privacy laws.</p>
 
             <div class="legal-sub-heading">1.2 Contact Details</div>
-            <p class="legal-paragraph">Data Controller: Falhen Media. Email: <span style="color: #ef4444;">privacy@falhen.com</span>. For all data protection enquiries, please contact our Privacy Team at privacy@falhen.com. We aim to respond to all requests within 30 days.</p>
+            <p class="legal-paragraph">Data Controller: Falhen Productions. Email: <span style="color: #ef4444;">privacy@falhen.com</span>. For all data protection enquiries, please contact our Privacy Team at privacy@falhen.com. We aim to respond to all requests within 30 days.</p>
 
             <div class="legal-sub-heading">1.3 Scope</div>
             <p class="legal-paragraph">This Privacy Policy applies to all personal data we collect through our website (falhen.com), our client portal, and in the course of providing our professional media production services. It does not apply to third-party websites linked from our site.</p>
@@ -680,7 +678,7 @@ $pageTitle = "Privacy Policy — Falhen Media";
             <p class="legal-paragraph">In the event of a merger, acquisition, or sale of all or part of our business, your personal data may be transferred to the acquiring entity. We will provide at least 30 days' notice before your data is transferred and becomes subject to a different privacy policy.</p>
 
             <div class="legal-sub-heading">5.3 Legal Disclosure</div>
-            <p class="legal-paragraph">We may disclose your information where required by law, court order, or regulatory authority, or where necessary to protect the rights, property, or safety of Falhen Media, our clients, or others.</p>
+            <p class="legal-paragraph">We may disclose your information where required by law, court order, or regulatory authority, or where necessary to protect the rights, property, or safety of Falhen Productions, our clients, or others.</p>
 
             <div class="legal-sub-heading">5.4 No Sale of Personal Data</div>
             <p class="legal-paragraph">We do not sell, rent, or trade your personal information to third parties for their own marketing or commercial purposes. Under the CCPA/CPRA, we confirm we do not "sell" or "share" personal information as defined by California law.</p>

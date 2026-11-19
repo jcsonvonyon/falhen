@@ -1,5 +1,6 @@
 <?php
-$pageTitle = "Our Services — End-to-End Media Agency | Falhen Media";
+$pageTitle = "Video Production Services | Falhen Productions";
+$pageDescription = "End-to-end media production services: commercial film, multi-camera live streaming, post-production, 3D motion design, and event cinematography.";
 require_once __DIR__ . '/config/db.php';
 require_once __DIR__ . '/includes/functions.php';
 require_once __DIR__ . '/includes/header.php';

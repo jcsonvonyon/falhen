@@ -1,6 +1,7 @@
 <?php
-// portfolio-video.php - Dedicated Video Reel Detail Showcase matching readdy.ai reference
+// portfolio-video.php - Dedicated Video Reel Detail Showcase (Watch Page)
 require_once __DIR__ . '/includes/functions.php';
+require_once __DIR__ . '/includes/seo_helper.php';
 
 $masterPortfolioItems = getPortfolioRepo();
 $videosRepo = [];
@@ -17,8 +18,10 @@ if (empty($videosRepo)) {
     }
 }
 
-$videoId = isset($_GET['id']) ? (int)$_GET['id'] : key($videosRepo);
+$hasRequestedVideo = isset($_GET['id']);
+$videoId = $hasRequestedVideo ? (int)$_GET['id'] : key($videosRepo);
 $currentVideo = null;
+
 if (isset($videosRepo[$videoId])) {
     $currentVideo = $videosRepo[$videoId];
 } else {
@@ -28,12 +31,20 @@ if (isset($videosRepo[$videoId])) {
             break;
         }
     }
-    if (!$currentVideo) {
-        $currentVideo = reset($videosRepo);
-    }
 }
 
-$pageTitle = htmlspecialchars($currentVideo['title']) . " — Video Reel | Falhen Media";
+// Strict 404 Check: if requested video does not exist, return real 404
+if (!$currentVideo) {
+    http_response_code(404);
+    require __DIR__ . '/404.php';
+    exit;
+}
+
+$cleanCanonical = getSiteBaseUrl() . '/portfolio-video?id=' . (int)$currentVideo['id'];
+$cleanDesc = !empty($currentVideo['desc']) 
+    ? strip_tags($currentVideo['desc']) 
+    : 'Watch ' . ($currentVideo['title'] ?? 'Cinematic Film') . ' produced by Falhen Productions. Commercial cinema, concert coverage & creative direction.';
+$cleanDesc = mb_substr(preg_replace('/\s+/', ' ', $cleanDesc), 0, 160);
 
 // YouTube Video ID extraction helper
 $videoUrl = $currentVideo['video_url'] ?? '';
@@ -41,6 +52,16 @@ $youtubeId = extractYouTubeId($videoUrl);
 if (empty($youtubeId) && strpos($videoUrl, '.mp4') === false) {
     $youtubeId = 'ySus5ZS0b94';
 }
+
+$videoThumb = getCloudinaryUrl($currentVideo['image'] ?? 'https://res.cloudinary.com/pnabfi91/image/upload/v1791224271/falhen/portfolio/ysfriy8jlhhkcuzl8j16.jpg');
+
+$seo = getSeoConfig('portfolio', [
+    'title'       => htmlspecialchars($currentVideo['title']) . ' — Video Reel',
+    'description' => $cleanDesc,
+    'canonical'   => $cleanCanonical,
+    'image'       => $videoThumb,
+    'keywords'    => 'video production, concert cinematography, film reel, ' . ($currentVideo['title'] ?? '') . ', Falhen Productions'
+]);
 
 // Fetch related/more videos (excluding the current one)
 $relatedVideos = [];
@@ -54,28 +75,43 @@ $relatedVideos = array_slice($relatedVideos, 0, 3);
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <!-- Google tag (gtag.js) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-LJ91C0YXCH"></script>
-    <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-
-      gtag('config', 'G-LJ91C0YXCH');
-    </script>
-
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?php echo $pageTitle; ?></title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    
+    <?php require_once __DIR__ . '/includes/analytics.php'; ?>
+    <?php renderSeoHeadTags($seo); ?>
+    
+    <!-- Valid Google Watch Page VideoObject Structured Data -->
+    <?php 
+    renderSchemaJsonLd('video_watch', [
+        'canonical' => $cleanCanonical,
+        'video' => [
+            'title'       => $currentVideo['title'] ?? 'Cinematic Video Reel',
+            'description' => $cleanDesc,
+            'thumbnail'   => $videoThumb,
+            'embed_url'   => $youtubeId ? 'https://www.youtube-nocookie.com/embed/' . rawurlencode($youtubeId) : $videoUrl,
+            'content_url' => $cleanCanonical,
+            'upload_date' => !empty($currentVideo['year']) ? $currentVideo['year'] . '-01-01T08:00:00+00:00' : '2026-01-01T08:00:00+00:00'
+        ],
+        'breadcrumbs' => [
+            ['name' => 'Home', 'url' => getSiteBaseUrl() . '/'],
+            ['name' => 'Portfolio', 'url' => getSiteBaseUrl() . '/portfolio'],
+            ['name' => $currentVideo['title'], 'url' => $cleanCanonical]
+        ]
+    ]); 
+    ?>
     
     <!-- Favicon -->
     <link rel="icon" type="image/png" href="/assets/img/icons/favicon.png">
+    <link rel="shortcut icon" type="image/png" href="/assets/img/icons/favicon.png">
+    <link rel="apple-touch-icon" href="/assets/img/icons/favicon.png">
     
     <!-- Google Fonts & FontAwesome -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"></noscript>
     
     <!-- Main Style -->
     <link rel="stylesheet" href="/assets/css/style.css">
@@ -686,7 +722,7 @@ $relatedVideos = array_slice($relatedVideos, 0, 3);
                 <i class="fa-solid fa-arrow-left"></i> All Videos
             </a>
             <a href="/" class="nav-center-logo">
-                <img src="/assets/img/icons/logo.png" alt="Falhen Media">
+                <img src="/assets/img/icons/logo.png" alt="Falhen Productions">
             </a>
             <div class="nav-right-actions">
                 <button type="button" class="btn-nav-share" onclick="shareCurrentPage()">
@@ -767,7 +803,7 @@ $relatedVideos = array_slice($relatedVideos, 0, 3);
             <p class="video-full-desc">
                 <?php echo !empty($currentVideo['desc']) 
                     ? htmlspecialchars($currentVideo['desc']) 
-                    : 'A high-impact video production produced by Falhen Media. This piece blends cinematic storytelling with sharp editing and color grading crafted to hold attention from the first frame to the last.'; ?>
+                    : 'A high-impact video production produced by Falhen Productions. This piece blends cinematic storytelling with sharp editing and color grading crafted to hold attention from the first frame to the last.'; ?>
             </p>
 
             <!-- Action Buttons -->

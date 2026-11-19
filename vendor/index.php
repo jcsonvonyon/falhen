@@ -1,7 +1,7 @@
 <?php
 /**
  * vendor/index.php - Vendor Dashboard Portal
- * Falhen Media Production Administration & Vendor Management
+ * Falhen Productions Production Administration & Vendor Management
  * 
  * Core Operational Focus:
  * 1. Calendar Booking & Availability Schedule
@@ -229,7 +229,7 @@ $displayBreadcrumb = $sectionTitles[$activeSection] ?? 'Dashboard';
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>Falhen Media &mdash; Vendor Portal (<?php echo htmlspecialchars($displayBreadcrumb); ?>)</title>
+    <title>Falhen Productions &mdash; Vendor Portal (<?php echo htmlspecialchars($displayBreadcrumb); ?>)</title>
     <link rel="icon" type="image/png" href="/assets/img/icons/favicon.png">
     <link rel="shortcut icon" type="image/png" href="/assets/img/icons/favicon.png">
 
@@ -2670,7 +2670,7 @@ $displayBreadcrumb = $sectionTitles[$activeSection] ?? 'Dashboard';
                         <div>
                             <h2 style="font-weight: 700; color: #15803d; font-size: 1.05rem; margin-bottom: 4px;">Bank-Grade Direct Deposit via Stripe Connect</h2>
                             <p style="color: #166534; font-size: 0.88rem; line-height: 1.6;">
-                                No bank account or routing numbers are stored directly on our servers. When projects and Statements of Work (SOWs) are wrapped, Falhen Media initiates a tokenized direct deposit payout via <strong>Stripe Connect</strong> with 256-bit encryption.
+                                No bank account or routing numbers are stored directly on our servers. When projects and Statements of Work (SOWs) are wrapped, Falhen Productions initiates a tokenized direct deposit payout via <strong>Stripe Connect</strong> with 256-bit encryption.
                             </p>
                         </div>
                     </div>

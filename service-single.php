@@ -2,13 +2,30 @@
 // service-single.php - Dynamic Service details view
 require_once __DIR__ . '/config/db.php';
 require_once __DIR__ . '/includes/functions.php';
+require_once __DIR__ . '/includes/seo_helper.php';
 
 $requestedSlug = isset($_GET['slug']) ? trim($_GET['slug']) : (isset($_GET['service']) ? trim($_GET['service']) : 'video-production');
 
 // Master Services Repository dynamically fetched from Admin Settings
 $servicesRepo = getServicesRepo();
-$service = $servicesRepo[$requestedSlug] ?? (reset($servicesRepo) ?: []);
-$pageTitle = $service['title'] . " — Services | Falhen Media";
+
+// Strict 404 Check to eliminate Google Search Console Soft-404 errors
+if (!isset($servicesRepo[$requestedSlug])) {
+    http_response_code(404);
+    require __DIR__ . '/404.php';
+    exit;
+}
+
+$service = $servicesRepo[$requestedSlug];
+$cleanCanonical = getSiteBaseUrl() . '/services/' . rawurlencode($service['slug']);
+
+$seo = getSeoConfig('services', [
+    'title'       => $service['title'] . ' Services',
+    'description' => !empty($service['short_description']) ? $service['short_description'] : 'Explore professional ' . $service['title'] . ' by Falhen Productions.',
+    'canonical'   => $cleanCanonical,
+    'keywords'    => $service['title'] . ', video production services, commercial video, Falhen Productions',
+    'image'       => !empty($service['image']) ? $service['image'] : ''
+]);
 
 // Other Services for explore section (excluding current)
 $otherServices = array_filter($servicesRepo, function($item) use ($service) {
@@ -18,29 +35,34 @@ $otherServices = array_filter($servicesRepo, function($item) use ($service) {
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <!-- Google tag (gtag.js) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-LJ91C0YXCH"></script>
-    <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-
-      gtag('config', 'G-LJ91C0YXCH');
-    </script>
-
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?php echo htmlspecialchars($pageTitle); ?></title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    
+    <?php require_once __DIR__ . '/includes/analytics.php'; ?>
+    <?php renderSeoHeadTags($seo); ?>
+    <?php 
+    renderSchemaJsonLd('service', [
+        'canonical' => $cleanCanonical,
+        'service'   => $service,
+        'breadcrumbs' => [
+            ['name' => 'Home', 'url' => getSiteBaseUrl() . '/'],
+            ['name' => 'Services', 'url' => getSiteBaseUrl() . '/services'],
+            ['name' => $service['title'], 'url' => $cleanCanonical]
+        ]
+    ]); 
+    ?>
 
     <!-- Favicon -->
     <link rel="icon" type="image/png" href="/assets/img/icons/favicon.png">
     <link rel="shortcut icon" type="image/png" href="/assets/img/icons/favicon.png">
     <link rel="apple-touch-icon" href="/assets/img/icons/favicon.png">
 
+    <!-- Preconnects & Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"></noscript>
     <link rel="stylesheet" href="/assets/css/style.css">
 
     <style>
@@ -1002,7 +1024,7 @@ $otherServices = array_filter($servicesRepo, function($item) use ($service) {
 
         <!-- Footer -->
         <footer class="service-footer-bar">
-            <div>© 2026 Falhen Media. All rights reserved.</div>
+            <div>© 2026 Falhen Productions. All rights reserved.</div>
             <div class="service-footer-links">
                 <a href="/">Home</a>
                 <a href="/about">About</a>

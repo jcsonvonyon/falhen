@@ -1,15 +1,43 @@
 <?php
-// blog-single.php - Blog Article Detail View matching falhen.com/blog/behind-scenes-award-winning-commercial
+// blog-single.php - Blog Article Detail View
 require_once __DIR__ . '/includes/functions.php';
+require_once __DIR__ . '/includes/seo_helper.php';
 
 $blogRepo = getBlogRepo();
-$articleId = isset($_GET['id']) ? (int)$_GET['id'] : 1;
-$article = getBlogPostById($articleId);
-if (!$article && !empty($blogRepo)) {
-    $article = reset($blogRepo);
+$article = null;
+
+if (isset($_GET['id'])) {
+    $articleId = (int)$_GET['id'];
+    $article = getBlogPostById($articleId);
+} elseif (isset($_GET['slug'])) {
+    $slug = trim($_GET['slug']);
+    foreach ($blogRepo as $p) {
+        if (($p['slug'] ?? '') === $slug) {
+            $article = $p;
+            break;
+        }
+    }
+} else {
+    $article = reset($blogRepo) ?: null;
 }
 
-$pageTitle = ($article ? $article['title'] : 'Article') . " — Falhen Media Blog";
+// Strict 404 Check: eliminate soft-404s if article ID or slug was requested but does not exist
+if (!$article) {
+    http_response_code(404);
+    require __DIR__ . '/404.php';
+    exit;
+}
+
+$cleanCanonical = getSiteBaseUrl() . '/blog-single?id=' . (int)$article['id'];
+$cleanExcerpt = !empty($article['excerpt']) ? $article['excerpt'] : 'Read the latest production insights and filmmaking breakdowns from Falhen Productions.';
+
+$seo = getSeoConfig('blog', [
+    'title'       => $article['title'],
+    'description' => $cleanExcerpt,
+    'canonical'   => $cleanCanonical,
+    'keywords'    => 'video production blog, filmmaking, ' . ($article['category'] ?? 'Media Production') . ', Falhen Productions',
+    'image'       => !empty($article['image']) ? $article['image'] : ''
+]);
 
 $relatedArticles = array_filter($blogRepo, function($a) use ($article) {
     return $article && (int)$a['id'] !== (int)$article['id'];
@@ -18,19 +46,23 @@ $relatedArticles = array_filter($blogRepo, function($a) use ($article) {
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <!-- Google tag (gtag.js) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-LJ91C0YXCH"></script>
-    <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-
-      gtag('config', 'G-LJ91C0YXCH');
-    </script>
-
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?php echo htmlspecialchars($pageTitle); ?></title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    
+    <?php require_once __DIR__ . '/includes/analytics.php'; ?>
+    <?php renderSeoHeadTags($seo); ?>
+    <?php 
+    renderSchemaJsonLd('blog', [
+        'canonical'   => $cleanCanonical,
+        'description' => $cleanExcerpt,
+        'post'        => $article,
+        'breadcrumbs' => [
+            ['name' => 'Home', 'url' => getSiteBaseUrl() . '/'],
+            ['name' => 'Blog', 'url' => getSiteBaseUrl() . '/blog'],
+            ['name' => $article['title'], 'url' => $cleanCanonical]
+        ]
+    ]); 
+    ?>
     
     <!-- Favicon -->
     <link rel="icon" type="image/png" href="/assets/img/icons/favicon.png">
@@ -40,7 +72,8 @@ $relatedArticles = array_filter($blogRepo, function($a) use ($article) {
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"></noscript>
     <link rel="stylesheet" href="/assets/css/style.css">
 
     <style>
@@ -633,7 +666,7 @@ $relatedArticles = array_filter($blogRepo, function($a) use ($article) {
                 <?php 
                 $articleTags = (!empty($article['tags']) && is_array($article['tags']))
                     ? $article['tags'] 
-                    : (!empty($article['category']) ? [$article['category'], 'Falhen Media', 'Production'] : ['Falhen Media']);
+                    : (!empty($article['category']) ? [$article['category'], 'Falhen Productions', 'Production'] : ['Falhen Productions']);
                 foreach ($articleTags as $tag): 
                 ?>
                     <span class="tag-pill-item"><?php echo htmlspecialchars($tag); ?></span>
@@ -650,7 +683,7 @@ $relatedArticles = array_filter($blogRepo, function($a) use ($article) {
         <!-- Discovery Callout Card -->
         <div class="discovery-cta-card">
             <h3>Ready to create something great?</h3>
-            <p>Book a free discovery call with the Falhen Media team.</p>
+            <p>Book a free discovery call with the Falhen Productions team.</p>
             <a href="/index.php#lets-talk" class="btn-discovery-red">Book a Discovery Call</a>
         </div>
 
@@ -691,7 +724,7 @@ $relatedArticles = array_filter($blogRepo, function($a) use ($article) {
             <i class="fa-solid fa-arrow-left"></i> All Articles
         </a>
 
-        <div>&copy; 2026 Falhen Media. All rights reserved.</div>
+        <div>&copy; 2026 Falhen Productions. All rights reserved.</div>
 
         <div class="blog-footer-links">
             <a href="/">Home</a>

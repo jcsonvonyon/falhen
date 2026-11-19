@@ -1,6 +1,7 @@
 <?php
 // portfolio-photo.php - Client Portfolio Gallery Page with Carousel & Photo Download
 require_once __DIR__ . '/includes/functions.php';
+require_once __DIR__ . '/includes/seo_helper.php';
 
 $masterPortfolioItems = getPortfolioRepo();
 $albumsRepo = [];
@@ -17,8 +18,9 @@ if (empty($albumsRepo)) {
     }
 }
 
-$albumId = isset($_GET['id']) ? (int)$_GET['id'] : key($albumsRepo);
-$currentAlbum = reset($albumsRepo);
+$hasRequestedAlbum = isset($_GET['id']);
+$albumId = $hasRequestedAlbum ? (int)$_GET['id'] : key($albumsRepo);
+$currentAlbum = null;
 
 if (isset($albumsRepo[$albumId])) {
     $currentAlbum = $albumsRepo[$albumId];
@@ -31,8 +33,23 @@ if (isset($albumsRepo[$albumId])) {
     }
 }
 
+// Strict 404 check if album was explicitly requested but does not exist
+if (!$currentAlbum) {
+    http_response_code(404);
+    require __DIR__ . '/404.php';
+    exit;
+}
+
 $coverImage = getCloudinaryUrl($currentAlbum['image'] ?? $currentAlbum['cover'] ?? 'https://res.cloudinary.com/pnabfi91/image/upload/v1791224271/falhen/portfolio/ysfriy8jlhhkcuzl8j16.jpg');
-$pageTitle = htmlspecialchars($currentAlbum['title']) . " — Gallery | Falhen Media";
+$cleanCanonical = getSiteBaseUrl() . '/portfolio-photo?id=' . (int)$currentAlbum['id'];
+
+$seo = getSeoConfig('portfolio', [
+    'title'       => htmlspecialchars($currentAlbum['title']) . ' — Photography Gallery',
+    'description' => 'Explore the high-resolution photography gallery for ' . ($currentAlbum['title'] ?? 'Falhen Productions') . '. Event, portrait, and commercial photography by Falhen Productions.',
+    'canonical'   => $cleanCanonical,
+    'image'       => $coverImage,
+    'keywords'    => 'photography gallery, concert photography, portrait portfolio, Falhen Productions'
+]);
 
 // Registered Client Authentication Status
 $isClientLoggedIn = !empty($_SESSION['registered_client_email']) || !empty($_COOKIE['falhen_client_email']);
@@ -171,19 +188,22 @@ $totalPhotoCount = count($clientPhotos);
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <!-- Google tag (gtag.js) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-LJ91C0YXCH"></script>
-    <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-      gtag('config', 'G-LJ91C0YXCH');
-    </script>
-
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta name="referrer" content="no-referrer">
-    <title><?php echo $pageTitle; ?></title>
+    
+    <?php require_once __DIR__ . '/includes/analytics.php'; ?>
+    <?php renderSeoHeadTags($seo); ?>
+    <?php 
+    renderSchemaJsonLd('global', [
+        'canonical' => $cleanCanonical,
+        'breadcrumbs' => [
+            ['name' => 'Home', 'url' => getSiteBaseUrl() . '/'],
+            ['name' => 'Portfolio', 'url' => getSiteBaseUrl() . '/portfolio'],
+            ['name' => $currentAlbum['title'], 'url' => $cleanCanonical]
+        ]
+    ]); 
+    ?>
     
     <!-- Favicon -->
     <link rel="icon" type="image/png" href="/assets/img/icons/favicon.png">
@@ -193,7 +213,8 @@ $totalPhotoCount = count($clientPhotos);
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"></noscript>
     
     <!-- Main Style -->
     <link rel="stylesheet" href="/assets/css/style.css">
@@ -1545,7 +1566,7 @@ $totalPhotoCount = count($clientPhotos);
             </a>
             
             <a href="/" class="gallery-nav-logo">
-                <img src="/assets/img/icons/logo.png" alt="Falhen Media">
+                <img src="/assets/img/icons/logo.png" alt="Falhen Productions">
             </a>
 
             <div class="gallery-nav-actions">
@@ -1603,7 +1624,7 @@ $totalPhotoCount = count($clientPhotos);
                     <?php 
                     echo !empty($currentAlbum['desc']) 
                         ? htmlspecialchars($currentAlbum['desc']) 
-                        : "A comprehensive photographic showcase capturing authentic emotions, editorial aesthetic, and cinematic lighting curated by Falhen Media."; 
+                        : "A comprehensive photographic showcase capturing authentic emotions, editorial aesthetic, and cinematic lighting curated by Falhen Productions."; 
                     ?>
                 </p>
 
@@ -2185,8 +2206,8 @@ $totalPhotoCount = count($clientPhotos);
         // Native Share Web API or Clipboard copy
         async function shareGalleryPage() {
             const shareData = {
-                title: `${shootTitle} — Falhen Media`,
-                text: `Explore the portfolio gallery for ${shootTitle} by Falhen Media.`,
+                title: `${shootTitle} — Falhen Productions`,
+                text: `Explore the portfolio gallery for ${shootTitle} by Falhen Productions.`,
                 url: window.location.href
             };
 

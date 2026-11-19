@@ -1,7 +1,7 @@
 <?php
 /**
  * Staff Login & Multi-Portal Access
- * Falhen Media Administration
+ * Falhen Productions Administration
  */
 
 require_once __DIR__ . '/../config/db.php';
@@ -699,7 +699,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sign In &mdash; Falhen Media</title>
+    <title>Sign In &mdash; Falhen Productions</title>
     <link rel="icon" type="image/png" href="/assets/img/icons/favicon.png">
     <link rel="shortcut icon" type="image/png" href="/assets/img/icons/favicon.png">
     <link rel="apple-touch-icon" href="/assets/img/icons/favicon.png">
@@ -1773,7 +1773,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         <!-- Bottom Fixed Footer Exactly Matching Design -->
         <footer class="bottom-footer">
-            &copy; 2026 Falhen Media. <a href="/privacy.php">Privacy</a> &middot; <a href="/terms.php">Terms</a>
+            &copy; 2026 Falhen Productions. <a href="/privacy.php">Privacy</a> &middot; <a href="/terms.php">Terms</a>
         </footer>
 
     </div>

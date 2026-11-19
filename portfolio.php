@@ -1,8 +1,14 @@
 <?php
-// portfolio.php - Portfolio Showcase matching falhen.com/portfolio screenshots
+// portfolio.php - Portfolio Showcase
 require_once __DIR__ . '/includes/functions.php';
+require_once __DIR__ . '/includes/seo_helper.php';
 
-$pageTitle = "The Portfolio — Twelve years of stories, brands, and moments | Falhen Media";
+$seo = getSeoConfig('portfolio', [
+    'title'       => 'The Portfolio — Twelve Years of Stories, Brands & Cinema',
+    'description' => 'Explore 12+ years of award-winning commercial video production, concert cinematography, brand documentaries, and photography crafted by Falhen Productions.',
+    'canonical'   => getSiteBaseUrl() . '/portfolio',
+    'keywords'    => 'video production portfolio, concert cinematography showcase, commercial films, brand storytelling, Falhen Productions work'
+]);
 
 $masterPortfolioItems = getPortfolioRepo();
 
@@ -38,29 +44,32 @@ $featuredAllProjects = array_filter($allProjects, function($item) {
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <!-- Google tag (gtag.js) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-LJ91C0YXCH"></script>
-    <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-
-      gtag('config', 'G-LJ91C0YXCH');
-    </script>
-
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?php echo htmlspecialchars($pageTitle); ?></title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    
+    <?php require_once __DIR__ . '/includes/analytics.php'; ?>
+    <?php renderSeoHeadTags($seo); ?>
+    <?php 
+    renderSchemaJsonLd('global', [
+        'canonical' => getSiteBaseUrl() . '/portfolio',
+        'breadcrumbs' => [
+            ['name' => 'Home', 'url' => getSiteBaseUrl() . '/'],
+            ['name' => 'Portfolio', 'url' => getSiteBaseUrl() . '/portfolio']
+        ]
+    ]); 
+    ?>
     
     <!-- Favicon -->
     <link rel="icon" type="image/png" href="/assets/img/icons/favicon.png">
     <link rel="shortcut icon" type="image/png" href="/assets/img/icons/favicon.png">
     <link rel="apple-touch-icon" href="/assets/img/icons/favicon.png">
 
+    <!-- Preconnects & Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"></noscript>
     <link rel="stylesheet" href="/assets/css/style.css">
 
     <style>
@@ -1737,7 +1746,7 @@ $featuredAllProjects = array_filter($allProjects, function($item) {
 
         <!-- Footer Bar -->
         <div class="port-footer-bar">
-            <div>© 2026 Falhen Media. All rights reserved.</div>
+            <div>© 2026 Falhen Productions. All rights reserved.</div>
             <div class="port-footer-links">
                 <a href="/">Home</a>
                 <a href="/about.php">About</a>

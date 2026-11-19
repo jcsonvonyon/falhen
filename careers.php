@@ -1,8 +1,14 @@
 <?php
-// careers.php - Careers Page matching falhen.com/careers screenshots with rich expandable job details drawers
+// careers.php - Careers Page
 require_once __DIR__ . '/includes/functions.php';
+require_once __DIR__ . '/includes/seo_helper.php';
 
-$pageTitle = "Careers & Openings — Falhen Media";
+$seo = getSeoConfig('careers', [
+    'title'       => 'Careers & Openings | Join the Falhen Productions Crew',
+    'description' => 'Join our growing team of cinematographers, video editors, motion graphic artists, and live broadcast engineers. View our open creative opportunities.',
+    'canonical'   => getSiteBaseUrl() . '/careers',
+    'keywords'    => 'video production jobs, filmmaker careers, video editor openings, cinematography gigs, Falhen Productions jobs'
+]);
 
 // Fetch Job Openings Dynamically from Repository
 $jobOpeningsMap = getCareersRepo();
@@ -13,19 +19,20 @@ $jobOpenings = array_values(array_filter($jobOpeningsMap, function($j) {
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <!-- Google tag (gtag.js) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-LJ91C0YXCH"></script>
-    <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-
-      gtag('config', 'G-LJ91C0YXCH');
-    </script>
-
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?php echo htmlspecialchars($pageTitle); ?></title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    
+    <?php require_once __DIR__ . '/includes/analytics.php'; ?>
+    <?php renderSeoHeadTags($seo); ?>
+    <?php 
+    renderSchemaJsonLd('global', [
+        'canonical' => getSiteBaseUrl() . '/careers',
+        'breadcrumbs' => [
+            ['name' => 'Home', 'url' => getSiteBaseUrl() . '/'],
+            ['name' => 'Careers', 'url' => getSiteBaseUrl() . '/careers']
+        ]
+    ]); 
+    ?>
     
     <!-- Favicon -->
     <link rel="icon" type="image/png" href="/assets/img/icons/favicon.png">
@@ -35,7 +42,8 @@ $jobOpenings = array_values(array_filter($jobOpeningsMap, function($j) {
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"></noscript>
     <link rel="stylesheet" href="/assets/css/style.css">
     <style>
         body {
@@ -1030,7 +1038,7 @@ $jobOpenings = array_values(array_filter($jobOpeningsMap, function($j) {
 
         <!-- Footer Bar -->
         <div class="careers-footer-bar">
-            <div>© 2026 Falhen Media. All rights reserved.</div>
+            <div>© 2026 Falhen Productions. All rights reserved.</div>
             <div class="careers-footer-links">
                 <a href="/">Home</a>
                 <a href="/index.php#about">About</a>
@@ -1054,33 +1062,33 @@ $jobOpenings = array_values(array_filter($jobOpeningsMap, function($j) {
                 <input type="hidden" name="job_title" id="modalPositionInput" value="">
                 
                 <div class="form-group-field">
-                    <label>Full Name *</label>
-                    <input type="text" name="full_name" required placeholder="John Doe">
+                    <label for="careerFullName">Full Name *</label>
+                    <input type="text" name="full_name" id="careerFullName" autocomplete="name" required placeholder="John Doe">
                 </div>
 
                 <div class="form-group-field">
-                    <label>Email Address *</label>
-                    <input type="email" name="email" required placeholder="john@example.com">
+                    <label for="careerEmail">Email Address *</label>
+                    <input type="email" name="email" id="careerEmail" autocomplete="email" required placeholder="john@example.com">
                 </div>
 
                 <div class="form-group-field">
-                    <label>Phone Number</label>
-                    <input type="tel" name="phone" placeholder="+1 (555) 000-0000">
+                    <label for="careerPhone">Phone Number</label>
+                    <input type="tel" name="phone" id="careerPhone" autocomplete="tel" placeholder="+1 (555) 000-0000">
                 </div>
 
                 <div class="form-group-field">
-                    <label>Portfolio / Showreel URL</label>
-                    <input type="url" name="portfolio_url" placeholder="https://vimeo.com/yourportfolio">
+                    <label for="careerPortfolio">Portfolio / Showreel URL</label>
+                    <input type="url" name="portfolio_url" id="careerPortfolio" placeholder="https://vimeo.com/yourportfolio">
                 </div>
 
                 <div class="form-group-field">
-                    <label>LinkedIn Profile URL</label>
-                    <input type="url" name="linkedin_url" placeholder="https://linkedin.com/in/yourprofile">
+                    <label for="careerLinkedIn">LinkedIn Profile URL</label>
+                    <input type="url" name="linkedin_url" id="careerLinkedIn" placeholder="https://linkedin.com/in/yourprofile">
                 </div>
 
                 <div class="form-group-field">
-                    <label>Cover Note / Pitch *</label>
-                    <textarea name="cover_note" rows="4" required placeholder="Tell us why you would be a great fit for Falhen..."></textarea>
+                    <label for="careerCoverNote">Cover Note / Pitch *</label>
+                    <textarea name="cover_note" id="careerCoverNote" rows="4" required placeholder="Tell us why you would be a great fit for Falhen..."></textarea>
                 </div>
 
                 <div id="applyStatusMsg" style="display: none; margin-bottom: 14px; padding: 10px 14px; border-radius: 8px; font-size: 0.88rem; font-weight: 600;"></div>
@@ -1166,7 +1174,7 @@ $jobOpenings = array_values(array_filter($jobOpeningsMap, function($j) {
         function shareJob(title) {
             if (navigator.share) {
                 navigator.share({
-                    title: title + ' at Falhen Media',
+                    title: title + ' at Falhen Productions',
                     url: window.location.href
                 }).catch(() => {});
             } else {

@@ -1,6 +1,6 @@
 <?php
 /**
- * Falhen Media - Dynamic Employment Agreement PDF / Print Generator
+ * Falhen Productions - Dynamic Employment Agreement PDF / Print Generator
  */
 session_start();
 require_once __DIR__ . '/../includes/functions.php';
@@ -50,7 +50,7 @@ $rawSalary = $offerInfo['salary'] ?? ($sym . '250,000 / month');
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Employment Agreement - <?php echo htmlspecialchars($userFullName); ?> | Falhen Media</title>
+    <title>Employment Agreement - <?php echo htmlspecialchars($userFullName); ?> | Falhen Productions</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         @page {

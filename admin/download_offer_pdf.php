@@ -1,6 +1,6 @@
 <?php
 /**
- * Falhen Media - Dynamic Offer Letter PDF / Print Generator
+ * Falhen Productions - Dynamic Offer Letter PDF / Print Generator
  */
 session_start();
 require_once __DIR__ . '/../includes/functions.php';
@@ -37,7 +37,7 @@ $startDate = $offerInfo['start_date'] ?? date('Y-m-d', strtotime('+7 days'));
 $probation = $offerInfo['probation_period'] ?? '3 Months';
 $expiryDate = $offerInfo['expiry_date'] ?? date('Y-m-d', strtotime('+14 days'));
 $issuerName = $offerInfo['issued_by'] ?? 'Mojisola Emjay';
-$notes = $offerInfo['notes'] ?? 'Welcome to Falhen Media! We are thrilled to invite you to join our creative production team.';
+$notes = $offerInfo['notes'] ?? 'Welcome to Falhen Productions! We are thrilled to invite you to join our creative production team.';
 
 $baseSalary = $offerInfo['base_salary'] ?? ($sym . '200,000');
 $techAllowance = $offerInfo['tech_allowance'] ?? ($sym . '30,000');
@@ -56,7 +56,7 @@ if (!preg_match('/^[₦$€£]/u', $totalEarnings)) $totalEarnings = $sym . $tot
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Offer Letter - <?php echo htmlspecialchars($userFullName); ?> | Falhen Media</title>
+    <title>Offer Letter - <?php echo htmlspecialchars($userFullName); ?> | Falhen Productions</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         @page {
@@ -234,7 +234,7 @@ if (!preg_match('/^[₦$€£]/u', $totalEarnings)) $totalEarnings = $sym . $tot
 
         <p>Dear <strong><?php echo htmlspecialchars($userFullName); ?></strong>,</p>
 
-        <p>We are delighted to extend an official offer of employment to join <strong>Falhen Media</strong>. Following our assessment, we believe your skills and expertise will be invaluable to our studio operations.</p>
+        <p>We are delighted to extend an official offer of employment to join <strong>Falhen Productions</strong>. Following our assessment, we believe your skills and expertise will be invaluable to our studio operations.</p>
 
         <div class="details-grid">
             <div><strong>Candidate Name:</strong> <?php echo htmlspecialchars($userFullName); ?> (@<?php echo htmlspecialchars($targetUser); ?>)</div>
@@ -273,7 +273,7 @@ if (!preg_match('/^[₦$€£]/u', $totalEarnings)) $totalEarnings = $sym . $tot
         <div style="margin-top: 40px; display: flex; justify-content: space-between; align-items: flex-end; padding-top: 20px; border-top: 2px dashed #cbd5e1;">
             <div>
                 <div style="font-weight: 700; font-size: 0.95rem; color: #0f172a;"><?php echo htmlspecialchars($issuerName); ?></div>
-                <div style="font-size: 0.82rem; color: #64748b;">Human Resources Lead, Falhen Media</div>
+                <div style="font-size: 0.82rem; color: #64748b;">Human Resources Lead, Falhen Productions</div>
             </div>
             <div style="text-align: right;">
                 <?php if (!empty($offerInfo['signature_data'])): ?>

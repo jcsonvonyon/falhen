@@ -2,7 +2,7 @@
 /**
  * download_call_sheet.php
  * Official Studio Call Sheet Viewer & PDF Printable Document
- * Falhen Media Productions / Henad Innovations and Global Services LLC
+ * Falhen Productions Productions / Henad Innovations and Global Services LLC
  */
 
 require_once __DIR__ . '/config/db.php';
@@ -24,7 +24,7 @@ if (!$gig) {
 }
 
 $title = $gig['title'] ?? 'Studio Production Shoot';
-$client = $gig['client'] ?? 'Falhen Media Production';
+$client = $gig['client'] ?? 'Falhen Productions Production';
 $date = !empty($gig['shoot_date']) ? date('l, F j, Y', strtotime($gig['shoot_date'])) : date('l, F j, Y');
 $callTime = $gig['call_time'] ?? '08:00 AM';
 $wrapTime = $gig['wrap_time'] ?? '06:00 PM';
@@ -44,7 +44,7 @@ $refCode = $vendor['reference_code'] ?? ($gig['assigned_to_ref'] ?? 'FAL-VND-CRE
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Call Sheet &mdash; <?php echo htmlspecialchars($title); ?> | Falhen Media</title>
+    <title>Call Sheet &mdash; <?php echo htmlspecialchars($title); ?> | Falhen Productions</title>
     <link rel="icon" type="image/png" href="/assets/img/icons/favicon.png">
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -406,7 +406,7 @@ $refCode = $vendor['reference_code'] ?? ($gig['assigned_to_ref'] ?? 'FAL-VND-CRE
                     <img src="/assets/img/icons/logo.png" alt="Falhen Logo" onerror="this.src='/assets/falhenmedia_logo.png'">
                 </div>
                 <div class="cs-title-box">
-                    <h1>Falhen Media Productions</h1>
+                    <h1>Falhen Productions Productions</h1>
                     <span>Official Production Call Sheet &bull; Confidential (NDA)</span>
                 </div>
             </div>
@@ -578,7 +578,7 @@ $refCode = $vendor['reference_code'] ?? ($gig['assigned_to_ref'] ?? 'FAL-VND-CRE
                     <i class="fa-solid fa-triangle-exclamation"></i> Production Notes &amp; Studio Guidelines
                 </div>
                 <div class="cs-notice-box">
-                    <strong>CONFIDENTIALITY &amp; NDAs IN FULL EFFECT:</strong> No unauthorized photos, live streaming, or behind-the-scenes posting on social media without prior written clearance from Falhen Media Executive Producers. All captured media is Work Made For Hire and the exclusive property of Henad Innovations and Global Services LLC DBA Falhenmedia and Productions.
+                    <strong>CONFIDENTIALITY &amp; NDAs IN FULL EFFECT:</strong> No unauthorized photos, live streaming, or behind-the-scenes posting on social media without prior written clearance from Falhen Productions Executive Producers. All captured media is Work Made For Hire and the exclusive property of Henad Innovations and Global Services LLC DBA Falhenmedia and Productions.
                 </div>
                 <div style="font-size: 0.85rem; color: #475569; line-height: 1.6; background: #f8fafc; padding: 12px 16px; border-radius: 8px; border: 1px solid #e2e8f0;">
                     <strong>Special Directives:</strong> <?php echo htmlspecialchars($notes); ?>
@@ -597,7 +597,7 @@ $refCode = $vendor['reference_code'] ?? ($gig['assigned_to_ref'] ?? 'FAL-VND-CRE
                     <?php 
                     $authSigner = function_exists('getAuthorizedCounterSigner') ? getAuthorizedCounterSigner() : null;
                     $supSigData = $authSigner['signature_data'] ?? '';
-                    $supName = !empty($director) && $director !== 'Falhen Media Production' ? $director : ($authSigner['full_name'] ?? 'Production Supervisor');
+                    $supName = !empty($director) && $director !== 'Falhen Productions Production' ? $director : ($authSigner['full_name'] ?? 'Production Supervisor');
                     ?>
                     <div style="min-height: 42px; display: flex; align-items: flex-end; justify-content: center; margin-bottom: 4px;">
                         <?php if (!empty($supSigData) && (strpos($supSigData, 'data:image') === 0 || strpos($supSigData, 'http') === 0 || strpos($supSigData, '/') === 0)): ?>

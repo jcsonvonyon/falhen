@@ -1,7 +1,7 @@
 <!-- Lightbox Video Player Modal -->
 <div class="video-modal" id="videoModal">
     <div class="video-modal-content">
-        <span class="video-modal-close" id="modalClose">&times;</span>
+        <button type="button" class="video-modal-close" id="modalClose" aria-label="Close video player">&times;</button>
         <iframe id="modalIframe" src="" allow="autoplay; encrypted-media" allowfullscreen></iframe>
     </div>
 </div>
@@ -36,7 +36,7 @@
 
         <!-- Right: Copyright & Legal / Admin Links -->
         <div class="footer-right-block">
-            <div class="footer-copy-text">&copy; <?php echo date('Y'); ?> Falhen Media. All rights reserved.</div>
+            <div class="footer-copy-text">&copy; <?php echo date('Y'); ?> Falhen Productions. All rights reserved.</div>
             <div class="footer-legal-links">
                 <a href="/privacy">Privacy</a>
                 <a href="/terms">Terms</a>
@@ -79,8 +79,8 @@ $footerSlug = isset($currentSlug) ? $currentSlug : preg_replace('/\.php$/', '', 
         <span class="dock-label">CONTACT</span>
     </a>
     
-    <button type="button" class="dock-item dock-top-btn" id="dockScrollTop">
-        <div class="dock-icon-box"><i class="fa-solid fa-arrow-up"></i></div>
+    <button type="button" class="dock-item dock-top-btn" id="dockScrollTop" aria-label="Scroll to top of page">
+        <div class="dock-icon-box"><i class="fa-solid fa-arrow-up" aria-hidden="true"></i></div>
         <span class="dock-label">TOP</span>
     </button>
 </nav>

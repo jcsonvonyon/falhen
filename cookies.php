@@ -1,23 +1,21 @@
 <?php
-// cookies.php - Cookie Policy Page matching falhen.com screenshots exactly
-$pageTitle = "Cookie Policy | Falhen Media";
+// cookies.php - Cookie Policy Page
+require_once __DIR__ . '/includes/seo_helper.php';
+
+$seo = getSeoConfig('cookies', [
+    'title'       => 'Cookie Policy | Falhen Productions',
+    'description' => 'Cookie Policy explaining how Falhen Productions uses cookies, analytics tokens, and preferences to provide seamless browsing.',
+    'canonical'   => getSiteBaseUrl() . '/cookies'
+]);
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <!-- Google tag (gtag.js) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-LJ91C0YXCH"></script>
-    <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-
-      gtag('config', 'G-LJ91C0YXCH');
-    </script>
-
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?php echo $pageTitle; ?></title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    
+    <?php require_once __DIR__ . '/includes/analytics.php'; ?>
+    <?php renderSeoHeadTags($seo); ?>
     
     <!-- Favicon -->
     <link rel="icon" type="image/png" href="/assets/img/icons/favicon.png">
@@ -27,7 +25,8 @@ $pageTitle = "Cookie Policy | Falhen Media";
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"></noscript>
     <link rel="stylesheet" href="/assets/css/style.css">
     <style>
         body {
@@ -397,7 +396,7 @@ $pageTitle = "Cookie Policy | Falhen Media";
 
             <!-- Title & Subtitle -->
             <h1 class="policy-title">Cookie Policy</h1>
-            <p class="policy-subtitle">This Cookie Policy explains how Falhen Media uses cookies and similar tracking technologies on our website in compliance with the GDPR, ePrivacy Directive, and applicable US privacy laws.</p>
+            <p class="policy-subtitle">This Cookie Policy explains how Falhen Productions uses cookies and similar tracking technologies on our website in compliance with the GDPR, ePrivacy Directive, and applicable US privacy laws.</p>
 
             <!-- Meta Information Row -->
             <div class="policy-meta-row">
@@ -610,7 +609,7 @@ $pageTitle = "Cookie Policy | Falhen Media";
 
             <div class="article-section">
                 <h3 class="article-heading">3. How We Use Cookies</h3>
-                <p class="article-text">Falhen Media uses cookies and similar tracking technologies to: (a) operate and secure our website; (b) remember your preferences and settings; (c) analyse traffic patterns and improve site performance; (d) deliver relevant advertising where you have consented; and (e) enable third-party integrations such as embedded video content. We use both session cookies (which expire when you close your browser) and persistent cookies (which remain on your device for a set period or until you delete them).</p>
+                <p class="article-text">Falhen Productions uses cookies and similar tracking technologies to: (a) operate and secure our website; (b) remember your preferences and settings; (c) analyse traffic patterns and improve site performance; (d) deliver relevant advertising where you have consented; and (e) enable third-party integrations such as embedded video content. We use both session cookies (which expire when you close your browser) and persistent cookies (which remain on your device for a set period or until you delete them).</p>
             </div>
 
             <div class="article-section">
