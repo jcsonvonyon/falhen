@@ -1,46 +1,42 @@
 {
   "subdomain": "client.falhen.com",
-  "build_batch_id": "batch_20261117_062800",
-  "timestamp": "2026-11-17T06:28:00Z",
-  "description": "Client Portal SEO enhancements, background Cloudinary sync, header deduplication, and mobile/iPad mosaic glassmorphism",
+  "build_batch_id": "batch_20261119_052000",
+  "timestamp": "2026-11-19T05:20:00Z",
+  "description": "Multi-Client Email Authorization Gate, Public Guest PII Security Layer, Direct Email Delivery, and Admin Download Audit Logs with CSV Export",
   "components": {
     "client_portal": {
       "path": "client-portal.php",
-      "version": "2.4.0",
+      "version": "2.5.0",
       "features": [
-        "Editorial mosaic grid layout with dynamic aspect spans",
-        "Frosted glassmorphism overlay with blur(14px) and specular borders",
-        "Deduplicated header titles and client names",
-        "Removed redundant duplicate top-bar action buttons",
-        "Full support for iPad (3-col) and Mobile (2-col) touch targets",
-        "Strict suppression of hidden and deleted albums",
-        "Removal of legacy hardcoded fallback arrays",
-        "Removed Frame # badges from all existing and upcoming gallery pictures for a pristine visual experience"
+        "Two-tier access gate: Authorized Client OTP & Public Guest Verified Gate",
+        "Public Guest security layer collecting Full Name, Email, Phone, Organization, and Reason for Download",
+        "Direct delivery notification: informs users of instant high-res ZIP stream and inbox delivery",
+        "Removal of Frame # badges and alt tags across all photo assets",
+        "Hallmark-styled glassmorphism modal with accessible keyboard focus and live feedback toasts"
       ]
     },
-    "cloudinary_sync_engine": {
-      "worker": "cron/sync_worker.php",
-      "api": "api/admin-client-gallery.php",
+    "verification_and_download_api": {
+      "verify_api": "api/verify-download.php",
+      "download_api": "api/download-album.php",
       "features": [
-        "In-memory sync map memoization for 10x reduced disk writes",
-        "Non-blocking PHP session release (session_write_close) preventing UI freezes",
-        "Polite throttled 2-worker chunked pool (chunk size 3) keeping origin server CPU < 10%",
-        "Instant HTTP response (< 30ms) via fastcgi_finish_request for background jobs",
-        "Detached headless background synchronization worker with CPU yield"
+        "Multi-email regex matching supporting comma-separated authorized emails",
+        "Tier 1 (Authorized Client): instant 6-digit OTP delivery",
+        "Tier 2 (Public Guest): PII, organization, and download reason requirement + 6-digit email confirmation code",
+        "Automatic background dispatch of high-res download delivery email via FalhenSMTPMailer",
+        "Full audit trail logging to client_download_logs and JSONL fallback stream"
       ]
     },
-    "seo_engine": {
-      "helper": "includes/functions.php",
-      "admin_form": "admin/index.php",
+    "admin_gallery_and_audit_engine": {
+      "admin_view": "admin/index.php",
+      "db_schema": "config/db.php",
+      "data_helpers": "includes/functions.php",
+      "mailer": "includes/smtp_mailer.php",
       "features": [
-        "Removed forced brand suffix in SEO title tags",
-        "Upgraded client-centric, benefit-driven meta descriptions"
-      ]
-    },
-    "persistence_safety": {
-      "deploy": "deploy.php",
-      "features": [
-        "Authoritative MySQL protection preventing deleted/hidden albums from resurrection"
+        "Comma-separated client email support in Edit Gallery form with syntax sanitization",
+        "Dedicated Download Access & Audit Logs subview tab in Admin Client Galleries",
+        "Batch filtering by Client Gallery, Access Tier, and Requestor Search",
+        "KPI metrics cards: Total Downloads, Authorized Clients, Public Guests, and Email Deliveries",
+        "Full-featured CSV Export for download logs with batch and tier filtering"
       ]
     }
   },

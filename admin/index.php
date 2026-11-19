@@ -1,7 +1,7 @@
 <?php
 /**
  * Admin Dashboard & Site Management
- * Falhen Media Administration
+ * Falhen Productions Administration
  */
 
 require_once __DIR__ . '/../config/db.php';
@@ -28,20 +28,52 @@ requireAdmin();
 
 // CSV Exports for Super Admin / IT
 if (isset($_GET['export_download_logs_csv'])) {
-    $logs = function_exists('getClientDownloadLogs') ? getClientDownloadLogs(2000) : [];
+    $albumFilter = !empty($_GET['album_id']) ? (int)$_GET['album_id'] : null;
+    $tierFilter = !empty($_GET['tier']) ? trim($_GET['tier']) : null;
+    $searchFilter = !empty($_GET['q']) ? trim($_GET['q']) : null;
+    $logs = function_exists('getClientDownloadLogs') ? getClientDownloadLogs(5000, $albumFilter, $tierFilter, $searchFilter) : [];
+    
+    $filenameSuffix = '';
+    if ($albumFilter) {
+        $filenameSuffix .= '_album' . $albumFilter;
+    }
+    if ($tierFilter) {
+        $filenameSuffix .= '_' . preg_replace('/[^a-zA-Z0-9_-]/', '', $tierFilter);
+    }
+
     header('Content-Type: text/csv; charset=utf-8');
-    header('Content-Disposition: attachment; filename="falhen_client_downloads_' . date('Ymd_His') . '.csv"');
+    header('Content-Disposition: attachment; filename="falhen_downloads' . $filenameSuffix . '_' . date('Ymd_His') . '.csv"');
     $out = fopen('php://output', 'w');
-    fputcsv($out, ['Log ID', 'Client Name', 'Client Email', 'Client Phone', 'Album ID', 'Album Title', 'Download Type', 'IP Address', 'Downloaded At']);
+    fputcsv($out, [
+        'Log ID',
+        'Requestor Name',
+        'Requestor Email',
+        'Requestor Phone',
+        'Organization / Relationship',
+        'Download Reason',
+        'Access Tier',
+        'Album ID',
+        'Album Title',
+        'Download Type',
+        'Email Sent',
+        'IP Address',
+        'Downloaded At'
+    ]);
     foreach ($logs as $row) {
+        $tierName = ($row['access_tier'] ?? 'authorized_client') === 'public_verified' ? 'Public Guest Verified' : 'Authorized Client OTP';
+        $emailStatus = !empty($row['email_sent']) ? 'Sent' : 'Browser Only';
         fputcsv($out, [
             $row['id'] ?? '',
             $row['client_name'] ?? '',
             $row['client_email'] ?? '',
             $row['client_phone'] ?? '',
+            $row['organization'] ?? 'N/A',
+            $row['download_reason'] ?? 'Direct Client Download',
+            $tierName,
             $row['album_id'] ?? '',
             $row['album_title'] ?? '',
             $row['download_type'] ?? '',
+            $emailStatus,
             $row['ip_address'] ?? '',
             $row['downloaded_at'] ?? ''
         ]);
@@ -776,7 +808,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         $targetUser = trim($_POST['target_user'] ?? '');
-        $hbTitle = trim(strip_tags($_POST['handbook_title'] ?? 'Falhen Media Staff Handbook (30 Sections)'));
+        $hbTitle = trim(strip_tags($_POST['handbook_title'] ?? 'Falhen Productions Staff Handbook (30 Sections)'));
         $hbVersion = trim(strip_tags($_POST['handbook_version'] ?? '2026 Edition'));
         $reissueNotes = trim(strip_tags($_POST['reissue_notes'] ?? ''));
 
@@ -2333,7 +2365,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $pId = (int)($_POST['id'] ?? 0);
         $title = trim(strip_tags($_POST['title'] ?? ''));
         $client = trim(strip_tags($_POST['client'] ?? ''));
-        $clientEmail = strtolower(trim(strip_tags($_POST['client_email'] ?? '')));
+        $rawClientEmail = trim(strip_tags($_POST['client_email'] ?? ''));
+        $parsedEmails = [];
+        foreach (preg_split('/[,;\s]+/', strtolower($rawClientEmail)) as $em) {
+            $em = trim($em);
+            if (!empty($em) && filter_var($em, FILTER_VALIDATE_EMAIL)) {
+                if (!in_array($em, $parsedEmails, true)) {
+                    $parsedEmails[] = $em;
+                }
+            }
+        }
+        $clientEmail = implode(', ', $parsedEmails);
         $clientPhone = trim(strip_tags($_POST['client_phone'] ?? ''));
         $category = trim(strip_tags($_POST['category'] ?? 'Portrait'));
         $location = trim(strip_tags($_POST['location'] ?? ''));
@@ -2460,12 +2502,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         saveSiteSettings(['portfolio_items' => $items]);
 
-        // Register client email in authorized list for OTP gate
-        if (!empty($clientEmail) && filter_var($clientEmail, FILTER_VALIDATE_EMAIL)) {
+        // Register each valid client email in authorized list for OTP gate
+        if (!empty($parsedEmails)) {
             $settings = getSiteSettings();
             $clients = $settings['registered_clients'] ?? [];
-            if (!in_array($clientEmail, $clients, true)) {
-                $clients[] = $clientEmail;
+            $updatedClients = false;
+            foreach ($parsedEmails as $singleEmail) {
+                if (!in_array($singleEmail, $clients, true)) {
+                    $clients[] = $singleEmail;
+                    $updatedClients = true;
+                }
+            }
+            if ($updatedClients) {
                 saveSiteSettings(['registered_clients' => array_values(array_unique($clients))]);
             }
         }
@@ -3688,7 +3736,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'public_key'         => trim($_POST['raenest_public_key'] ?? ''),
                 'secret_key'         => trim($_POST['raenest_secret_key'] ?? ''),
                 'webhook_secret'     => trim($_POST['raenest_webhook_secret'] ?? ''),
-                'account_name'       => trim($_POST['raenest_account_name'] ?? 'Falhen Media Ltd'),
+                'account_name'       => trim($_POST['raenest_account_name'] ?? 'Falhen Productions Ltd'),
                 'usd_bank_name'      => trim($_POST['raenest_usd_bank_name'] ?? 'JPMorgan Chase / Lead Bank'),
                 'usd_account_number' => trim($_POST['raenest_usd_account_number'] ?? ''),
                 'usd_routing_number' => trim($_POST['raenest_usd_routing_number'] ?? ''),
@@ -3704,7 +3752,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'lemfi' => [
                 'enabled'         => !empty($_POST['lemfi_enabled']),
                 'tag'             => trim($_POST['lemfi_tag'] ?? '@falhen'),
-                'account_name'    => trim($_POST['lemfi_account_name'] ?? 'Falhen Media Global'),
+                'account_name'    => trim($_POST['lemfi_account_name'] ?? 'Falhen Productions Global'),
                 'receiving_bank'  => trim($_POST['lemfi_receiving_bank'] ?? 'LemFi Virtual Account (Providus Bank / Wema)'),
                 'account_number'  => trim($_POST['lemfi_account_number'] ?? ''),
                 'country'         => trim($_POST['lemfi_country'] ?? 'Nigeria / Global Diaspora'),
@@ -3712,7 +3760,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ],
             'taptap' => [
                 'enabled'          => !empty($_POST['taptap_enabled']),
-                'recipient_name'   => trim($_POST['taptap_recipient_name'] ?? 'Falhen Media Limited'),
+                'recipient_name'   => trim($_POST['taptap_recipient_name'] ?? 'Falhen Productions Limited'),
                 'receiving_bank'   => trim($_POST['taptap_receiving_bank'] ?? 'Zenith Bank PLC / Access Bank'),
                 'account_number'   => trim($_POST['taptap_account_number'] ?? ''),
                 'domiciliary_usd'  => trim($_POST['taptap_domiciliary_usd'] ?? ''),
@@ -3729,7 +3777,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'bank_transfer' => [
                 'enabled'        => !empty($_POST['bank_transfer_enabled']),
                 'bank_name'      => trim($_POST['bank_name'] ?? 'Zenith Bank PLC'),
-                'account_name'   => trim($_POST['bank_account_name'] ?? 'Falhen Media Limited'),
+                'account_name'   => trim($_POST['bank_account_name'] ?? 'Falhen Productions Limited'),
                 'account_number' => trim($_POST['bank_account_number'] ?? ''),
                 'dom_usd_bank'   => trim($_POST['dom_usd_bank'] ?? 'Zenith Bank PLC (USD Domiciliary)'),
                 'dom_usd_acc'    => trim($_POST['dom_usd_acc'] ?? ''),
@@ -3933,7 +3981,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $gigData = [
             'id'                  => $gigId,
             'title'               => trim($_POST['title'] ?? 'Production Shoot'),
-            'client'              => trim($_POST['client'] ?? 'Falhen Media Production'),
+            'client'              => trim($_POST['client'] ?? 'Falhen Productions Production'),
             'shoot_date'          => trim($_POST['shoot_date'] ?? date('Y-m-d')),
             'end_date'            => trim($_POST['end_date'] ?? $_POST['shoot_date'] ?? date('Y-m-d')),
             'call_time'           => trim($_POST['call_time'] ?? '08:00 AM'),
@@ -9335,6 +9383,46 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                 $subAction = $_GET['sub_action'] ?? '';
                 $searchQuery = trim($_GET['q'] ?? '');
                 $catFilter = $_GET['cat'] ?? 'all';
+                $activeTab = $_GET['tab'] ?? 'galleries';
+                $logAlbumId = !empty($_GET['log_album']) ? (int)$_GET['log_album'] : null;
+                $logTier = !empty($_GET['log_tier']) ? trim($_GET['log_tier']) : null;
+                $logSearch = !empty($_GET['log_q']) ? trim($_GET['log_q']) : null;
+
+                $allDownloadLogs = function_exists('getClientDownloadLogs') ? getClientDownloadLogs(2000) : [];
+                $totalLogsCount = count($allDownloadLogs);
+                $authorizedOtpCount = 0;
+                $publicGuestCount = 0;
+                $emailSentCount = 0;
+                foreach ($allDownloadLogs as $lRow) {
+                    if (($lRow['access_tier'] ?? 'authorized_client') === 'public_verified') {
+                        $publicGuestCount++;
+                    } else {
+                        $authorizedOtpCount++;
+                    }
+                    if (!empty($lRow['email_sent'])) {
+                        $emailSentCount++;
+                    }
+                }
+
+                $filteredLogs = $allDownloadLogs;
+                if ($logAlbumId || $logTier || $logSearch) {
+                    $filteredLogs = array_filter($allDownloadLogs, function($l) use ($logAlbumId, $logTier, $logSearch) {
+                        if ($logAlbumId && (int)($l['album_id'] ?? 0) !== $logAlbumId) {
+                            return false;
+                        }
+                        if ($logTier && ($l['access_tier'] ?? 'authorized_client') !== $logTier) {
+                            return false;
+                        }
+                        if ($logSearch) {
+                            $needle = strtolower($logSearch);
+                            $haystack = strtolower(($l['client_name'] ?? '') . ' ' . ($l['client_email'] ?? '') . ' ' . ($l['client_phone'] ?? '') . ' ' . ($l['organization'] ?? '') . ' ' . ($l['download_reason'] ?? '') . ' ' . ($l['album_title'] ?? ''));
+                            if (strpos($haystack, $needle) === false) {
+                                return false;
+                            }
+                        }
+                        return true;
+                    });
+                }
                 
                 $editingGallery = null;
                 if ($editingGalleryId !== null) {
@@ -9382,17 +9470,17 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                 <?php endif; ?>
 
                 <!-- Header Bar -->
-                <div class="section-header-bar" style="align-items: center; margin-bottom: 24px;">
+                <div class="section-header-bar" style="align-items: center; margin-bottom: 20px;">
                     <div>
                         <h1 class="section-header-title" style="font-size: 1.75rem; font-weight: 700; color: #0f172a; margin-bottom: 4px; display: flex; align-items: center; gap: 10px;">
-                            <i class="fa-solid fa-user-gear" style="color: #dc2626;"></i> Client Galleries Manager
+                            <i class="fa-solid fa-user-gear" style="color: #dc2626;"></i> Client Galleries &amp; Access Gate
                         </h1>
                         <p class="section-header-desc" style="font-size: 0.88rem; color: #64748b; margin: 0; display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
                             <span><strong style="color: #0f172a;"><?php echo count($clientGalleries); ?> Galleries</strong></span>
                             <span>&bull;</span>
                             <span><?php echo $totalPhotosSynced; ?> Photos Synced</span>
                             <span>&bull;</span>
-                            <span><?php echo $driveConnectedCount; ?> Connected to Google Drive</span>
+                            <span><?php echo $totalLogsCount; ?> Verified Downloads</span>
                             <span>&bull;</span>
                             <a href="https://client.falhen.com" target="_blank" style="color: #dc2626; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">
                                 <i class="fa-solid fa-arrow-up-right-from-square" style="font-size: 0.78rem;"></i> Open client.falhen.com
@@ -9400,11 +9488,28 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                         </p>
                     </div>
                     <?php if ($subAction !== 'add' && $editingGalleryId === null): ?>
-                        <a href="index.php?section=client_galleries&sub_action=add" class="btn-save-primary" style="text-decoration: none; padding: 10px 22px; background-color: #dc2626; display: inline-flex; align-items: center; gap: 8px;">
-                            <i class="fa-solid fa-plus"></i> Add Client Gallery
-                        </a>
+                        <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                            <a href="index.php?export_download_logs_csv=1<?php echo $logAlbumId ? '&album_id='.$logAlbumId : ''; ?><?php echo $logTier ? '&tier='.urlencode($logTier) : ''; ?><?php echo $logSearch ? '&q='.urlencode($logSearch) : ''; ?>" style="background: #ffffff; color: #0f172a; border: 1px solid #cbd5e1; padding: 10px 16px; border-radius: 8px; text-decoration: none; font-size: 0.85rem; font-weight: 700; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 1px 2px rgba(0,0,0,0.04);">
+                                <i class="fa-solid fa-file-csv" style="color: #2563eb;"></i> Export CSV Logs
+                            </a>
+                            <a href="index.php?section=client_galleries&sub_action=add" class="btn-save-primary" style="text-decoration: none; padding: 10px 22px; background-color: #dc2626; display: inline-flex; align-items: center; gap: 8px;">
+                                <i class="fa-solid fa-plus"></i> Add Client Gallery
+                            </a>
+                        </div>
                     <?php endif; ?>
                 </div>
+
+                <?php if ($subAction !== 'add' && $editingGalleryId === null): ?>
+                    <!-- Subview Navigation Tabs -->
+                    <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 24px; border-bottom: 1px solid #e2e8f0; padding-bottom: 12px;">
+                        <a href="index.php?section=client_galleries&tab=galleries" style="padding: 8px 18px; border-radius: 8px; font-size: 0.86rem; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; <?php echo ($activeTab !== 'logs') ? 'background: #0f172a; color: #ffffff;' : 'background: #f1f5f9; color: #475569;'; ?>">
+                            <i class="fa-solid fa-images"></i> Client Galleries (<?php echo count($clientGalleries); ?>)
+                        </a>
+                        <a href="index.php?section=client_galleries&tab=logs" style="padding: 8px 18px; border-radius: 8px; font-size: 0.86rem; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; <?php echo ($activeTab === 'logs') ? 'background: #0f172a; color: #ffffff;' : 'background: #f1f5f9; color: #475569;'; ?>">
+                            <i class="fa-solid fa-list-check"></i> Download Access &amp; Audit Logs (<?php echo $totalLogsCount; ?>)
+                        </a>
+                    </div>
+                <?php endif; ?>
 
                 <?php if ($subAction === 'add' || $editingGalleryId !== null): 
                     $curSlug = $editingGallery['slug'] ?? generateSlug($editingGallery['title'] ?? '');
@@ -9473,13 +9578,13 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                         <div style="font-size: 0.85rem; font-weight: 700; color: #0f172a; margin-bottom: 4px; display: flex; align-items: center; gap: 6px;">
                                             <i class="fa-solid fa-shield-halved" style="color: #dc2626;"></i> Client Security &amp; OTP Access Gate
                                         </div>
-                                        <p style="font-size: 0.78rem; color: #64748b; margin-bottom: 12px;">
-                                            The client email entered below is strictly authorized to request and verify 6-digit OTP codes to download this gallery.
+                                        <p style="font-size: 0.78rem; color: #64748b; margin-bottom: 12px; line-height: 1.5;">
+                                            Enter one or more authorized client emails separated by commas. Any listed email receives direct 6-digit OTP verification. Unlisted public guests will be prompted for verified PII &amp; download reason.
                                         </p>
-                                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                                        <div style="display: grid; grid-template-columns: 1.4fr 1fr; gap: 12px;">
                                             <div>
-                                                <label class="form-label-title" style="font-size: 0.78rem;">Client Email *</label>
-                                                <input type="email" name="client_email" class="form-text-input" value="<?php echo htmlspecialchars($editingGallery['client_email'] ?? ''); ?>" placeholder="client@falhen.com">
+                                                <label class="form-label-title" style="font-size: 0.78rem;">Authorized Client Email(s) (comma-separated)</label>
+                                                <input type="text" name="client_email" class="form-text-input" value="<?php echo htmlspecialchars($editingGallery['client_email'] ?? ''); ?>" placeholder="client@falhen.com, partner@gmail.com, planner@agency.com">
                                             </div>
                                             <div>
                                                 <label class="form-label-title" style="font-size: 0.78rem;">Client Phone</label>
@@ -10043,7 +10148,192 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                     </style>
 
                 <?php else: ?>
-                    <!-- CLIENT GALLERIES LIST VIEW -->
+                    <?php if ($activeTab === 'logs'): ?>
+                        <!-- CLIENT DOWNLOAD ACCESS & AUDIT LOGS VIEW -->
+                        <!-- Summary KPI Cards -->
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 16px; margin-bottom: 24px;">
+                            <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+                                <div style="font-size: 0.78rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px;">Total Downloads</div>
+                                <div style="font-size: 1.85rem; font-weight: 800; color: #0f172a; line-height: 1.1;"><?php echo $totalLogsCount; ?></div>
+                                <div style="font-size: 0.78rem; color: #94a3b8; margin-top: 4px;">Across all client galleries</div>
+                            </div>
+
+                            <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+                                <div style="font-size: 0.78rem; font-weight: 700; color: #166534; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
+                                    <i class="fa-solid fa-shield-check"></i> Authorized Clients
+                                </div>
+                                <div style="font-size: 1.85rem; font-weight: 800; color: #15803d; line-height: 1.1;"><?php echo $authorizedOtpCount; ?></div>
+                                <div style="font-size: 0.78rem; color: #94a3b8; margin-top: 4px;">Direct client OTP verified</div>
+                            </div>
+
+                            <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+                                <div style="font-size: 0.78rem; font-weight: 700; color: #4338ca; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
+                                    <i class="fa-solid fa-user-shield"></i> Public Guests
+                                </div>
+                                <div style="font-size: 1.85rem; font-weight: 800; color: #4338ca; line-height: 1.1;"><?php echo $publicGuestCount; ?></div>
+                                <div style="font-size: 0.78rem; color: #94a3b8; margin-top: 4px;">PII + reason registered</div>
+                            </div>
+
+                            <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+                                <div style="font-size: 0.78rem; font-weight: 700; color: #0369a1; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
+                                    <i class="fa-solid fa-paper-plane"></i> Email Deliveries
+                                </div>
+                                <div style="font-size: 1.85rem; font-weight: 800; color: #0284c7; line-height: 1.1;"><?php echo $emailSentCount; ?></div>
+                                <div style="font-size: 0.78rem; color: #94a3b8; margin-top: 4px;">Dispatched to requestor inbox</div>
+                            </div>
+                        </div>
+
+                        <!-- Filter and Batch Controls -->
+                        <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 16px 20px; margin-bottom: 24px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px;">
+                            <form action="index.php" method="GET" style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin: 0; flex: 1;">
+                                <input type="hidden" name="section" value="client_galleries">
+                                <input type="hidden" name="tab" value="logs">
+
+                                <!-- Gallery / Batch Filter -->
+                                <select name="log_album" class="form-select-input" style="padding: 8px 12px; font-size: 0.84rem; border-radius: 8px; border: 1px solid #cbd5e1; background: #ffffff; min-width: 200px;">
+                                    <option value="">All Galleries (All Batches)</option>
+                                    <?php foreach ($clientGalleries as $cgOpt): ?>
+                                        <option value="<?php echo (int)$cgOpt['id']; ?>" <?php echo ($logAlbumId === (int)$cgOpt['id']) ? 'selected' : ''; ?>>
+                                            <?php echo htmlspecialchars($cgOpt['title']); ?> (#<?php echo (int)$cgOpt['id']; ?>)
+                                        </option>
+                                    <?php endforeach; ?>
+                                </select>
+
+                                <!-- Access Tier Filter -->
+                                <select name="log_tier" class="form-select-input" style="padding: 8px 12px; font-size: 0.84rem; border-radius: 8px; border: 1px solid #cbd5e1; background: #ffffff;">
+                                    <option value="">All Access Tiers</option>
+                                    <option value="authorized_client" <?php echo ($logTier === 'authorized_client') ? 'selected' : ''; ?>>Authorized Client OTP</option>
+                                    <option value="public_verified" <?php echo ($logTier === 'public_verified') ? 'selected' : ''; ?>>Public Guest Verified</option>
+                                </select>
+
+                                <!-- Search -->
+                                <input type="text" name="log_q" value="<?php echo htmlspecialchars($logSearch ?? ''); ?>" placeholder="Search name, email, org, reason..." style="padding: 8px 12px; font-size: 0.84rem; border-radius: 8px; border: 1px solid #cbd5e1; min-width: 220px;">
+
+                                <button type="submit" style="background: #0f172a; color: #ffffff; border: none; border-radius: 8px; padding: 8px 16px; font-size: 0.84rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+                                    <i class="fa-solid fa-filter"></i> Apply Filter
+                                </button>
+
+                                <?php if ($logAlbumId || $logTier || $logSearch): ?>
+                                    <a href="index.php?section=client_galleries&tab=logs" style="color: #64748b; font-size: 0.84rem; text-decoration: underline; font-weight: 600; padding: 6px 8px;">
+                                        Clear
+                                    </a>
+                                <?php endif; ?>
+                            </form>
+
+                            <div>
+                                <a href="index.php?export_download_logs_csv=1<?php echo $logAlbumId ? '&album_id='.$logAlbumId : ''; ?><?php echo $logTier ? '&tier='.urlencode($logTier) : ''; ?><?php echo $logSearch ? '&q='.urlencode($logSearch) : ''; ?>" style="background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; padding: 8px 16px; border-radius: 8px; text-decoration: none; font-size: 0.84rem; font-weight: 700; display: inline-flex; align-items: center; gap: 6px;">
+                                    <i class="fa-solid fa-file-arrow-down"></i> Export Filtered CSV (<?php echo count($filteredLogs); ?>)
+                                </a>
+                            </div>
+                        </div>
+
+                        <!-- Logs Data Table -->
+                        <?php if (empty($filteredLogs)): ?>
+                            <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 48px 20px; text-align: center;">
+                                <i class="fa-solid fa-clipboard-list" style="font-size: 2.5rem; color: #94a3b8; margin-bottom: 12px;"></i>
+                                <h4 style="font-size: 1.1rem; font-weight: 700; color: #0f172a; margin-bottom: 6px;">No Download Logs Found</h4>
+                                <p style="font-size: 0.88rem; color: #64748b; margin-bottom: 0;">No client gallery downloads match your current filter parameters.</p>
+                            </div>
+                        <?php else: ?>
+                            <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 14px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+                                <div style="overflow-x: auto;">
+                                    <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.86rem;">
+                                        <thead>
+                                            <tr style="background: #f8fafc; border-bottom: 1px solid #e2e8f0; color: #475569; font-size: 0.76rem; text-transform: uppercase; letter-spacing: 0.05em;">
+                                                <th style="padding: 14px 18px;">Date &amp; Time</th>
+                                                <th style="padding: 14px 18px;">Requestor Details</th>
+                                                <th style="padding: 14px 18px;">Access Tier</th>
+                                                <th style="padding: 14px 18px;">Organization / Relation</th>
+                                                <th style="padding: 14px 18px;">Download Reason</th>
+                                                <th style="padding: 14px 18px;">Gallery Album</th>
+                                                <th style="padding: 14px 18px;">Delivery</th>
+                                                <th style="padding: 14px 18px;">IP Address</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <?php foreach ($filteredLogs as $log): 
+                                                $tier = $log['access_tier'] ?? 'authorized_client';
+                                                $isGuest = ($tier === 'public_verified');
+                                                $formattedDate = !empty($log['downloaded_at']) ? date('M j, Y, g:i A', strtotime($log['downloaded_at'])) : 'Recent';
+                                            ?>
+                                                <tr style="border-bottom: 1px solid #f1f5f9; transition: background-color 0.15s ease;" onmouseover="this.style.backgroundColor='#f8fafc';" onmouseout="this.style.backgroundColor='transparent';">
+                                                    <td style="padding: 14px 18px; white-space: nowrap; color: #64748b; font-family: monospace; font-size: 0.8rem;">
+                                                        <?php echo htmlspecialchars($formattedDate); ?>
+                                                    </td>
+                                                    <td style="padding: 14px 18px;">
+                                                        <strong style="color: #0f172a; font-size: 0.9rem;"><?php echo htmlspecialchars($log['client_name'] ?: 'Verified User'); ?></strong>
+                                                        <?php if (!empty($log['client_email'])): ?>
+                                                            <div style="font-size: 0.8rem; margin-top: 2px;">
+                                                                <a href="mailto:<?php echo htmlspecialchars($log['client_email']); ?>" style="color: #2563eb; text-decoration: none;">
+                                                                    <?php echo htmlspecialchars($log['client_email']); ?>
+                                                                </a>
+                                                            </div>
+                                                        <?php endif; ?>
+                                                        <?php if (!empty($log['client_phone'])): ?>
+                                                            <div style="font-size: 0.75rem; color: #64748b; margin-top: 1px;">
+                                                                <i class="fa-solid fa-phone" style="font-size: 0.7rem; color: #94a3b8;"></i> <?php echo htmlspecialchars($log['client_phone']); ?>
+                                                            </div>
+                                                        <?php endif; ?>
+                                                    </td>
+                                                    <td style="padding: 14px 18px; white-space: nowrap;">
+                                                        <?php if ($isGuest): ?>
+                                                            <span style="background: #eef2ff; color: #4338ca; border: 1px solid #c7d2fe; padding: 4px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;">
+                                                                <i class="fa-solid fa-user-shield"></i> Public Guest
+                                                            </span>
+                                                        <?php else: ?>
+                                                            <span style="background: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0; padding: 4px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;">
+                                                                <i class="fa-solid fa-shield-check"></i> Authorized Client
+                                                            </span>
+                                                        <?php endif; ?>
+                                                    </td>
+                                                    <td style="padding: 14px 18px; color: #334155; font-size: 0.84rem;">
+                                                        <?php if (!empty($log['organization'])): ?>
+                                                            <span style="background: #f1f5f9; color: #334155; padding: 3px 8px; border-radius: 6px; font-weight: 600; font-size: 0.8rem;">
+                                                                <?php echo htmlspecialchars($log['organization']); ?>
+                                                            </span>
+                                                        <?php else: ?>
+                                                            <span style="color: #94a3b8;">Direct Client</span>
+                                                        <?php endif; ?>
+                                                    </td>
+                                                    <td style="padding: 14px 18px; color: #475569; font-size: 0.82rem; max-width: 240px;">
+                                                        <?php if (!empty($log['download_reason'])): ?>
+                                                            <span style="font-style: italic; color: #1e293b;">
+                                                                &ldquo;<?php echo htmlspecialchars($log['download_reason']); ?>&rdquo;
+                                                            </span>
+                                                        <?php else: ?>
+                                                            <span style="color: #94a3b8;">High-res archive download</span>
+                                                        <?php endif; ?>
+                                                    </td>
+                                                    <td style="padding: 14px 18px; white-space: nowrap;">
+                                                        <strong style="color: #0f172a;"><?php echo htmlspecialchars($log['album_title'] ?: 'Gallery'); ?></strong>
+                                                        <div style="font-size: 0.75rem; color: #94a3b8;">
+                                                            Batch #<?php echo htmlspecialchars($log['album_id'] ?? '0'); ?>
+                                                        </div>
+                                                    </td>
+                                                    <td style="padding: 14px 18px; white-space: nowrap;">
+                                                        <?php if (!empty($log['email_sent'])): ?>
+                                                            <span style="color: #059669; font-size: 0.8rem; font-weight: 700; display: inline-flex; align-items: center; gap: 5px;">
+                                                                <i class="fa-solid fa-circle-check"></i> Sent to Email
+                                                            </span>
+                                                        <?php else: ?>
+                                                            <span style="color: #64748b; font-size: 0.8rem; display: inline-flex; align-items: center; gap: 4px;">
+                                                                <i class="fa-solid fa-download"></i> Streamed
+                                                            </span>
+                                                        <?php endif; ?>
+                                                    </td>
+                                                    <td style="padding: 14px 18px; white-space: nowrap; font-family: monospace; font-size: 0.78rem; color: #64748b;">
+                                                        <?php echo htmlspecialchars($log['ip_address'] ?: '—'); ?>
+                                                    </td>
+                                                </tr>
+                                            <?php endforeach; ?>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        <?php endif; ?>
+
+                    <?php else: ?>
+                        <!-- CLIENT GALLERIES LIST VIEW -->
                     <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 16px 20px; margin-bottom: 24px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px;">
                         <div style="display: flex; gap: 8px; align-items: center;">
                             <span style="font-size: 0.82rem; font-weight: 700; color: #64748b; text-transform: uppercase;">CATEGORY:</span>
@@ -10196,7 +10486,8 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                         </script>
                     <?php endif; ?>
 
-                <?php endif; ?>
+                <?php endif; /* close $activeTab === 'logs' */ ?>
+            <?php endif; /* close $subAction === 'add' || $editingGalleryId !== null */ ?>
 
             <!-- SECTION: WEBSITE DEV LOGS & BACKUP HISTORY (IT / SUPER ADMIN / ACCOUNT) -->
             <?php elseif ($activeSection === 'dev_logs'):
@@ -11661,7 +11952,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                 <div class="form-field">
                                     <label class="form-label-title">Designation / Job Position <span style="color: #ef4444;">*</span></label>
                                     <input type="text" name="designation" required class="form-text-input" value="<?php echo htmlspecialchars($profileData['designation'] ?? ($profileData['role'] ?? '')); ?>" placeholder="e.g. IT Support Specialist, Head of Creative Services">
-                                    <span class="form-label-help" style="font-size: 0.74rem; color: #64748b; margin-top: 3px; display: block;">Your official corporate job title at Falhen Media.</span>
+                                    <span class="form-label-help" style="font-size: 0.74rem; color: #64748b; margin-top: 3px; display: block;">Your official corporate job title at Falhen Productions.</span>
                                 </div>
 
                                 <div class="form-field">
@@ -11689,7 +11980,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
 
                             <div class="form-field" style="margin-top: 18px;">
                                 <label class="form-label-title">Short Bio / About Yourself</label>
-                                <textarea name="bio" rows="3" class="form-text-input" style="resize: vertical; font-family: inherit;" placeholder="Brief statement about your role at Falhen Media..."><?php echo htmlspecialchars($profileData['bio'] ?? ''); ?></textarea>
+                                <textarea name="bio" rows="3" class="form-text-input" style="resize: vertical; font-family: inherit;" placeholder="Brief statement about your role at Falhen Productions..."><?php echo htmlspecialchars($profileData['bio'] ?? ''); ?></textarea>
                             </div>
 
                             <div style="margin-top: 24px; padding-top: 20px; border-top: 1px solid #f1f5f9;">
@@ -11838,7 +12129,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                             <div>
                                                 <strong style="color: #0f172a; font-size: 0.88rem; display: block;">Set as Primary Active Company Counter-Signer</strong>
                                                 <span style="font-size: 0.78rem; color: #64748b; display: block; margin-top: 2px;">
-                                                    When enabled, all newly downloaded vendor agreements, contractor agreements, and call sheets will automatically be stamped with this signature on behalf of Falhen Media Ltd.
+                                                    When enabled, all newly downloaded vendor agreements, contractor agreements, and call sheets will automatically be stamped with this signature on behalf of Falhen Productions Ltd.
                                                 </span>
                                             </div>
                                         </label>
@@ -11867,10 +12158,10 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                             </span>
                                         </div>
 
-                                        <!-- Exact Falhen Media Ltd Signature Card Box as on download_vendor_agreement.php -->
+                                        <!-- Exact Falhen Productions Ltd Signature Card Box as on download_vendor_agreement.php -->
                                         <div style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 12px; padding: 20px; box-shadow: 0 2px 6px rgba(0,0,0,0.02);">
                                             <div style="font-size: 0.78rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px;">
-                                                FOR: FALHEN MEDIA LTD
+                                                FOR: FALHEN PRODUCTIONS LTD
                                             </div>
 
                                             <div id="live_sig_preview_container" style="min-height: 52px; display: flex; align-items: center;">
@@ -11888,7 +12179,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                                 <?php echo htmlspecialchars($signerDisplayName); ?>
                                             </div>
                                             <div id="live_sig_preview_subtext" style="font-size: 0.78rem; color: #64748b; margin-top: 2px;">
-                                                <?php echo htmlspecialchars($userSigTitle); ?> &bull; Falhen Media Ltd
+                                                <?php echo htmlspecialchars($userSigTitle); ?> &bull; Falhen Productions Ltd
                                             </div>
                                             <div style="display: inline-flex; align-items: center; gap: 6px; color: #15803d; font-size: 0.78rem; font-weight: 700; margin-top: 8px;">
                                                 <i class="fa-solid fa-circle-check"></i> Authorized Counter-Signature
@@ -12216,7 +12507,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
 
                         const previewTitle = document.getElementById('live_sig_preview_subtext');
                         if (previewTitle) {
-                            previewTitle.innerHTML = escapeHtml(title || 'Executive Producer') + ' &bull; Falhen Media Ltd';
+                            previewTitle.innerHTML = escapeHtml(title || 'Executive Producer') + ' &bull; Falhen Productions Ltd';
                         }
 
                         // If typed mode is currently active, sync the typed text as well
@@ -13124,7 +13415,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                         </div>
                         <div>
                             <strong style="color: #78350f; font-size: 1.02rem; display: block; margin-bottom: 2px;">Mandatory Action Required: Complete Staff Onboarding Checklist</strong>
-                            Welcome to Falhen Media! Access to the employee portal dashboard and features is locked until you complete your onboarding checklist tasks below (Bank Details, Employment Agreement, SOP &amp; Staff Handbook, ID Verification, and References).
+                            Welcome to Falhen Productions! Access to the employee portal dashboard and features is locked until you complete your onboarding checklist tasks below (Bank Details, Employment Agreement, SOP &amp; Staff Handbook, ID Verification, and References).
                         </div>
                     </div>
                 <?php endif; ?>
@@ -13811,7 +14102,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                     <?php echo ($isHandbookApproved ? 'Approved' : ($isHandbookRejected ? 'Rejected' : ($isHandbookSubmitted ? 'Submitted' : 'Pending'))); ?>
                                 </span>
                             </div>
-                            <p style="font-size: 0.84rem; color: #64748b; margin-bottom: 16px;">Read and acknowledge the Falhen Media Staff Handbook & Policies (30 Sections).</p>
+                            <p style="font-size: 0.84rem; color: #64748b; margin-bottom: 16px;">Read and acknowledge the Falhen Productions Staff Handbook & Policies (30 Sections).</p>
 
                             <?php if ($isHandbookRejected): ?>
                                 <div style="padding: 12px; background: #fef2f2; border: 1px solid #fecaca; border-radius: 10px; color: #991b1b; font-size: 0.84rem; margin-bottom: 10px;">
@@ -14131,7 +14422,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
 
                             <div>
                                 <label style="display: block; font-size: 0.8rem; font-weight: 700; color: #334155; margin-bottom: 6px;">Welcome Message & Special Terms (Optional)</label>
-                                <textarea name="notes" rows="3" placeholder="Add custom greeting or details regarding allowances, work tools, equipment dispatch, etc..." style="width: 100%; padding: 10px 12px; font-size: 0.85rem; border: 1px solid #cbd5e1; border-radius: 8px; box-sizing: border-box; font-family: inherit; resize: vertical;"><?php echo htmlspecialchars($onboardingData['offer_letter']['notes'] ?? 'Welcome to Falhen Media! We are thrilled to invite you to join our creative production team.'); ?></textarea>
+                                <textarea name="notes" rows="3" placeholder="Add custom greeting or details regarding allowances, work tools, equipment dispatch, etc..." style="width: 100%; padding: 10px 12px; font-size: 0.85rem; border: 1px solid #cbd5e1; border-radius: 8px; box-sizing: border-box; font-family: inherit; resize: vertical;"><?php echo htmlspecialchars($onboardingData['offer_letter']['notes'] ?? 'Welcome to Falhen Productions! We are thrilled to invite you to join our creative production team.'); ?></textarea>
                             </div>
 
                             <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 10px; padding-top: 14px; border-top: 1px solid #f1f5f9;">
@@ -14253,7 +14544,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                     </div>
                                     <div>
                                         <div style="font-size: 0.88rem; font-weight: 700; color: #0f172a;">Official Offer Document</div>
-                                        <div style="font-size: 0.76rem; color: #64748b; font-weight: 600;">Verified Studio Document • Official Falhen Media Terms</div>
+                                        <div style="font-size: 0.76rem; color: #64748b; font-weight: 600;">Verified Studio Document • Official Falhen Productions Terms</div>
                                     </div>
                                 </div>
                                 <div style="display: flex; gap: 8px;">
@@ -14781,7 +15072,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
                                 <div>
                                     <label style="display: block; font-size: 0.78rem; font-weight: 700; color: #334155; margin-bottom: 4px;">Handbook Document Title</label>
-                                    <input type="text" name="handbook_title" value="<?php echo htmlspecialchars($onboardingData['staff_handbook']['handbook_title'] ?? 'Falhen Media Staff Handbook (30 Sections)'); ?>" placeholder="Staff Handbook" required style="width: 100%; padding: 9px 10px; font-size: 0.84rem; border: 1px solid #cbd5e1; border-radius: 8px; box-sizing: border-box;">
+                                    <input type="text" name="handbook_title" value="<?php echo htmlspecialchars($onboardingData['staff_handbook']['handbook_title'] ?? 'Falhen Productions Staff Handbook (30 Sections)'); ?>" placeholder="Staff Handbook" required style="width: 100%; padding: 9px 10px; font-size: 0.84rem; border: 1px solid #cbd5e1; border-radius: 8px; box-sizing: border-box;">
                                 </div>
                                 <div>
                                     <label style="display: block; font-size: 0.78rem; font-weight: 700; color: #334155; margin-bottom: 4px;">Handbook Edition / Version</label>
@@ -15749,7 +16040,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                 <div class="section-header-bar">
                     <div>
                         <h1 class="section-header-title">Staff & Team Directory</h1>
-                        <p class="section-header-desc">Find and connect with colleagues across Falhen Media departments.</p>
+                        <p class="section-header-desc">Find and connect with colleagues across Falhen Productions departments.</p>
                     </div>
                 </div>
 
@@ -18008,7 +18299,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                 <!-- SECTION: ASSETS -->
                 <div class="section-header-bar">
                     <div>
-                        <h1 class="section-header-title">Falhen Media & Brand Assets Library</h1>
+                        <h1 class="section-header-title">Falhen Productions & Brand Assets Library</h1>
                         <p class="section-header-desc">Download official brand logos, high-res showreel clips, graphic templates, and media kits.</p>
                     </div>
                     <button type="button" class="btn-save-primary" onclick="alert('Asset uploader opened!')">
@@ -18058,11 +18349,11 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                 $authorTitle = $celebSettings['author_title'] ?? 'Falhen HR & Culture Team';
 
                 $defaultTemplate = $celebSettings['default_template'] ?? "Wishing our fantastic {name} ({role}) a very Happy Birthday! 🎂🎉 May your year ahead be filled with boundless creativity, joy, and incredible milestones. We celebrate you today and appreciate everything you bring to the Falhen family! 🥳✨";
-                $template45d = $celebSettings['template_45d'] ?? "Congratulations to {name} ({role}) on completing your first 45 days at Falhen Media! 🚀🌟 We love having your creativity, dedication, and positive energy on the team. Keep shining and reaching higher! 👏✨";
-                $template90d = $celebSettings['template_90d'] ?? "Huge congratulations to {name} ({role}) on reaching your 90-day milestone and successfully completing probation at Falhen Media! 🏆🎉 Thank you for your hard work, impact, and brilliance. We are proud to have you on board! 🌟🚀";
-                $template6m = $celebSettings['template_6m'] ?? "Happy 6-Month Anniversary to {name} ({role})! 💫🎊 Celebrating half a year of memorable moments, creative excellence, and great teamwork. Thank you for everything you bring to Falhen Media! 🥂✨";
+                $template45d = $celebSettings['template_45d'] ?? "Congratulations to {name} ({role}) on completing your first 45 days at Falhen Productions! 🚀🌟 We love having your creativity, dedication, and positive energy on the team. Keep shining and reaching higher! 👏✨";
+                $template90d = $celebSettings['template_90d'] ?? "Huge congratulations to {name} ({role}) on reaching your 90-day milestone and successfully completing probation at Falhen Productions! 🏆🎉 Thank you for your hard work, impact, and brilliance. We are proud to have you on board! 🌟🚀";
+                $template6m = $celebSettings['template_6m'] ?? "Happy 6-Month Anniversary to {name} ({role})! 💫🎊 Celebrating half a year of memorable moments, creative excellence, and great teamwork. Thank you for everything you bring to Falhen Productions! 🥂✨";
                 $template1y = $celebSettings['template_1y'] ?? "Happy 1st Work Anniversary to our exceptional {name} ({role})! 🥂🎉 A whole year of remarkable achievements, inspiring teamwork, and dedication. We appreciate all you do for the Falhen family! 🥳🌟";
-                $templateMultiYear = $celebSettings['template_multi_year'] ?? "Happy {years}-Year Work Anniversary to {name} ({role})! 🎖️🌟 Thank you for your continued loyalty, leadership, and outstanding contributions to Falhen Media over the past {years} years! 🥂🎉";
+                $templateMultiYear = $celebSettings['template_multi_year'] ?? "Happy {years}-Year Work Anniversary to {name} ({role})! 🎖️🌟 Thank you for your continued loyalty, leadership, and outstanding contributions to Falhen Productions over the past {years} years! 🥂🎉";
 
                 $customWishes = $celebSettings['custom_wishes'] ?? [];
 
@@ -19092,7 +19383,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                 </div>
                                 <div>
                                     <label class="form-label-title">Recipient Account Name</label>
-                                    <input type="text" name="lemfi_account_name" value="<?php echo htmlspecialchars($lem['account_name'] ?? 'Falhen Media Global'); ?>" class="form-text-input">
+                                    <input type="text" name="lemfi_account_name" value="<?php echo htmlspecialchars($lem['account_name'] ?? 'Falhen Productions Global'); ?>" class="form-text-input">
                                 </div>
                                 <div>
                                     <label class="form-label-title">LemFi Receiving Account Number</label>
@@ -19129,7 +19420,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 18px; margin-bottom: 20px;">
                                 <div>
                                     <label class="form-label-title">Recipient Account Name</label>
-                                    <input type="text" name="taptap_recipient_name" value="<?php echo htmlspecialchars($tap['recipient_name'] ?? 'Falhen Media Limited'); ?>" class="form-text-input">
+                                    <input type="text" name="taptap_recipient_name" value="<?php echo htmlspecialchars($tap['recipient_name'] ?? 'Falhen Productions Limited'); ?>" class="form-text-input">
                                 </div>
                                 <div>
                                     <label class="form-label-title">Receiving Bank Name</label>
@@ -19683,7 +19974,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                         <?php foreach ($filteredGigs as $gig): 
                                             $gId = $gig['id'] ?? '';
                                             $gTitle = $gig['title'] ?? 'Production Shoot';
-                                            $gClient = $gig['client'] ?? 'Falhen Media Production';
+                                            $gClient = $gig['client'] ?? 'Falhen Productions Production';
                                             $gDate = !empty($gig['shoot_date']) ? date('M j, Y', strtotime($gig['shoot_date'])) : 'TBD';
                                             $gCallTime = $gig['call_time'] ?? '08:00 AM';
                                             $gWrapTime = $gig['wrap_time'] ?? '06:00 PM';
@@ -20174,7 +20465,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px;">
                                 <div>
                                     <label style="display: block; font-size: 0.8rem; font-weight: 700; color: #334155; margin-bottom: 5px;">Client / Project Series *</label>
-                                    <input type="text" name="client" id="editGigClient" required placeholder="e.g. Vogue West Africa / Falhen Media" style="width: 100%; padding: 9px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.88rem;">
+                                    <input type="text" name="client" id="editGigClient" required placeholder="e.g. Vogue West Africa / Falhen Productions" style="width: 100%; padding: 9px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.88rem;">
                                 </div>
                                 <div>
                                     <label style="display: block; font-size: 0.8rem; font-weight: 700; color: #334155; margin-bottom: 5px;">Assign To Talent / Contractor</label>
@@ -20512,7 +20803,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                     document.getElementById('gigEditModalTitle').textContent = 'Create Production Shoot';
                     document.getElementById('editGigId').value = '';
                     document.getElementById('editGigTitle').value = '';
-                    document.getElementById('editGigClient').value = 'Falhen Media Production';
+                    document.getElementById('editGigClient').value = 'Falhen Productions Production';
                     document.getElementById('editGigAssignedRef').value = '';
                     document.getElementById('editGigDate').value = new Date().toISOString().split('T')[0];
                     document.getElementById('editGigCallTime').value = '08:00 AM';

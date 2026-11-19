@@ -1,7 +1,7 @@
 <?php
 /**
  * Global Helper Functions
- * Falhen Media
+ * Falhen Productions
  */
 
 // Recommended PHP Runtime Settings for Media-Heavy Photography & Video Workloads
@@ -64,17 +64,7 @@ function sanitizeInput($data) {
  * Render Google Analytics (gtag.js) Tag
  */
 function renderGoogleAnalyticsTag() {
-    ?>
-<!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-LJ91C0YXCH"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-
-  gtag('config', 'G-LJ91C0YXCH');
-</script>
-<?php
+    require_once __DIR__ . '/analytics.php';
 }
 
 /**
@@ -402,8 +392,8 @@ function resolveHeroMediaConfig($settings = null) {
     if ($posterIsCloudinary && preg_match('#/upload/(?:[^/]+/)*?(?:v\d+/)?(.+)$#i', $rawPoster, $pm)) {
         $posterPublicId = $pm[1];
     }
-    $posterDesktop = getResponsiveCloudinaryAsset($rawPoster, 'f_auto,q_auto:good,w_1920,c_fill');
-    $posterMobile  = getResponsiveCloudinaryAsset($rawPoster, 'f_auto,q_auto:eco,w_780,c_fill');
+    $posterDesktop = getResponsiveCloudinaryAsset($rawPoster, 'f_auto,q_auto:good,w_1920,h_1080,c_fill');
+    $posterMobile  = getResponsiveCloudinaryAsset($rawPoster, 'f_auto,q_auto:good,w_750,h_422,c_fill');
     $posterLqip    = getResponsiveCloudinaryAsset($rawPoster, 'f_auto,q_30,w_48,e_blur:200,c_fill');
 
     $directVideoRaw = trim((string)($settings['hero_direct_video_url'] ?? ''));
@@ -698,7 +688,7 @@ function getSiteSettings($forceReload = false) {
         'hero_poster_image' => 'https://storage.readdy-site.link/project_files/6c8ddf7b-6d98-436f-a5d0-36fd1d9fec3f/hero-fallback.jpg',
         'showreel_youtube_id' => 'Tf8rNMZ-Bw0',
         'hero_title' => 'Cinematic Storytelling & High-Impact Media Production',
-        'hero_subtitle' => 'Falhen Media is a premier full-service media production studio crafting high-end corporate films, commercials, live broadcasts, and brand anthems.'
+        'hero_subtitle' => 'Falhen Productions is a premier full-service media production studio crafting high-end corporate films, commercials, live broadcasts, and brand anthems.'
     ];
 
     return $cachedSettings;
@@ -758,12 +748,17 @@ function logClientDownload($data) {
     if ($pdo) {
         try {
             $stmt = $pdo->prepare("INSERT INTO `client_download_logs` 
-                (`client_name`, `client_email`, `client_phone`, `album_id`, `album_title`, `download_type`, `ip_address`, `user_agent`)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+                (`client_name`, `client_email`, `client_phone`, `organization`, `download_reason`, `access_tier`, `email_sent`, `batch_id`, `album_id`, `album_title`, `download_type`, `ip_address`, `user_agent`)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
             $logged = $stmt->execute([
                 $data['client_name'] ?? 'Client',
                 $data['client_email'] ?? '',
                 $data['client_phone'] ?? '',
+                $data['organization'] ?? null,
+                $data['download_reason'] ?? null,
+                $data['access_tier'] ?? 'authorized_client',
+                !empty($data['email_sent']) ? 1 : 0,
+                $data['batch_id'] ?? null,
                 (int)($data['album_id'] ?? 0),
                 $data['album_title'] ?? 'Gallery',
                 $data['download_type'] ?? 'ZIP Archive',
@@ -782,15 +777,20 @@ function logClientDownload($data) {
     }
     $streamFile = $backupDir . '/client_downloads_stream.jsonl';
     $entry = [
-        'id'            => time(),
-        'client_name'   => $data['client_name'] ?? 'Client',
-        'client_email'  => $data['client_email'] ?? '',
-        'client_phone'  => $data['client_phone'] ?? '',
-        'album_id'      => (int)($data['album_id'] ?? 0),
-        'album_title'   => $data['album_title'] ?? 'Gallery',
-        'download_type' => $data['download_type'] ?? 'ZIP Archive',
-        'ip_address'    => $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1',
-        'downloaded_at' => date('Y-m-d H:i:s')
+        'id'              => time(),
+        'client_name'     => $data['client_name'] ?? 'Client',
+        'client_email'    => $data['client_email'] ?? '',
+        'client_phone'    => $data['client_phone'] ?? '',
+        'organization'    => $data['organization'] ?? '',
+        'download_reason' => $data['download_reason'] ?? '',
+        'access_tier'     => $data['access_tier'] ?? 'authorized_client',
+        'email_sent'      => !empty($data['email_sent']) ? 1 : 0,
+        'batch_id'        => $data['batch_id'] ?? '',
+        'album_id'        => (int)($data['album_id'] ?? 0),
+        'album_title'     => $data['album_title'] ?? 'Gallery',
+        'download_type'   => $data['download_type'] ?? 'ZIP Archive',
+        'ip_address'      => $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1',
+        'downloaded_at'   => date('Y-m-d H:i:s')
     ];
     @file_put_contents($streamFile, json_encode($entry, JSON_UNESCAPED_SLASHES) . "\n", FILE_APPEND | LOCK_EX);
 
@@ -800,14 +800,33 @@ function logClientDownload($data) {
 /**
  * Retrieve client download logs with pagination/search & disk-stream fallback
  */
-function getClientDownloadLogs($limit = 100) {
+function getClientDownloadLogs($limit = 100, $albumId = null, $tier = null, $search = null) {
     $pdo = function_exists('getDBConnection') ? getDBConnection() : null;
     $dbLogs = [];
     if ($pdo) {
         try {
-            $stmt = $pdo->prepare("SELECT * FROM `client_download_logs` ORDER BY `id` DESC LIMIT ?");
-            $stmt->bindValue(1, (int)$limit, PDO::PARAM_INT);
-            $stmt->execute();
+            $sql = "SELECT * FROM `client_download_logs` WHERE 1=1";
+            $params = [];
+            if ($albumId !== null && (int)$albumId > 0) {
+                $sql .= " AND `album_id` = ?";
+                $params[] = (int)$albumId;
+            }
+            if ($tier !== null && $tier !== '' && $tier !== 'all') {
+                $sql .= " AND `access_tier` = ?";
+                $params[] = (string)$tier;
+            }
+            if ($search !== null && trim($search) !== '') {
+                $sql .= " AND (`client_name` LIKE ? OR `client_email` LIKE ? OR `client_phone` LIKE ? OR `download_reason` LIKE ? OR `organization` LIKE ?)";
+                $q = '%' . trim($search) . '%';
+                $params[] = $q;
+                $params[] = $q;
+                $params[] = $q;
+                $params[] = $q;
+                $params[] = $q;
+            }
+            $sql .= " ORDER BY `id` DESC LIMIT " . (int)$limit;
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute($params);
             $dbLogs = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
         } catch (Exception $e) {
             $dbLogs = [];
@@ -822,6 +841,8 @@ function getClientDownloadLogs($limit = 100) {
             foreach (array_reverse($lines) as $l) {
                 $j = json_decode($l, true);
                 if ($j && is_array($j)) {
+                    if ($albumId !== null && (int)$albumId > 0 && (int)($j['album_id'] ?? 0) !== (int)$albumId) continue;
+                    if ($tier !== null && $tier !== '' && $tier !== 'all' && ($j['access_tier'] ?? 'authorized_client') !== $tier) continue;
                     $diskLogs[] = $j;
                 }
                 if (count($diskLogs) >= $limit) break;
@@ -970,7 +991,7 @@ function createDatabaseSqlDump($sqlFilename) {
     $pdo = function_exists('getDBConnection') ? getDBConnection() : null;
 
     $out = "-- ==========================================================\n";
-    $out .= "-- Falhen Media Database & Pipeline SQL Dump\n";
+    $out .= "-- Falhen Productions Database & Pipeline SQL Dump\n";
     $out .= "-- Timestamp: " . date('Y-m-d H:i:s') . "\n";
     $out .= "-- Host: " . (defined('DB_HOST') ? DB_HOST : 'localhost') . "\n";
     $out .= "-- Database: " . (defined('DB_NAME') ? DB_NAME : 'falhen_db') . "\n";
@@ -1307,7 +1328,7 @@ function getPaymentGatewaysSettings() {
             'public_key'         => 'rae_pub_test_8921fa76b10',
             'secret_key'         => 'rae_sec_test_9921abcf783',
             'webhook_secret'     => 'rae_whsec_f89312b918',
-            'account_name'       => 'Falhen Media Ltd',
+            'account_name'       => 'Falhen Productions Ltd',
             'usd_bank_name'      => 'JPMorgan Chase / Lead Bank',
             'usd_account_number' => '1029384756',
             'usd_routing_number' => '021000021',
@@ -1324,7 +1345,7 @@ function getPaymentGatewaysSettings() {
         'lemfi' => [
             'enabled'         => true,
             'tag'             => '@falhen',
-            'account_name'    => 'Falhen Media Global',
+            'account_name'    => 'Falhen Productions Global',
             'receiving_bank'  => 'LemFi Virtual Account (Providus Bank / Wema)',
             'account_number'  => '9920192834',
             'country'         => 'Nigeria / Global Diaspora (UK, US, Canada, EU)',
@@ -1332,7 +1353,7 @@ function getPaymentGatewaysSettings() {
         ],
         'taptap' => [
             'enabled'          => true,
-            'recipient_name'   => 'Falhen Media Limited',
+            'recipient_name'   => 'Falhen Productions Limited',
             'receiving_bank'   => 'Zenith Bank PLC / Access Bank',
             'account_number'   => '1019283746',
             'domiciliary_usd'  => '5071928340',
@@ -1349,7 +1370,7 @@ function getPaymentGatewaysSettings() {
         'bank_transfer' => [
             'enabled'        => true,
             'bank_name'      => 'Zenith Bank PLC',
-            'account_name'   => 'Falhen Media Limited',
+            'account_name'   => 'Falhen Productions Limited',
             'account_number' => '1019283746',
             'dom_usd_bank'   => 'Zenith Bank PLC (USD Domiciliary)',
             'dom_usd_acc'    => '5071928340',
@@ -1466,7 +1487,7 @@ function getTestimonialsRepo() {
                 'project' => 'Energy Unleashed Campaign',
                 'avatar' => 'https://res.cloudinary.com/pnabfi91/image/upload/v1786712075/falhen/team/ctxjp9mymgqdh2ecg2hu.jpg',
                 'rating' => 5,
-                'quote' => 'Falhen Media delivered a campaign that exceeded every benchmark we set. The team understood our brand DNA from day one and translated it into visuals that literally stopped people mid-scroll. Our engagement numbers tripled.'
+                'quote' => 'Falhen Productions delivered a campaign that exceeded every benchmark we set. The team understood our brand DNA from day one and translated it into visuals that literally stopped people mid-scroll. Our engagement numbers tripled.'
             ],
             [
                 'id' => 2,
@@ -1603,7 +1624,7 @@ function generateClientGallerySeo($title, $category = 'Gallery', $client = '', $
     $keywords = [
         strtolower($cleanTitle),
         strtolower($cleanCat) . ' photography',
-        'falhen media client gallery',
+        'falhen productions client gallery',
         'high resolution photo download',
         'editorial photography delivery',
         'private client gallery'
@@ -2384,7 +2405,7 @@ function getAdminUserProfile() {
             'role'          => 'Super Admin',
             'designation'   => 'Creative Director & Founder',
             'avatar'        => 'https://res.cloudinary.com/pnabfi91/image/upload/v1786712075/falhen/team/ctxjp9mymgqdh2ecg2hu.jpg',
-            'bio'           => 'Visionary Creative Director and founder of Falhen Media.',
+            'bio'           => 'Visionary Creative Director and founder of Falhen Productions.',
             'password_hash' => password_hash('Password123#', PASSWORD_DEFAULT)
         ];
 
@@ -4107,11 +4128,11 @@ function getCelebrationSettings() {
         'enable_anniversaries' => true,
         'author_title' => 'Falhen HR & Culture Team',
         'default_template' => "Wishing our fantastic {name} ({role}) a very Happy Birthday! 🎂🎉 May your year ahead be filled with boundless creativity, joy, and incredible milestones. We celebrate you today and appreciate everything you bring to the Falhen family! 🥳✨",
-        'template_45d' => "Congratulations to {name} ({role}) on completing your first 45 days at Falhen Media! 🚀🌟 We love having your creativity, dedication, and positive energy on the team. Keep shining and reaching higher! 👏✨",
-        'template_90d' => "Huge congratulations to {name} ({role}) on reaching your 90-day milestone and successfully completing probation at Falhen Media! 🏆🎉 Thank you for your hard work, impact, and brilliance. We are proud to have you on board! 🌟🚀",
-        'template_6m' => "Happy 6-Month Anniversary to {name} ({role})! 💫🎊 Celebrating half a year of memorable moments, creative excellence, and great teamwork. Thank you for everything you bring to Falhen Media! 🥂✨",
+        'template_45d' => "Congratulations to {name} ({role}) on completing your first 45 days at Falhen Productions! 🚀🌟 We love having your creativity, dedication, and positive energy on the team. Keep shining and reaching higher! 👏✨",
+        'template_90d' => "Huge congratulations to {name} ({role}) on reaching your 90-day milestone and successfully completing probation at Falhen Productions! 🏆🎉 Thank you for your hard work, impact, and brilliance. We are proud to have you on board! 🌟🚀",
+        'template_6m' => "Happy 6-Month Anniversary to {name} ({role})! 💫🎊 Celebrating half a year of memorable moments, creative excellence, and great teamwork. Thank you for everything you bring to Falhen Productions! 🥂✨",
         'template_1y' => "Happy 1st Work Anniversary to our exceptional {name} ({role})! 🥂🎉 A whole year of remarkable achievements, inspiring teamwork, and dedication. We appreciate all you do for the Falhen family! 🥳🌟",
-        'template_multi_year' => "Happy {years}-Year Work Anniversary to {name} ({role})! 🎖️🌟 Thank you for your continued loyalty, leadership, and outstanding contributions to Falhen Media over the past {years} years! 🥂🎉",
+        'template_multi_year' => "Happy {years}-Year Work Anniversary to {name} ({role})! 🎖️🌟 Thank you for your continued loyalty, leadership, and outstanding contributions to Falhen Productions over the past {years} years! 🥂🎉",
         'custom_wishes' => []
     ];
 
@@ -4176,7 +4197,7 @@ function getSiteAnnouncements($category = 'all') {
             'category' => 'Events',
             'posted_by' => 'Studio Operations',
             'date_str' => 'Posted 3 days ago',
-            'content' => 'Save the date! Falhen Media will host our annual End-of-Summer Gala on August 30th at the Main Soundstage. Details and RSVP forms will be shared shortly.'
+            'content' => 'Save the date! Falhen Productions will host our annual End-of-Summer Gala on August 30th at the Main Soundstage. Details and RSVP forms will be shared shortly.'
         ]
     ];
 
@@ -4332,7 +4353,7 @@ function getSiteAnnouncements($category = 'all') {
 
                     // 45-Day Milestone
                     if ($daysEmployed === 45 && !empty($celebSettings['enable_45d'])) {
-                        $template = $celebSettings['template_45d'] ?? "Congratulations to {name} ({role}) on completing your first 45 days at Falhen Media! 🚀🌟 We love having your creativity, dedication, and positive energy on the team. Keep shining and reaching higher! 👏✨";
+                        $template = $celebSettings['template_45d'] ?? "Congratulations to {name} ({role}) on completing your first 45 days at Falhen Productions! 🚀🌟 We love having your creativity, dedication, and positive energy on the team. Keep shining and reaching higher! 👏✨";
                         $content = str_replace(['{name}', '{role}', '{first_name}'], [$stName, $stRole, $firstName], $template);
                         $celebIds++;
                         $celebrationAnnouncements[] = [
@@ -4352,7 +4373,7 @@ function getSiteAnnouncements($category = 'all') {
 
                     // 90-Day Milestone (Probation Completion)
                     if ($daysEmployed === 90 && !empty($celebSettings['enable_90d'])) {
-                        $template = $celebSettings['template_90d'] ?? "Huge congratulations to {name} ({role}) on reaching your 90-day milestone and successfully completing probation at Falhen Media! 🏆🎉 Thank you for your hard work, impact, and brilliance. We are proud to have you on board! 🌟🚀";
+                        $template = $celebSettings['template_90d'] ?? "Huge congratulations to {name} ({role}) on reaching your 90-day milestone and successfully completing probation at Falhen Productions! 🏆🎉 Thank you for your hard work, impact, and brilliance. We are proud to have you on board! 🌟🚀";
                         $content = str_replace(['{name}', '{role}', '{first_name}'], [$stName, $stRole, $firstName], $template);
                         $celebIds++;
                         $celebrationAnnouncements[] = [
@@ -4372,7 +4393,7 @@ function getSiteAnnouncements($category = 'all') {
 
                     // 6-Month / Half-Year Milestone (Day 182)
                     if ($daysEmployed === 182 && !empty($celebSettings['enable_6m'])) {
-                        $template = $celebSettings['template_6m'] ?? "Happy 6-Month Anniversary to {name} ({role})! 💫🎊 Celebrating half a year of memorable moments, creative excellence, and great teamwork. Thank you for everything you bring to Falhen Media! 🥂✨";
+                        $template = $celebSettings['template_6m'] ?? "Happy 6-Month Anniversary to {name} ({role})! 💫🎊 Celebrating half a year of memorable moments, creative excellence, and great teamwork. Thank you for everything you bring to Falhen Productions! 🥂✨";
                         $content = str_replace(['{name}', '{role}', '{first_name}'], [$stName, $stRole, $firstName], $template);
                         $celebIds++;
                         $celebrationAnnouncements[] = [
@@ -4401,7 +4422,7 @@ function getSiteAnnouncements($category = 'all') {
                             $title = '🥂 Happy 1st Work Anniversary, ' . $stName . '! 🎉';
                             $dateTag = '1-Year Work Anniversary 🥂';
                         } else {
-                            $template = $celebSettings['template_multi_year'] ?? "Happy {years}-Year Work Anniversary to {name} ({role})! 🎖️🌟 Thank you for your continued loyalty, leadership, and outstanding contributions to Falhen Media over the past {years} years! 🥂🎉";
+                            $template = $celebSettings['template_multi_year'] ?? "Happy {years}-Year Work Anniversary to {name} ({role})! 🎖️🌟 Thank you for your continued loyalty, leadership, and outstanding contributions to Falhen Productions over the past {years} years! 🥂🎉";
                             $content = str_replace(['{name}', '{role}', '{first_name}', '{years}'], [$stName, $stRole, $firstName, $years], $template);
                             $title = '🎖️ Happy ' . $years . '-Year Work Anniversary, ' . $stName . '! 🌟';
                             $dateTag = $years . '-Year Work Anniversary 🎖️';
@@ -6091,7 +6112,7 @@ function authenticateVendor($email, $refOrPassword) {
 
     // Check status
     if (in_array(strtolower($vendor['status'] ?? ''), ['suspended', 'inactive'], true)) {
-        return ['success' => false, 'message' => 'Your vendor account is currently suspended. Please contact Falhen Media management.'];
+        return ['success' => false, 'message' => 'Your vendor account is currently suspended. Please contact Falhen Productions management.'];
     }
 
     // Set vendor session

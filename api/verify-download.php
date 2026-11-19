@@ -2,7 +2,7 @@
 /**
  * api/verify-download.php
  * Client Identity (Name, Email, Phone) & 6-Digit OTP Verification Gate
- * Falhen Media Client Portal (client.falhen.com)
+ * Falhen Productions Client Portal (client.falhen.com)
  */
 
 require_once __DIR__ . '/../includes/functions.php';
@@ -138,18 +138,22 @@ function logClientDownloadEvent(array $entry): void {
 
     if (function_exists('logClientDownload')) {
         logClientDownload([
-            'client_name'   => $entry['name'] ?? ($entry['client_name'] ?? 'Client'),
-            'client_email'  => $entry['email'] ?? ($entry['client_email'] ?? ''),
-            'client_phone'  => $entry['phone'] ?? ($entry['client_phone'] ?? ''),
-            'album_id'      => (int)($entry['album_id'] ?? 0),
-            'album_title'   => $entry['album_title'] ?? 'Gallery',
-            'download_type' => $entry['event'] ?? ($entry['status'] ?? 'Verification Code Requested')
+            'client_name'     => $entry['name'] ?? ($entry['client_name'] ?? 'Client'),
+            'client_email'    => $entry['email'] ?? ($entry['client_email'] ?? ''),
+            'client_phone'    => $entry['phone'] ?? ($entry['client_phone'] ?? ''),
+            'organization'    => $entry['organization'] ?? null,
+            'download_reason' => $entry['download_reason'] ?? null,
+            'access_tier'     => $entry['access_tier'] ?? 'authorized_client',
+            'email_sent'      => !empty($entry['email_sent']) ? 1 : 0,
+            'album_id'        => (int)($entry['album_id'] ?? 0),
+            'album_title'     => $entry['album_title'] ?? 'Gallery',
+            'download_type'   => $entry['event'] ?? ($entry['status'] ?? 'Verification Code Requested')
         ]);
     }
 }
 
 // ============================================================================
-// STEP 1: REQUEST 6-DIGIT OTP CODE (Requires Name, Email, and Phone Number)
+// STEP 1: REQUEST 6-DIGIT OTP CODE (Two-Tier: Authorized Client or Verified Public Guest)
 // ============================================================================
 if ($action === 'request_code' || ($action === 'verify_client_download' && !empty($_POST['require_otp']))) {
     if (empty($name) || strlen($name) < 2) {
@@ -170,14 +174,23 @@ if ($action === 'request_code' || ($action === 'verify_client_download' && !empt
     }
 
     $isAuthorized = isClientAuthorizedForFolder($email, $albumId, $albumTitle, $name, $adminAuthorizedEmails);
+    $accessTier = $isAuthorized ? 'authorized_client' : 'public_verified';
+    $organization = trim($_POST['organization'] ?? '');
+    $downloadReason = trim($_POST['download_reason'] ?? '');
+
+    // TWO-TIER GATING:
+    // If not on the pre-authorized client list, require Organization/Relationship and Download Reason
     if (!$isAuthorized) {
-        http_response_code(403);
-        echo json_encode([
-            'success'       => false,
-            'is_registered' => false,
-            'message'       => 'Access Restricted: The email provided is not authorized to download this private gallery folder. Please provide the client email registered for this shoot.'
-        ]);
-        exit;
+        if (empty($organization) || empty($downloadReason)) {
+            echo json_encode([
+                'success'                => true,
+                'is_authorized_client'   => false,
+                'requires_guest_details' => true,
+                'tier'                   => 'public_guest',
+                'message'                => 'This email is not listed on the primary client sheet. To download as a verified guest, please share your relationship to the event and reason for download.'
+            ]);
+            exit;
+        }
     }
 
     // Generate cryptographically secure 6-digit OTP
@@ -188,11 +201,14 @@ if ($action === 'request_code' || ($action === 'verify_client_download' && !empt
     $_SESSION['download_code_attempts']= 0;
     $_SESSION['download_email']        = $email;
     $_SESSION['download_name']         = $name;
-    $_SESSION['download_phone']        = $phone;
+    $_SESSION['download_phone']        = $cleanPhone;
+    $_SESSION['download_organization'] = $organization;
+    $_SESSION['download_reason']       = $downloadReason;
+    $_SESSION['download_access_tier']  = $accessTier;
     $_SESSION['download_album_id']     = $albumId;
     $_SESSION['download_album_title']  = $albumTitle;
 
-    // Dispatch 6-digit OTP via SMTP Email
+    // Dispatch 6-digit OTP via SMTP / Resend Email
     $mailSent = false;
     if (function_exists('sendVerificationCodeEmail')) {
         $mailSent = @sendVerificationCodeEmail($email, $code, $name);
@@ -203,17 +219,21 @@ if ($action === 'request_code' || ($action === 'verify_client_download' && !empt
     $maskedEmail = substr($emailParts[0], 0, 2) . '***@' . ($emailParts[1] ?? '');
     $maskedPhone = substr($cleanPhone, 0, 3) . '****' . substr($cleanPhone, -3);
 
+    $tierNotice = $isAuthorized ? 'authorized client address' : 'verified guest address';
+
     $responsePayload = [
-        'success'      => true,
-        'otp_required' => true,
-        'masked_email' => $maskedEmail,
-        'masked_phone' => $maskedPhone,
-        'mail_sent'    => (bool)$mailSent,
-        'expires_in'   => 600,
-        'message'      => 'A 6-digit security verification code has been dispatched to your registered address (' . htmlspecialchars($maskedEmail) . ').'
+        'success'              => true,
+        'otp_required'         => true,
+        'is_authorized_client' => $isAuthorized,
+        'access_tier'          => $accessTier,
+        'masked_email'         => $maskedEmail,
+        'masked_phone'         => $maskedPhone,
+        'mail_sent'            => (bool)$mailSent,
+        'expires_in'           => 600,
+        'message'              => 'A 6-digit security verification code has been dispatched to your ' . $tierNotice . ' (' . htmlspecialchars($maskedEmail) . ').'
     ];
 
-    // If SMTP is unavailable in local dev or fallback mode, provide a dev preview hint so clients/testers aren't blocked
+    // If SMTP is unavailable in local dev or fallback mode, provide a dev preview hint
     if (!$mailSent) {
         $responsePayload['delivery_mode'] = 'instant_fallback';
         $responsePayload['dev_otp_hint']  = $code;
@@ -275,10 +295,13 @@ if ($action === 'verify_code') {
     }
 
     // OTP Verified! Issue signed download token and unlock client session strictly for this album
-    $verifiedName  = $_SESSION['download_name'] ?? $name;
-    $verifiedPhone = $_SESSION['download_phone'] ?? $phone;
-    $verifiedAlbumId = (int)($_SESSION['download_album_id'] ?? $albumId);
+    $verifiedName       = $_SESSION['download_name'] ?? $name;
+    $verifiedPhone      = $_SESSION['download_phone'] ?? $phone;
+    $verifiedAlbumId    = (int)($_SESSION['download_album_id'] ?? $albumId);
     $verifiedAlbumTitle = $_SESSION['download_album_title'] ?? $albumTitle;
+    $accessTier         = $_SESSION['download_access_tier'] ?? 'authorized_client';
+    $organization       = $_SESSION['download_organization'] ?? '';
+    $downloadReason     = $_SESSION['download_reason'] ?? '';
 
     unset($_SESSION['download_code_hash'], $_SESSION['download_code_plain'], $_SESSION['download_code_expires'], $_SESSION['download_code_attempts']);
 
@@ -300,29 +323,74 @@ if ($action === 'verify_code') {
     $_SESSION['client_download_token']    = $downloadToken;
     $_SESSION['last_verified_album_id']   = $verifiedAlbumId;
     $_SESSION['registered_client_name']   = $verifiedName;
+    $_SESSION['registered_client_phone']  = $verifiedPhone;
+
+    // Build absolute download link
+    $host = $_SERVER['HTTP_HOST'] ?? 'client.falhen.com';
+    $proto = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+    $downloadZipUrl = "{$proto}://{$host}/api/download-album.php?album_id={$verifiedAlbumId}&token=" . urlencode($downloadToken);
+
+    // Resolve album metadata for email delivery
+    $portfolioRepo = getPortfolioRepo();
+    $targetAlbum = null;
+    foreach ($portfolioRepo as $alb) {
+        if ((int)($alb['id'] ?? 0) === $verifiedAlbumId) {
+            $targetAlbum = $alb;
+            break;
+        }
+    }
+    $coverUrl = getCloudinaryUrl($targetAlbum['image'] ?? $targetAlbum['cover'] ?? '');
+    $photoCount = (int)($targetAlbum['photosCount'] ?? count($targetAlbum['gallery_photos'] ?? []));
+
+    // Dispatch download link directly to requestor's email
+    $emailSent = false;
+    if (function_exists('sendClientGalleryDownloadDeliveryEmail')) {
+        $emailSent = @sendClientGalleryDownloadDeliveryEmail(
+            $savedEmail,
+            $verifiedName,
+            $verifiedAlbumTitle,
+            $downloadZipUrl,
+            $photoCount,
+            $coverUrl,
+            $accessTier
+        );
+    }
 
     logClientDownloadEvent([
-        'name'        => $verifiedName,
-        'email_hash'  => hash('sha256', $savedEmail),
-        'phone_masked'=> substr($verifiedPhone, 0, 3) . '****' . substr($verifiedPhone, -3),
-        'album_id'    => $verifiedAlbumId,
-        'album_title' => $verifiedAlbumTitle,
-        'verified_by' => 'otp_6digit'
+        'name'            => $verifiedName,
+        'email'           => $savedEmail,
+        'email_hash'      => hash('sha256', $savedEmail),
+        'phone'           => $verifiedPhone,
+        'phone_masked'    => substr($verifiedPhone, 0, 3) . '****' . substr($verifiedPhone, -3),
+        'organization'    => $organization,
+        'download_reason' => $downloadReason,
+        'access_tier'     => $accessTier,
+        'email_sent'      => $emailSent ? 1 : 0,
+        'album_id'        => $verifiedAlbumId,
+        'album_title'     => $verifiedAlbumTitle,
+        'event'           => ($accessTier === 'public_verified') ? 'Public Verified Download (Emailed)' : 'Client OTP Download (Emailed)'
     ]);
 
     $emailParts = explode('@', $savedEmail);
     $maskedEmail = substr($emailParts[0], 0, 2) . '***@' . ($emailParts[1] ?? '');
 
+    $successMsg = $emailSent 
+        ? 'Identity verified! Your download has started and a copy of the download link has been sent to your email (' . htmlspecialchars($maskedEmail) . ').'
+        : 'Identity verified! Preparing your gallery download...';
+
     echo json_encode([
         'success'          => true,
         'verified'         => true,
+        'access_tier'      => $accessTier,
+        'email_sent'       => (bool)$emailSent,
         'masked_email'     => $maskedEmail,
         'name'             => $verifiedName,
         'album_id'         => $verifiedAlbumId,
         'download_token'   => $downloadToken,
-        'download_zip_url' => '/api/download-album.php?album_id=' . $verifiedAlbumId . '&token=' . urlencode($downloadToken),
-        'message'          => 'Identity verified! Preparing your gallery download...'
+        'download_zip_url' => $downloadZipUrl,
+        'message'          => $successMsg
     ]);
+    exit;
     exit;
 }
 

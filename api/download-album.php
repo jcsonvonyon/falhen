@@ -187,7 +187,7 @@ foreach ($photoItems as $idx => $pItem) {
 }
 
 // Include a manifest receipt inside the ZIP without leaking private email addresses
-$receiptText = "FALHEN MEDIA — CLIENT GALLERY ARCHIVE\n"
+$receiptText = "FALHEN PRODUCTIONS — CLIENT GALLERY ARCHIVE\n"
     . "=====================================\n"
     . "Album: " . $albumTitle . "\n"
     . "Client: " . ($_SESSION['registered_client_name'] ?? 'Verified Client') . "\n"
@@ -203,12 +203,16 @@ $zipSize = filesize($tmpZip);
 
 if (function_exists('logClientDownload')) {
     logClientDownload([
-        'client_name'   => $_SESSION['registered_client_name'] ?? 'Authorized Client',
-        'client_email'  => $_SESSION['portal_lookup_email'] ?? ($_SESSION['verified_client_emails'][$albumId] ?? ''),
-        'client_phone'  => $_SESSION['registered_client_phone'] ?? '',
-        'album_id'      => $albumId,
-        'album_title'   => $albumTitle,
-        'download_type' => sprintf('Full Gallery ZIP (%d photos)', $addedCount)
+        'client_name'     => $_SESSION['registered_client_name'] ?? 'Authorized Client',
+        'client_email'    => $_SESSION['download_email'] ?? ($_SESSION['portal_lookup_email'] ?? ($_SESSION['verified_client_emails'][$albumId] ?? '')),
+        'client_phone'    => $_SESSION['registered_client_phone'] ?? '',
+        'organization'    => $_SESSION['download_organization'] ?? null,
+        'download_reason' => $_SESSION['download_reason'] ?? null,
+        'access_tier'     => $_SESSION['download_access_tier'] ?? 'authorized_client',
+        'email_sent'      => 1,
+        'album_id'        => $albumId,
+        'album_title'     => $albumTitle,
+        'download_type'   => sprintf('Full Gallery ZIP (%d photos)', $addedCount)
     ]);
 }
 

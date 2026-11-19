@@ -1,7 +1,7 @@
 <?php
 /**
  * client-portal.php
- * Falhen Media — Independent Client Gallery Subdomain Portal (client.falhen.com)
+ * Falhen Productions — Independent Client Gallery Subdomain Portal (client.falhen.com)
  * SmugMug-inspired clean photography delivery UX:
  * - Minimalist breadcrumbs & typography-first album header
  * - Edge-to-edge responsive photography gallery (Masonry / Justified)
@@ -77,9 +77,9 @@ $albumSlug = $currentAlbum['slug'] ?? generateSlug($currentAlbum['title'] ?? 'ga
 $coverImage = getCloudinaryUrl($currentAlbum['image'] ?? $currentAlbum['cover'] ?? 'https://res.cloudinary.com/pnabfi91/image/upload/v1791224271/falhen/portfolio/ysfriy8jlhhkcuzl8j16.jpg');
 
 if ($isClientsView) {
-    $seoTitle = "Client Galleries & Deliveries — Falhen Media";
-    $seoDesc = "Access, review proofs, and download high-resolution photography deliveries for Falhen Media clients.";
-    $seoKeywords = "client galleries, photography delivery, client portal, falhen media, weddings, portraits, commercial, corporate";
+    $seoTitle = "Client Galleries & Deliveries — Falhen Productions";
+    $seoDesc = "Access, review proofs, and download high-resolution photography deliveries for Falhen Productions clients.";
+    $seoKeywords = "client galleries, photography delivery, client portal, falhen productions, weddings, portraits, commercial, corporate";
     $pageTitle = $seoTitle;
 } else {
     $albumTitle = $currentAlbum['title'] ?? 'Client Gallery';
@@ -1774,7 +1774,7 @@ foreach ($albumsRepo as $alb) {
     <header class="smug-topbar">
         <div class="smug-topbar-inner">
             <a href="/clients" class="smug-brand-link" title="Falhen Client Deliveries">
-                <img src="/assets/img/icons/logo.png" alt="Falhen Media">
+                <img src="/assets/img/icons/logo.png" alt="Falhen Productions">
                 <span class="smug-brand-tag">Client Galleries</span>
             </a>
 
@@ -2031,19 +2031,19 @@ foreach ($albumsRepo as $alb) {
                 <div id="thumb-<?php echo (int)$item['index']; ?>"
                      class="smug-thumb <?php echo ($item['index'] === 0) ? 'active' : ''; ?>"
                      onclick="goToPhoto(<?php echo (int)$item['index']; ?>)">
-                    <img src="<?php echo htmlspecialchars($item['thumb_url'] ?? $item['masonry_url']); ?>" alt="Frame <?php echo (int)$item['number']; ?>" loading="lazy">
+                    <img src="<?php echo htmlspecialchars($item['thumb_url'] ?? $item['masonry_url']); ?>" alt="Photo <?php echo (int)$item['number']; ?>" loading="lazy">
                 </div>
             <?php endforeach; ?>
         </div>
     </div>
 
-    <!-- 2-STEP CLIENT IDENTITY & OTP VERIFICATION MODAL -->
+    <!-- 2-STEP CLIENT & GUEST IDENTITY & OTP VERIFICATION MODAL -->
     <div id="smugVerifyModal" class="smug-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="verifyModalTitle">
         <div class="smug-modal-box">
             <div class="smug-modal-header">
                 <div>
-                    <h2 class="smug-modal-title" id="verifyModalTitle">Client Security Verification</h2>
-                    <p class="smug-modal-subtitle" id="verifyModalSubtitle">Please verify your details to download high-resolution photos.</p>
+                    <h2 class="smug-modal-title" id="verifyModalTitle">Security &amp; Download Access Gate</h2>
+                    <p class="smug-modal-subtitle" id="verifyModalSubtitle">Verify your details to unlock high-resolution photos. A delivery link is also sent directly to your inbox.</p>
                 </div>
                 <button type="button" class="smug-tool-close" onclick="closeVerifyModal()" aria-label="Close">
                     <i class="fa-solid fa-xmark"></i>
@@ -2054,7 +2054,7 @@ foreach ($albumsRepo as $alb) {
                 <div id="verifyErrorAlert" class="smug-modal-alert smug-alert-error"></div>
                 <div id="verifyInfoAlert" class="smug-modal-alert smug-alert-info"></div>
 
-                <!-- STEP 1: Name, Email, Phone -->
+                <!-- STEP 1: Name, Email, Phone & Guest Security Fields -->
                 <div id="verifyStepIdentity">
                     <div class="smug-field-group">
                         <label class="smug-label" for="client_input_name">Full Name *</label>
@@ -2063,12 +2063,33 @@ foreach ($albumsRepo as $alb) {
 
                     <div class="smug-field-group">
                         <label class="smug-label" for="client_input_email">Email Address *</label>
-                        <input type="email" id="client_input_email" class="smug-input" placeholder="Enter your authorized email address" value="" required autocomplete="email">
+                        <input type="email" id="client_input_email" class="smug-input" placeholder="name@domain.com" value="" required autocomplete="email">
+                        <span style="font-size: 0.74rem; color: var(--smug-text-muted); margin-top: 4px; display: block;">Authorized clients and verified guests receive a 6-digit passcode and direct download delivery here.</span>
                     </div>
 
                     <div class="smug-field-group">
                         <label class="smug-label" for="client_input_phone">Phone Number *</label>
-                        <input type="tel" id="client_input_phone" class="smug-input" placeholder="+1 (555) 234-5678" value="<?php echo htmlspecialchars($clientPhone); ?>" required>
+                        <input type="tel" id="client_input_phone" class="smug-input" placeholder="+1 (555) 000-0000" value="<?php echo htmlspecialchars($clientPhone); ?>" required>
+                    </div>
+
+                    <!-- Enhanced Security Layer for Public Guest Access -->
+                    <div id="verifyGuestDetails" style="display: none; margin-top: 16px; padding-top: 14px; border-top: 1px dashed rgba(255,255,255,0.14);">
+                        <div style="font-size: 0.76rem; font-weight: 700; color: #f87171; letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
+                            <i class="fa-solid fa-shield-halved"></i> Guest Security &amp; Usage Protocol
+                        </div>
+                        <p style="font-size: 0.8rem; color: #94a3b8; line-height: 1.45; margin: 0 0 12px 0;">
+                            This gallery is protected. As an event attendee, relative, or partner, please confirm your relationship and download purpose.
+                        </p>
+
+                        <div class="smug-field-group">
+                            <label class="smug-label" for="client_input_org">Organization / Relationship to Event *</label>
+                            <input type="text" id="client_input_org" class="smug-input" placeholder="e.g. Wedding Guest, Family Member, Sponsor, Press / Media, Vendor">
+                        </div>
+
+                        <div class="smug-field-group">
+                            <label class="smug-label" for="client_input_reason">Reason for Download *</label>
+                            <textarea id="client_input_reason" class="smug-input" rows="2" placeholder="e.g. Personal keepsake and printing, social media recap, editorial coverage..." style="resize: vertical; min-height: 54px;"></textarea>
+                        </div>
                     </div>
                 </div>
 
@@ -2511,6 +2532,8 @@ foreach ($albumsRepo as $alb) {
             document.getElementById('verifyStepOtp').style.display = 'none';
             document.getElementById('verifyErrorAlert').style.display = 'none';
             document.getElementById('verifyInfoAlert').style.display = 'none';
+            const guestBox = document.getElementById('verifyGuestDetails');
+            if (guestBox) guestBox.style.display = 'none';
             const btn = document.getElementById('btnVerifySubmit');
             btn.disabled = false;
             btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Send Verification Code';
@@ -2520,6 +2543,11 @@ foreach ($albumsRepo as $alb) {
             const name = document.getElementById('client_input_name').value.trim();
             const email = document.getElementById('client_input_email').value.trim();
             const phone = document.getElementById('client_input_phone').value.trim();
+            const guestBox = document.getElementById('verifyGuestDetails');
+            const orgInput = document.getElementById('client_input_org');
+            const reasonInput = document.getElementById('client_input_reason');
+            const org = orgInput ? orgInput.value.trim() : '';
+            const reason = reasonInput ? reasonInput.value.trim() : '';
             const errBox = document.getElementById('verifyErrorAlert');
             const infoBox = document.getElementById('verifyInfoAlert');
             const submitBtn = document.getElementById('btnVerifySubmit');
@@ -2543,8 +2571,25 @@ foreach ($albumsRepo as $alb) {
                     return;
                 }
 
+                // If guest details are displayed, validate required fields
+                const isGuestSectionVisible = guestBox && guestBox.style.display !== 'none';
+                if (isGuestSectionVisible) {
+                    if (!org || org.length < 2) {
+                        errBox.textContent = 'Please enter your organization or relationship to this event.';
+                        errBox.style.display = 'block';
+                        if (orgInput) orgInput.focus();
+                        return;
+                    }
+                    if (!reason || reason.length < 3) {
+                        errBox.textContent = 'Please enter a brief reason for requesting this download.';
+                        errBox.style.display = 'block';
+                        if (reasonInput) reasonInput.focus();
+                        return;
+                    }
+                }
+
                 submitBtn.disabled = true;
-                submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Sending 6-Digit Code...';
+                submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Checking Access Permissions...';
 
                 try {
                     const fd = new FormData();
@@ -2552,23 +2597,35 @@ foreach ($albumsRepo as $alb) {
                     fd.append('name', name);
                     fd.append('email', email);
                     fd.append('phone', phone);
+                    fd.append('organization', org);
+                    fd.append('download_reason', reason);
                     fd.append('album_id', currentAlbumId);
                     fd.append('album_title', currentAlbumTitle);
 
                     const resp = await fetch('/api/verify-download.php', { method: 'POST', body: fd });
                     const res = await resp.json();
 
-                    if (res.success) {
+                    if (res.requires_guest_details) {
+                        // Unlisted public requester: show enhanced guest verification form
+                        if (guestBox) guestBox.style.display = 'block';
+                        infoBox.style.display = 'block';
+                        infoBox.innerHTML = '<i class="fa-solid fa-shield-halved"></i> <strong>Guest Access Protocol:</strong> ' + (res.message || 'Please specify your organization and reason to receive your verification code.');
+                        submitBtn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Verify Identity &amp; Send Code';
+                        if (orgInput) orgInput.focus();
+                    } else if (res.success) {
                         verificationStep = 'otp';
                         document.getElementById('verifyStepIdentity').style.display = 'none';
                         document.getElementById('verifyStepOtp').style.display = 'block';
                         infoBox.style.display = 'block';
-                        infoBox.innerHTML = `<i class="fa-solid fa-envelope-circle-check"></i> ${res.message}` +
+                        const tierLabel = res.access_tier === 'public_verified' ? 'Verified Guest Code' : 'Client Access Passcode';
+                        infoBox.innerHTML = `<i class="fa-solid fa-envelope-circle-check"></i> <strong>${tierLabel}:</strong> ${res.message}` +
                             (res.dev_otp_hint ? `<br><strong>Passcode: ${res.dev_otp_hint}</strong>` : '');
+                        const otpNotice = document.getElementById('otpNoticeText');
+                        if (otpNotice) otpNotice.textContent = 'Sent to ' + email;
                         if (res.dev_otp_hint) {
                             document.getElementById('client_input_otp').value = res.dev_otp_hint;
                         }
-                        submitBtn.innerHTML = '<i class="fa-solid fa-unlock-keyhole"></i> Verify & Start Download';
+                        submitBtn.innerHTML = '<i class="fa-solid fa-unlock-keyhole"></i> Verify &amp; Unlock Download';
                         document.getElementById('client_input_otp').focus();
                     } else {
                         errBox.textContent = res.message || 'Verification failed. Please check your credentials.';
@@ -2576,7 +2633,7 @@ foreach ($albumsRepo as $alb) {
                         submitBtn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Send Verification Code';
                     }
                 } catch (err) {
-                    errBox.textContent = 'Network error while requesting verification code.';
+                    errBox.textContent = 'Network error while requesting verification code. Please try again.';
                     errBox.style.display = 'block';
                     submitBtn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Send Verification Code';
                 } finally {
@@ -2599,6 +2656,8 @@ foreach ($albumsRepo as $alb) {
                     fd.append('email', email);
                     fd.append('name', name);
                     fd.append('phone', phone);
+                    fd.append('organization', org);
+                    fd.append('download_reason', reason);
                     fd.append('code', otp);
                     fd.append('album_id', currentAlbumId);
                     fd.append('album_title', currentAlbumTitle);
@@ -2612,10 +2671,16 @@ foreach ($albumsRepo as $alb) {
                         const badge = document.getElementById('verifiedStatusBadge');
                         if (badge) {
                             badge.style.display = 'inline-flex';
-                            badge.innerHTML = '<i class="fa-solid fa-circle-check"></i> Verified Client';
+                            if (res.access_tier === 'public_verified') {
+                                badge.innerHTML = '<i class="fa-solid fa-user-check"></i> Verified Guest';
+                            } else {
+                                badge.innerHTML = '<i class="fa-solid fa-circle-check"></i> Verified Client';
+                            }
                         }
                         closeVerifyModal();
-                        showToast('Identity verified! Starting download...');
+
+                        const deliveryNote = res.download_emailed ? ' and sent to your email (' + email + ')' : '';
+                        showToast('✓ Identity verified! High-res download started' + deliveryNote + '.');
 
                         // Immediately trigger the requested file download without synthetic click blocking
                         if (typeof pendingDownloadCallback === 'function') {
@@ -2626,7 +2691,7 @@ foreach ($albumsRepo as $alb) {
                             initiateBrowserDownload(res.download_zip_url);
                         }
                     } else {
-                        errBox.textContent = res.message || 'Invalid verification code.';
+                        errBox.textContent = res.message || 'Invalid verification code. Please check your email.';
                         errBox.style.display = 'block';
                     }
                 } catch (err) {
@@ -2634,7 +2699,7 @@ foreach ($albumsRepo as $alb) {
                     errBox.style.display = 'block';
                 } finally {
                     submitBtn.disabled = false;
-                    submitBtn.innerHTML = '<i class="fa-solid fa-unlock-keyhole"></i> Verify & Start Download';
+                    submitBtn.innerHTML = '<i class="fa-solid fa-unlock-keyhole"></i> Verify &amp; Unlock Download';
                 }
             }
         }

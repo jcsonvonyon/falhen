@@ -1,7 +1,7 @@
 <?php
 /**
  * Database Configuration & Connection Management
- * Falhen Media PHP Application
+ * Falhen Productions PHP Application
  */
 
 // Auto-load .env configuration if present
@@ -286,6 +286,11 @@ function initDatabaseSchema($pdo = null) {
             `client_name` VARCHAR(150) NOT NULL DEFAULT 'Client',
             `client_email` VARCHAR(150) NOT NULL DEFAULT '',
             `client_phone` VARCHAR(60) DEFAULT NULL,
+            `organization` VARCHAR(150) DEFAULT NULL,
+            `download_reason` VARCHAR(255) DEFAULT NULL,
+            `access_tier` VARCHAR(50) NOT NULL DEFAULT 'authorized_client',
+            `email_sent` TINYINT(1) NOT NULL DEFAULT 0,
+            `batch_id` VARCHAR(100) DEFAULT NULL,
             `album_id` INT NOT NULL DEFAULT 0,
             `album_title` VARCHAR(255) NOT NULL DEFAULT '',
             `download_type` VARCHAR(100) NOT NULL DEFAULT 'ZIP Archive',
@@ -294,8 +299,33 @@ function initDatabaseSchema($pdo = null) {
             `downloaded_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
             INDEX `idx_dl_email` (`client_email`),
             INDEX `idx_dl_album` (`album_id`),
+            INDEX `idx_dl_tier` (`access_tier`),
             INDEX `idx_dl_date` (`downloaded_at`)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+
+        // Schema migration: ensure new audit columns exist on client_download_logs
+        $dlColumns = [];
+        try {
+            $colStmt = $pdo->query("SHOW COLUMNS FROM `client_download_logs`");
+            $dlColumns = $colStmt ? $colStmt->fetchAll(PDO::FETCH_COLUMN) : [];
+        } catch (Exception $e) {}
+
+        if (!in_array('organization', $dlColumns)) {
+            @$pdo->exec("ALTER TABLE `client_download_logs` ADD COLUMN `organization` VARCHAR(150) DEFAULT NULL AFTER `client_phone`");
+        }
+        if (!in_array('download_reason', $dlColumns)) {
+            @$pdo->exec("ALTER TABLE `client_download_logs` ADD COLUMN `download_reason` VARCHAR(255) DEFAULT NULL AFTER `organization`");
+        }
+        if (!in_array('access_tier', $dlColumns)) {
+            @$pdo->exec("ALTER TABLE `client_download_logs` ADD COLUMN `access_tier` VARCHAR(50) NOT NULL DEFAULT 'authorized_client' AFTER `download_reason`");
+            @$pdo->exec("ALTER TABLE `client_download_logs` ADD INDEX `idx_dl_tier` (`access_tier`)");
+        }
+        if (!in_array('email_sent', $dlColumns)) {
+            @$pdo->exec("ALTER TABLE `client_download_logs` ADD COLUMN `email_sent` TINYINT(1) NOT NULL DEFAULT 0 AFTER `access_tier`");
+        }
+        if (!in_array('batch_id', $dlColumns)) {
+            @$pdo->exec("ALTER TABLE `client_download_logs` ADD COLUMN `batch_id` VARCHAR(100) DEFAULT NULL AFTER `email_sent`");
+        }
 
         $pdo->exec("CREATE TABLE IF NOT EXISTS `system_backups` (
             `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,

@@ -1,7 +1,7 @@
 <?php
 /**
  * Resend & Socket-based SMTP Mailer Class & Helpers
- * Falhen Media
+ * Falhen Productions
  */
 
 require_once __DIR__ . '/../config/smtp.php';
@@ -333,8 +333,8 @@ class FalhenSMTPMailer {
         ];
 
         if (!empty($testRecipient)) {
-            $subject = "Falhen Media — Resend SMTP Connection Test";
-            $html = "<h3>Resend Mail Test Successful</h3><p>This is a test notification dispatched from Falhen Media on " . date('Y-m-d H:i:s') . ".</p>";
+            $subject = "Falhen Productions — Resend SMTP Connection Test";
+            $html = "<h3>Resend Mail Test Successful</h3><p>This is a test notification dispatched from Falhen Productions on " . date('Y-m-d H:i:s') . ".</p>";
             $results['overall'] = $this->sendMail($testRecipient, $subject, $html, "Test Recipient");
         }
 
@@ -356,7 +356,7 @@ function sendFalhenEmail($toEmail, $subject, $htmlBody, $recipientName = '') {
 function sendVerificationCodeEmail($toEmail, $code, $recipientName = '') {
     $mailer = new FalhenSMTPMailer();
     
-    $subject = "Your Download Verification Code — Falhen Media";
+    $subject = "Your Download Verification Code — Falhen Productions";
     
     $html = '
     <!DOCTYPE html>
@@ -380,7 +380,7 @@ function sendVerificationCodeEmail($toEmail, $code, $recipientName = '') {
             <div class="code-box">' . htmlspecialchars($code) . '</div>
             <p>This code will expire in 10 minutes. If you did not request this download, please ignore this email.</p>
             <div class="footer">
-                &copy; ' . date('Y') . ' Falhen Media. All rights reserved.
+                &copy; ' . date('Y') . ' Falhen Productions. All rights reserved.
             </div>
         </div>
     </body>
@@ -431,7 +431,7 @@ function sendStaffActivationEmail($toEmail, $code, $recipientName = '', $staffEm
     <body>
         <div class="email-card">
             <div class="brand-logo">
-                <img src="https://falhen.com/assets/img/icons/logo.png" alt="Falhen Media" style="height: 36px;">
+                <img src="https://falhen.com/assets/img/icons/logo.png" alt="Falhen Productions" style="height: 36px;">
             </div>
             <h2>Account Activation Code</h2>
             <p>Hello ' . htmlspecialchars($recipientName ?: 'Team Member') . ',</p>
@@ -445,10 +445,10 @@ function sendStaffActivationEmail($toEmail, $code, $recipientName = '', $staffEm
             </div>
             <p style="font-size: 13px; color: #94a3b8; margin-top: 10px;">Or visit <a href="https://falhen.com/admin/login.php?action=activate&user=' . urlencode($staffEmail) . '&code=' . urlencode($code) . '" style="color: #ef4444; font-weight: 700; text-decoration: underline;">falhen.com/admin/login.php</a> to verify your 6-digit code.</p>
             <div class="notice-box">
-                <strong>Security Notice:</strong> Keep this activation code confidential. Do not share it with anyone outside Falhen Media.
+                <strong>Security Notice:</strong> Keep this activation code confidential. Do not share it with anyone outside Falhen Productions.
             </div>
             <div class="footer">
-                &copy; ' . date('Y') . ' Falhen Media Ltd. All rights reserved.
+                &copy; ' . date('Y') . ' Falhen Productions Ltd. All rights reserved.
             </div>
         </div>
     </body>
@@ -501,7 +501,7 @@ function sendStaffPasswordResetOtpEmail($toAltEmail, $code, $recipientName = '',
     <body>
         <div class="email-card">
             <div class="brand-logo">
-                <img src="https://falhen.com/assets/img/icons/logo.png" alt="Falhen Media" style="height: 36px;">
+                <img src="https://falhen.com/assets/img/icons/logo.png" alt="Falhen Productions" style="height: 36px;">
             </div>
             <h2>Password &amp; Username Reset OTP</h2>
             <p>Hello ' . htmlspecialchars($recipientName ?: 'Staff Member') . ',</p>
@@ -515,7 +515,7 @@ function sendStaffPasswordResetOtpEmail($toAltEmail, $code, $recipientName = '',
                 <strong>Important Security Notice:</strong> This alternative email address is designated strictly for security OTP verifications. If you did not initiate this request, your account credentials remain unchanged. Notify the system administrator immediately.
             </div>
             <div class="footer">
-                &copy; ' . date('Y') . ' Falhen Media Ltd. All rights reserved.
+                &copy; ' . date('Y') . ' Falhen Productions Ltd. All rights reserved.
             </div>
         </div>
     </body>
@@ -536,7 +536,7 @@ function sendSalaryPayoutNotificationEmail($toEmail, $recipientName, $payPeriod,
     if (empty($toEmail)) return false;
 
     $mailer = new FalhenSMTPMailer();
-    $subject = "Falhen Media — Salary Payout Advice (" . htmlspecialchars($payPeriod) . ")";
+    $subject = "Falhen Productions — Salary Payout Advice (" . htmlspecialchars($payPeriod) . ")";
 
     $html = '
     <!DOCTYPE html>
@@ -559,7 +559,7 @@ function sendSalaryPayoutNotificationEmail($toEmail, $recipientName, $payPeriod,
     <body>
         <div class="email-card">
             <div class="brand-logo">
-                <img src="https://falhen.com/assets/img/icons/logo.png" alt="Falhen Media" style="height: 36px;">
+                <img src="https://falhen.com/assets/img/icons/logo.png" alt="Falhen Productions" style="height: 36px;">
             </div>
             <h2>Salary Payment Advice</h2>
             <p>Dear ' . htmlspecialchars($recipientName ?: 'Team Member') . ',</p>
@@ -586,7 +586,7 @@ function sendSalaryPayoutNotificationEmail($toEmail, $recipientName, $payPeriod,
             </div>
 
             <div class="footer">
-                &copy; ' . date('Y') . ' Falhen Media Ltd. All rights reserved.
+                &copy; ' . date('Y') . ' Falhen Productions Ltd. All rights reserved.
             </div>
         </div>
     </body>
@@ -607,7 +607,7 @@ function sendVendorOnboardingConfirmationEmail($toEmail, $recipientName, $roleLa
     if (empty($toEmail)) return false;
 
     $mailer = new FalhenSMTPMailer();
-    $subject = "Welcome to Falhen Media — Onboarding Recorded (Ref: {$refCode})";
+    $subject = "Welcome to Falhen Productions — Onboarding Recorded (Ref: {$refCode})";
 
     if (empty($downloadUrl)) {
         $downloadUrl = "https://falhen.com/download_vendor_agreement.php?ref=" . urlencode($refCode);
@@ -641,11 +641,11 @@ function sendVendorOnboardingConfirmationEmail($toEmail, $recipientName, $roleLa
     <body>
         <div class="email-card">
             <div class="brand-logo">
-                <img src="https://falhen.com/assets/img/icons/logo.png" alt="Falhen Media" style="height: 38px;">
+                <img src="https://falhen.com/assets/img/icons/logo.png" alt="Falhen Productions" style="height: 38px;">
             </div>
             <h2>Onboarding Complete!</h2>
             <p>Hello <strong>' . htmlspecialchars($recipientName ?: 'Team Member') . '</strong>,</p>
-            <p>Welcome to the Falhen Media team! Your contractor/talent profile, workplace policy acceptance, and signed legal agreements (Master Services Agreement &amp; Non-Disclosure Agreement) have been officially registered.</p>
+            <p>Welcome to the Falhen Productions team! Your contractor/talent profile, workplace policy acceptance, and signed legal agreements (Master Services Agreement &amp; Non-Disclosure Agreement) have been officially registered.</p>
             
             <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: #10b981; letter-spacing: 1px; margin-top: 16px;">Your Official Reference Code</div>
             <div class="ref-box">' . htmlspecialchars($refCode) . '</div>
@@ -681,7 +681,7 @@ function sendVendorOnboardingConfirmationEmail($toEmail, $recipientName, $roleLa
             </div>
 
             <div class="footer">
-                &copy; ' . date('Y') . ' Falhen Media Ltd. All rights reserved.
+                &copy; ' . date('Y') . ' Falhen Productions Ltd. All rights reserved.
             </div>
         </div>
     </body>
@@ -694,4 +694,88 @@ function sendVendorOnboardingConfirmationEmail($toEmail, $recipientName, $roleLa
         return false;
     }
 }
+
+/**
+ * Send High-Resolution Client Gallery Download Delivery Email
+ * Dispatches an authenticated, signed download link directly to the requestor's inbox upon 6-digit OTP verification.
+ */
+function sendClientGalleryDownloadDeliveryEmail($toEmail, $recipientName, $albumTitle, $downloadUrl, $photoCount = 0, $coverUrl = '', $accessTier = 'authorized_client') {
+    if (empty($toEmail)) return false;
+
+    $mailer = new FalhenSMTPMailer();
+    $subject = "Your Photo Delivery: " . strip_tags($albumTitle) . " — Falhen Productions";
+
+    $cleanName = htmlspecialchars(trim($recipientName ?: 'Client'));
+    $cleanTitle = htmlspecialchars(trim($albumTitle ?: 'Client Gallery'));
+    $fullDlUrl = htmlspecialchars($downloadUrl);
+    $tierLabel = ($accessTier === 'public_verified') ? 'Verified Guest Access' : 'Authorized Client Access';
+
+    $coverMarkup = '';
+    if (!empty($coverUrl)) {
+        $coverMarkup = '<div style="margin: 20px 0; border-radius: 12px; overflow: hidden; max-height: 260px; box-shadow: 0 10px 25px rgba(0,0,0,0.4);"><img src="' . htmlspecialchars($coverUrl) . '" alt="' . $cleanTitle . '" style="width: 100%; height: auto; display: block; object-fit: cover;"></div>';
+    }
+
+    $countBadge = ($photoCount > 0) ? '<span>&bull;</span> <span>' . (int)$photoCount . ' High-Resolution Photos</span>' : '';
+
+    $html = '
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <style>
+            body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: #050811; color: #f8fafc; margin: 0; padding: 40px 20px; }
+            .email-container { max-width: 560px; margin: 0 auto; background-color: #0d131f; border: 1px solid #1e293b; border-radius: 18px; padding: 36px 32px; text-align: center; }
+            .brand-header { margin-bottom: 24px; }
+            h1 { color: #ffffff; font-size: 22px; font-weight: 700; margin: 0 0 10px 0; }
+            p { color: #94a3b8; font-size: 14.5px; line-height: 1.6; margin: 0 0 16px 0; }
+            .meta-pill { display: inline-flex; align-items: center; gap: 8px; background: rgba(220, 38, 38, 0.12); border: 1px solid rgba(220, 38, 38, 0.3); color: #f87171; font-size: 12px; font-weight: 700; padding: 4px 14px; border-radius: 20px; margin-bottom: 18px; }
+            .btn-download { background-color: #dc2626; color: #ffffff !important; text-decoration: none; padding: 16px 36px; border-radius: 12px; font-weight: 700; font-size: 15px; display: inline-block; box-shadow: 0 6px 20px rgba(220, 38, 38, 0.35); margin: 20px 0 12px 0; letter-spacing: 0.3px; }
+            .security-box { background: rgba(15, 23, 42, 0.6); border: 1px solid #1e293b; border-radius: 12px; padding: 14px 18px; font-size: 12.5px; color: #64748b; margin-top: 24px; text-align: left; }
+            .footer { font-size: 12px; color: #475569; margin-top: 28px; border-top: 1px solid #1e293b; padding-top: 16px; }
+        </style>
+    </head>
+    <body>
+        <div class="email-container">
+            <div class="brand-header">
+                <img src="https://falhen.com/assets/img/icons/logo.png" alt="Falhen Productions" style="height: 38px;">
+            </div>
+            <div class="meta-pill">' . $tierLabel . '</div>
+            <h1>Your Gallery Download is Ready</h1>
+            <p>Hello ' . $cleanName . ',</p>
+            <p>Your security verification for <strong>' . $cleanTitle . '</strong> was successful. Access and download your full-resolution digital photography collection below:</p>
+            ' . $coverMarkup . '
+            <div style="font-size: 13.5px; color: #cbd5e1; margin-bottom: 12px;">
+                <strong>' . $cleanTitle . '</strong> ' . $countBadge . '
+            </div>
+            <div>
+                <a href="' . $fullDlUrl . '" class="btn-download">
+                    ⬇ Download Full Gallery (.ZIP)
+                </a>
+            </div>
+            <p style="font-size: 12px; color: #64748b; margin-top: 8px;">
+                If the button above does not open directly, copy and paste this link into your browser:<br>
+                <a href="' . $fullDlUrl . '" style="color: #ef4444; word-break: break-all;">' . $fullDlUrl . '</a>
+            </p>
+            <div class="security-box">
+                <strong>🔒 Security &amp; Delivery Receipt:</strong><br>
+                &bull; Requestor: ' . $cleanName . ' (' . htmlspecialchars($toEmail) . ')<br>
+                &bull; Authorization: 6-Digit Two-Factor OTP Passed<br>
+                &bull; Timestamp: ' . date('F j, Y, g:i a T') . '<br>
+                &bull; This signed link is authenticated for your verified session. Please retain this email for your personal records.
+            </div>
+            <div class="footer">
+                &copy; ' . date('Y') . ' Falhen Productions. Editorial &amp; Commercial Photography. All rights reserved.
+            </div>
+        </div>
+    </body>
+    </html>';
+
+    try {
+        return $mailer->sendMail($toEmail, $subject, $html, $recipientName);
+    } catch (Exception $e) {
+        error_log("Failed to send Client Download Delivery email: " . $e->getMessage());
+        return false;
+    }
+}
+
 
