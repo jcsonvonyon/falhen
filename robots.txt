@@ -1,0 +1,18 @@
+User-agent: *
+Allow: /
+Allow: /assets/
+Allow: /llms.txt
+
+# Block administrative, internal API, and automation endpoints
+Disallow: /admin/
+Disallow: /api/
+Disallow: /config/
+Disallow: /cron/
+Disallow: /backups/
+Disallow: /vendor/
+Disallow: /client-portal.php
+Disallow: /vendor-onboarding.php
+Disallow: /download_call_sheet.php
+Disallow: /download_vendor_agreement.php
+
+Sitemap: https://www.falhen.com/sitemap.xml

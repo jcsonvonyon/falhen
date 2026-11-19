@@ -692,69 +692,120 @@ foreach ($albumsRepo as $alb) {
 
         /* Mobile Phone Responsiveness (<= 640px) */
         @media (max-width: 640px) {
-            .smug-gallery-grid {
-                grid-template-columns: repeat(2, 1fr) !important;
-                gap: 10px !important;
+            .smug-page-container {
+                padding: 12px 12px 48px !important;
+                padding-left: max(12px, env(safe-area-inset-left)) !important;
+                padding-right: max(12px, env(safe-area-inset-right)) !important;
                 width: 100% !important;
+                max-width: 100vw !important;
+                box-sizing: border-box !important;
+                overflow-x: hidden !important;
+            }
+            .smug-gallery-grid {
+                display: grid !important;
+                grid-template-columns: repeat(2, 1fr) !important;
+                gap: 8px !important;
+                width: 100% !important;
+                margin: 0 !important;
+                box-sizing: border-box !important;
+            }
+            .smug-photo-card {
+                aspect-ratio: 4 / 5 !important;
+                border-radius: 10px !important;
+                box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08) !important;
+                overflow: hidden !important;
+                width: 100% !important;
+                min-height: 0 !important;
+                position: relative !important;
+                border: 1px solid rgba(255, 255, 255, 0.08) !important;
             }
             .smug-photo-card.mosaic-lead {
                 grid-column: span 2 !important;
                 grid-row: span 1 !important;
+                aspect-ratio: 16 / 10 !important;
             }
             .smug-photo-card.mosaic-wide {
                 grid-column: span 2 !important;
+                grid-row: span 1 !important;
+                aspect-ratio: 16 / 10 !important;
             }
-            .smug-photo-card {
-                border-radius: 12px !important;
-                box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08) !important;
+            .smug-photo-card.mosaic-tall {
+                grid-column: span 1 !important;
+                grid-row: span 1 !important;
+                aspect-ratio: 4 / 5 !important;
+            }
+            .smug-photo-card .smug-card-media-wrap {
+                width: 100% !important;
+                height: 100% !important;
+            }
+            .smug-photo-card img {
+                width: 100% !important;
+                height: 100% !important;
+                object-fit: cover !important;
+                display: block !important;
             }
             .smug-photo-glass-overlay {
                 opacity: 1 !important;
-                background: linear-gradient(180deg, rgba(0,0,0,0) 50%, rgba(0,0,0,0.7) 100%) !important;
-                padding: 8px 10px !important;
+                background: linear-gradient(180deg, rgba(0,0,0,0) 60%, rgba(0,0,0,0.65) 100%) !important;
+                padding: 6px 8px !important;
                 pointer-events: auto !important;
                 justify-content: flex-end !important;
+                display: flex !important;
+                align-items: flex-end !important;
+            }
+            .smug-glass-actions {
+                display: flex !important;
+                gap: 6px !important;
             }
             .smug-glass-btn {
-                width: 32px !important;
-                height: 32px !important;
-                font-size: 0.76rem !important;
+                width: 30px !important;
+                height: 30px !important;
+                font-size: 0.72rem !important;
+                border-radius: 50% !important;
+                backdrop-filter: blur(8px) !important;
+                -webkit-backdrop-filter: blur(8px) !important;
             }
             .smug-topbar {
-                padding: 10px 14px;
-                padding-left: max(14px, env(safe-area-inset-left));
-                padding-right: max(14px, env(safe-area-inset-right));
-                height: 54px;
-                overflow: hidden;
+                padding: 0 12px !important;
+                padding-left: max(12px, env(safe-area-inset-left)) !important;
+                padding-right: max(12px, env(safe-area-inset-right)) !important;
+                height: 52px !important;
+                display: flex !important;
+                align-items: center !important;
+                overflow: hidden !important;
             }
             .smug-topbar-inner {
-                gap: 8px;
-                width: 100%;
+                gap: 8px !important;
+                width: 100% !important;
+                height: 52px !important;
+                display: flex !important;
+                align-items: center !important;
+                justify-content: space-between !important;
             }
             .smug-brand-link {
-                gap: 8px;
+                gap: 8px !important;
             }
             .smug-brand-link img {
-                height: 24px;
+                height: 26px !important;
             }
             .smug-brand-tag {
                 display: none !important;
             }
             .smug-topbar-actions {
-                gap: 6px;
+                gap: 6px !important;
+                display: flex !important;
+                align-items: center !important;
             }
-            /* Hide verbose text links and secondary buttons on mobile top bar */
             .smug-nav-link,
             .smug-nav-cta,
             .smug-nav-primary,
             .smug-nav-download {
                 display: none !important;
             }
-            /* Minimalist icon-only Sun/Moon atmosphere switch */
             .smug-theme-toggle {
                 padding: 0 !important;
-                width: 36px !important;
-                height: 36px !important;
+                width: 34px !important;
+                height: 34px !important;
                 border-radius: 50% !important;
                 display: inline-flex !important;
                 align-items: center !important;
@@ -764,57 +815,166 @@ foreach ($albumsRepo as $alb) {
             .smug-theme-toggle span {
                 display: none !important;
             }
-            /* Keep mobile topbar sleek: logo on left, theme switch on right */
-            .smug-page-container {
-                padding: 16px 16px 60px !important;
-                padding-left: max(16px, env(safe-area-inset-left)) !important;
-                padding-right: max(16px, env(safe-area-inset-right)) !important;
-                width: 100% !important;
-                max-width: 100vw !important;
-                box-sizing: border-box !important;
-                overflow-x: clip !important;
-            }
             .smug-back-nav-wrap {
-                margin-bottom: 12px;
+                margin-bottom: 10px !important;
             }
             .smug-back-link {
-                padding: 5px 12px;
-                font-size: 0.8rem;
+                padding: 5px 12px !important;
+                font-size: 0.78rem !important;
+                border-radius: 20px !important;
             }
             .smug-album-title {
-                font-size: clamp(1.35rem, 5.5vw, 1.85rem) !important;
-                line-height: 1.25 !important;
+                font-size: clamp(1.3rem, 5vw, 1.7rem) !important;
+                line-height: 1.22 !important;
                 word-break: break-word !important;
                 overflow-wrap: break-word !important;
-                margin-bottom: 6px !important;
+                margin: 0 0 4px !important;
+                font-weight: 800 !important;
             }
             .smug-album-meta {
-                font-size: 0.8rem;
-                gap: 8px;
+                font-size: 0.78rem !important;
+                gap: 6px !important;
             }
             .smug-album-header {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 14px;
-                margin-bottom: 20px;
-                padding-bottom: 16px;
+                flex-direction: column !important;
+                align-items: flex-start !important;
+                gap: 12px !important;
+                margin-bottom: 16px !important;
+                padding-bottom: 14px !important;
             }
             .smug-header-actions {
-                width: 100%;
-                display: grid;
-                grid-template-columns: 1.25fr 1fr;
-                gap: 8px;
+                width: 100% !important;
+                display: grid !important;
+                grid-template-columns: 1fr 1fr !important;
+                gap: 8px !important;
             }
             .btn-smug-action {
-                justify-content: center;
-                padding: 10px 12px;
-                font-size: 0.82rem;
-                width: 100%;
-                white-space: nowrap;
+                justify-content: center !important;
+                padding: 10px 8px !important;
+                font-size: 0.8rem !important;
+                border-radius: 8px !important;
+                width: 100% !important;
+                white-space: nowrap !important;
+                gap: 6px !important;
+            }
+            /* Directory Search & Category Pills on Mobile */
+            .smug-directory-header {
+                margin-bottom: 16px !important;
+            }
+            .smug-directory-title {
+                font-size: 1.45rem !important;
+                font-weight: 800 !important;
+                margin: 0 0 3px !important;
+            }
+            .smug-directory-subtitle {
+                font-size: 0.82rem !important;
+                margin: 0 0 12px !important;
+            }
+            .smug-glass-toolbar {
+                padding: 10px 12px !important;
+                gap: 10px !important;
+                border-radius: 12px !important;
+                flex-direction: column !important;
+                align-items: stretch !important;
+                width: 100% !important;
+                box-sizing: border-box !important;
+            }
+            .smug-search-wrap {
+                width: 100% !important;
+                min-width: 0 !important;
+                max-width: 100% !important;
+                box-sizing: border-box !important;
+            }
+            .smug-search-input {
+                font-size: 16px !important; /* Prevents iOS auto-zoom */
+                padding: 8px 32px 8px 34px !important;
+            }
+            .smug-cat-pills-row {
+                width: 100% !important;
+                overflow-x: auto !important;
+                -webkit-overflow-scrolling: touch !important;
+                padding-bottom: 3px !important;
+                flex: none !important;
+                gap: 6px !important;
+            }
+            .smug-cat-pill {
+                padding: 5px 12px !important;
+                font-size: 0.76rem !important;
+                border-radius: 16px !important;
+                flex-shrink: 0 !important;
             }
             .smug-folders-grid {
                 grid-template-columns: 1fr !important;
-                gap: 16px !important;
+                gap: 14px !important;
+            }
+            .smug-folder-card {
+                border-radius: 14px !important;
+                overflow: hidden !important;
+            }
+            .smug-folder-cover {
+                aspect-ratio: 16 / 10 !important;
+            }
+            .smug-folder-title {
+                font-size: 1.05rem !important;
+            }
+            .smug-folder-meta {
+                font-size: 0.78rem !important;
+            }
+            /* Verification Modal Bottom-Sheet on Mobile */
+            .smug-modal-overlay {
+                padding: 8px !important;
+                align-items: flex-end !important;
+            }
+            .smug-modal-box {
+                max-width: 100% !important;
+                width: 100% !important;
+                max-height: 90dvh !important;
+                max-height: 90vh !important;
+                border-radius: 18px 18px 8px 8px !important;
+                display: flex !important;
+                flex-direction: column !important;
+            }
+            .smug-modal-header {
+                padding: 16px 18px 12px !important;
+                flex-shrink: 0 !important;
+            }
+            .smug-modal-title {
+                font-size: 1.1rem !important;
+            }
+            .smug-modal-subtitle {
+                font-size: 0.78rem !important;
+            }
+            .smug-modal-body {
+                padding: 14px 18px !important;
+                overflow-y: auto !important;
+                -webkit-overflow-scrolling: touch !important;
+                flex: 1 !important;
+            }
+            .smug-input {
+                font-size: 16px !important; /* Critical: stops iOS zoom */
+                padding: 10px 12px !important;
+            }
+            .smug-otp-input {
+                font-size: 1.45rem !important;
+                letter-spacing: 8px !important;
+            }
+            .smug-modal-footer {
+                padding: 12px 18px 16px !important;
+                flex-direction: column-reverse !important;
+                gap: 8px !important;
+                flex-shrink: 0 !important;
+            }
+            .btn-modal-submit {
+                width: 100% !important;
+                justify-content: center !important;
+                padding: 12px !important;
+                font-size: 0.92rem !important;
+                border-radius: 8px !important;
+            }
+            .btn-modal-cancel {
+                width: 100% !important;
+                text-align: center !important;
+                padding: 6px !important;
             }
         }
 
@@ -2617,14 +2777,10 @@ foreach ($albumsRepo as $alb) {
                         document.getElementById('verifyStepIdentity').style.display = 'none';
                         document.getElementById('verifyStepOtp').style.display = 'block';
                         infoBox.style.display = 'block';
-                        const tierLabel = res.access_tier === 'public_verified' ? 'Verified Guest Code' : 'Client Access Passcode';
-                        infoBox.innerHTML = `<i class="fa-solid fa-envelope-circle-check"></i> <strong>${tierLabel}:</strong> ${res.message}` +
-                            (res.dev_otp_hint ? `<br><strong>Passcode: ${res.dev_otp_hint}</strong>` : '');
+                        const tierLabel = res.access_tier === 'public_verified' ? 'Verified Guest Access' : 'Client Access Passcode';
+                        infoBox.innerHTML = `<i class="fa-solid fa-envelope-circle-check"></i> <strong>${tierLabel}:</strong> ${res.message}`;
                         const otpNotice = document.getElementById('otpNoticeText');
-                        if (otpNotice) otpNotice.textContent = 'Sent to ' + email;
-                        if (res.dev_otp_hint) {
-                            document.getElementById('client_input_otp').value = res.dev_otp_hint;
-                        }
+                        if (otpNotice) otpNotice.textContent = 'Verification code sent to your contact email';
                         submitBtn.innerHTML = '<i class="fa-solid fa-unlock-keyhole"></i> Verify &amp; Unlock Download';
                         document.getElementById('client_input_otp').focus();
                     } else {
@@ -2679,7 +2835,7 @@ foreach ($albumsRepo as $alb) {
                         }
                         closeVerifyModal();
 
-                        const deliveryNote = res.download_emailed ? ' and sent to your email (' + email + ')' : '';
+                        const deliveryNote = res.download_emailed ? ' and delivery dispatched to your inbox' : '';
                         showToast('✓ Identity verified! High-res download started' + deliveryNote + '.');
 
                         // Immediately trigger the requested file download without synthetic click blocking

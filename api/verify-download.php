@@ -217,28 +217,17 @@ if ($action === 'request_code' || ($action === 'verify_client_download' && !empt
     // Mask email and phone for UI confirmation (never expose full email publicly)
     $emailParts = explode('@', $email);
     $maskedEmail = substr($emailParts[0], 0, 2) . '***@' . ($emailParts[1] ?? '');
-    $maskedPhone = substr($cleanPhone, 0, 3) . '****' . substr($cleanPhone, -3);
-
-    $tierNotice = $isAuthorized ? 'authorized client address' : 'verified guest address';
+    $tierNotice = $isAuthorized ? 'authorized client contact' : 'verified guest contact';
 
     $responsePayload = [
         'success'              => true,
         'otp_required'         => true,
         'is_authorized_client' => $isAuthorized,
         'access_tier'          => $accessTier,
-        'masked_email'         => $maskedEmail,
-        'masked_phone'         => $maskedPhone,
         'mail_sent'            => (bool)$mailSent,
         'expires_in'           => 600,
-        'message'              => 'A 6-digit security verification code has been dispatched to your ' . $tierNotice . ' (' . htmlspecialchars($maskedEmail) . ').'
+        'message'              => 'A 6-digit security verification code has been dispatched to your ' . $tierNotice . '.'
     ];
-
-    // If SMTP is unavailable in local dev or fallback mode, provide a dev preview hint
-    if (!$mailSent) {
-        $responsePayload['delivery_mode'] = 'instant_fallback';
-        $responsePayload['dev_otp_hint']  = $code;
-        $responsePayload['message']       = 'Verification code generated for ' . htmlspecialchars($maskedEmail) . '. Enter your 6-digit security passcode below.';
-    }
 
     echo json_encode($responsePayload);
     exit;

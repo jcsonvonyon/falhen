@@ -64,7 +64,9 @@ function sanitizeInput($data) {
  * Render Google Analytics (gtag.js) Tag
  */
 function renderGoogleAnalyticsTag() {
-    require_once __DIR__ . '/analytics.php';
+    if (file_exists(__DIR__ . '/analytics.php')) {
+        require_once __DIR__ . '/analytics.php';
+    }
 }
 
 /**
