@@ -41,7 +41,7 @@ if ($pdo) {
                 width="750" height="422">
             <img src="<?php echo htmlspecialchars($heroMedia['poster_desktop']); ?>"
                 alt="Falhen Productions Hero Showreel" class="hero-poster-img" width="1920" height="1080"
-                fetchpriority="high" decoding="sync" onerror="this.onerror=null;this.src='/assets/img/hero.jpg';">
+                fetchpriority="high" decoding="sync" onerror="if(!this.dataset.failed){this.dataset.failed='1';this.src='https://res.cloudinary.com/pnabfi91/image/upload/v1786578372/falhen/uploads/r96mxsji9cdogqrkxwoe.jpg';}">
         </picture>
     </div>
 

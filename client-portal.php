@@ -832,18 +832,27 @@ foreach ($albumsRepo as $alb) {
             }
             .smug-folders-grid {
                 grid-template-columns: 1fr !important;
-                gap: 18px !important;
+                gap: 16px !important;
             }
             .smug-folder-card {
                 border-radius: 14px !important;
                 overflow: hidden !important;
-                box-shadow: none !important;
+                box-shadow: 0 6px 20px rgba(0, 0, 0, 0.18) !important;
+                border: 1px solid var(--smug-glass-border) !important;
+                background: var(--smug-surface) !important;
             }
             .smug-folder-cover {
-                aspect-ratio: 16 / 10 !important;
+                aspect-ratio: 4 / 3.6 !important;
+                background: var(--smug-surface-solid) !important;
+            }
+            .smug-folder-cover img {
+                width: 100% !important;
+                height: 100% !important;
+                object-fit: cover !important;
+                object-position: center 20% !important;
             }
             .smug-folder-caption {
-                padding: 14px 16px !important;
+                padding: 13px 15px !important;
             }
             .smug-folder-title {
                 font-size: 1.05rem !important;
@@ -1189,22 +1198,20 @@ foreach ($albumsRepo as $alb) {
         }
 
         .smug-header-row {
-            margin-bottom: 24px;
+            margin-bottom: 16px;
         }
 
         .smug-directory-title {
-            font-size: clamp(2rem, 3.8vw, 3rem);
+            font-size: clamp(1.85rem, 3.5vw, 2.75rem);
             font-weight: 800;
             color: var(--smug-text-primary);
             letter-spacing: -0.03em;
             line-height: 1.15;
-            margin-bottom: 6px;
+            margin-bottom: 0;
         }
 
         .smug-directory-subtitle {
-            font-size: 0.95rem;
-            color: var(--smug-text-secondary);
-            font-weight: 500;
+            display: none;
         }
 
         /* Glassmorphic Search & Filter Bar */
@@ -2107,7 +2114,6 @@ foreach ($albumsRepo as $alb) {
             <div class="smug-directory-header">
                 <div class="smug-header-row">
                     <h1 class="smug-directory-title">Client Deliveries</h1>
-                    <p class="smug-directory-subtitle">Private client archives, event collections &amp; high-resolution proof galleries.</p>
                 </div>
 
                 <!-- Search & Dynamic Category Filter Bar -->
@@ -2160,8 +2166,6 @@ foreach ($albumsRepo as $alb) {
                                 <h2 class="smug-folder-title"><?php echo htmlspecialchars($album['title']); ?></h2>
                                 <p class="smug-folder-meta">
                                     <span><?php echo htmlspecialchars($albCategory); ?></span>
-                                    <span>·</span>
-                                    <span><?php echo $albCount; ?> Photos</span>
                                     <?php if (!empty($albClient) && stripos($album['title'], $albClient) === false): ?>
                                         <span>·</span>
                                         <span><?php echo htmlspecialchars($albClient); ?></span>

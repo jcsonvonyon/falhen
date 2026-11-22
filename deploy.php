@@ -316,13 +316,10 @@ try {
     $repoCount = count($repoSettings['portfolio_items'] ?? []);
 
     // Merge authoritative live settings from MySQL over repo defaults
-    $criticalKeys = ['portfolio_items', 'bts_items', 'brand_logos_items', 'registered_clients'];
-    $mergedSettings = $repoSettings;
-    foreach ($criticalKeys as $ck) {
-        if (!empty($dbSettings[$ck]) && is_array($dbSettings[$ck])) {
-            $mergedSettings[$ck] = $dbSettings[$ck];
-        }
-    }
+    // Canonical rule: Database settings in MySQL always override repo defaults!
+    // This ensures hero Cloudinary sync, direct video, showreel, custom categories,
+    // deleted/hidden albums, and portfolio items are 100% preserved and never overwritten by git pull.
+    $mergedSettings = array_merge($repoSettings, $dbSettings);
     
     // If MySQL is completely uninitialized ($dbCount === 0) or user explicitly requests ?sync_to_db=1
     if (($dbCount === 0 && $repoCount > 0) || isset($_GET['sync_to_db']) || isset($_GET['force_repo_seed'])) {

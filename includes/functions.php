@@ -388,7 +388,7 @@ function resolveHeroMediaConfig($settings = null) {
     $showreelId  = extractYouTubeId($showreelRaw) ?: 'Tf8rNMZ-Bw0';
     $showreelModalUrl = 'https://www.youtube-nocookie.com/embed/' . rawurlencode($showreelId) . '?autoplay=1&rel=0&modestbranding=1&playsinline=1';
 
-    $rawPoster = !empty($settings['hero_poster_image']) ? trim((string)$settings['hero_poster_image']) : '/assets/img/hero.jpg';
+    $rawPoster = !empty($settings['hero_poster_image']) ? trim((string)$settings['hero_poster_image']) : 'https://res.cloudinary.com/pnabfi91/image/upload/v1786578372/falhen/uploads/r96mxsji9cdogqrkxwoe.jpg';
     $posterIsCloudinary = function_exists('isCloudinaryUrl') && isCloudinaryUrl($rawPoster);
     $posterPublicId = '';
     if ($posterIsCloudinary && preg_match('#/upload/(?:[^/]+/)*?(?:v\d+/)?(.+)$#i', $rawPoster, $pm)) {
@@ -687,7 +687,7 @@ function getSiteSettings($forceReload = false) {
         'hero_direct_video_url' => '',
         'hero_youtube_bg' => '',
         'hero_vimeo_bg' => '',
-        'hero_poster_image' => 'https://storage.readdy-site.link/project_files/6c8ddf7b-6d98-436f-a5d0-36fd1d9fec3f/hero-fallback.jpg',
+        'hero_poster_image' => 'https://res.cloudinary.com/pnabfi91/image/upload/v1786578372/falhen/uploads/r96mxsji9cdogqrkxwoe.jpg',
         'showreel_youtube_id' => 'Tf8rNMZ-Bw0',
         'hero_title' => 'Cinematic Storytelling & High-Impact Media Production',
         'hero_subtitle' => 'Falhen Productions is a premier full-service media production studio crafting high-end corporate films, commercials, live broadcasts, and brand anthems.'

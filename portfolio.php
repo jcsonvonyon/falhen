@@ -1278,38 +1278,42 @@ $featuredAllProjects = array_filter($allProjects, function($item) {
                 display: none;
             }
 
-            /* Hero */
+            /* Hero - Compact & Tight for UX on Mobile */
             .port-hero-section {
-                padding: 42px 16px 28px 16px;
+                padding: 22px 14px 14px 14px;
             }
             .port-hero-title {
-                font-size: 2.15rem;
-                letter-spacing: -0.5px;
-                margin-bottom: 6px;
+                font-size: 1.45rem;
+                letter-spacing: -0.4px;
+                margin-bottom: 4px;
+                font-weight: 800;
+                line-height: 1.15;
             }
             .port-hero-subtitle {
-                font-size: 0.88rem;
-                margin: 0 0 22px 0;
+                font-size: 0.78rem;
+                margin: 0 0 12px 0;
+                opacity: 0.85;
             }
 
-            /* Switcher Pills */
+            /* Switcher Pills - Slim & Compact */
             .gallery-type-bar {
-                padding: 4px;
-                gap: 4px;
-                border-radius: 12px;
+                padding: 3px;
+                gap: 3px;
+                border-radius: 10px;
                 background: rgba(14, 14, 18, 0.96);
-                max-width: 320px;
-                width: calc(100% - 24px);
+                max-width: 300px;
+                width: calc(100% - 16px);
                 margin: 0 auto;
                 display: inline-flex;
             }
             .gallery-tab-btn {
                 flex: 1;
                 justify-content: center;
-                padding: 7px 10px;
-                font-size: 0.78rem;
-                border-radius: 8px;
-                gap: 5px;
+                padding: 6px 8px;
+                font-size: 0.74rem;
+                font-weight: 600;
+                border-radius: 6px;
+                gap: 4px;
             }
             .gallery-tab-btn .tab-tag {
                 display: none !important;
@@ -1323,33 +1327,33 @@ $featuredAllProjects = array_filter($allProjects, function($item) {
 
             /* Main Container */
             .port-main-container {
-                padding: 24px 16px 80px;
+                padding: 14px 12px 60px;
             }
 
-            /* Booking Callout Banner */
+            /* Booking Callout Banner - Slim & Non-Intrusive */
             .book-shoot-card {
-                padding: 10px 14px;
-                border-radius: 12px;
-                margin-bottom: 24px;
+                padding: 8px 10px;
+                border-radius: 10px;
+                margin-bottom: 16px;
                 flex-direction: row;
                 align-items: center;
                 justify-content: space-between;
-                gap: 8px;
+                gap: 6px;
             }
             .book-shoot-left {
-                gap: 8px;
+                gap: 6px;
                 flex-shrink: 1;
                 min-width: 0;
             }
             .book-shoot-icon {
-                width: 32px;
-                height: 32px;
-                border-radius: 8px;
-                font-size: 0.85rem;
+                width: 28px;
+                height: 28px;
+                border-radius: 6px;
+                font-size: 0.75rem;
                 flex-shrink: 0;
             }
             .book-shoot-title {
-                font-size: 0.74rem !important;
+                font-size: 0.72rem !important;
                 margin: 0;
                 white-space: nowrap;
                 letter-spacing: -0.2px;
@@ -1359,36 +1363,49 @@ $featuredAllProjects = array_filter($allProjects, function($item) {
                 display: none;
             }
             .btn-book-shoot {
-                padding: 7px 12px;
-                font-size: 0.74rem;
-                border-radius: 8px;
+                padding: 5px 10px;
+                font-size: 0.70rem;
+                border-radius: 6px;
                 white-space: nowrap;
-                gap: 5px;
+                gap: 4px;
                 flex-shrink: 0;
             }
 
-            /* Section Headers */
+            /* Section Headers - Clean & Compact */
             .port-section-header {
-                margin-bottom: 16px;
-                padding-bottom: 10px;
+                margin-bottom: 10px;
+                padding-bottom: 6px;
             }
             .port-section-title {
-                font-size: 1.15rem;
+                font-size: 0.95rem !important;
+                font-weight: 700;
             }
             .port-section-subtitle {
-                font-size: 0.8rem;
+                display: none !important;
             }
 
-            /* Photo Albums Grids - 2 Cards in a Row on Mobile */
+            /* Dynamic Filter Pills on Mobile */
+            .filter-pills-row {
+                gap: 16px !important;
+                margin-bottom: 12px !important;
+                padding-bottom: 4px !important;
+            }
+            .cat-pill-btn,
+            .project-pill-btn {
+                font-size: 0.74rem !important;
+                padding: 2px 2px 6px 2px !important;
+            }
+
+            /* Photo Albums Grids - High Density 2-Column on Mobile */
             .featured-albums-grid,
             .all-albums-grid {
                 grid-template-columns: repeat(2, 1fr) !important;
-                gap: 12px !important;
-                margin-bottom: 28px;
+                gap: 10px !important;
+                margin-bottom: 20px;
             }
 
             .featured-albums-grid .album-card {
-                border-radius: 12px;
+                border-radius: 10px;
             }
 
             .featured-albums-grid .album-thumb-wrap {
@@ -1397,32 +1414,32 @@ $featuredAllProjects = array_filter($allProjects, function($item) {
             }
 
             .featured-albums-grid .album-content-body {
-                padding: 8px 10px 10px 10px;
+                padding: 6px 8px 8px 8px;
             }
 
             .featured-albums-grid .album-title-text {
-                font-size: 0.78rem !important;
-                line-height: 1.25;
+                font-size: 0.74rem !important;
+                line-height: 1.2;
                 white-space: nowrap;
                 overflow: hidden;
                 text-overflow: ellipsis;
             }
 
             .featured-albums-grid .album-badges {
-                top: 8px;
-                left: 8px;
-                gap: 4px;
+                top: 6px;
+                left: 6px;
+                gap: 3px;
             }
 
             .featured-albums-grid .badge-feat,
             .featured-albums-grid .badge-cat {
-                font-size: 0.58rem !important;
-                padding: 2px 6px !important;
+                font-size: 0.54rem !important;
+                padding: 2px 5px !important;
             }
 
             /* All Albums Cards (2 Columns) */
             .all-albums-grid .grid-album-card {
-                border-radius: 12px;
+                border-radius: 10px;
             }
 
             .grid-thumb-box {
@@ -1431,41 +1448,45 @@ $featuredAllProjects = array_filter($allProjects, function($item) {
             }
 
             .grid-card-footer {
-                padding: 8px 10px 10px 10px;
+                padding: 6px 8px 8px 8px;
             }
 
             .grid-card-title {
-                font-size: 0.78rem !important;
-                line-height: 1.25;
+                font-size: 0.74rem !important;
+                line-height: 1.2;
                 white-space: nowrap;
                 overflow: hidden;
                 text-overflow: ellipsis;
             }
 
             .grid-card-cat {
-                font-size: 0.68rem;
+                font-size: 0.64rem;
             }
 
             .grid-card-arrow {
-                font-size: 0.75rem;
+                font-size: 0.70rem;
             }
 
             /* Project Cards (2 Columns) */
+            .projects-4col-grid {
+                gap: 10px !important;
+                margin-bottom: 24px !important;
+            }
             .project-card-image-wrap {
                 aspect-ratio: 16 / 10;
             }
             .project-card-info {
-                padding: 8px 10px 10px 10px;
+                padding: 6px 8px 8px 8px;
             }
             .project-card-cat {
-                font-size: 0.68rem;
+                font-size: 0.64rem;
                 color: #ef4444;
                 font-weight: 700;
                 margin-bottom: 2px;
             }
             .project-card-title {
-                font-size: 0.78rem !important;
-                line-height: 1.25;
+                font-size: 0.74rem !important;
+                line-height: 1.2;
                 display: -webkit-box;
                 -webkit-line-clamp: 2;
                 -webkit-box-orient: vertical;
@@ -1473,36 +1494,40 @@ $featuredAllProjects = array_filter($allProjects, function($item) {
             }
 
             /* Video Cards (2 Columns) */
+            .video-grid {
+                gap: 10px !important;
+                margin-bottom: 24px !important;
+            }
             .video-card-thumb {
                 aspect-ratio: 16 / 9;
             }
             .video-featured-tag {
-                top: 8px;
-                left: 8px;
-                font-size: 0.62rem;
-                padding: 2px 5px;
+                top: 6px;
+                left: 6px;
+                font-size: 0.58rem;
+                padding: 2px 4px;
             }
             .video-duration-pill,
             .video-duration-badge {
-                bottom: 8px;
-                right: 8px;
-                font-size: 0.65rem;
-                padding: 2px 6px;
+                bottom: 6px;
+                right: 6px;
+                font-size: 0.60rem;
+                padding: 2px 5px;
             }
             .video-card-info {
-                padding: 8px 10px 10px 10px;
+                padding: 6px 8px 8px 8px;
                 gap: 2px;
             }
             .video-card-title {
-                font-size: 0.78rem !important;
-                line-height: 1.25;
+                font-size: 0.74rem !important;
+                line-height: 1.2;
                 display: -webkit-box;
                 -webkit-line-clamp: 2;
                 -webkit-box-orient: vertical;
                 overflow: hidden;
             }
             .video-card-sub {
-                font-size: 0.68rem;
+                font-size: 0.64rem;
                 white-space: nowrap;
                 overflow: hidden;
                 text-overflow: ellipsis;

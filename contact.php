@@ -62,60 +62,56 @@ require_once __DIR__ . '/includes/header.php';
 
     .contact-hero-title {
         font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
-        font-size: 60px;
+        font-size: 56px;
         font-weight: 800;
         color: #ffffff;
         letter-spacing: -1.5px;
         line-height: 1.1;
-        margin: 0 0 24px 0;
+        margin: 0 0 14px 0;
+    }
+
+    .contact-hero-subtitle {
+        font-size: 1.15rem;
+        color: #a1a1aa;
+        margin: 0 auto 16px auto;
+        max-width: 580px;
+        line-height: 1.5;
     }
 
     .contact-trust-row {
         display: flex;
         align-items: center;
         justify-content: center;
-        gap: 32px;
-        margin-top: 24px;
+        gap: 28px;
+        margin-top: 18px;
     }
 
     .contact-trust-item {
         display: flex;
         align-items: center;
-        gap: 10px;
-        color: #a1a1aa;
-        font-size: 0.92rem;
+        gap: 8px;
+        color: #d4d4d8;
+        font-size: 0.88rem;
         font-weight: 600;
     }
 
     .contact-trust-item i {
         color: #ef4444;
-        font-size: 1rem;
+        font-size: 0.95rem;
     }
 
-    /* Sub-Header Banner */
-    .contact-subheader-section {
-        padding: 50px 0 20px 0;
-        text-align: center;
+    /* Main Section */
+    .contact-main-section {
+        padding: 50px 0 80px 0;
     }
 
-    .contact-sub-badge {
-        display: inline-block;
-        background: rgba(220, 38, 38, 0.18);
-        border: 1px solid rgba(220, 38, 38, 0.35);
-        color: #ff4d4d;
-        font-size: 0.8rem;
+    .form-card-title {
+        font-family: inherit;
+        font-size: 1.25rem;
         font-weight: 700;
-        padding: 5px 18px;
-        border-radius: 50px;
-        margin-bottom: 8px;
-    }
-
-    .contact-sub-desc {
-        color: #a1a1aa;
-        font-size: 1.1rem;
-        line-height: 1.65;
-        max-width: 580px;
-        margin: 0 auto 50px auto;
+        color: #ffffff;
+        margin: 0 0 18px 0;
+        letter-spacing: -0.3px;
     }
 
     /* Main 2-Column Section */
@@ -393,154 +389,72 @@ require_once __DIR__ . '/includes/header.php';
 
     @media (max-width: 992px) {
         .contact-hero-stage {
-            padding: 120px 0 45px 0;
+            padding: 105px 0 35px 0;
         }
         .contact-main-grid {
             grid-template-columns: 1fr;
-            gap: 36px;
-            margin-bottom: 60px;
+            gap: 32px;
+            margin-bottom: 50px;
         }
         .contact-hero-title {
-            font-size: 2.8rem;
+            font-size: 2.6rem;
         }
         .contact-form-card {
-            padding: 30px 28px;
+            padding: 28px 24px;
         }
     }
 
     @media (max-width: 768px) {
         .contact-hero-stage {
-            padding: 105px 0 32px 0;
+            padding: 85px 0 24px 0 !important;
         }
         .contact-hero-title {
-            font-size: 2.3rem;
-            letter-spacing: -0.8px;
-            margin-bottom: 18px;
-            line-height: 1.15;
+            font-size: 2.05rem !important;
+            letter-spacing: -0.6px !important;
+            margin-bottom: 8px !important;
+            line-height: 1.15 !important;
+        }
+        .contact-hero-subtitle {
+            font-size: 0.85rem !important;
+            line-height: 1.4 !important;
+            margin: 0 auto 12px auto !important;
+            padding: 0 12px !important;
         }
         .contact-trust-row {
-            gap: 18px;
-            margin-top: 16px;
-            flex-wrap: wrap;
+            gap: 14px !important;
+            margin-top: 10px !important;
+            flex-wrap: wrap !important;
         }
         .contact-trust-item {
-            font-size: 0.84rem;
+            font-size: 0.80rem !important;
         }
-        .contact-subheader-section {
-            padding: 28px 0 12px 0;
-        }
-        .contact-sub-desc {
-            font-size: 0.95rem;
-            margin: 0 auto 30px auto;
-            padding: 0 12px;
-            line-height: 1.55;
+        .contact-main-section {
+            padding: 24px 0 45px 0 !important;
         }
         .contact-main-grid {
-            gap: 28px;
-            margin-bottom: 45px;
+            gap: 22px !important;
+            margin-bottom: 30px !important;
         }
         .conversation-heading {
-            font-size: 1.85rem;
-            margin-bottom: 10px;
+            font-size: 1.35rem !important;
+            margin-bottom: 6px !important;
         }
         .conversation-desc {
-            font-size: 0.88rem;
-            margin-bottom: 18px;
-            line-height: 1.55;
+            font-size: 0.82rem !important;
+            margin-bottom: 14px !important;
+            line-height: 1.45 !important;
         }
         .contact-info-list {
-            gap: 12px;
+            gap: 10px !important;
         }
         .contact-info-card {
-            padding: 13px 16px;
-            gap: 14px;
-        }
-        .contact-info-icon-box {
-            width: 38px;
-            height: 38px;
-            font-size: 0.95rem;
-        }
-        .contact-info-label {
-            font-size: 0.88rem;
-        }
-        .contact-info-val {
-            font-size: 0.85rem;
-        }
-        .services-tag-box {
-            padding: 18px 18px;
-        }
-        .services-tag-title {
-            font-size: 0.9rem;
-            margin-bottom: 12px;
-        }
-        .services-tag-cloud {
-            gap: 8px 14px;
-        }
-        .service-tag-pill {
-            font-size: 0.8rem;
-            padding: 2px 0 3px 0;
-            border-radius: 0;
-        }
-        .contact-form-card {
-            padding: 24px 20px;
-            border-radius: 16px;
-        }
-    }
-
-    @media (max-width: 480px) {
-        .contact-hero-stage {
-            padding: 95px 0 26px 0;
-        }
-        .contact-hero-title {
-            font-size: 1.95rem;
-            letter-spacing: -0.5px;
-            margin-bottom: 14px;
-            line-height: 1.18;
-        }
-        .contact-trust-row {
-            gap: 14px;
-            margin-top: 14px;
-        }
-        .contact-trust-item {
-            font-size: 0.78rem;
-            gap: 6px;
-        }
-        .contact-subheader-section {
-            padding: 20px 0 8px 0;
-        }
-        .contact-sub-desc {
-            font-size: 0.88rem;
-            margin: 0 auto 24px auto;
-            padding: 0 4px;
-            line-height: 1.5;
-        }
-        .contact-main-grid {
-            gap: 24px;
-            margin-bottom: 35px;
-        }
-        .conversation-heading {
-            font-size: 1.6rem;
-            margin-bottom: 8px;
-            line-height: 1.2;
-        }
-        .conversation-desc {
-            font-size: 0.84rem;
-            margin-bottom: 16px;
-            line-height: 1.5;
-        }
-        .contact-info-list {
-            gap: 10px;
-        }
-        .contact-info-card {
-            padding: 11px 13px;
-            gap: 12px;
-            border-radius: 12px;
+            padding: 11px 14px !important;
+            gap: 12px !important;
         }
         .contact-info-icon-box {
             width: 36px;
             height: 36px;
             font-size: 0.9rem;
-            border-radius: 10px;
         }
         .contact-info-label {
             font-size: 0.82rem;
@@ -549,8 +463,7 @@ require_once __DIR__ . '/includes/header.php';
             font-size: 0.82rem;
         }
         .services-tag-box {
-            padding: 14px 14px;
-            border-radius: 12px;
+            padding: 14px 16px;
         }
         .services-tag-title {
             font-size: 0.85rem;
@@ -560,51 +473,94 @@ require_once __DIR__ . '/includes/header.php';
             gap: 7px 12px;
         }
         .service-tag-pill {
-            font-size: 0.76rem;
+            font-size: 0.78rem;
             padding: 2px 0 3px 0;
             border-radius: 0;
         }
         .contact-form-card {
-            padding: 20px 15px;
-            border-radius: 14px;
+            padding: 20px 16px !important;
+            border-radius: 14px !important;
+        }
+        .form-card-title {
+            font-size: 1.15rem !important;
+            margin-bottom: 14px !important;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .contact-hero-stage {
+            padding: 80px 0 20px 0 !important;
+        }
+        .contact-hero-title {
+            font-size: 1.85rem !important;
+            letter-spacing: -0.4px !important;
+            margin-bottom: 6px !important;
+            line-height: 1.18 !important;
+        }
+        .contact-trust-row {
+            gap: 10px !important;
+            margin-top: 8px !important;
+        }
+        .contact-trust-item {
+            font-size: 0.74rem !important;
+            gap: 5px;
+        }
+        .contact-main-grid {
+            gap: 18px !important;
+            margin-bottom: 25px !important;
+        }
+        .conversation-heading {
+            font-size: 1.25rem !important;
+            margin-bottom: 4px !important;
+        }
+        .conversation-desc {
+            font-size: 0.80rem !important;
+            margin-bottom: 12px !important;
+        }
+        .contact-info-card {
+            padding: 10px 12px !important;
+            gap: 10px !important;
+            border-radius: 10px !important;
+        }
+        .contact-info-icon-box {
+            width: 32px !important;
+            height: 32px !important;
+            font-size: 0.85rem !important;
+            border-radius: 8px !important;
+        }
+        .services-tag-box {
+            padding: 12px 12px !important;
+            border-radius: 10px !important;
+        }
+        .contact-form-card {
+            padding: 18px 14px !important;
+            border-radius: 12px !important;
         }
         .contact-form-row {
             grid-template-columns: 1fr;
-            gap: 14px;
-            margin-bottom: 14px;
+            gap: 12px;
+            margin-bottom: 12px;
         }
         .contact-field-group {
-            margin-bottom: 14px;
+            margin-bottom: 12px;
         }
         .contact-field-label {
-            font-size: 0.8rem;
-            margin-bottom: 6px;
+            font-size: 0.78rem;
+            margin-bottom: 5px;
         }
         .contact-field-control {
-            padding: 11px 13px;
-            font-size: 0.86rem;
-            border-radius: 9px;
-        }
-        select.contact-field-control {
-            background-size: 14px;
-            padding-right: 36px;
+            padding: 10px 12px;
+            font-size: 0.84rem;
+            border-radius: 8px;
         }
         textarea.contact-field-control {
-            min-height: 90px;
-        }
-        .char-counter-text {
-            font-size: 0.72rem;
-            margin-top: 5px;
+            min-height: 85px;
         }
         .btn-send-message {
-            padding: 13px 18px;
-            font-size: 0.92rem;
-            border-radius: 10px;
-            margin-top: 6px;
-        }
-        .service-preselected-notice {
-            font-size: 0.75rem;
-            margin-top: 6px;
+            padding: 12px 16px;
+            font-size: 0.88rem;
+            border-radius: 9px;
+            margin-top: 4px;
         }
     }
 </style>
@@ -612,28 +568,26 @@ require_once __DIR__ . '/includes/header.php';
 <!-- Hero Section -->
 <section class="contact-hero-stage">
     <div class="container">
-        <h1 class="contact-hero-title">Let's Create Something<br><span style="color: #dc2626;">Extraordinary</span></h1>
+        <h1 class="contact-hero-title">Start a <span style="color: #dc2626;">Project</span></h1>
+        <p class="contact-hero-subtitle">Oakbrook studio &amp; on-location productions across North America and worldwide.</p>
         
         <div class="contact-trust-row">
-            <div class="contact-trust-item"><i class="fa-regular fa-clock"></i> 48hr Response</div>
-            <div class="contact-trust-item"><i class="fa-solid fa-shield-halved"></i> No Commitment</div>
+            <div class="contact-trust-item"><i class="fa-regular fa-clock"></i> 24-48hr Direct Response</div>
+            <div class="contact-trust-item"><i class="fa-solid fa-location-dot"></i> Chicago &amp; Worldwide</div>
         </div>
     </div>
 </section>
 
-<!-- Sub-Header Section -->
-<section class="contact-subheader-section">
+<!-- Main Inquiry Section -->
+<section class="contact-main-section">
     <div class="container">
-        <p class="contact-sub-desc">Ready to bring your vision to life? Tell us about your project and we'll get back to you within 48 hours.</p>
-
-        <!-- Main 2-Column Section -->
         <div class="contact-main-grid">
             
             <!-- Left Info Column -->
             <div class="contact-left-col">
                 <div>
-                    <h2 class="conversation-heading">Let's Start a Conversation</h2>
-                    <p class="conversation-desc">Whether you have a specific project in mind or just want to explore possibilities, we're here to help. Reach out and our team will respond promptly.</p>
+                    <h2 class="conversation-heading">Direct Coordinates</h2>
+                    <p class="conversation-desc">Speak directly with our production team for commercial films, broadcasts, or photography bookings.</p>
 
                     <!-- Contact Info List -->
                     <div class="contact-info-list">
@@ -656,8 +610,8 @@ require_once __DIR__ . '/includes/header.php';
                         <div class="contact-info-card">
                             <div class="contact-info-icon-box"><i class="fa-solid fa-location-dot"></i></div>
                             <div style="text-align: left;">
-                                <div class="contact-info-label">Visit Us</div>
-                                <div class="contact-info-val">611 Enterprise Dr. Suite 4 Oakbrook IL 60523</div>
+                                <div class="contact-info-label">Studio</div>
+                                <div class="contact-info-val">611 Enterprise Dr. Suite 4, Oakbrook IL 60523</div>
                             </div>
                         </div>
                     </div>
@@ -665,7 +619,7 @@ require_once __DIR__ . '/includes/header.php';
 
                 <!-- Services Tag Cloud -->
                 <div class="services-tag-box">
-                    <div class="services-tag-title">Our Services</div>
+                    <div class="services-tag-title">Select Service</div>
                     <div class="services-tag-cloud" id="servicesTagCloud">
                         <?php foreach ($servicesList as $srv): 
                             $isActive = (strcasecmp($selectedService, $srv) === 0);
@@ -680,6 +634,7 @@ require_once __DIR__ . '/includes/header.php';
 
             <!-- Right Form Column -->
             <div class="contact-form-card">
+                <h3 class="form-card-title">Send an Inquiry</h3>
                 <div id="contactFormAlert" style="display: none; margin-bottom: 20px; padding: 14px; border-radius: 10px; font-size: 0.92rem; text-align: left;"></div>
 
                 <form id="contactPageForm" action="/api/contact_submit.php" method="POST">
@@ -733,7 +688,7 @@ require_once __DIR__ . '/includes/header.php';
                     </div>
 
                     <button type="submit" class="btn-send-message" id="contactSubmitBtn">
-                        <i class="fa-solid fa-paper-plane"></i> Send Message
+                        <i class="fa-solid fa-paper-plane"></i> Send Inquiry
                     </button>
                 </form>
             </div>

@@ -33,8 +33,8 @@ if (!empty($dynamicServices)) {
             'icon' => 'ri-video-line',
             'image' => 'https://res.cloudinary.com/pnabfi91/image/upload/v1791224271/falhen/portfolio/ysfriy8jlhhkcuzl8j16.jpg',
             'badge' => 'Cinema & TV',
-            'desc' => 'Professional video production services from concept to completion, including scripting, filming, and editing with state-of-the-art equipment.',
-            'tags' => ['Corporate videos & commercials', '4K & 8K video capture', 'Drone cinematography', 'Multi-camera productions']
+            'desc' => 'Commercial films, brand documentaries, and 4K/8K cinema production crafted for impact.',
+            'tags' => ['Commercial Films', '4K & 8K Cinema', 'Drone Aerials', 'Multi-Camera']
         ],
         [
             'slug' => 'live-streaming',
@@ -42,8 +42,8 @@ if (!empty($dynamicServices)) {
             'icon' => 'ri-live-line',
             'image' => 'https://res.cloudinary.com/pnabfi91/image/upload/v1791222750/falhen/portfolio/blpzc2fznaqr0czm3ji8.jpg',
             'badge' => 'Global Broadcast',
-            'desc' => 'Seamless live streaming solutions for events, conferences, and broadcasts with professional-grade equipment and technical support.',
-            'tags' => ['Multi-platform streaming', 'Real-time graphics & overlays', 'Interactive audience engagement', 'Technical support & monitoring']
+            'desc' => 'Multi-camera broadcast streaming for global events, keynotes, and concerts with redundant uplinks.',
+            'tags' => ['Global Broadcast', 'Keynotes & Concerts', 'Real-Time Graphics', 'Redundant Uplink']
         ],
         [
             'slug' => 'post-production',
@@ -51,8 +51,8 @@ if (!empty($dynamicServices)) {
             'icon' => 'ri-edit-line',
             'image' => 'https://res.cloudinary.com/pnabfi91/image/upload/v1791380765/falhen/bts/bqpxfuekjfuqrbq1sqed.jpg',
             'badge' => 'DaVinci Resolve HDR',
-            'desc' => 'Comprehensive post-production services including editing, color grading, sound design, and visual effects to polish your content.',
-            'tags' => ['Professional video editing', 'Color correction & grading', 'Sound design & mixing', 'Visual effects & compositing']
+            'desc' => 'Precision offline editing, DaVinci Resolve HDR color grading, and spatial sound design.',
+            'tags' => ['Editorial & Assembly', 'HDR Color Grading', 'Audio Mastering', 'Visual Effects']
         ],
         [
             'slug' => 'animation',
@@ -60,8 +60,8 @@ if (!empty($dynamicServices)) {
             'icon' => 'ri-magic-line',
             'image' => 'https://res.cloudinary.com/pnabfi91/image/upload/v1791380709/falhen/bts/yqjuxtubd9ka0gyqw68c.jpg',
             'badge' => '2D & 3D Design',
-            'desc' => 'Creative animation and motion graphics services to enhance your brand storytelling with engaging visual elements.',
-            'tags' => ['2D & 3D animation', 'Motion graphics design', 'Logo animations', 'Explainer videos']
+            'desc' => 'Dynamic 2D/3D motion design, kinetic brand identity, 3D product renders, and title sequences.',
+            'tags' => ['2D & 3D Motion', 'Brand Identity', 'Kinetic Typography', '3D Visuals']
         ]
     ];
 }
@@ -258,48 +258,100 @@ if (!empty($dynamicServices)) {
 
     @media (max-width: 768px) {
         .services-hero-wrapper {
-            padding-top: 100px !important;
-            padding-bottom: 30px !important;
+            padding-top: 85px !important;
+            padding-bottom: 24px !important;
+        }
+        .services-hero-badge {
+            font-size: 0.72rem !important;
+            padding: 4px 12px !important;
+            margin-bottom: 10px !important;
+        }
+        .services-hero-title {
+            font-size: 1.85rem !important;
+            line-height: 1.15 !important;
+            margin-bottom: 8px !important;
+        }
+        .services-hero-subtitle {
+            font-size: 0.85rem !important;
+            line-height: 1.45 !important;
+            color: #a1a1aa !important;
+            margin: 0 auto !important;
+            padding: 0 10px !important;
+            display: block !important;
         }
         .services-pro-grid {
             grid-template-columns: 1fr !important;
-            gap: 16px !important;
-            margin-top: 24px !important;
+            gap: 14px !important;
+            margin-top: 20px !important;
+        }
+        .pro-service-card {
+            border-radius: 16px !important;
+            background: #0b0b0e !important;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35) !important;
+            border-color: rgba(255, 255, 255, 0.08) !important;
         }
         .pro-card-image-wrap {
-            height: 160px !important;
+            height: 135px !important;
             overflow: visible !important;
         }
         .pro-card-img-inner {
-            border-top-left-radius: 20px !important;
-            border-top-right-radius: 20px !important;
+            border-top-left-radius: 16px !important;
+            border-top-right-radius: 16px !important;
+        }
+        .pro-card-top-badge {
+            top: 10px !important;
+            right: 10px !important;
+            font-size: 0.66rem !important;
+            padding: 3px 9px !important;
         }
         .pro-card-icon-floating {
-            bottom: -20px !important;
-            left: 20px !important;
-            width: 44px !important;
-            height: 44px !important;
-            font-size: 1.15rem !important;
-            border-radius: 12px !important;
-            box-shadow: 0 6px 20px rgba(220, 38, 38, 0.5) !important;
+            bottom: -16px !important;
+            left: 16px !important;
+            width: 38px !important;
+            height: 38px !important;
+            font-size: 1rem !important;
+            border-radius: 10px !important;
+            box-shadow: 0 4px 14px rgba(220, 38, 38, 0.45) !important;
         }
         .pro-card-body {
-            padding: 30px 18px 18px 18px !important;
+            padding: 24px 14px 14px 14px !important;
         }
         .pro-card-title {
-            font-size: 1.2rem !important;
+            font-size: 1.08rem !important;
+            line-height: 1.25 !important;
+            margin-bottom: 6px !important;
         }
         .pro-card-desc {
-            font-size: 0.85rem !important;
+            font-size: 0.82rem !important;
+            line-height: 1.45 !important;
+            color: #a1a1aa !important;
+            margin-bottom: 10px !important;
             display: -webkit-box !important;
             -webkit-line-clamp: 2 !important;
             -webkit-box-orient: vertical !important;
             overflow: hidden !important;
-            text-overflow: ellipsis !important;
-            margin-bottom: 14px !important;
         }
-        .section-subtitle {
+        .pro-card-tags {
+            gap: 6px !important;
+            margin-bottom: 12px !important;
+        }
+        .pro-tag {
+            font-size: 0.68rem !important;
+            padding: 2px 8px !important;
+        }
+        .pro-tag:nth-child(n+3) {
             display: none !important;
+        }
+        .pro-card-footer {
+            padding-top: 10px !important;
+        }
+        .pro-action-text {
+            font-size: 0.80rem !important;
+        }
+        .pro-arrow-circle {
+            width: 28px !important;
+            height: 28px !important;
+            font-size: 0.72rem !important;
         }
     }
 </style>
@@ -307,9 +359,9 @@ if (!empty($dynamicServices)) {
 <section class="section services-hero-wrapper">
     <div class="container">
         <div class="section-title-wrapper" style="text-align: center;">
-            <div class="badge" style="display: inline-flex; align-items: center; gap: 8px; margin-bottom: 16px;"><i class="fa-solid fa-clapperboard"></i> Full-Service Media Agency</div>
-            <h2 class="section-title" style="font-size: 3rem; font-weight: 700; color: #ffffff; margin-bottom: 14px;">End-to-End <span style="color: #dc2626;">Media Services</span></h2>
-            <p class="section-subtitle" style="font-size: 1.1rem; color: #a1a1aa; max-width: 680px; margin: 0 auto;">We handle every stage of visual media creation — from concept development to red-carpet delivery.</p>
+            <div class="badge services-hero-badge" style="display: inline-flex; align-items: center; gap: 8px; margin-bottom: 14px;"><i class="fa-solid fa-clapperboard"></i> Media Production</div>
+            <h1 class="section-title services-hero-title" style="font-size: 2.85rem; font-weight: 800; color: #ffffff; letter-spacing: -0.8px; margin-bottom: 12px;">End-to-End <span style="color: #dc2626;">Media Services</span></h1>
+            <p class="section-subtitle services-hero-subtitle" style="font-size: 1.05rem; color: #a1a1aa; max-width: 640px; margin: 0 auto;">Commercial film, multi-camera broadcasting, post-production, and motion design.</p>
         </div>
 
         <div class="services-pro-grid">
