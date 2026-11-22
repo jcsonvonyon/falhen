@@ -322,6 +322,13 @@ try {
     $mergedSettings = array_merge($repoSettings, $dbSettings);
     if (!empty($repoSettings['services_items'])) {
         $mergedSettings['services_items'] = $repoSettings['services_items'];
+        $pdo = function_exists('getDBConnection') ? getDBConnection() : null;
+        if ($pdo) {
+            try {
+                $stmt = $pdo->prepare("INSERT INTO `site_settings` (`setting_key`, `setting_value`) VALUES ('services_items', ?) ON DUPLICATE KEY UPDATE `setting_value` = VALUES(`setting_value`)");
+                $stmt->execute([json_encode($repoSettings['services_items'], JSON_UNESCAPED_SLASHES)]);
+            } catch (Throwable $e) {}
+        }
     }
     
     // If MySQL is completely uninitialized ($dbCount === 0) or user explicitly requests ?sync_to_db=1
@@ -347,6 +354,11 @@ try {
     }
 } catch (Throwable $e) {
     $output[] = "Settings sync notice: " . $e->getMessage();
+}
+
+if (function_exists('opcache_reset')) {
+    @opcache_reset();
+    $output[] = "OPcache cleared successfully.";
 }
 
 echo "Command: git pull origin main\n";
