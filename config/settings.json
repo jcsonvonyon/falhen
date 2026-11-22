@@ -7,7 +7,7 @@
   "hero_badge_label": "",
   "hero_headline_line1": "Creating what the",
   "hero_headline_line2": "World Watches",
-  "hero_tagline": "From cinematic campaigns to viral content \u2014 we craft the visual stories your audience can't look away from.",
+  "hero_tagline": "From cinematic campaigns to viral content — we craft the visual stories your audience can't look away from.",
   "hero_primary_cta_text": "Explore Our Projects",
   "hero_primary_cta_url": "/portfolio.php",
   "hero_secondary_cta_text": "Watch Showreel",
@@ -44,46 +44,46 @@
   "bts_badge_label": "Production BTS",
   "bts_headline_white": "Every Frame",
   "bts_headline_red": "Speaks",
-  "bts_description": "A raw look at what it takes to create world-class content \u2014 from location scouts to post-production suites.",
+  "bts_description": "A raw look at what it takes to create world-class content — from location scouts to post-production suites.",
   "bts_items": [
     {
       "id": 1,
-      "title": "On set \u2014 RedBull Campaign, Dubai 2024",
+      "title": "On set — RedBull Campaign, Dubai 2024",
       "subtitle": "Director reviewing footage on set",
       "image": "https://res.cloudinary.com/pnabfi91/image/upload/v1791380693/falhen/bts/uc34zifoyzeyyqvsm5qj.jpg",
       "visible": true
     },
     {
       "id": 2,
-      "title": "ARRI ALEXA Mini LF \u2014 lens prep",
+      "title": "ARRI ALEXA Mini LF — lens prep",
       "subtitle": "Camera rig setup",
       "image": "https://res.cloudinary.com/pnabfi91/image/upload/v1791380709/falhen/bts/yqjuxtubd9ka0gyqw68c.jpg",
       "visible": true
     },
     {
       "id": 3,
-      "title": "Lighting rig \u2014 HBO Teaser, Cape Town",
+      "title": "Lighting rig — HBO Teaser, Cape Town",
       "subtitle": "Lighting setup",
       "image": "https://res.cloudinary.com/pnabfi91/image/upload/v1791380721/falhen/bts/gmw6x8ccznwrjbhsuhja.jpg",
       "visible": true
     },
     {
       "id": 4,
-      "title": "Aerial Drone Scout \u2014 Kenya Safari",
+      "title": "Aerial Drone Scout — Kenya Safari",
       "subtitle": "4K aerial footage capture",
       "image": "https://res.cloudinary.com/pnabfi91/image/upload/v1791380756/falhen/bts/ufjkbvwtqxd5f15uxx5h.jpg",
       "visible": true
     },
     {
       "id": 5,
-      "title": "Post-Production Suite \u2014 Color Grading",
+      "title": "Post-Production Suite — Color Grading",
       "subtitle": "DaVinci Resolve studio session",
       "image": "https://res.cloudinary.com/pnabfi91/image/upload/v1791380765/falhen/bts/bqpxfuekjfuqrbq1sqed.jpg",
       "visible": true
     },
     {
       "id": 6,
-      "title": "Wedding Cinema Shoot \u2014 Sunset",
+      "title": "Wedding Cinema Shoot — Sunset",
       "subtitle": "Romantic Golden Hour capture",
       "image": "https://res.cloudinary.com/pnabfi91/image/upload/v1791380777/falhen/bts/hu9buzs1ccakow1eqsna.jpg",
       "visible": true
@@ -158,7 +158,7 @@
     {
       "id": 6,
       "project_name": "Wedding Celebration",
-      "client": "Dian\u00e9 and Max",
+      "client": "Diané and Max",
       "category": "Wedding Film",
       "year": "2024",
       "duration": "1:49",
@@ -201,14 +201,14 @@
       "slug": "video-production",
       "title": "Video Production",
       "icon": "fa-solid fa-film",
-      "short_description": "Professional video production services from concept to completion, including scripting, filming, and editing with state-of-the-art equipment.",
-      "detail_description": "Our full-service video production team handles every stage of the process \u2014 from initial creative briefs and scriptwriting through on-set filming with cinema-grade cameras to the final polished edit. Whether you need a 30-second ad or a 30-minute brand documentary, we bring precision and artistry to every frame.",
+      "short_description": "High-impact commercial films, brand documentaries, and 4K/8K cinema capture.",
+      "detail_description": "Our full-service video production team handles every stage of the process — from initial creative briefs and scriptwriting through on-set filming with cinema-grade cameras to the final polished edit. Whether you need a 30-second ad or a 30-minute brand documentary, we bring precision and artistry to every frame.",
       "image": "https://res.cloudinary.com/pnabfi91/image/upload/v1791294690/falhen/services/b6urkmrrjaqvwtovwtqz.jpg",
       "card_features": [
-        "Corporate videos & commercials",
-        "4K & 8K video capture",
-        "Drone cinematography",
-        "Multi-camera productions"
+        "Commercial Films",
+        "4K & 8K Cinema",
+        "Drone Aerials",
+        "Multi-Camera Rigs"
       ],
       "detail_features": [
         "4K & 8K Cinema Capture",
@@ -226,14 +226,14 @@
       "slug": "live-streaming",
       "title": "Live Streaming",
       "icon": "fa-solid fa-tower-broadcast",
-      "short_description": "Seamless live streaming solutions for events, conferences, and broadcasts with professional-grade equipment and technical support.",
-      "detail_description": "Transform your corporate meetings, product launches, and keynote conferences into immersive digital experiences. Falhen production team provides end-to-end broadcast engineering\u2014from multi-angle cinema cameras and live switching to real-time viewer polling and instant master VOD recording. We handle the complex technical infrastructure so you can focus on connecting with your viewers anywhere in the world.",
+      "short_description": "Multi-camera broadcast streaming for global events, keynotes, and concerts.",
+      "detail_description": "Transform your corporate meetings, product launches, and keynote conferences into immersive digital experiences. Falhen production team provides end-to-end broadcast engineering—from multi-angle cinema cameras and live switching to real-time viewer polling and instant master VOD recording. We handle the complex technical infrastructure so you can focus on connecting with your viewers anywhere in the world.",
       "image": "https://res.cloudinary.com/pnabfi91/image/upload/v1791369247/falhen/services/hf1q9mvxywinx4x83spq.jpg",
       "card_features": [
-        "Multi-platform streaming",
-        "Real-time graphics & overlays",
-        "Interactive audience engagement",
-        "Technical support & monitoring"
+        "Global Broadcast",
+        "Keynotes & Concerts",
+        "Real-Time Graphics",
+        "Redundant Uplinks"
       ],
       "detail_features": [
         "YouTube, FB & Custom RTMP",
@@ -251,14 +251,14 @@
       "slug": "photography",
       "title": "Photography",
       "icon": "ri-camera-line",
-      "short_description": "Professional photography services for corporate events, products, and promotional materials with creative direction.",
-      "detail_description": "Every photograph should command attention and convey authority. We work closely with corporate teams, event producers, and creative directors to document pivotal moments\u2014from fast-paced multi-day summits to polished product lines and lifestyle visuals. Every frame is intentionally composed, professionally lit on location or in-studio, and retouched to elevate your visual collateral across digital platforms and print media.",
+      "short_description": "Editorial photography, high-end portraits, corporate events, and commercial campaigns.",
+      "detail_description": "Every photograph should command attention and convey authority. We work closely with corporate teams, event producers, and creative directors to document pivotal moments—from fast-paced multi-day summits to polished product lines and lifestyle visuals. Every frame is intentionally composed, professionally lit on location or in-studio, and retouched to elevate your visual collateral across digital platforms and print media.",
       "image": "https://res.cloudinary.com/pnabfi91/image/upload/v1791369403/falhen/services/asbk4gks6mneafbizhxc.jpg",
       "card_features": [
-        "Event photography",
-        "Product photography",
-        "Corporate headshots",
-        "Photo editing & retouching"
+        "Commercial Campaigns",
+        "High-End Portraits",
+        "Corporate Events",
+        "Editorial Retouching"
       ],
       "detail_features": [
         "Medium & Full-Frame Systems",
@@ -276,14 +276,14 @@
       "slug": "wedding-events",
       "title": "Wedding & Events",
       "icon": "ri-heart-3-line",
-      "short_description": "Cinematic wedding films and full-service event coverage that preserve your most precious memories with extraordinary artistry.",
+      "short_description": "Cinematic wedding films and bespoke event cinematography crafted with editorial artistry.",
       "detail_description": "Every love story deserves a cinematic masterpiece. Our dedicated wedding and events team blends into your day, capturing every emotion, detail, and unscripted moment with discretion and artistry. From intimate ceremonies to grand destination weddings and corporate galas, we deliver films you'll treasure forever.",
       "image": "https://res.cloudinary.com/pnabfi91/image/upload/v1791369429/falhen/services/vipj4ysloixrwvujfays.jpg",
       "card_features": [
-        "Cinematic wedding films",
-        "Same-day highlight edits",
-        "Multi-camera event coverage",
-        "Drone aerials & stabilised shots"
+        "Cinematic Wedding Films",
+        "Multi-Camera Coverage",
+        "Same-Day Edits",
+        "Drone Aerials"
       ],
       "detail_features": [
         "Cinematic Storytelling Films",
@@ -301,14 +301,14 @@
       "slug": "creative-services",
       "title": "Creative Services",
       "icon": "ri-article-line",
-      "short_description": "Strategic content planning and creation to maximise engagement across all digital platforms and social media channels.",
+      "short_description": "Brand storytelling, creative direction, and campaign strategy built for modern media.",
       "detail_description": "A beautiful video means nothing without the right strategy. We combine data analytics, audience research, and creative direction to build content calendars that grow your brand consistently. From platform-native short-form to long-form series, we plan, produce, and measure what resonates.",
       "image": "https://res.cloudinary.com/pnabfi91/image/upload/v1791369463/falhen/services/ra3adgvaiudrvbk9tgqk.jpg",
       "card_features": [
-        "Content planning & scheduling",
-        "Social media optimisation",
-        "Brand storytelling",
-        "Analytics & reporting"
+        "Creative Direction",
+        "Campaign Strategy",
+        "Brand Storytelling",
+        "Visual Identity"
       ],
       "detail_features": [
         "Audience & Competitor Research",
@@ -326,14 +326,14 @@
       "slug": "post-production",
       "title": "Post Production",
       "icon": "fa-solid fa-sliders",
-      "short_description": "Comprehensive post-production services including editing, color grading, sound design, and visual effects to polish your content.",
-      "detail_description": "Great footage becomes great content in the edit suite. Our post team works in Premiere Pro, DaVinci Resolve, and After Effects to deliver broadcast-ready content with perfect pacing, professional color science, immersive audio, and seamless visual effects compositing \u2014 all delivered on your timeline.",
+      "short_description": "Precision offline editing, DaVinci Resolve HDR color grading, and spatial sound design.",
+      "detail_description": "Great footage becomes great content in the edit suite. Our post team works in Premiere Pro, DaVinci Resolve, and After Effects to deliver broadcast-ready content with perfect pacing, professional color science, immersive audio, and seamless visual effects compositing — all delivered on your timeline.",
       "image": "https://res.cloudinary.com/pnabfi91/image/upload/v1791369500/falhen/services/ey7ezm2nbuyegpeu5fmw.jpg",
       "card_features": [
-        "Professional video editing",
-        "Color correction & grading",
-        "Sound design & mixing",
-        "Visual effects & compositing"
+        "Editorial Assembly",
+        "HDR Color Grading",
+        "Audio Mastering",
+        "Visual Effects"
       ],
       "detail_features": [
         "Premiere Pro & DaVinci Resolve",
@@ -356,7 +356,7 @@
       "project": "ICOMA-NA 25th Anniversary",
       "avatar": "https://res.cloudinary.com/pnabfi91/image/upload/v1790708476/falhen/testimonials/etstfejqtmyhviuwpi07.jpg",
       "rating": 5,
-      "quote": "\u201cOn behalf of the Executive Committee and members of ICOMAA North America, I sincerely appreciate the outstanding work you did covering our 25th Anniversary Gala. Your professionalism, creativity, and attention to detail were evident throughout the event. From capturing the excitement of our guests\u2019 arrival to preserving the memorable moments during the scientific sessions, awards presentations, speeches, and Gala celebrations, you helped tell the story truly"
+      "quote": "“On behalf of the Executive Committee and members of ICOMAA North America, I sincerely appreciate the outstanding work you did covering our 25th Anniversary Gala. Your professionalism, creativity, and attention to detail were evident throughout the event. From capturing the excitement of our guests’ arrival to preserving the memorable moments during the scientific sessions, awards presentations, speeches, and Gala celebrations, you helped tell the story truly"
     },
     {
       "id": 2,
@@ -376,7 +376,7 @@
       "project": "Sprint Series Brand Film",
       "avatar": "https://res.cloudinary.com/pnabfi91/image/upload/v1790708435/falhen/testimonials/bbakk49sjp8konziea52.jpg",
       "rating": 5,
-      "quote": "Working with Falhen was genuinely one of the best creative decisions we made this year. They don't just shoot video \u2014 they engineer emotion. The final film had our entire team in tears. In the best way."
+      "quote": "Working with Falhen was genuinely one of the best creative decisions we made this year. They don't just shoot video — they engineer emotion. The final film had our entire team in tears. In the best way."
     },
     {
       "id": 4,
@@ -501,7 +501,7 @@
     },
     {
       "id": 5,
-      "title": "Jussoul \u2014 Winery Music Tour",
+      "title": "Jussoul — Winery Music Tour",
       "category": "Events",
       "media_type": "photo",
       "featured": false,
@@ -760,7 +760,7 @@
       "video_url": "",
       "gdrive_url": "https://drive.google.com/drive/folders/luxury-fashion-2026",
       "image": "https://res.cloudinary.com/pnabfi91/image/upload/v1791244757/falhen/portfolio/mqehd47zq92zcohqfxok.jpg",
-      "desc": "Step inside The Fantasy Island\u2014MC Fantasy\u2019s signature annual spectacle, shaped and elevated under the creative direction of Falhen for three straight years. Serving as the visual architect behind the event's atmosphere, Falhen blends cutting-edge cinematography, bespoke visual design, and seamless production management to capture the heart of the experience. The result is a vibrant fusion of music, elegance, and raw performances.",
+      "desc": "Step inside The Fantasy Island—MC Fantasy’s signature annual spectacle, shaped and elevated under the creative direction of Falhen for three straight years. Serving as the visual architect behind the event's atmosphere, Falhen blends cutting-edge cinematography, bespoke visual design, and seamless production management to capture the heart of the experience. The result is a vibrant fusion of music, elegance, and raw performances.",
       "services": "Video Production, Photography, AV Production, Content Strategy, live production, creative services, event design, event management",
       "photosCount": 30,
       "keywords": "Video Production, Photography, AV Production, Content Strategy, live production, creative services, event design, event management",
@@ -1017,7 +1017,7 @@
       "gdrive_url": "https://drive.google.com/drive/folders/1vkMLP3Ki8Frj5Fbis2mQHmIDfSISBvyD?usp=drive_link",
       "slug": "ropo-birthday-shoot",
       "seo_title": "Ropo Birthday Shoot",
-      "seo_desc": "View and download the exclusive Portrait photography gallery for Ropo Kayode. Curated and delivered in editorial quality by Falhen Productions. Explore frames \u2713",
+      "seo_desc": "View and download the exclusive Portrait photography gallery for Ropo Kayode. Curated and delivered in editorial quality by Falhen Productions. Explore frames ✓",
       "seo_keywords": "",
       "featured": false,
       "media_type": "photo",
@@ -1172,7 +1172,7 @@
       "author": "Victoria Opemipo",
       "role": "Social Media Manager",
       "image": "https://res.cloudinary.com/pnabfi91/image/upload/v1786715592/falhen/blog/d2zuwp0anpg2oxerq5tz.png",
-      "content": "<blockquote>\"Learn the secrets to creating scroll-stopping social media content that captures attention and drives engagement.\"</blockquote><p>Social media video is the most competitive creative arena in existence. You have less than two seconds to prevent a thumb from scrolling past your content. That's not hyperbole \u2014 it's the documented average attention threshold before a decision to scroll is made.</p><h3>1. Lead With the Payoff</h3><p>Traditional storytelling builds to a climax. Social video inverts this. Your most compelling moment \u2014 the reveal, the transformation, the surprising fact \u2014 goes in the first three seconds. This is called a hook-first structure and it consistently outperforms slow-burn openings by 3\u20135x in completion rate.</p><h3>2. Design for Silent Viewing</h3><p>Over 70% of social video is watched without sound. If your video only works with audio, it's likely missing a large portion of your audience. Use bold on-screen text, expressive visuals, and clear visual storytelling.</p><blockquote>If you can't communicate your message in silent mode, your video isn't working hard enough. \u2014 Michael Chen, Creative Director</blockquote><h3>3. Match Energy to Platform</h3><ul><li>TikTok: Raw, fast, trend-aware, under 30 seconds</li><li>Instagram Reels: Polished but personal, 15\u201330 seconds</li><li>YouTube Shorts: Educational or entertaining, up to 60 seconds</li><li>LinkedIn: Authority-driven, measured, 60\u201390 seconds</li></ul>",
+      "content": "<blockquote>\"Learn the secrets to creating scroll-stopping social media content that captures attention and drives engagement.\"</blockquote><p>Social media video is the most competitive creative arena in existence. You have less than two seconds to prevent a thumb from scrolling past your content. That's not hyperbole — it's the documented average attention threshold before a decision to scroll is made.</p><h3>1. Lead With the Payoff</h3><p>Traditional storytelling builds to a climax. Social video inverts this. Your most compelling moment — the reveal, the transformation, the surprising fact — goes in the first three seconds. This is called a hook-first structure and it consistently outperforms slow-burn openings by 3–5x in completion rate.</p><h3>2. Design for Silent Viewing</h3><p>Over 70% of social video is watched without sound. If your video only works with audio, it's likely missing a large portion of your audience. Use bold on-screen text, expressive visuals, and clear visual storytelling.</p><blockquote>If you can't communicate your message in silent mode, your video isn't working hard enough. — Michael Chen, Creative Director</blockquote><h3>3. Match Energy to Platform</h3><ul><li>TikTok: Raw, fast, trend-aware, under 30 seconds</li><li>Instagram Reels: Polished but personal, 15–30 seconds</li><li>YouTube Shorts: Educational or entertaining, up to 60 seconds</li><li>LinkedIn: Authority-driven, measured, 60–90 seconds</li></ul>",
       "featured": true
     },
     {
@@ -1853,11 +1853,11 @@
         "document_url": "/assets/docs/Offer_Letter_Falhen.pdf",
         "currency": "NGN",
         "job_title": "Super Admin",
-        "salary": "\u20a6150,000 / month",
-        "base_salary": "\u20a6120,000",
-        "tech_allowance": "\u20a620,000",
-        "wellness_allowance": "\u20a610,000",
-        "total_earnings": "\u20a6150,000",
+        "salary": "₦150,000 / month",
+        "base_salary": "₦120,000",
+        "tech_allowance": "₦20,000",
+        "wellness_allowance": "₦10,000",
+        "total_earnings": "₦150,000",
         "issued": true,
         "issued_at": "2026-08-29 13:51:19",
         "issued_by": "Mojisola Emjay",
@@ -2119,7 +2119,7 @@
   "celebration_settings": {
     "auto_announce": true,
     "author_title": "Falhen HR & Culture Team",
-    "default_template": "Wishing our fantastic {name} ({role}) a very Happy Birthday! \ud83c\udf82\ud83c\udf89 May your year ahead be filled with boundless creativity, joy, and incredible milestones. We celebrate you today and appreciate everything you bring to the Falhen family! \ud83e\udd73\u2728",
+    "default_template": "Wishing our fantastic {name} ({role}) a very Happy Birthday! 🎂🎉 May your year ahead be filled with boundless creativity, joy, and incredible milestones. We celebrate you today and appreciate everything you bring to the Falhen family! 🥳✨",
     "custom_wishes": []
   },
   "vendors": [],

@@ -320,6 +320,9 @@ try {
     // This ensures hero Cloudinary sync, direct video, showreel, custom categories,
     // deleted/hidden albums, and portfolio items are 100% preserved and never overwritten by git pull.
     $mergedSettings = array_merge($repoSettings, $dbSettings);
+    if (!empty($repoSettings['services_items'])) {
+        $mergedSettings['services_items'] = $repoSettings['services_items'];
+    }
     
     // If MySQL is completely uninitialized ($dbCount === 0) or user explicitly requests ?sync_to_db=1
     if (($dbCount === 0 && $repoCount > 0) || isset($_GET['sync_to_db']) || isset($_GET['force_repo_seed'])) {
