@@ -1593,47 +1593,180 @@ function generateSlug($text, $maxLength = 60) {
 }
 
 /**
- * Comprehensive SEO & Metadata Generator per /seo-keyword-strategist & /seo-meta-optimizer
+ * Retrieve all gallery/event categories: curated base + custom saved categories + existing album categories
  */
-function generateClientGallerySeo($title, $category = 'Gallery', $client = '', $desc = '') {
+function getGalleryCategories(): array {
+    $defaults = [
+        'Portrait',
+        'Wedding',
+        'Birthday',
+        'Events',
+        'Corporate',
+        'Commercials',
+        'Graduation',
+        'Fashion Show',
+        'Baby Shower',
+        'Proposal',
+        'Concert / Tour',
+        'Anniversary',
+        'Documentary',
+        'Music Video'
+    ];
+
+    $savedCustom = getSiteSetting('gallery_categories', []);
+    if (!is_array($savedCustom)) {
+        $savedCustom = [];
+    }
+
+    $existingFromAlbums = [];
+    if (function_exists('getPortfolioRepo')) {
+        foreach (getPortfolioRepo() as $item) {
+            $cat = trim((string)($item['category'] ?? ''));
+            if ($cat !== '') {
+                $existingFromAlbums[] = $cat;
+            }
+        }
+    }
+
+    $merged = array_merge($defaults, $savedCustom, $existingFromAlbums);
+    $unique = [];
+    $seenLower = [];
+
+    foreach ($merged as $cat) {
+        $clean = trim(preg_replace('/\s+/', ' ', strip_tags((string)$cat)));
+        if ($clean === '') continue;
+        // Normalize singular "Event" -> "Events" so taxonomy stays clean
+        if (strcasecmp($clean, 'Event') === 0) $clean = 'Events';
+        $lower = strtolower($clean);
+        if (!isset($seenLower[$lower])) {
+            $seenLower[$lower] = true;
+            $unique[] = $clean;
+        }
+    }
+
+    return $unique;
+}
+
+/**
+ * Persist a new custom gallery/event category into site_settings
+ */
+function addGalleryCategory(string $rawName): array {
+    $clean = trim(preg_replace('/\s+/', ' ', strip_tags($rawName)));
+    if ($clean === '' || strlen($clean) < 2) {
+        return ['success' => false, 'message' => 'Category name must be at least 2 characters.', 'categories' => getGalleryCategories()];
+    }
+    if (strlen($clean) > 48) {
+        $clean = substr($clean, 0, 48);
+    }
+    // Preserve intentional capitalization if mixed-case, otherwise title-case
+    if ($clean === strtolower($clean) || $clean === strtoupper($clean)) {
+        $clean = ucwords(strtolower($clean));
+    }
+    if (strcasecmp($clean, 'Event') === 0) {
+        $clean = 'Events';
+    }
+
+    $existing = getGalleryCategories();
+    foreach ($existing as $ex) {
+        if (strcasecmp($ex, $clean) === 0) {
+            return ['success' => true, 'category' => $ex, 'categories' => $existing, 'already_exists' => true];
+        }
+    }
+
+    $savedCustom = getSiteSetting('gallery_categories', []);
+    if (!is_array($savedCustom)) {
+        $savedCustom = [];
+    }
+    $savedCustom[] = $clean;
+    saveSiteSettings(['gallery_categories' => array_values(array_unique($savedCustom))]);
+
+    return ['success' => true, 'category' => $clean, 'categories' => getGalleryCategories(), 'already_exists' => false];
+}
+
+/**
+ * Detect deprecated hardcoded SEO boilerplate descriptions so they can be stripped cleanly
+ */
+function isLegacyBoilerplateSeoDesc(string $desc): bool {
+    $d = trim($desc);
+    if ($d === '') return false;
+    $legacyPatterns = [
+        'Browse the exclusive photo gallery',
+        'Editorial curation, proofs, and secure digital client access',
+        'Explore private photography collection delivered in editorial high-resolution',
+        '| Falhen'
+    ];
+    foreach ($legacyPatterns as $pat) {
+        if (stripos($d, $pat) !== false) {
+            return true;
+        }
+    }
+    return false;
+}
+
+/**
+ * Dynamic SEO & Metadata Generator (Backstory-First, Zero Hardcoded Boilerplate)
+ */
+function generateClientGallerySeo($title, $category = 'Gallery', $client = '', $desc = '', $location = '', $year = '') {
     $cleanTitle = trim(strip_tags((string)$title));
     $cleanCat = trim(strip_tags((string)$category)) ?: 'Gallery';
     $cleanClient = trim(strip_tags((string)$client));
+    $cleanDesc = trim(preg_replace('/\s+/', ' ', strip_tags((string)$desc)));
+    $cleanLocation = trim(strip_tags((string)$location));
+    $cleanYear = trim(strip_tags((string)$year));
     $slug = generateSlug($cleanTitle);
     
     // 1. Title Tag: 50-60 chars optimal, primary keyword up front, no forced brand boilerplate
-    $seoTitle = $cleanTitle;
-    if (strlen($seoTitle) < 45 && strpos(strtolower($seoTitle), strtolower($cleanCat)) === false) {
-        $candidate = "{$cleanTitle} — {$cleanCat} Collection";
+    $seoTitle = preg_replace('/\s*[\|\-]\s*Falhen\s*(Media|Productions)?\s*$/i', '', $cleanTitle);
+    if (strlen($seoTitle) < 42 && stripos($seoTitle, $cleanCat) === false) {
+        $candidate = "{$seoTitle} — {$cleanCat}";
         if (strlen($candidate) <= 60) {
             $seoTitle = $candidate;
         }
     }
     if (strlen($seoTitle) > 60) {
         $seoTitle = substr($seoTitle, 0, 60);
-        $seoTitle = rtrim($seoTitle, ' -');
+        $seoTitle = rtrim($seoTitle, ' -|');
     }
     
-    // 2. Meta Description: 150-160 chars optimal, action verb, client benefit, clear CTA
-    $targetClient = $cleanClient ?: 'Private Client';
-    $rawDesc = "Explore and download the high-resolution {$cleanCat} photo collection for {$targetClient}. Editorial curation, proofs, and secure digital client access ✓";
-    if (strlen($rawDesc) > 160) {
-        $rawDesc = substr($rawDesc, 0, 157) . '...';
+    // 2. Meta Description: Derive from actual Gallery Backstory first; otherwise synthesize cleanly from real shoot metadata
+    $seoDesc = '';
+    if ($cleanDesc !== '' && !isLegacyBoilerplateSeoDesc($cleanDesc)) {
+        $seoDesc = $cleanDesc;
+    } else {
+        $parts = [];
+        $lead = $cleanTitle !== '' ? $cleanTitle : ($cleanCat . ' Photography');
+        if ($cleanCat !== '' && stripos($lead, $cleanCat) === false) {
+            $lead .= " ({$cleanCat})";
+        }
+        $contextBits = [];
+        if ($cleanClient !== '' && stripos($lead, $cleanClient) === false) {
+            $contextBits[] = "for {$cleanClient}";
+        }
+        if ($cleanLocation !== '') {
+            $contextBits[] = "in {$cleanLocation}";
+        }
+        if ($cleanYear !== '' && strpos($lead, $cleanYear) === false) {
+            $contextBits[] = "({$cleanYear})";
+        }
+        $parts[] = $lead . (!empty($contextBits) ? ' ' . implode(' ', $contextBits) : '') . '.';
+        $parts[] = 'View the full high-resolution photo gallery and download original images.';
+        $seoDesc = trim(implode(' ', $parts));
     }
-    $seoDesc = $rawDesc;
+
+    if (strlen($seoDesc) > 160) {
+        $cut = substr($seoDesc, 0, 157);
+        $lastSpace = strrpos($cut, ' ');
+        $seoDesc = ($lastSpace !== false && $lastSpace > 110) ? substr($cut, 0, $lastSpace) . '...' : rtrim($cut) . '...';
+    }
     
-    // 3. Semantic LSI Keywords per /seo-keyword-strategist
-    $keywords = [
+    // 3. Semantic Keywords tailored to actual gallery metadata
+    $keywords = array_filter([
         strtolower($cleanTitle),
         strtolower($cleanCat) . ' photography',
-        'falhen productions client gallery',
-        'high resolution photo download',
-        'editorial photography delivery',
-        'private client gallery'
-    ];
-    if (!empty($cleanClient)) {
-        $keywords[] = strtolower($cleanClient) . ' gallery';
-    }
+        $cleanLocation !== '' ? strtolower($cleanLocation) . ' ' . strtolower($cleanCat) . ' photographer' : '',
+        $cleanClient !== '' ? strtolower($cleanClient) . ' gallery' : '',
+        'high resolution photo gallery'
+    ]);
     
     return [
         'slug'            => $slug,

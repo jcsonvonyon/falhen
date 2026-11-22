@@ -67,12 +67,14 @@ if (!empty($currentAlbum['gallery_photos']) && is_array($currentAlbum['gallery_p
     $rawPhotos = $currentAlbum['photos'];
 }
 if (empty($rawPhotos)) {
-    $rawPhotos = [
-        'https://res.cloudinary.com/pnabfi91/image/upload/v1794096443/falhen/client-galleries/king-david-grad-shoot/king-david-grad-shoot-01.jpg',
-        'https://res.cloudinary.com/pnabfi91/image/upload/v1794096445/falhen/client-galleries/king-david-grad-shoot/king-david-grad-shoot-02.jpg',
-        'https://res.cloudinary.com/pnabfi91/image/upload/v1794096448/falhen/client-galleries/king-david-grad-shoot/king-david-grad-shoot-03.jpg',
-        $coverImage
-    ];
+    if (!empty($coverImage)) {
+        $rawPhotos = [$coverImage];
+    } else {
+        http_response_code(404);
+        header('Content-Type: application/json');
+        echo json_encode(['success' => false, 'message' => 'No downloadable photo assets found for this gallery.']);
+        exit;
+    }
 }
 
 $photoItems = buildClientGalleryPhotoItems($rawPhotos, $albumId);
@@ -93,12 +95,12 @@ function fetchLightweightPhotoBytes(string $urlOrPath): ?string {
         }
     }
 
-    // 2. Remote URL fetch (Cloudinary lightweight URL or Google Drive image)
+    // 2. Remote URL fetch (Cloudinary or Google Drive image)
     if (preg_match('#^https?://#i', $urlOrPath)) {
         $ctx = stream_context_create([
             'http' => [
-                'timeout' => 8,
-                'user_agent' => 'FalhenMediaClientPortal/2.0',
+                'timeout' => 10,
+                'user_agent' => 'FalhenProductionsClientPortal/2.6',
                 'ignore_errors' => true
             ],
             'ssl' => [
@@ -112,19 +114,18 @@ function fetchLightweightPhotoBytes(string $urlOrPath): ?string {
         }
     }
 
-    // 3. Fallback to local default portfolio image so download never fails offline
-    $fallbackLocal = __DIR__ . '/../assets/img/portfolio/king_david_01.jpg';
-    if (is_file($fallbackLocal)) {
-        return @file_get_contents($fallbackLocal) ?: null;
-    }
+    // Never substitute another client's photo on failure
     return null;
 }
 
 // Mode A: Single Photo Download (?photo_index=N)
 if ($photoIndex >= 0 && isset($photoItems[$photoIndex])) {
     $targetItem = $photoItems[$photoIndex];
-    $sourceUrl = $targetItem['masonry_url'] ?? $targetItem['raw_url'];
+    $sourceUrl = $targetItem['full_url'] ?? $targetItem['masonry_url'] ?? $targetItem['raw_url'];
     $bytes = fetchLightweightPhotoBytes($sourceUrl);
+    if ($bytes === null && !empty($targetItem['raw_url']) && $targetItem['raw_url'] !== $sourceUrl) {
+        $bytes = fetchLightweightPhotoBytes($targetItem['raw_url']);
+    }
 
     if ($bytes === null) {
         http_response_code(404);
@@ -137,12 +138,16 @@ if ($photoIndex >= 0 && isset($photoItems[$photoIndex])) {
 
     if (function_exists('logClientDownload')) {
         logClientDownload([
-            'client_name'   => $_SESSION['registered_client_name'] ?? 'Authorized Client',
-            'client_email'  => $_SESSION['portal_lookup_email'] ?? ($_SESSION['verified_client_emails'][$albumId] ?? ''),
-            'client_phone'  => $_SESSION['registered_client_phone'] ?? '',
-            'album_id'      => $albumId,
-            'album_title'   => $albumTitle,
-            'download_type' => sprintf('Single Photo #%02d', $photoIndex + 1)
+            'client_name'     => $_SESSION['registered_client_name'] ?? 'Authorized Client',
+            'client_email'    => $_SESSION['download_email'] ?? ($_SESSION['portal_lookup_email'] ?? ($_SESSION['verified_client_emails'][$albumId] ?? '')),
+            'client_phone'    => $_SESSION['registered_client_phone'] ?? '',
+            'organization'    => $_SESSION['download_organization'] ?? null,
+            'download_reason' => $_SESSION['download_reason'] ?? null,
+            'access_tier'     => $_SESSION['download_access_tier'] ?? 'authorized_client',
+            'email_sent'      => 0,
+            'album_id'        => $albumId,
+            'album_title'     => $albumTitle,
+            'download_type'   => sprintf('Single Photo #%02d', $photoIndex + 1)
         ]);
     }
 

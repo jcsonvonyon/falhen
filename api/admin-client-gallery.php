@@ -133,23 +133,32 @@ switch ($action) {
         ]);
         exit;
 
-    // 3. Generate SEO slug, title tag, meta description, and keywords
+    // 3. Generate SEO slug, title tag, meta description, and keywords (backstory-first)
     case 'generate_seo':
         $title = trim($_POST['title'] ?? '');
         $category = trim($_POST['category'] ?? 'Gallery');
         $client = trim($_POST['client'] ?? '');
         $desc = trim($_POST['desc'] ?? '');
+        $location = trim($_POST['location'] ?? '');
+        $year = trim($_POST['year'] ?? '');
 
         if (empty($title)) {
             echo json_encode(['success' => false, 'message' => 'Title is required to generate SEO metadata.']);
             exit;
         }
 
-        $seo = generateClientGallerySeo($title, $category, $client, $desc);
+        $seo = generateClientGallerySeo($title, $category, $client, $desc, $location, $year);
         echo json_encode([
             'success' => true,
             'seo'     => $seo
         ]);
+        exit;
+
+    // 3b. Add and persist a new custom event/gallery category
+    case 'add_category':
+        $catName = trim($_POST['name'] ?? $_POST['category'] ?? '');
+        $res = addGalleryCategory($catName);
+        echo json_encode($res);
         exit;
 
     // 4. Direct multi-file upload directly to Cloudinary with SEO slug naming

@@ -87,14 +87,17 @@ if ($isClientsView) {
     $albumClient = $currentAlbum['client'] ?? 'Private Client';
 
     $seoTitle = !empty($currentAlbum['seo_title']) ? $currentAlbum['seo_title'] : $albumTitle;
-    // Strip brand suffix to adhere strictly to /seo-meta-optimizer & prevent repetitive clutter
-    $seoTitle = preg_replace('/\s*\|\s*Falhen\s*(Media|Productions)?\s*$/i', '', (string)$seoTitle);
-    $seoTitle = preg_replace('/\s*-\s*Falhen\s*(Media|Productions)?\s*$/i', '', (string)$seoTitle);
+    $seoTitle = preg_replace('/\s*[\|\-]\s*Falhen\s*(Media|Productions)?\s*$/i', '', (string)$seoTitle);
 
-    $rawDesc = !empty($currentAlbum['seo_desc']) ? $currentAlbum['seo_desc'] : '';
-    // Replace default/legacy boilerplate with high-converting, benefit-driven description
-    if (empty($rawDesc) || stripos($rawDesc, 'Browse the exclusive photo gallery') !== false || stripos($rawDesc, '| Falhen') !== false) {
-        $rawDesc = "Explore and download the curated {$albumCategory} photo collection for {$albumClient}. Instant proofs, editorial gallery & full digital delivery.";
+    $rawDesc = trim((string)($currentAlbum['seo_desc'] ?? ''));
+    if ($rawDesc === '' || (function_exists('isLegacyBoilerplateSeoDesc') && isLegacyBoilerplateSeoDesc($rawDesc))) {
+        $backstory = trim(preg_replace('/\s+/', ' ', strip_tags((string)($currentAlbum['desc'] ?? ''))));
+        if ($backstory !== '') {
+            $rawDesc = strlen($backstory) > 160 ? rtrim(substr($backstory, 0, 157)) . '...' : $backstory;
+        } else {
+            $locBit = !empty($currentAlbum['location']) ? ' in ' . trim($currentAlbum['location']) : '';
+            $rawDesc = "{$albumTitle} ({$albumCategory}){$locBit}. View and download high-resolution photography.";
+        }
     }
     $seoDesc = preg_replace('/\s*\|\s*Falhen\s*(Media|Productions)?\s*$/i', '', (string)$rawDesc);
     $seoKeywords = !empty($currentAlbum['seo_keywords']) ? $currentAlbum['seo_keywords'] : "{$albumCategory}, client gallery, high resolution, photo download";
@@ -362,22 +365,39 @@ foreach ($albumsRepo as $alb) {
         }
 
         .smug-brand-link {
-            display: flex;
+            display: inline-flex;
             align-items: center;
-            gap: 12px;
+            gap: 10px;
             text-decoration: none;
             color: var(--smug-text-primary);
+            flex-shrink: 0;
         }
 
         .smug-brand-link img {
-            height: 28px;
+            height: 40px;
             width: auto;
             display: block;
+            object-fit: contain;
+            /* logo.png is pure white; invert to crisp jet-black on Daylight (white) theme */
+            filter: brightness(0);
+            transition: filter 0.25s ease, transform 0.2s ease;
+        }
+
+        [data-theme="noir"] .smug-brand-link img {
+            filter: none;
+        }
+
+        .smug-brand-wordmark {
+            font-size: 1.02rem;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            color: var(--smug-text-primary);
+            line-height: 1;
         }
 
         .smug-brand-tag {
             font-size: 0.72rem;
-            letter-spacing: 2px;
+            letter-spacing: 1.6px;
             text-transform: uppercase;
             font-weight: 700;
             color: var(--smug-text-muted);
@@ -388,7 +408,7 @@ foreach ($albumsRepo as $alb) {
         .smug-topbar-actions {
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 10px;
         }
 
         /* Daylight / Noir Atmosphere Switcher */
@@ -397,8 +417,6 @@ foreach ($albumsRepo as $alb) {
             align-items: center;
             gap: 6px;
             background: var(--smug-surface);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
             border: 1px solid var(--smug-border-light);
             color: var(--smug-text-primary);
             font-size: 0.78rem;
@@ -406,24 +424,22 @@ foreach ($albumsRepo as $alb) {
             padding: 7px 13px;
             border-radius: 20px;
             cursor: pointer;
-            transition: all 0.2s ease;
+            transition: border-color 0.2s ease, background-color 0.2s ease;
             user-select: none;
             touch-action: manipulation;
         }
 
         .smug-theme-toggle:hover {
             border-color: var(--smug-red);
-            transform: translateY(-1px);
         }
 
         .smug-theme-toggle i {
-            color: #f59e0b;
+            color: #d97706;
             font-size: 0.85rem;
-            transition: transform 0.3s ease;
         }
 
         [data-theme="noir"] .smug-theme-toggle i {
-            color: #a78bfa;
+            color: #f8fafc;
         }
 
         .smug-nav-link {
@@ -433,10 +449,11 @@ foreach ($albumsRepo as $alb) {
             font-weight: 600;
             padding: 8px 14px;
             border-radius: 8px;
-            transition: all 0.2s ease;
+            transition: color 0.2s ease, background-color 0.2s ease;
             display: inline-flex;
             align-items: center;
-            gap: 8px;
+            gap: 7px;
+            white-space: nowrap;
         }
 
         .smug-nav-link:hover,
@@ -445,19 +462,16 @@ foreach ($albumsRepo as $alb) {
             background: var(--smug-pill-bg);
         }
 
-        .smug-nav-cta {
-            background: var(--smug-surface);
-            backdrop-filter: blur(14px);
-            -webkit-backdrop-filter: blur(14px);
+        .smug-nav-portfolio {
             border: 1px solid var(--smug-border-light);
             color: var(--smug-text-primary);
-            font-size: 0.84rem;
-            font-weight: 600;
-            padding: 8px 16px;
-            border-radius: 8px;
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
+        }
+
+        .smug-nav-portfolio:hover {
+            border-color: var(--smug-red);
+            color: var(--smug-red);
+            background: transparent;
+        }
             gap: 8px;
             transition: all 0.2s ease;
             cursor: pointer;
@@ -690,16 +704,200 @@ foreach ($albumsRepo as $alb) {
             }
         }
 
-        /* Mobile Phone Responsiveness (<= 640px) */
+        /* Mobile Phone Responsiveness (<= 640px) — Editorial & Tightly Formatted */
         @media (max-width: 640px) {
             .smug-page-container {
-                padding: 12px 12px 48px !important;
-                padding-left: max(12px, env(safe-area-inset-left)) !important;
-                padding-right: max(12px, env(safe-area-inset-right)) !important;
+                padding: 18px 16px 40px !important;
+                padding-left: max(16px, env(safe-area-inset-left)) !important;
+                padding-right: max(16px, env(safe-area-inset-right)) !important;
                 width: 100% !important;
                 max-width: 100vw !important;
                 box-sizing: border-box !important;
                 overflow-x: hidden !important;
+            }
+            .smug-topbar {
+                padding: 0 16px !important;
+                padding-left: max(16px, env(safe-area-inset-left)) !important;
+                padding-right: max(16px, env(safe-area-inset-right)) !important;
+                height: 60px !important;
+                display: flex !important;
+                align-items: center !important;
+            }
+            .smug-topbar-inner {
+                gap: 10px !important;
+                width: 100% !important;
+                height: 60px !important;
+                display: flex !important;
+                align-items: center !important;
+                justify-content: space-between !important;
+            }
+            .smug-brand-link {
+                gap: 8px !important;
+            }
+            .smug-brand-link img {
+                height: 36px !important;
+            }
+            .smug-brand-wordmark {
+                font-size: 0.96rem !important;
+            }
+            .smug-brand-tag {
+                display: none !important;
+            }
+            .smug-topbar-actions {
+                gap: 8px !important;
+                display: flex !important;
+                align-items: center !important;
+            }
+            /* Keep main Portfolio link cleanly visible on mobile for effortless site flow */
+            .smug-nav-galleries {
+                display: none !important;
+            }
+            .smug-nav-portfolio {
+                display: inline-flex !important;
+                padding: 7px 12px !important;
+                font-size: 0.8rem !important;
+                border-radius: 999px !important;
+                gap: 5px !important;
+            }
+            .smug-theme-toggle {
+                padding: 0 !important;
+                width: 36px !important;
+                height: 36px !important;
+                border-radius: 50% !important;
+                display: inline-flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+                gap: 0 !important;
+            }
+            .smug-theme-toggle span {
+                display: none !important;
+            }
+            /* Directory Header & Flat Editorial Controls on Mobile */
+            .smug-directory-header {
+                margin-bottom: 20px !important;
+            }
+            .smug-header-row {
+                margin-bottom: 14px !important;
+                text-align: left !important;
+            }
+            .smug-directory-title {
+                font-size: 1.75rem !important;
+                font-weight: 800 !important;
+                letter-spacing: -0.03em !important;
+                line-height: 1.12 !important;
+                margin: 0 0 6px !important;
+            }
+            .smug-directory-subtitle {
+                font-size: 0.92rem !important;
+                line-height: 1.45 !important;
+                margin: 0 !important;
+                color: var(--smug-text-secondary) !important;
+            }
+            .smug-glass-toolbar {
+                padding: 12px !important;
+                gap: 10px !important;
+                border-radius: 14px !important;
+                flex-direction: column !important;
+                align-items: stretch !important;
+                width: 100% !important;
+                box-sizing: border-box !important;
+                box-shadow: none !important;
+            }
+            .smug-search-wrap {
+                width: 100% !important;
+                min-width: 0 !important;
+                max-width: 100% !important;
+                box-sizing: border-box !important;
+            }
+            .smug-search-input {
+                font-size: 16px !important;
+                padding: 10px 36px 10px 36px !important;
+                border-radius: 10px !important;
+            }
+            .smug-cat-pills-row {
+                width: 100% !important;
+                overflow-x: auto !important;
+                -webkit-overflow-scrolling: touch !important;
+                padding: 2px 24px 2px 0 !important;
+                flex: none !important;
+                gap: 8px !important;
+                -webkit-mask-image: linear-gradient(to right, #000 86%, transparent 100%) !important;
+                mask-image: linear-gradient(to right, #000 86%, transparent 100%) !important;
+            }
+            .smug-cat-pill {
+                padding: 7px 13px !important;
+                font-size: 0.8rem !important;
+                border-radius: 999px !important;
+                flex-shrink: 0 !important;
+            }
+            .smug-folders-grid {
+                grid-template-columns: 1fr !important;
+                gap: 18px !important;
+            }
+            .smug-folder-card {
+                border-radius: 14px !important;
+                overflow: hidden !important;
+                box-shadow: none !important;
+            }
+            .smug-folder-cover {
+                aspect-ratio: 16 / 10 !important;
+            }
+            .smug-folder-caption {
+                padding: 14px 16px !important;
+            }
+            .smug-folder-title {
+                font-size: 1.05rem !important;
+                white-space: normal !important;
+                line-height: 1.28 !important;
+            }
+            .smug-folder-meta {
+                font-size: 0.82rem !important;
+                margin-top: 5px !important;
+                flex-wrap: wrap !important;
+                white-space: normal !important;
+            }
+            /* Album Detail View on Mobile */
+            .smug-back-nav-wrap {
+                margin-bottom: 12px !important;
+            }
+            .smug-back-link {
+                padding: 6px 14px !important;
+                font-size: 0.82rem !important;
+                border-radius: 999px !important;
+            }
+            .smug-album-title {
+                font-size: clamp(1.45rem, 5.5vw, 1.85rem) !important;
+                line-height: 1.18 !important;
+                word-break: break-word !important;
+                overflow-wrap: break-word !important;
+                margin: 0 0 6px !important;
+                font-weight: 800 !important;
+            }
+            .smug-album-meta {
+                font-size: 0.82rem !important;
+                gap: 6px !important;
+            }
+            .smug-album-header {
+                flex-direction: column !important;
+                align-items: flex-start !important;
+                gap: 14px !important;
+                margin-bottom: 18px !important;
+                padding-bottom: 16px !important;
+            }
+            .smug-header-actions {
+                width: 100% !important;
+                display: grid !important;
+                grid-template-columns: 1fr 1fr !important;
+                gap: 10px !important;
+            }
+            .btn-smug-action {
+                justify-content: center !important;
+                padding: 11px 10px !important;
+                font-size: 0.84rem !important;
+                border-radius: 10px !important;
+                width: 100% !important;
+                white-space: nowrap !important;
+                gap: 6px !important;
             }
             .smug-gallery-grid {
                 display: grid !important;
@@ -712,18 +910,13 @@ foreach ($albumsRepo as $alb) {
             .smug-photo-card {
                 aspect-ratio: 4 / 5 !important;
                 border-radius: 10px !important;
-                box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08) !important;
+                box-shadow: none !important;
                 overflow: hidden !important;
                 width: 100% !important;
                 min-height: 0 !important;
                 position: relative !important;
-                border: 1px solid rgba(255, 255, 255, 0.08) !important;
             }
-            .smug-photo-card.mosaic-lead {
-                grid-column: span 2 !important;
-                grid-row: span 1 !important;
-                aspect-ratio: 16 / 10 !important;
-            }
+            .smug-photo-card.mosaic-lead,
             .smug-photo-card.mosaic-wide {
                 grid-column: span 2 !important;
                 grid-row: span 1 !important;
@@ -734,10 +927,7 @@ foreach ($albumsRepo as $alb) {
                 grid-row: span 1 !important;
                 aspect-ratio: 4 / 5 !important;
             }
-            .smug-photo-card .smug-card-media-wrap {
-                width: 100% !important;
-                height: 100% !important;
-            }
+            .smug-photo-card .smug-card-media-wrap,
             .smug-photo-card img {
                 width: 100% !important;
                 height: 100% !important;
@@ -746,7 +936,7 @@ foreach ($albumsRepo as $alb) {
             }
             .smug-photo-glass-overlay {
                 opacity: 1 !important;
-                background: linear-gradient(180deg, rgba(0,0,0,0) 60%, rgba(0,0,0,0.65) 100%) !important;
+                background: linear-gradient(180deg, rgba(0,0,0,0) 62%, rgba(0,0,0,0.62) 100%) !important;
                 padding: 6px 8px !important;
                 pointer-events: auto !important;
                 justify-content: flex-end !important;
@@ -758,167 +948,10 @@ foreach ($albumsRepo as $alb) {
                 gap: 6px !important;
             }
             .smug-glass-btn {
-                width: 30px !important;
-                height: 30px !important;
-                font-size: 0.72rem !important;
+                width: 32px !important;
+                height: 32px !important;
+                font-size: 0.74rem !important;
                 border-radius: 50% !important;
-                backdrop-filter: blur(8px) !important;
-                -webkit-backdrop-filter: blur(8px) !important;
-            }
-            .smug-topbar {
-                padding: 0 12px !important;
-                padding-left: max(12px, env(safe-area-inset-left)) !important;
-                padding-right: max(12px, env(safe-area-inset-right)) !important;
-                height: 52px !important;
-                display: flex !important;
-                align-items: center !important;
-                overflow: hidden !important;
-            }
-            .smug-topbar-inner {
-                gap: 8px !important;
-                width: 100% !important;
-                height: 52px !important;
-                display: flex !important;
-                align-items: center !important;
-                justify-content: space-between !important;
-            }
-            .smug-brand-link {
-                gap: 8px !important;
-            }
-            .smug-brand-link img {
-                height: 26px !important;
-            }
-            .smug-brand-tag {
-                display: none !important;
-            }
-            .smug-topbar-actions {
-                gap: 6px !important;
-                display: flex !important;
-                align-items: center !important;
-            }
-            .smug-nav-link,
-            .smug-nav-cta,
-            .smug-nav-primary,
-            .smug-nav-download {
-                display: none !important;
-            }
-            .smug-theme-toggle {
-                padding: 0 !important;
-                width: 34px !important;
-                height: 34px !important;
-                border-radius: 50% !important;
-                display: inline-flex !important;
-                align-items: center !important;
-                justify-content: center !important;
-                gap: 0 !important;
-            }
-            .smug-theme-toggle span {
-                display: none !important;
-            }
-            .smug-back-nav-wrap {
-                margin-bottom: 10px !important;
-            }
-            .smug-back-link {
-                padding: 5px 12px !important;
-                font-size: 0.78rem !important;
-                border-radius: 20px !important;
-            }
-            .smug-album-title {
-                font-size: clamp(1.3rem, 5vw, 1.7rem) !important;
-                line-height: 1.22 !important;
-                word-break: break-word !important;
-                overflow-wrap: break-word !important;
-                margin: 0 0 4px !important;
-                font-weight: 800 !important;
-            }
-            .smug-album-meta {
-                font-size: 0.78rem !important;
-                gap: 6px !important;
-            }
-            .smug-album-header {
-                flex-direction: column !important;
-                align-items: flex-start !important;
-                gap: 12px !important;
-                margin-bottom: 16px !important;
-                padding-bottom: 14px !important;
-            }
-            .smug-header-actions {
-                width: 100% !important;
-                display: grid !important;
-                grid-template-columns: 1fr 1fr !important;
-                gap: 8px !important;
-            }
-            .btn-smug-action {
-                justify-content: center !important;
-                padding: 10px 8px !important;
-                font-size: 0.8rem !important;
-                border-radius: 8px !important;
-                width: 100% !important;
-                white-space: nowrap !important;
-                gap: 6px !important;
-            }
-            /* Directory Search & Category Pills on Mobile */
-            .smug-directory-header {
-                margin-bottom: 16px !important;
-            }
-            .smug-directory-title {
-                font-size: 1.45rem !important;
-                font-weight: 800 !important;
-                margin: 0 0 3px !important;
-            }
-            .smug-directory-subtitle {
-                font-size: 0.82rem !important;
-                margin: 0 0 12px !important;
-            }
-            .smug-glass-toolbar {
-                padding: 10px 12px !important;
-                gap: 10px !important;
-                border-radius: 12px !important;
-                flex-direction: column !important;
-                align-items: stretch !important;
-                width: 100% !important;
-                box-sizing: border-box !important;
-            }
-            .smug-search-wrap {
-                width: 100% !important;
-                min-width: 0 !important;
-                max-width: 100% !important;
-                box-sizing: border-box !important;
-            }
-            .smug-search-input {
-                font-size: 16px !important; /* Prevents iOS auto-zoom */
-                padding: 8px 32px 8px 34px !important;
-            }
-            .smug-cat-pills-row {
-                width: 100% !important;
-                overflow-x: auto !important;
-                -webkit-overflow-scrolling: touch !important;
-                padding-bottom: 3px !important;
-                flex: none !important;
-                gap: 6px !important;
-            }
-            .smug-cat-pill {
-                padding: 5px 12px !important;
-                font-size: 0.76rem !important;
-                border-radius: 16px !important;
-                flex-shrink: 0 !important;
-            }
-            .smug-folders-grid {
-                grid-template-columns: 1fr !important;
-                gap: 14px !important;
-            }
-            .smug-folder-card {
-                border-radius: 14px !important;
-                overflow: hidden !important;
-            }
-            .smug-folder-cover {
-                aspect-ratio: 16 / 10 !important;
-            }
-            .smug-folder-title {
-                font-size: 1.05rem !important;
-            }
-            .smug-folder-meta {
-                font-size: 0.78rem !important;
             }
             /* Verification Modal Bottom-Sheet on Mobile */
             .smug-modal-overlay {
@@ -942,7 +975,7 @@ foreach ($albumsRepo as $alb) {
                 font-size: 1.1rem !important;
             }
             .smug-modal-subtitle {
-                font-size: 0.78rem !important;
+                font-size: 0.8rem !important;
             }
             .smug-modal-body {
                 padding: 14px 18px !important;
@@ -951,7 +984,7 @@ foreach ($albumsRepo as $alb) {
                 flex: 1 !important;
             }
             .smug-input {
-                font-size: 16px !important; /* Critical: stops iOS zoom */
+                font-size: 16px !important;
                 padding: 10px 12px !important;
             }
             .smug-otp-input {
@@ -975,6 +1008,34 @@ foreach ($albumsRepo as $alb) {
                 width: 100% !important;
                 text-align: center !important;
                 padding: 6px !important;
+            }
+            .smug-portal-footer-inner {
+                flex-direction: column !important;
+                align-items: flex-start !important;
+                gap: 18px !important;
+            }
+            .smug-portal-footer-links {
+                flex-wrap: wrap !important;
+                gap: 14px 18px !important;
+            }
+        }
+
+        /* Landscape Mobile Orientation Support */
+        @media (max-height: 500px) and (orientation: landscape) {
+            .smug-topbar,
+            .smug-topbar-inner {
+                height: 48px !important;
+            }
+            .smug-brand-link img {
+                height: 30px !important;
+            }
+            .smug-folders-grid {
+                grid-template-columns: repeat(2, 1fr) !important;
+                gap: 14px !important;
+            }
+            .smug-gallery-grid {
+                grid-template-columns: repeat(3, 1fr) !important;
+                gap: 8px !important;
             }
         }
 
@@ -1329,23 +1390,21 @@ foreach ($albumsRepo as $alb) {
             transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
-        /* Frosted Glass Floating Dock inside Cover */
-        .smug-folder-glass-dock {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background: var(--smug-glass-dock-bg);
-            backdrop-filter: blur(24px) saturate(180%);
-            -webkit-backdrop-filter: blur(24px) saturate(180%);
-            border-top: 1px solid var(--smug-glass-border);
-            padding: 13px 18px;
+        /* Clean Editorial Caption Block Below Cover Image (Zero text obscuring portraits) */
+        .smug-folder-caption {
+            background: var(--smug-surface-solid);
+            padding: 15px 18px;
             display: flex;
             align-items: center;
             justify-content: space-between;
             gap: 12px;
-            z-index: 2;
-            transition: background 0.3s ease, border-color 0.3s ease;
+            border-top: 1px solid var(--smug-border);
+            transition: background-color 0.25s ease, border-color 0.25s ease;
+        }
+
+        [data-theme="noir"] .smug-folder-caption {
+            background: #0d131f;
+            border-top-color: rgba(255, 255, 255, 0.08);
         }
 
         .smug-dock-text {
@@ -1357,7 +1416,7 @@ foreach ($albumsRepo as $alb) {
             font-size: 1.05rem;
             font-weight: 700;
             color: var(--smug-text-primary);
-            line-height: 1.25;
+            line-height: 1.28;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
@@ -1365,15 +1424,98 @@ foreach ($albumsRepo as $alb) {
         }
 
         .smug-folder-meta {
-            font-size: 0.8rem;
+            font-size: 0.82rem;
             color: var(--smug-text-secondary);
-            margin-top: 3px;
+            margin: 4px 0 0 0;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
             display: flex;
             align-items: center;
             gap: 6px;
+        }
+
+        .smug-folder-arrow {
+            color: var(--smug-text-muted);
+            font-size: 0.82rem;
+            flex-shrink: 0;
+            transition: transform 0.2s ease, color 0.2s ease;
+        }
+
+        .smug-folder-card:hover .smug-folder-arrow {
+            transform: translateX(3px);
+            color: var(--smug-red);
+        }
+
+        /* Editorial Closing Portal Footer (Seamless Bridge to falhen.com) */
+        .smug-portal-footer {
+            border-top: 1px solid var(--smug-border);
+            background: var(--smug-surface-solid);
+            padding: 36px 32px;
+            margin-top: 40px;
+            transition: background-color 0.25s ease, border-color 0.25s ease;
+        }
+
+        [data-theme="noir"] .smug-portal-footer {
+            background: #070a12;
+            border-top-color: rgba(255, 255, 255, 0.08);
+        }
+
+        .smug-portal-footer-inner {
+            max-width: 1720px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 24px;
+            flex-wrap: wrap;
+        }
+
+        .smug-portal-footer-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .smug-portal-footer-brand img {
+            height: 32px;
+            width: auto;
+            filter: brightness(0);
+        }
+
+        [data-theme="noir"] .smug-portal-footer-brand img {
+            filter: none;
+        }
+
+        .smug-portal-footer-links {
+            display: flex;
+            align-items: center;
+            gap: 22px;
+        }
+
+        .smug-portal-footer-links a {
+            color: var(--smug-text-secondary);
+            text-decoration: none;
+            font-size: 0.86rem;
+            font-weight: 600;
+            transition: color 0.2s ease;
+        }
+
+        .smug-portal-footer-links a:hover {
+            color: var(--smug-red);
+        }
+
+        .smug-portal-footer-cta {
+            background: var(--smug-red);
+            color: #ffffff !important;
+            padding: 9px 18px;
+            border-radius: 999px;
+            font-weight: 700 !important;
+        }
+
+        .smug-portal-footer-cta:hover {
+            background: var(--smug-red-hover);
+            color: #ffffff !important;
         }
 
         /* Empty State */
@@ -1930,29 +2072,30 @@ foreach ($albumsRepo as $alb) {
 </head>
 <body>
 
-    <!-- Minimal SmugMug Top Bar -->
+    <!-- Editorial Brand Top Bar -->
     <header class="smug-topbar">
         <div class="smug-topbar-inner">
-            <a href="/clients" class="smug-brand-link" title="Falhen Client Deliveries">
+            <a href="/clients" class="smug-brand-link" title="Falhen Productions — Client Galleries">
                 <img src="/assets/img/icons/logo.png" alt="Falhen Productions">
+                <span class="smug-brand-wordmark">FALHEN</span>
                 <span class="smug-brand-tag">Client Galleries</span>
             </a>
 
             <div class="smug-topbar-actions">
-                <!-- Daylight / Noir Atmosphere Toggle -->
-                <button type="button" class="smug-theme-toggle" id="portalThemeToggle" onclick="togglePortalTheme()" title="Toggle Daylight / Noir Atmosphere">
-                    <i class="fa-solid fa-sun" id="themeActiveIcon"></i>
-                    <span id="themeActiveLabel">Daylight</span>
-                </button>
-
-                <a href="https://www.falhen.com/portfolio" class="smug-nav-link smug-nav-portfolio">
-                    <i class="fa-solid fa-arrow-left"></i>
+                <a href="https://www.falhen.com/portfolio" class="smug-nav-link smug-nav-portfolio" title="Explore Main Website Portfolio">
+                    <i class="fa-solid fa-arrow-up-right-from-square" style="font-size: 0.72rem;"></i>
                     <span>Portfolio</span>
                 </a>
                 <a href="/clients" class="smug-nav-link smug-nav-galleries <?php echo $isClientsView ? 'active' : ''; ?>">
                     <i class="fa-regular fa-folder"></i>
                     <span>Galleries</span>
                 </a>
+
+                <!-- Daylight / Noir Atmosphere Toggle -->
+                <button type="button" class="smug-theme-toggle" id="portalThemeToggle" onclick="togglePortalTheme()" title="Toggle Daylight / Noir Atmosphere" aria-label="Toggle Light or Dark Theme">
+                    <i class="fa-solid fa-sun" id="themeActiveIcon"></i>
+                    <span id="themeActiveLabel">Daylight</span>
+                </button>
             </div>
         </div>
     </header>
@@ -1964,10 +2107,10 @@ foreach ($albumsRepo as $alb) {
             <div class="smug-directory-header">
                 <div class="smug-header-row">
                     <h1 class="smug-directory-title">Client Deliveries</h1>
-                    <p class="smug-directory-subtitle">Curated client archives & proof galleries.</p>
+                    <p class="smug-directory-subtitle">Private client archives, event collections &amp; high-resolution proof galleries.</p>
                 </div>
 
-                <!-- Glassmorphic Search & Filter Bar -->
+                <!-- Search & Dynamic Category Filter Bar -->
                 <div class="smug-glass-toolbar">
                     <div class="smug-search-wrap">
                         <i class="fa-solid fa-magnifying-glass smug-search-icon"></i>
@@ -1984,7 +2127,7 @@ foreach ($albumsRepo as $alb) {
                         <?php foreach ($allCategories as $catName): 
                             $cCount = 0;
                             foreach ($albumsRepo as $alb) {
-                                if (strcasecmp(trim($alb['category'] ?? ''), $catName) === 0) $cCount++;
+                                if (strcasecmp(normalizeCategoryName($alb['category'] ?? ''), $catName) === 0) $cCount++;
                             }
                         ?>
                             <button type="button" class="smug-cat-pill" data-cat="<?php echo htmlspecialchars(strtolower($catName)); ?>" onclick="filterGalleryCategory('<?php echo htmlspecialchars(strtolower($catName)); ?>', this)">
@@ -1999,7 +2142,7 @@ foreach ($albumsRepo as $alb) {
             <div class="smug-folders-grid" id="smugFoldersGrid">
                 <?php foreach ($albumsRepo as $aId => $album): 
                     $albCover = getCloudinaryUrl($album['image'] ?? $album['cover'] ?? 'https://res.cloudinary.com/pnabfi91/image/upload/v1791224271/falhen/portfolio/ysfriy8jlhhkcuzl8j16.jpg');
-                    $albCount = (int)($album['photosCount'] ?? 25);
+                    $albCount = (int)($album['photosCount'] ?? count($album['gallery_photos'] ?? []));
                     $albSlug = $album['slug'] ?? generateSlug($album['title'] ?? 'gallery');
                     $albCategory = normalizeCategoryName($album['category'] ?? 'Gallery');
                     $albClient = trim($album['client'] ?? '');
@@ -2011,21 +2154,21 @@ foreach ($albumsRepo as $alb) {
                        data-cat="<?php echo htmlspecialchars(strtolower($albCategory)); ?>">
                         <div class="smug-folder-cover">
                             <img src="<?php echo htmlspecialchars($albCover); ?>" alt="<?php echo htmlspecialchars($album['title']); ?>" loading="lazy">
-                            <span class="smug-folder-lock-badge" style="display:none;"><i class="fa-solid fa-lock"></i> Client Delivery</span>
-                            <div class="smug-folder-glass-dock">
-                                <div class="smug-dock-text">
-                                    <h2 class="smug-folder-title"><?php echo htmlspecialchars($album['title']); ?></h2>
-                                    <p class="smug-folder-meta">
-                                        <span><?php echo htmlspecialchars($albCategory); ?></span>
+                        </div>
+                        <div class="smug-folder-caption">
+                            <div class="smug-dock-text">
+                                <h2 class="smug-folder-title"><?php echo htmlspecialchars($album['title']); ?></h2>
+                                <p class="smug-folder-meta">
+                                    <span><?php echo htmlspecialchars($albCategory); ?></span>
+                                    <span>·</span>
+                                    <span><?php echo $albCount; ?> Photos</span>
+                                    <?php if (!empty($albClient) && stripos($album['title'], $albClient) === false): ?>
                                         <span>·</span>
-                                        <span><?php echo $albCount; ?> Photos</span>
-                                        <?php if (!empty($albClient) && strcasecmp($albClient, trim($album['title'])) !== 0): ?>
-                                            <span>·</span>
-                                            <span><?php echo htmlspecialchars($albClient); ?></span>
-                                        <?php endif; ?>
-                                    </p>
-                                </div>
+                                        <span><?php echo htmlspecialchars($albClient); ?></span>
+                                    <?php endif; ?>
+                                </p>
                             </div>
+                            <i class="fa-solid fa-chevron-right smug-folder-arrow" aria-hidden="true"></i>
                         </div>
                     </a>
                 <?php endforeach; ?>
@@ -2130,6 +2273,26 @@ foreach ($albumsRepo as $alb) {
         <?php endif; ?>
 
     </div>
+
+    <!-- Editorial Closing Portal Footer -->
+    <footer class="smug-portal-footer">
+        <div class="smug-portal-footer-inner">
+            <div class="smug-portal-footer-brand">
+                <img src="/assets/img/icons/logo.png" alt="Falhen Productions">
+                <div>
+                    <div class="smug-brand-wordmark">FALHEN PRODUCTIONS</div>
+                    <div style="font-size: 0.78rem; color: var(--smug-text-muted); margin-top: 3px;">&copy; <?php echo date('Y'); ?> Editorial Photography &amp; Visual Storytelling</div>
+                </div>
+            </div>
+            <nav class="smug-portal-footer-links" aria-label="Main Website Navigation">
+                <a href="https://www.falhen.com/">Home</a>
+                <a href="https://www.falhen.com/portfolio">Main Portfolio</a>
+                <a href="/clients">Client Galleries</a>
+                <a href="https://www.falhen.com/services">Services</a>
+                <a href="https://www.falhen.com/contact" class="smug-portal-footer-cta">Book a Shoot</a>
+            </nav>
+        </div>
+    </footer>
 
     <!-- FULLSCREEN LIGHTBOX & SLIDESHOW MODAL -->
     <div id="smugLightbox" class="smug-lightbox" role="dialog" aria-modal="true" aria-label="Dynamic Lightbox">
@@ -2991,9 +3154,6 @@ foreach ($albumsRepo as $alb) {
                     card.style.display = 'none';
                 }
             });
-
-            const countElem = document.getElementById('visibleGalleryCount');
-            if (countElem) countElem.textContent = visibleCount;
 
             const emptyElem = document.getElementById('noGalleriesFound');
             if (emptyElem) {

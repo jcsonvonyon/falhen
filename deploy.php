@@ -196,10 +196,25 @@ if ($action === 'diag_admin') {
 }
 
 if ($action === 'lint_client') {
-    $out = [];
-    exec("php -l " . escapeshellarg(__DIR__ . '/client-portal.php') . " 2>&1", $out);
-    exec("php -d display_errors=1 -r 'try { require \"" . __DIR__ . "/client-portal.php\"; } catch (Throwable \$e) { echo \"FATAL: \" . \$e->getMessage() . \" on line \" . \$e->getLine() . \" in \" . \$e->getFile() . \"\n\" . \$e->getTraceAsString(); }' 2>&1", $runOut);
-    echo "LINT:\n" . implode("\n", $out) . "\n\nRUN:\n" . implode("\n", $runOut);
+    $targets = [
+        'client-portal.php',
+        'portfolio-photo.php',
+        'portfolio.php',
+        'admin/index.php',
+        'api/admin-client-gallery.php',
+        'api/verify-download.php',
+        'api/download-album.php',
+        'includes/functions.php'
+    ];
+    $allOk = true;
+    foreach ($targets as $rel) {
+        $out = [];
+        $code = 0;
+        exec("php -l " . escapeshellarg(__DIR__ . '/' . $rel) . " 2>&1", $out, $code);
+        echo sprintf("[%s] %s\n", $code === 0 ? 'OK' : 'FAIL', implode(' | ', $out));
+        if ($code !== 0) $allOk = false;
+    }
+    echo "\nSUMMARY: " . ($allOk ? "ALL CLEAN" : "ERRORS DETECTED") . "\n";
     exit;
 }
 

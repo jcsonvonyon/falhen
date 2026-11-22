@@ -1622,19 +1622,35 @@ $featuredAllProjects = array_filter($allProjects, function($item) {
                 </div>
             <?php endif; ?>
 
-            <!-- Category Filter Tabs -->
+            <!-- Dynamic Category Filter Tabs -->
             <div class="filter-pills-row">
                 <button class="cat-pill-btn active" data-filter="all" onclick="filterCategory('all', this)">ALL</button>
-                <button class="cat-pill-btn" data-filter="Portrait" onclick="filterCategory('Portrait', this)">PORTRAIT</button>
-                <button class="cat-pill-btn" data-filter="Event" onclick="filterCategory('Event', this)">EVENT</button>
-                <button class="cat-pill-btn" data-filter="Birthday" onclick="filterCategory('Birthday', this)">BIRTHDAY</button>
-                <button class="cat-pill-btn" data-filter="Wedding" onclick="filterCategory('Wedding', this)">WEDDING</button>
+                <?php
+                $photoCategories = [];
+                $seenPhotoCats = [];
+                foreach ($portfolioAlbums as $pAlb) {
+                    $rawCat = trim((string)($pAlb['category'] ?? ''));
+                    if ($rawCat === '') continue;
+                    if (strcasecmp($rawCat, 'Event') === 0) $rawCat = 'Events';
+                    $cKey = strtolower($rawCat);
+                    if (!isset($seenPhotoCats[$cKey])) {
+                        $seenPhotoCats[$cKey] = true;
+                        $photoCategories[] = $rawCat;
+                    }
+                }
+                foreach ($photoCategories as $pCat):
+                ?>
+                    <button class="cat-pill-btn" data-filter="<?php echo htmlspecialchars($pCat); ?>" onclick="filterCategory('<?php echo htmlspecialchars($pCat, ENT_QUOTES); ?>', this)"><?php echo htmlspecialchars(strtoupper($pCat)); ?></button>
+                <?php endforeach; ?>
             </div>
 
             <!-- All Albums 3-Column Grid -->
             <div class="all-albums-grid" id="allAlbumsGrid">
-                <?php foreach ($portfolioAlbums as $item): ?>
-                    <div class="grid-album-card" data-cat="<?php echo htmlspecialchars($item['category']); ?>" onclick="window.location.href='/portfolio-photo.php?id=<?php echo $item['id']; ?>'">
+                <?php foreach ($portfolioAlbums as $item):
+                    $normItemCat = trim((string)($item['category'] ?? ''));
+                    if (strcasecmp($normItemCat, 'Event') === 0) $normItemCat = 'Events';
+                ?>
+                    <div class="grid-album-card" data-cat="<?php echo htmlspecialchars(strtolower($normItemCat)); ?>" onclick="window.location.href='/portfolio-photo.php?id=<?php echo $item['id']; ?>'">
                         <div class="grid-thumb-box">
                             <?php if (!empty($item['featured'])): ?>
                                 <div class="grid-star-badge"><i class="fa-solid fa-star"></i></div>
@@ -1849,10 +1865,12 @@ $featuredAllProjects = array_filter($allProjects, function($item) {
             buttons.forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
 
+            const normTarget = (cat || 'all').toLowerCase() === 'event' ? 'events' : (cat || 'all').toLowerCase();
             const cards = document.querySelectorAll('#allAlbumsGrid .grid-album-card');
             cards.forEach(card => {
-                const cardCat = card.getAttribute('data-cat');
-                if (cat === 'all' || cardCat === cat) {
+                const rawCardCat = (card.getAttribute('data-cat') || '').toLowerCase();
+                const cardCat = rawCardCat === 'event' ? 'events' : rawCardCat;
+                if (normTarget === 'all' || cardCat === normTarget) {
                     card.style.display = 'flex';
                 } else {
                     card.style.display = 'none';

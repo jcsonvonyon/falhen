@@ -103,86 +103,25 @@ foreach ($relatedAlbums as $r) {
 }
 $sectionHeading = $allSameCat ? "More {$albumCategory} Albums" : "More Portfolio Albums";
 
-// Curate client-specific gallery photo sets
+// Resolve album gallery photos (Cloudinary CDN first -> Google Drive -> legacy photos -> cover image)
 $clientPhotos = [];
-
-// 1. Check if a Google Drive link or folder was configured and fetch its photos
-$gdrivePhotos = [];
-if (!empty($currentAlbum['gdrive_url'])) {
-    $gdrivePhotos = getGoogleDriveFolderPhotos($currentAlbum['gdrive_url']);
-}
-
-if (!empty($gdrivePhotos)) {
-    $clientPhotos = $gdrivePhotos;
-} elseif (!empty($currentAlbum['gallery_photos']) && is_array($currentAlbum['gallery_photos'])) {
+if (!empty($currentAlbum['gallery_photos']) && is_array($currentAlbum['gallery_photos'])) {
     $clientPhotos = $currentAlbum['gallery_photos'];
+} elseif (!empty($currentAlbum['gdrive_url'])) {
+    $clientPhotos = getGoogleDriveFolderPhotos($currentAlbum['gdrive_url']);
 } elseif (!empty($currentAlbum['photos']) && is_array($currentAlbum['photos'])) {
     $clientPhotos = $currentAlbum['photos'];
-} else {
-    // Curated high-res sets based on client / shoot
-    $clientId = (int)($currentAlbum['id'] ?? 0);
-    $clientName = strtolower(trim($currentAlbum['client'] ?? ''));
-    $clientTitle = strtolower(trim($currentAlbum['title'] ?? ''));
-
-    if ($clientId === 1 || strpos($clientName, 'king david') !== false || strpos($clientTitle, 'king david') !== false) {
-        // King David - Academic Graduation & Studio Celebration Shoot
-        $clientPhotos = [
-            '/assets/img/portfolio/king_david_01.jpg',
-            '/assets/img/portfolio/king_david_02.jpg',
-            '/assets/img/portfolio/king_david_03.jpg',
-            $coverImage,
-            'https://res.cloudinary.com/pnabfi91/image/upload/v1794096443/falhen/client-galleries/king-david-grad-shoot/king-david-grad-shoot-01.jpg',
-            'https://res.cloudinary.com/pnabfi91/image/upload/v1794096445/falhen/client-galleries/king-david-grad-shoot/king-david-grad-shoot-02.jpg',
-            'https://res.cloudinary.com/pnabfi91/image/upload/v1794096448/falhen/client-galleries/king-david-grad-shoot/king-david-grad-shoot-03.jpg',
-            'https://res.cloudinary.com/pnabfi91/image/upload/v1794096450/falhen/client-galleries/king-david-grad-shoot/king-david-grad-shoot-04.jpg',
-            'https://res.cloudinary.com/pnabfi91/image/upload/v1794096452/falhen/client-galleries/king-david-grad-shoot/king-david-grad-shoot-05.jpg',
-            'https://res.cloudinary.com/pnabfi91/image/upload/v1794096454/falhen/client-galleries/king-david-grad-shoot/king-david-grad-shoot-06.jpg',
-            'https://res.cloudinary.com/pnabfi91/image/upload/v1794096456/falhen/client-galleries/king-david-grad-shoot/king-david-grad-shoot-07.jpg',
-            'https://res.cloudinary.com/pnabfi91/image/upload/v1794096458/falhen/client-galleries/king-david-grad-shoot/king-david-grad-shoot-08.jpg'
-        ];
-    } elseif ($clientId === 3 || strpos($clientName, 'demola') !== false || strpos($clientTitle, 'demola') !== false) {
-        // Demola The Violinist - Live Concert Tour
-        $clientPhotos = [
-            $coverImage,
-            'https://res.cloudinary.com/pnabfi91/image/upload/v1791222750/falhen/portfolio/blpzc2fznaqr0czm3ji8.jpg',
-            'https://res.cloudinary.com/pnabfi91/image/upload/v1791222920/falhen/portfolio/c5k5xwoa1misejie2oxy.jpg',
-            'https://res.cloudinary.com/pnabfi91/image/upload/v1791226024/falhen/portfolio/ldtm77cjygkwcgijkdqq.jpg',
-            'https://res.cloudinary.com/pnabfi91/image/upload/v1791224320/falhen/portfolio/qdkldutyaqhrena0mrza.jpg',
-            'https://res.cloudinary.com/pnabfi91/image/upload/v1791226059/falhen/portfolio/lavtrjw84dyapshxdgpl.jpg',
-            'https://res.cloudinary.com/pnabfi91/image/upload/v1791226088/falhen/portfolio/sfa4gof0yfr0bc14r1eg.jpg',
-            'https://res.cloudinary.com/pnabfi91/image/upload/v1794096443/falhen/client-galleries/king-david-grad-shoot/king-david-grad-shoot-01.jpg',
-            'https://res.cloudinary.com/pnabfi91/image/upload/v1794096445/falhen/client-galleries/king-david-grad-shoot/king-david-grad-shoot-02.jpg',
-            'https://res.cloudinary.com/pnabfi91/image/upload/v1794096448/falhen/client-galleries/king-david-grad-shoot/king-david-grad-shoot-03.jpg'
-        ];
-    } elseif ($clientId === 2 || strpos($clientName, 'halima') !== false || strpos($clientTitle, 'halima') !== false) {
-        // Halima Ogunde - 40th Birthday Celebration
-        $clientPhotos = [
-            $coverImage,
-            'https://res.cloudinary.com/pnabfi91/image/upload/v1791224271/falhen/portfolio/ysfriy8jlhhkcuzl8j16.jpg',
-            'https://res.cloudinary.com/pnabfi91/image/upload/v1791224320/falhen/portfolio/qdkldutyaqhrena0mrza.jpg',
-            'https://res.cloudinary.com/pnabfi91/image/upload/v1791226059/falhen/portfolio/lavtrjw84dyapshxdgpl.jpg',
-            'https://res.cloudinary.com/pnabfi91/image/upload/v1791226088/falhen/portfolio/sfa4gof0yfr0bc14r1eg.jpg',
-            'https://res.cloudinary.com/pnabfi91/image/upload/v1794096443/falhen/client-galleries/king-david-grad-shoot/king-david-grad-shoot-01.jpg',
-            'https://res.cloudinary.com/pnabfi91/image/upload/v1794096445/falhen/client-galleries/king-david-grad-shoot/king-david-grad-shoot-02.jpg',
-            'https://res.cloudinary.com/pnabfi91/image/upload/v1794096448/falhen/client-galleries/king-david-grad-shoot/king-david-grad-shoot-03.jpg'
-        ];
-    } else {
-        // Default curated showcase collection with authentic Cloudinary master photos
-        $clientPhotos = [
-            $coverImage,
-            'https://res.cloudinary.com/pnabfi91/image/upload/v1791224271/falhen/portfolio/ysfriy8jlhhkcuzl8j16.jpg',
-            'https://res.cloudinary.com/pnabfi91/image/upload/v1791222750/falhen/portfolio/blpzc2fznaqr0czm3ji8.jpg',
-            'https://res.cloudinary.com/pnabfi91/image/upload/v1791222920/falhen/portfolio/c5k5xwoa1misejie2oxy.jpg',
-            'https://res.cloudinary.com/pnabfi91/image/upload/v1791226024/falhen/portfolio/ldtm77cjygkwcgijkdqq.jpg',
-            'https://res.cloudinary.com/pnabfi91/image/upload/v1791224320/falhen/portfolio/qdkldutyaqhrena0mrza.jpg',
-            'https://res.cloudinary.com/pnabfi91/image/upload/v1791226059/falhen/portfolio/lavtrjw84dyapshxdgpl.jpg',
-            'https://res.cloudinary.com/pnabfi91/image/upload/v1791226088/falhen/portfolio/sfa4gof0yfr0bc14r1eg.jpg'
-        ];
-    }
 }
 
-// Remove duplicates while preserving order
-$clientPhotos = array_values(array_unique($clientPhotos));
+if (empty($clientPhotos) && !empty($coverImage)) {
+    $clientPhotos = [$coverImage];
+}
+
+// Normalize via Cloudinary helper & remove duplicates while preserving order
+$clientPhotos = array_values(array_unique(array_filter(array_map(function($url) {
+    $u = trim((string)$url);
+    return $u !== '' ? getCloudinaryUrl($u) : '';
+}, $clientPhotos))));
 $totalPhotoCount = count($clientPhotos);
 ?>
 <!DOCTYPE html>
@@ -220,21 +159,17 @@ $totalPhotoCount = count($clientPhotos);
     <link rel="stylesheet" href="/assets/css/style.css">
 
     <script>
-        const galleryFallbackPhotos = [
-            '/assets/img/portfolio/king_david_01.jpg',
-            '/assets/img/portfolio/king_david_02.jpg',
-            '/assets/img/portfolio/king_david_03.jpg',
-            'https://res.cloudinary.com/pnabfi91/image/upload/v1794096443/falhen/client-galleries/king-david-grad-shoot/king-david-grad-shoot-01.jpg',
-            'https://res.cloudinary.com/pnabfi91/image/upload/v1794096445/falhen/client-galleries/king-david-grad-shoot/king-david-grad-shoot-02.jpg',
-            'https://res.cloudinary.com/pnabfi91/image/upload/v1794096448/falhen/client-galleries/king-david-grad-shoot/king-david-grad-shoot-03.jpg'
-        ];
+        const albumHeroCoverUrl = <?php echo json_encode($coverImage); ?>;
 
-        function handlePhotoFallback(imgEl, idx) {
+        function handlePhotoFallback(imgEl) {
             if (!imgEl) return;
             const step = parseInt(imgEl.dataset.fallbackStep || '0', 10);
-            const currentSrc = imgEl.src || '';
+            const currentSrc = imgEl.getAttribute('src') || '';
 
-            // Step 1: If Google Drive direct CDN URL, try alternate drive thumbnail endpoint
+            // Never mutate galleryPhotos or substitute another client's photos
+            if (!currentSrc) return;
+
+            // Step 1: If Google Drive direct CDN URL fails, retry Drive thumbnail endpoint
             if (step === 0 && currentSrc.includes('googleusercontent.com/d/')) {
                 const match = currentSrc.match(/\/d\/([a-zA-Z0-9_-]+)/);
                 if (match && match[1]) {
@@ -244,14 +179,10 @@ $totalPhotoCount = count($clientPhotos);
                 }
             }
 
-            // Step 2: Fall back to local high-res curated King David photos
-            if (step <= 1) {
+            // Step 2: Gracefully fall back ONLY to this album's own cover photo
+            if (step <= 1 && albumHeroCoverUrl && currentSrc !== albumHeroCoverUrl) {
                 imgEl.dataset.fallbackStep = '2';
-                const fbUrl = galleryFallbackPhotos[idx % galleryFallbackPhotos.length];
-                imgEl.src = fbUrl;
-                if (typeof galleryPhotos !== 'undefined' && galleryPhotos && galleryPhotos[idx]) {
-                    galleryPhotos[idx] = fbUrl;
-                }
+                imgEl.src = albumHeroCoverUrl;
             }
         }
     </script>
@@ -1585,7 +1516,7 @@ $totalPhotoCount = count($clientPhotos);
         <div class="gallery-hero-grid">
             
             <!-- Featured Showcase Cover (Left Column) -->
-            <div class="hero-featured-card" onclick="openCarousel(0)" title="Click to view full image in carousel">
+            <div class="hero-featured-card" onclick="openHeroCover()" title="Click to view full cover image">
                 <img src="<?php echo htmlspecialchars($coverImage); ?>" alt="<?php echo htmlspecialchars($currentAlbum['title']); ?>" referrerpolicy="no-referrer">
                 <div class="hero-featured-overlay">
                     <div class="hero-featured-zoom-badge">
@@ -1666,7 +1597,7 @@ $totalPhotoCount = count($clientPhotos);
         <div class="gallery-grid" id="galleryGrid">
             <?php foreach ($clientPhotos as $idx => $photo): ?>
                 <div class="gallery-photo-card" onclick="openCarousel(<?php echo $idx; ?>)">
-                    <img src="<?php echo htmlspecialchars($photo); ?>" alt="<?php echo htmlspecialchars($currentAlbum['title']) . ' — Photo ' . ($idx + 1); ?>" loading="lazy" referrerpolicy="no-referrer" onerror="handlePhotoFallback(this, <?php echo $idx; ?>)">
+                    <img src="<?php echo htmlspecialchars(getCloudinaryUrl($photo, 'f_auto,q_auto:good,w_900,c_limit')); ?>" alt="<?php echo htmlspecialchars($currentAlbum['title']) . ' — Photo ' . ($idx + 1); ?>" loading="lazy" referrerpolicy="no-referrer" onerror="handlePhotoFallback(this)">
                     
                     <!-- Floating Circular Action Buttons Overlay -->
                     <div class="card-hover-overlay">
@@ -1768,7 +1699,7 @@ $totalPhotoCount = count($clientPhotos);
             </button>
 
             <div class="carousel-main-image-wrap" onclick="closeCarousel()">
-                <img id="carouselMainImg" class="carousel-main-img" src="" alt="Full view" onclick="event.stopPropagation()" referrerpolicy="no-referrer" onerror="handlePhotoFallback(this, currentPhotoIndex)">
+                <img id="carouselMainImg" class="carousel-main-img" src="<?php echo htmlspecialchars($coverImage); ?>" alt="<?php echo htmlspecialchars($currentAlbum['title']); ?> — Full view" onclick="event.stopPropagation()" referrerpolicy="no-referrer" onerror="handlePhotoFallback(this)">
             </div>
 
             <button type="button" class="carousel-arrow-btn next" onclick="nextCarouselPhoto()" title="Next (Right Arrow)">
@@ -1780,14 +1711,14 @@ $totalPhotoCount = count($clientPhotos);
         <div class="carousel-bottom-thumbs" id="carouselThumbnails">
             <?php foreach ($clientPhotos as $idx => $photo): ?>
                 <div class="carousel-thumb-item <?php echo $idx === 0 ? 'active' : ''; ?>" id="thumb-<?php echo $idx; ?>" onclick="goToCarouselPhoto(<?php echo $idx; ?>)">
-                    <img src="<?php echo htmlspecialchars($photo); ?>" alt="Thumb <?php echo $idx + 1; ?>" referrerpolicy="no-referrer" onerror="handlePhotoFallback(this, <?php echo $idx; ?>)">
+                    <img src="<?php echo htmlspecialchars(getCloudinaryUrl($photo, 'f_auto,q_auto:eco,w_180,h_120,c_fill')); ?>" alt="Thumb <?php echo $idx + 1; ?>" loading="lazy" referrerpolicy="no-referrer" onerror="handlePhotoFallback(this)">
                 </div>
             <?php endforeach; ?>
         </div>
 
     </div>
 
-    <!-- Client Verification & Download Modal matching Readdy mockup -->
+    <!-- Client & Verified Guest Download Security Gate Modal -->
     <div id="clientDownloadModal" class="client-modal-backdrop" onclick="closeClientDownloadModal()">
         <div class="client-modal-box" onclick="event.stopPropagation()">
             <!-- Modal Header -->
@@ -1796,7 +1727,7 @@ $totalPhotoCount = count($clientPhotos);
                     <i class="fa-solid fa-cloud-arrow-down"></i>
                 </div>
                 <div style="flex: 1; text-align: left;">
-                    <h3 class="client-modal-title">Download Photos</h3>
+                    <h3 class="client-modal-title">Security &amp; Download Gate</h3>
                     <div class="client-modal-subtitle"><?php echo htmlspecialchars($currentAlbum['title']); ?></div>
                     <div class="client-stats-pill" id="downloadModalStats">
                         <i class="fa-regular fa-image"></i> 1 photo ~5 MB
@@ -1811,17 +1742,32 @@ $totalPhotoCount = count($clientPhotos);
 
                 <div class="cdm-form-group">
                     <label class="cdm-label" for="cdm_name">Full Name *</label>
-                    <input type="text" id="cdm_name" class="cdm-input" placeholder="Your full name" value="<?php echo htmlspecialchars($clientName); ?>" required>
+                    <input type="text" id="cdm_name" class="cdm-input" placeholder="Your full name" value="" required>
                 </div>
 
                 <div class="cdm-form-group">
                     <label class="cdm-label" for="cdm_email">Email Address *</label>
-                    <input type="email" id="cdm_email" class="cdm-input" placeholder="your@email.com" value="<?php echo htmlspecialchars($clientEmail); ?>" required>
+                    <input type="email" id="cdm_email" class="cdm-input" placeholder="name@domain.com" value="" required autocomplete="email">
                 </div>
 
                 <div class="cdm-form-group">
                     <label class="cdm-label" for="cdm_phone">Phone Number *</label>
                     <input type="tel" id="cdm_phone" class="cdm-input" placeholder="+1 (555) 000-0000" required>
+                </div>
+
+                <!-- Enhanced Guest Security Protocol (Auto-revealed for unlisted public visitors) -->
+                <div id="cdmGuestFields" style="display: none; margin-top: 12px; padding-top: 12px; border-top: 1px dashed rgba(255,255,255,0.14);">
+                    <div style="font-size: 0.74rem; font-weight: 700; color: #f87171; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px;">
+                        <i class="fa-solid fa-shield-halved"></i> Guest Access Verification
+                    </div>
+                    <div class="cdm-form-group">
+                        <label class="cdm-label" for="cdm_org">Organization / Relationship to Event *</label>
+                        <input type="text" id="cdm_org" class="cdm-input" placeholder="e.g. Guest, Family, Vendor, Press">
+                    </div>
+                    <div class="cdm-form-group">
+                        <label class="cdm-label" for="cdm_reason">Reason for Download *</label>
+                        <textarea id="cdm_reason" class="cdm-input" rows="2" placeholder="e.g. Personal keepsake, social media recap..." style="resize: vertical; min-height: 52px;"></textarea>
+                    </div>
                 </div>
 
                 <div class="cdm-form-group" id="cdmOtpGroup" style="display:none; margin-top: 14px;">
@@ -1831,7 +1777,7 @@ $totalPhotoCount = count($clientPhotos);
                 </div>
 
                 <p class="cdm-privacy-note">
-                    <i class="fa-solid fa-shield-halved" style="color: #3b82f6; margin-right: 4px;"></i> Your information verifies authorized client access. Only registered clients can download original gallery assets.
+                    <i class="fa-solid fa-shield-halved" style="color: #3b82f6; margin-right: 4px;"></i> Authorized clients receive an instant 6-digit passcode; public guests verify identity &amp; download reason. A delivery copy is also sent to your inbox.
                 </p>
             </div>
 
@@ -1882,8 +1828,9 @@ $totalPhotoCount = count($clientPhotos);
         // Gallery Photos Data
         const galleryPhotos = <?php echo json_encode($clientPhotos); ?>;
         const shootTitle = <?php echo json_encode($currentAlbum['title']); ?>;
-        const gdriveUrl = <?php echo json_encode($currentAlbum['gdrive_url'] ?? ''); ?>;
+        const currentAlbumId = <?php echo (int)($currentAlbum['id'] ?? 0); ?>;
         let currentPhotoIndex = 0;
+        let activeDownloadToken = '';
 
         // Toast Feedback Helper
         function showToast(text) {
@@ -1893,11 +1840,38 @@ $totalPhotoCount = count($clientPhotos);
             toast.classList.add('show');
             setTimeout(() => {
                 toast.classList.remove('show');
-            }, 3000);
+            }, 3400);
+        }
+
+        // Open the album's own hero cover photo cleanly
+        function openHeroCover() {
+            const normalizeKey = (u) => String(u || '').split('/').pop().split('?')[0].toLowerCase();
+            const coverKey = normalizeKey(albumHeroCoverUrl);
+            const matchIdx = galleryPhotos.findIndex(p => p === albumHeroCoverUrl || (coverKey && normalizeKey(p) === coverKey));
+
+            if (matchIdx >= 0) {
+                openCarousel(matchIdx);
+            } else {
+                currentPhotoIndex = 0;
+                const imgEl = document.getElementById('carouselMainImg');
+                if (imgEl && albumHeroCoverUrl) {
+                    imgEl.dataset.fallbackStep = '0';
+                    imgEl.src = albumHeroCoverUrl;
+                    imgEl.style.opacity = '1';
+                    imgEl.style.transform = 'scale(1)';
+                }
+                const counter = document.getElementById('carouselCounter');
+                if (counter) {
+                    counter.innerHTML = `<i class="fa-regular fa-image"></i> Cover · ${galleryPhotos.length} Photos`;
+                }
+                document.getElementById('carouselModal').style.display = 'flex';
+                document.body.style.overflow = 'hidden';
+            }
         }
 
         // Open Carousel at specific index
         function openCarousel(index) {
+            if (!galleryPhotos.length) return;
             if (index < 0 || index >= galleryPhotos.length) index = 0;
             currentPhotoIndex = index;
             updateCarouselView();
@@ -2023,6 +1997,13 @@ $totalPhotoCount = count($clientPhotos);
         function closeClientDownloadModal() {
             document.getElementById('clientDownloadModal').style.display = 'none';
             document.body.style.overflow = '';
+            otpStepActive = false;
+            const otpGroup = document.getElementById('cdmOtpGroup');
+            const guestFields = document.getElementById('cdmGuestFields');
+            const submitBtn = document.getElementById('btnCdmSubmit');
+            if (otpGroup) otpGroup.style.display = 'none';
+            if (guestFields) guestFields.style.display = 'none';
+            if (submitBtn) submitBtn.innerHTML = '<i class="fa-solid fa-download"></i> Start Download';
         }
 
         let otpStepActive = false;
@@ -2031,13 +2012,18 @@ $totalPhotoCount = count($clientPhotos);
             const name = document.getElementById('cdm_name').value.trim();
             const email = document.getElementById('cdm_email').value.trim();
             const phone = document.getElementById('cdm_phone').value.trim();
+            const guestFields = document.getElementById('cdmGuestFields');
+            const orgInput = document.getElementById('cdm_org');
+            const reasonInput = document.getElementById('cdm_reason');
+            const org = orgInput ? orgInput.value.trim() : '';
+            const reason = reasonInput ? reasonInput.value.trim() : '';
             const otpGroup = document.getElementById('cdmOtpGroup');
             const otpInput = document.getElementById('cdm_otp_code');
             const otpHint = document.getElementById('cdmOtpHint');
             const errBox = document.getElementById('cdm_error');
             const submitBtn = document.getElementById('btnCdmSubmit');
 
-            if (!name) {
+            if (!name || name.length < 2) {
                 errBox.style.display = 'block';
                 errBox.textContent = 'Please enter your full name.';
                 return;
@@ -2053,33 +2039,56 @@ $totalPhotoCount = count($clientPhotos);
                 return;
             }
 
+            const isGuestVisible = guestFields && guestFields.style.display !== 'none';
+            if (!otpStepActive && isGuestVisible) {
+                if (!org || org.length < 2) {
+                    errBox.style.display = 'block';
+                    errBox.textContent = 'Please enter your organization or relationship to this event.';
+                    if (orgInput) orgInput.focus();
+                    return;
+                }
+                if (!reason || reason.length < 3) {
+                    errBox.style.display = 'block';
+                    errBox.textContent = 'Please share a brief reason for downloading.';
+                    if (reasonInput) reasonInput.focus();
+                    return;
+                }
+            }
+
             errBox.style.display = 'none';
             submitBtn.disabled = true;
 
             try {
                 if (!otpStepActive) {
-                    submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Sending 6-Digit Code...';
+                    submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Checking Access...';
                     const fd = new FormData();
                     fd.append('action', 'request_code');
                     fd.append('name', name);
                     fd.append('email', email);
                     fd.append('phone', phone);
-                    fd.append('album_id', <?php echo (int)($currentAlbum['id'] ?? 0); ?>);
+                    fd.append('organization', org);
+                    fd.append('download_reason', reason);
+                    fd.append('album_id', currentAlbumId);
                     fd.append('album_title', shootTitle);
 
                     const resp = await fetch('/api/verify-download.php', { method: 'POST', body: fd });
                     const res = await resp.json();
 
-                    if (res.success) {
+                    if (res.requires_guest_details) {
+                        if (guestFields) guestFields.style.display = 'block';
+                        errBox.style.display = 'none';
+                        otpHint.textContent = res.message || 'Please enter your organization and download reason to receive your verification code.';
+                        submitBtn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Verify &amp; Send Code';
+                        if (orgInput) orgInput.focus();
+                    } else if (res.success) {
                         otpStepActive = true;
                         otpGroup.style.display = 'block';
-                        otpHint.innerHTML = res.message + (res.dev_otp_hint ? ` (Passcode: <strong>${res.dev_otp_hint}</strong>)` : '');
-                        if (res.dev_otp_hint) otpInput.value = res.dev_otp_hint;
-                        submitBtn.innerHTML = '<i class="fa-solid fa-unlock-keyhole"></i> Verify Code & Start Download';
+                        otpHint.textContent = res.message || 'A 6-digit security verification code has been dispatched to your contact email.';
+                        submitBtn.innerHTML = '<i class="fa-solid fa-unlock-keyhole"></i> Verify Code &amp; Start Download';
                         otpInput.focus();
                     } else {
                         errBox.style.display = 'block';
-                        errBox.innerHTML = (res.message || 'Access Restricted: You must be a registered client to download gallery assets.');
+                        errBox.textContent = res.message || 'Verification failed. Please check your details.';
                         submitBtn.innerHTML = '<i class="fa-solid fa-download"></i> Start Download';
                     }
                 } else {
@@ -2096,27 +2105,28 @@ $totalPhotoCount = count($clientPhotos);
                     fd.append('name', name);
                     fd.append('email', email);
                     fd.append('phone', phone);
+                    fd.append('organization', org);
+                    fd.append('download_reason', reason);
                     fd.append('code', code);
-                    fd.append('album_id', <?php echo (int)($currentAlbum['id'] ?? 0); ?>);
+                    fd.append('album_id', currentAlbumId);
                     fd.append('album_title', shootTitle);
 
                     const resp = await fetch('/api/verify-download.php', { method: 'POST', body: fd });
                     const res = await resp.json();
 
-                    if (res.success) {
+                    if (res.success && res.verified) {
                         isClientVerified = true;
-                        otpStepActive = false;
-                        otpGroup.style.display = 'none';
+                        activeDownloadToken = res.download_token || '';
                         closeClientDownloadModal();
-                        showToast('Client verified! Starting download...');
+                        showToast(res.download_emailed ? '✓ Identity verified! Download started and sent to your inbox.' : '✓ Identity verified! Starting download...');
                         if (typeof pendingDownload === 'function') {
-                            pendingDownload();
+                            pendingDownload(activeDownloadToken);
                             pendingDownload = null;
                         }
                     } else {
                         errBox.style.display = 'block';
                         errBox.textContent = res.message || 'Invalid verification code.';
-                        submitBtn.innerHTML = '<i class="fa-solid fa-unlock-keyhole"></i> Verify Code & Start Download';
+                        submitBtn.innerHTML = '<i class="fa-solid fa-unlock-keyhole"></i> Verify Code &amp; Start Download';
                     }
                 }
             } catch (err) {
@@ -2155,7 +2165,6 @@ $totalPhotoCount = count($clientPhotos);
                 document.body.removeChild(a);
                 showToast(`Downloaded: ${filename}`);
             } catch (err) {
-                // Fallback for CORS restricted origins: trigger browser direct download
                 const a = document.createElement('a');
                 a.href = url;
                 a.download = filename;
@@ -2171,36 +2180,17 @@ $totalPhotoCount = count($clientPhotos);
             downloadSinglePhoto(galleryPhotos[currentPhotoIndex], currentPhotoIndex + 1);
         }
 
-        // Download All Photos Functionality (Protected by Client Verification)
+        // Download All Photos Functionality (Protected by Verification Gate & Authenticated ZIP API)
         function downloadAllPhotos() {
-            checkClientAuthBeforeDownload(() => {
-                executeAllPhotosDownload();
-            }, `<i class="fa-solid fa-images"></i> ${galleryPhotos.length} photos ~${galleryPhotos.length * 5} MB`);
+            checkClientAuthBeforeDownload((token) => {
+                executeAllPhotosDownload(token || activeDownloadToken);
+            }, `<i class="fa-solid fa-images"></i> ${galleryPhotos.length} photos (.ZIP archive)`);
         }
 
-        async function executeAllPhotosDownload() {
-            const btn = document.getElementById('btnDownloadAll');
-            const originalHtml = btn.innerHTML;
-            
-            if (gdriveUrl && gdriveUrl.startsWith('http')) {
-                showToast('Opening Google Drive archive...');
-                window.open(gdriveUrl, '_blank');
-                return;
-            }
-
-            btn.disabled = true;
-            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Downloading (${galleryPhotos.length})...`;
-            showToast(`Starting download of ${galleryPhotos.length} high-resolution photos...`);
-
-            for (let i = 0; i < galleryPhotos.length; i++) {
-                await executeSinglePhotoDownload(galleryPhotos[i], i + 1);
-                // Stagger downloads by 350ms to prevent browser blocking
-                await new Promise(r => setTimeout(r, 350));
-            }
-
-            btn.disabled = false;
-            btn.innerHTML = originalHtml;
-            showToast('All photos downloaded successfully!');
+        function executeAllPhotosDownload(token) {
+            const url = `/api/download-album.php?album_id=${currentAlbumId}&token=${encodeURIComponent(token || '')}`;
+            showToast(`Packaging & downloading ${galleryPhotos.length} photos (.ZIP)...`);
+            window.location.href = url;
         }
 
         // Native Share Web API or Clipboard copy

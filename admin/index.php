@@ -2377,28 +2377,50 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         $clientEmail = implode(', ', $parsedEmails);
         $clientPhone = trim(strip_tags($_POST['client_phone'] ?? ''));
-        $category = trim(strip_tags($_POST['category'] ?? 'Portrait'));
+        $customCategory = trim(strip_tags($_POST['custom_category'] ?? ''));
+        $category = $customCategory !== '' ? $customCategory : trim(strip_tags($_POST['category'] ?? 'Portrait'));
+        if ($category === '') {
+            $category = 'Portrait';
+        }
+        if (function_exists('addGalleryCategory')) {
+            $catAddRes = addGalleryCategory($category);
+            if (!empty($catAddRes['category'])) {
+                $category = $catAddRes['category'];
+            }
+        }
         $location = trim(strip_tags($_POST['location'] ?? ''));
         $year = trim(strip_tags($_POST['year'] ?? date('Y')));
         $desc = trim($_POST['desc'] ?? '');
         $gdriveUrl = trim(strip_tags($_POST['gdrive_url'] ?? ''));
         $slug = generateSlug(!empty($_POST['slug']) ? $_POST['slug'] : $title);
         $seoTitle = trim(strip_tags($_POST['seo_title'] ?? ''));
-        $seoTitle = preg_replace('/\s*\|\s*Falhen\s*(Media|Productions)?\s*$/i', '', $seoTitle);
-        $seoTitle = preg_replace('/\s*-\s*Falhen\s*(Media|Productions)?\s*$/i', '', $seoTitle);
+        $seoTitle = preg_replace('/\s*[\|\-]\s*Falhen\s*(Media|Productions)?\s*$/i', '', $seoTitle);
 
         $seoDesc = trim(strip_tags($_POST['seo_desc'] ?? ''));
-        if (stripos($seoDesc, 'Browse the exclusive photo gallery') !== false || stripos($seoDesc, '| Falhen') !== false) {
+        if (function_exists('isLegacyBoilerplateSeoDesc') && isLegacyBoilerplateSeoDesc($seoDesc)) {
             $seoDesc = '';
         }
         $seoKeywords = trim(strip_tags($_POST['seo_keywords'] ?? ''));
         $featured = !empty($_POST['featured']);
 
-        if (empty($seoTitle) || empty($seoDesc)) {
-            $autoSeo = generateClientGallerySeo($title, $category, $client, $desc);
-            if (empty($seoTitle)) $seoTitle = $autoSeo['seo_title'];
-            if (empty($seoDesc)) $seoDesc = $autoSeo['seo_desc'];
-            if (empty($seoKeywords)) $seoKeywords = $autoSeo['seo_keywords'];
+        // Never force hardcoded boilerplate into SEO Description on save:
+        // Derive SEO title from title if empty; derive SEO desc ONLY from real backstory ($desc) if empty.
+        if (empty($seoTitle)) {
+            $seoTitle = substr($title, 0, 60);
+        }
+        if (empty($seoDesc) && !empty($desc)) {
+            $cleanBackstory = trim(preg_replace('/\s+/', ' ', strip_tags($desc)));
+            if (strlen($cleanBackstory) > 160) {
+                $cut = substr($cleanBackstory, 0, 157);
+                $sp = strrpos($cut, ' ');
+                $seoDesc = ($sp !== false && $sp > 110) ? substr($cut, 0, $sp) . '...' : rtrim($cut) . '...';
+            } else {
+                $seoDesc = $cleanBackstory;
+            }
+        }
+        if (empty($seoKeywords)) {
+            $autoSeo = generateClientGallerySeo($title, $category, $client, $desc, $location, $year);
+            $seoKeywords = $autoSeo['seo_keywords'];
         }
 
         $image = trim(strip_tags($_POST['existing_image'] ?? ''));
@@ -9436,8 +9458,14 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
 
                 // Filter items
                 $filteredGalleries = array_filter($clientGalleries, function($cg) use ($searchQuery, $catFilter) {
-                    if ($catFilter !== 'all' && strtolower($cg['category'] ?? '') !== strtolower($catFilter)) {
-                        return false;
+                    if ($catFilter !== 'all') {
+                        $itemCatNorm = strtolower(trim($cg['category'] ?? ''));
+                        if ($itemCatNorm === 'event') $itemCatNorm = 'events';
+                        $filterNorm = strtolower(trim($catFilter));
+                        if ($filterNorm === 'event') $filterNorm = 'events';
+                        if ($itemCatNorm !== $filterNorm) {
+                            return false;
+                        }
                     }
                     if (!empty($searchQuery)) {
                         $q = strtolower($searchQuery);
@@ -9514,13 +9542,12 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                 <?php if ($subAction === 'add' || $editingGalleryId !== null): 
                     $curSlug = $editingGallery['slug'] ?? generateSlug($editingGallery['title'] ?? '');
                     $rawSeoTitle = $editingGallery['seo_title'] ?? ($editingGallery['title'] ?? '');
-                    $curSeoTitle = preg_replace('/\s*\|\s*Falhen\s*(Media|Productions)?\s*$/i', '', (string)$rawSeoTitle);
-                    $curSeoTitle = preg_replace('/\s*-\s*Falhen\s*(Media|Productions)?\s*$/i', '', (string)$curSeoTitle);
+                    $curSeoTitle = preg_replace('/\s*[\|\-]\s*Falhen\s*(Media|Productions)?\s*$/i', '', (string)$rawSeoTitle);
                     $rawSeoDesc = $editingGallery['seo_desc'] ?? '';
-                    if (stripos($rawSeoDesc, 'Browse the exclusive photo gallery') !== false || stripos($rawSeoDesc, '| Falhen') !== false) {
+                    if (function_exists('isLegacyBoilerplateSeoDesc') && isLegacyBoilerplateSeoDesc((string)$rawSeoDesc)) {
                         $rawSeoDesc = '';
                     }
-                    $curSeoDesc = preg_replace('/\s*\|\s*Falhen\s*(Media|Productions)?\s*$/i', '', (string)$rawSeoDesc);
+                    $curSeoDesc = trim(preg_replace('/\s*\|\s*Falhen\s*(Media|Productions)?\s*$/i', '', (string)$rawSeoDesc));
                     $curPhotos = $editingGallery['gallery_photos'] ?? [];
                 ?>
                     <!-- EDIT / ADD CLIENT GALLERY FORM VIEW -->
@@ -9558,18 +9585,29 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                             <input type="text" name="client" id="cg_client_input" class="form-text-input" value="<?php echo htmlspecialchars($editingGallery['client'] ?? ''); ?>" placeholder="e.g. King David" required oninput="handleClientInputChange(this.value)">
                                         </div>
                                         <div>
-                                            <label class="form-label-title" style="font-weight: 700;">Category <span style="color: #ef4444;">*</span></label>
+                                            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px;">
+                                                <label class="form-label-title" style="font-weight: 700; margin-bottom: 0;">Category <span style="color: #ef4444;">*</span></label>
+                                                <button type="button" onclick="toggleAddCategoryBox()" style="background: none; border: none; color: #2563eb; font-size: 0.74rem; font-weight: 700; cursor: pointer; padding: 0; display: inline-flex; align-items: center; gap: 4px;">
+                                                    <i class="fa-solid fa-plus"></i> New Category
+                                                </button>
+                                            </div>
                                             <select name="category" id="cg_category_select" class="form-text-input" required onchange="handleCategoryChange(this.value)">
                                                 <?php 
-                                                $curCat = $editingGallery['category'] ?? 'Portrait';
-                                                $categories = ['Portrait', 'Wedding', 'Birthday', 'Events', 'Commercials', 'Corporate', 'Documentary', 'Music Video'];
-                                                if (!in_array($curCat, $categories) && !empty($curCat)) $categories[] = $curCat;
+                                                $curCat = trim($editingGallery['category'] ?? 'Portrait');
+                                                if (strcasecmp($curCat, 'Event') === 0) $curCat = 'Events';
+                                                $categories = function_exists('getGalleryCategories') ? getGalleryCategories() : ['Portrait', 'Wedding', 'Birthday', 'Events', 'Corporate', 'Commercials', 'Graduation', 'Fashion Show', 'Baby Shower', 'Proposal', 'Documentary', 'Music Video'];
                                                 foreach ($categories as $catOpt): ?>
-                                                    <option value="<?php echo htmlspecialchars($catOpt); ?>" <?php echo (strtolower($curCat) === strtolower($catOpt)) ? 'selected' : ''; ?>>
+                                                    <option value="<?php echo htmlspecialchars($catOpt); ?>" <?php echo (strcasecmp($curCat, $catOpt) === 0) ? 'selected' : ''; ?>>
                                                         <?php echo htmlspecialchars($catOpt); ?>
                                                     </option>
                                                 <?php endforeach; ?>
                                             </select>
+                                            <div id="cg_add_cat_box" style="display: none; margin-top: 8px; gap: 6px; align-items: center;">
+                                                <input type="text" id="cg_new_category_input" name="custom_category" class="form-text-input" placeholder="e.g. Graduation, Baby Shower, Gala..." style="padding: 7px 10px; font-size: 0.82rem; flex: 1;">
+                                                <button type="button" onclick="saveNewGalleryCategory()" id="btn_save_new_cat" style="background: #0f172a; color: #ffffff; border: none; border-radius: 6px; padding: 7px 12px; font-size: 0.78rem; font-weight: 700; cursor: pointer; white-space: nowrap;">
+                                                    Add
+                                                </button>
+                                            </div>
                                         </div>
                                     </div>
 
@@ -9596,17 +9634,17 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
                                         <div>
                                             <label class="form-label-title">Shoot Year / Date</label>
-                                            <input type="text" name="year" class="form-text-input" value="<?php echo htmlspecialchars($editingGallery['year'] ?? date('Y')); ?>" placeholder="2026">
+                                            <input type="text" name="year" id="cg_year_input" class="form-text-input" value="<?php echo htmlspecialchars($editingGallery['year'] ?? date('Y')); ?>" placeholder="2026" oninput="updateSeoPreview()">
                                         </div>
                                         <div>
                                             <label class="form-label-title">Location / City</label>
-                                            <input type="text" name="location" class="form-text-input" value="<?php echo htmlspecialchars($editingGallery['location'] ?? 'Lagos'); ?>" placeholder="Lagos, Chicago">
+                                            <input type="text" name="location" id="cg_location_input" class="form-text-input" value="<?php echo htmlspecialchars($editingGallery['location'] ?? 'Lagos'); ?>" placeholder="Lagos, Chicago" oninput="updateSeoPreview()">
                                         </div>
                                     </div>
 
                                     <div>
                                         <label class="form-label-title">Gallery Backstory / Description</label>
-                                        <textarea name="desc" id="cg_desc_input" class="form-text-input" rows="3" placeholder="Enter notes or client backstory..."><?php echo htmlspecialchars($editingGallery['desc'] ?? ''); ?></textarea>
+                                        <textarea name="desc" id="cg_desc_input" class="form-text-input" rows="3" placeholder="Enter notes or client backstory (also powers SEO meta description)..." oninput="updateSeoPreview()"><?php echo htmlspecialchars($editingGallery['desc'] ?? ''); ?></textarea>
                                     </div>
 
                                     <!-- Featured Checkbox -->
@@ -9659,8 +9697,8 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                         <!-- Google SERP Live Snippet Preview -->
                                         <div style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 12px; margin-top: 10px;">
                                             <div style="font-size: 0.7rem; color: #202124; margin-bottom: 2px;">client.falhen.com &rsaquo; album &rsaquo; <span id="serp_slug_preview" style="color:#5f6368;"><?php echo htmlspecialchars($curSlug); ?></span></div>
-                                            <div id="serp_title_preview" style="color: #1a0dab; font-size: 0.95rem; font-weight: 500; text-decoration: none; line-height: 1.25; margin-bottom: 4px;"><?php echo htmlspecialchars($curSeoTitle ?: 'Client Gallery'); ?></div>
-                                            <div id="serp_desc_preview" style="color: #4d5156; font-size: 0.78rem; line-height: 1.4;"><?php echo htmlspecialchars($curSeoDesc ?: 'Explore private photography collection delivered in editorial high-resolution.'); ?></div>
+                                            <div id="serp_title_preview" style="color: #1a0dab; font-size: 0.95rem; font-weight: 500; text-decoration: none; line-height: 1.25; margin-bottom: 4px;"><?php echo htmlspecialchars($curSeoTitle ?: ($editingGallery['title'] ?? 'Gallery Title')); ?></div>
+                                            <div id="serp_desc_preview" style="color: #4d5156; font-size: 0.78rem; line-height: 1.4;"><?php echo htmlspecialchars($curSeoDesc ?: ($editingGallery['desc'] ?? 'Add a gallery backstory or custom meta description to preview your search snippet.')); ?></div>
                                         </div>
                                     </div>
 
@@ -9759,9 +9797,69 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                         updateSeoPreview();
                     }
 
+                    function toggleAddCategoryBox() {
+                        const box = document.getElementById('cg_add_cat_box');
+                        const inp = document.getElementById('cg_new_category_input');
+                        if (!box) return;
+                        const isHidden = box.style.display === 'none' || !box.style.display;
+                        box.style.display = isHidden ? 'flex' : 'none';
+                        if (isHidden && inp) inp.focus();
+                    }
+
+                    async function saveNewGalleryCategory() {
+                        const inp = document.getElementById('cg_new_category_input');
+                        const sel = document.getElementById('cg_category_select');
+                        const btn = document.getElementById('btn_save_new_cat');
+                        const box = document.getElementById('cg_add_cat_box');
+                        const name = inp ? inp.value.trim() : '';
+
+                        if (!name || name.length < 2) {
+                            alert('Please enter a category name (at least 2 characters).');
+                            return;
+                        }
+
+                        btn.disabled = true;
+                        btn.textContent = 'Adding...';
+                        try {
+                            const fd = new FormData();
+                            fd.append('action', 'add_category');
+                            fd.append('name', name);
+                            const resp = await fetch('/api/admin-client-gallery.php', { method: 'POST', body: fd });
+                            const data = await resp.json();
+                            if (data.success && data.category) {
+                                let exists = false;
+                                for (let i = 0; i < sel.options.length; i++) {
+                                    if (sel.options[i].value.toLowerCase() === data.category.toLowerCase()) {
+                                        sel.selectedIndex = i;
+                                        exists = true;
+                                        break;
+                                    }
+                                }
+                                if (!exists) {
+                                    const opt = document.createElement('option');
+                                    opt.value = data.category;
+                                    opt.textContent = data.category;
+                                    sel.appendChild(opt);
+                                    sel.value = data.category;
+                                }
+                                inp.value = '';
+                                box.style.display = 'none';
+                                updateSeoPreview();
+                            } else {
+                                alert(data.message || 'Could not save category.');
+                            }
+                        } catch (e) {
+                            alert('Network error adding category.');
+                        } finally {
+                            btn.disabled = false;
+                            btn.textContent = 'Add';
+                        }
+                    }
+
                     function updateSeoPreview() {
                         const title = document.getElementById('cg_title_input').value.trim();
                         const slug = document.getElementById('cg_slug_input').value.trim();
+                        const desc = document.getElementById('cg_desc_input') ? document.getElementById('cg_desc_input').value.trim() : '';
                         const seoTitleInp = document.getElementById('cg_seo_title_input');
                         const seoDescInp = document.getElementById('cg_seo_desc_input');
 
@@ -9770,8 +9868,8 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                         }
 
                         document.getElementById('serp_slug_preview').textContent = slug || 'gallery';
-                        document.getElementById('serp_title_preview').textContent = seoTitleInp.value || 'Client Gallery';
-                        document.getElementById('serp_desc_preview').textContent = seoDescInp.value || 'Explore private photography collection delivered in editorial high-resolution.';
+                        document.getElementById('serp_title_preview').textContent = seoTitleInp.value || title || 'Gallery Title';
+                        document.getElementById('serp_desc_preview').textContent = seoDescInp.value || desc || 'Add a gallery backstory or custom meta description to preview your search snippet.';
 
                         document.getElementById('seo_title_count').textContent = `${seoTitleInp.value.length}/60`;
                         document.getElementById('seo_desc_count').textContent = `${seoDescInp.value.length}/160`;
@@ -9782,6 +9880,8 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                         const category = document.getElementById('cg_category_select').value;
                         const client = document.getElementById('cg_client_input').value.trim();
                         const desc = document.getElementById('cg_desc_input').value.trim();
+                        const location = document.getElementById('cg_location_input') ? document.getElementById('cg_location_input').value.trim() : '';
+                        const year = document.getElementById('cg_year_input') ? document.getElementById('cg_year_input').value.trim() : '';
 
                         if (!title) {
                             alert('Please enter a Gallery Title first.');
@@ -9795,6 +9895,8 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                             fd.append('category', category);
                             fd.append('client', client);
                             fd.append('desc', desc);
+                            fd.append('location', location);
+                            fd.append('year', year);
 
                             const resp = await fetch('/api/admin-client-gallery.php', { method: 'POST', body: fd });
                             const data = await resp.json();
@@ -10335,17 +10437,31 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                     <?php else: ?>
                         <!-- CLIENT GALLERIES LIST VIEW -->
                     <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 16px 20px; margin-bottom: 24px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px;">
-                        <div style="display: flex; gap: 8px; align-items: center;">
+                        <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
                             <span style="font-size: 0.82rem; font-weight: 700; color: #64748b; text-transform: uppercase;">CATEGORY:</span>
                             <a href="index.php?section=client_galleries&cat=all&q=<?php echo urlencode($searchQuery); ?>" style="padding: 6px 14px; border-radius: 8px; font-size: 0.82rem; font-weight: 700; text-decoration: none; <?php echo $catFilter === 'all' ? 'background: #0f172a; color: #fff;' : 'background: #f1f5f9; color: #475569;'; ?>">
                                 All
                             </a>
-                            <a href="index.php?section=client_galleries&cat=portrait&q=<?php echo urlencode($searchQuery); ?>" style="padding: 6px 14px; border-radius: 8px; font-size: 0.82rem; font-weight: 700; text-decoration: none; <?php echo strtolower($catFilter) === 'portrait' ? 'background: #0f172a; color: #fff;' : 'background: #f1f5f9; color: #475569;'; ?>">
-                                Portrait
-                            </a>
-                            <a href="index.php?section=client_galleries&cat=wedding&q=<?php echo urlencode($searchQuery); ?>" style="padding: 6px 14px; border-radius: 8px; font-size: 0.82rem; font-weight: 700; text-decoration: none; <?php echo strtolower($catFilter) === 'wedding' ? 'background: #0f172a; color: #fff;' : 'background: #f1f5f9; color: #475569;'; ?>">
-                                Wedding
-                            </a>
+                            <?php
+                            $listCategories = [];
+                            $seenListCats = [];
+                            foreach ($clientGalleries as $cgItem) {
+                                $cLabel = trim((string)($cgItem['category'] ?? ''));
+                                if ($cLabel === '') continue;
+                                if (strcasecmp($cLabel, 'Event') === 0) $cLabel = 'Events';
+                                $cKey = strtolower($cLabel);
+                                if (!isset($seenListCats[$cKey])) {
+                                    $seenListCats[$cKey] = true;
+                                    $listCategories[] = $cLabel;
+                                }
+                            }
+                            foreach ($listCategories as $cLabel):
+                                $isAct = (strcasecmp($catFilter, $cLabel) === 0 || (strcasecmp($catFilter, 'Event') === 0 && strcasecmp($cLabel, 'Events') === 0));
+                            ?>
+                                <a href="index.php?section=client_galleries&cat=<?php echo urlencode(strtolower($cLabel)); ?>&q=<?php echo urlencode($searchQuery); ?>" style="padding: 6px 14px; border-radius: 8px; font-size: 0.82rem; font-weight: 700; text-decoration: none; <?php echo $isAct ? 'background: #0f172a; color: #fff;' : 'background: #f1f5f9; color: #475569;'; ?>">
+                                    <?php echo htmlspecialchars($cLabel); ?>
+                                </a>
+                            <?php endforeach; ?>
                         </div>
 
                         <form action="index.php" method="GET" style="display: flex; gap: 8px; margin: 0;">
