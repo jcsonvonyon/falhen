@@ -103,7 +103,7 @@ if (empty($visibleBrands)) {
 }
 ?>
 <section class="brands-section">
-    <div class="brands-title">TRUSTED BY WORLD-CLASS BRANDS</div>
+    <div class="brands-title"><?php echo htmlspecialchars($settings['brands_section_title'] ?? 'TRUSTED BY WORLD-CLASS BRANDS'); ?></div>
     <div class="brands-ticker-wrapper">
         <div class="brands-ticker-track">
             <!-- First Set -->
@@ -143,10 +143,17 @@ if (empty($visibleBrands)) {
 <section class="section" id="services">
     <div class="container">
         <div class="section-title-wrapper" style="text-align: center;">
-            <h2 class="section-title" style="font-size: 2.75rem; font-weight: 700;">Our Services</h2>
+            <?php if (!empty($settings['services_badge_label'])): ?>
+                <span class="section-badge" style="display: inline-block; font-size: 0.76rem; font-weight: 700; color: #dc2626; text-transform: uppercase; letter-spacing: 1.2px; margin-bottom: 8px;"><?php echo htmlspecialchars($settings['services_badge_label']); ?></span>
+            <?php endif; ?>
+            <h2 class="section-title" style="font-size: 2.75rem; font-weight: 700;">
+                <span><?php echo htmlspecialchars($settings['services_headline_white'] ?? 'Our'); ?></span>
+                <span style="color: #dc2626;"><?php echo htmlspecialchars($settings['services_headline_red'] ?? 'Services'); ?></span>
+            </h2>
             <p class="section-subtitle"
-                style="max-width: 620px; margin: 0 auto; color: var(--text-muted); font-size: 1.05rem;">From concept to
-                completion, we bring your vision to life with creativity and precision.</p>
+                style="max-width: 620px; margin: 0 auto; color: var(--text-muted); font-size: 1.05rem;">
+                <?php echo htmlspecialchars($settings['services_subtitle'] ?? 'From concept to completion, we bring your vision to life with creativity and precision.'); ?>
+            </p>
         </div>
 
         <div class="services-grid">
@@ -242,9 +249,16 @@ $heroVideoUrl = 'https://www.youtube.com/embed/' . $heroYtId;
     <div class="container">
         <!-- Section Header -->
         <div class="section-title-wrapper" style="margin-bottom: 30px; text-align: left;">
+            <?php if (!empty($settings['featured_work_badge_label'])): ?>
+                <span class="section-badge" style="display: inline-block; font-size: 0.76rem; font-weight: 700; color: #dc2626; text-transform: uppercase; letter-spacing: 1.2px; margin-bottom: 8px;"><?php echo htmlspecialchars($settings['featured_work_badge_label']); ?></span>
+            <?php endif; ?>
             <h2 class="section-title stories-heading"
                 style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; font-size: 60px; font-weight: 800; letter-spacing: -1.5px; line-height: 1.1; text-align: left;">
-                Stories We've <span style="color: #dc2626;">Told.</span></h2>
+                <?php echo htmlspecialchars($settings['featured_work_headline_white'] ?? "Stories We've"); ?> <span style="color: #dc2626;"><?php echo htmlspecialchars($settings['featured_work_headline_red'] ?? 'Told.'); ?></span>
+            </h2>
+            <?php if (!empty($settings['featured_work_subtitle'])): ?>
+                <p style="color: var(--text-muted); font-size: 1.05rem; margin-top: 8px; max-width: 680px;"><?php echo htmlspecialchars($settings['featured_work_subtitle']); ?></p>
+            <?php endif; ?>
         </div>
 
         <!-- Dynamic Filter Pill Tabs -->
@@ -341,7 +355,7 @@ $heroVideoUrl = 'https://www.youtube.com/embed/' . $heroYtId;
                         class="fa-solid fa-chevron-right"></i></button>
                 <span class="auto-advance-label">Auto-advancing every 6s</span>
             </div>
-            <a href="/services.php" class="explore-services-btn">Explore Services <i
+            <a href="<?php echo htmlspecialchars($settings['featured_work_cta_url'] ?? '/services.php'); ?>" class="explore-services-btn"><?php echo htmlspecialchars($settings['featured_work_cta_text'] ?? 'Explore Services'); ?> <i
                     class="fa-solid fa-arrow-right"></i></a>
         </div>
     </div>
@@ -352,12 +366,14 @@ $heroVideoUrl = 'https://www.youtube.com/embed/' . $heroYtId;
     style="background: #09090b; border-top: 1px solid rgba(255, 255, 255, 0.08);">
     <div class="container">
         <div class="section-title-wrapper" style="text-align: center; margin-bottom: 50px;">
+            <?php if (!empty($settings['testimonials_badge_label'])): ?>
+                <span class="section-badge" style="display: inline-block; font-size: 0.76rem; font-weight: 700; color: #dc2626; text-transform: uppercase; letter-spacing: 1.2px; margin-bottom: 8px;"><?php echo htmlspecialchars($settings['testimonials_badge_label']); ?></span>
+            <?php endif; ?>
             <h2 class="section-title testimonials-heading"
                 style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; font-size: 50px; font-weight: 700; letter-spacing: -1.5px; line-height: 1.1;">
-                What Our Clients <span style="color: #dc2626;">Say</span></h2>
+                <?php echo htmlspecialchars($settings['testimonials_headline_white'] ?? 'What Our Clients'); ?> <span style="color: #dc2626;"><?php echo htmlspecialchars($settings['testimonials_headline_red'] ?? 'Say'); ?></span></h2>
             <p class="section-subtitle"
-                style="max-width: 620px; margin: 0 auto; color: var(--text-muted); font-size: 1.05rem;">Don't take our
-                word for it — here's what the brands we've worked with have to say.</p>
+                style="max-width: 620px; margin: 0 auto; color: var(--text-muted); font-size: 1.05rem;"><?php echo htmlspecialchars($settings['testimonials_subtitle'] ?? "Don't take our word for it — here's what the brands we've worked with have to say."); ?></p>
         </div>
 
         <div class="testimonials-wrapper">
@@ -475,10 +491,15 @@ if (empty($btsItems)) {
     <div class="container">
         <!-- Section Header -->
         <div class="section-title-wrapper" style="text-align: center; margin-bottom: 50px;">
-            <h2 class="section-title discovery-main-title">Book a <span style="color: #ef4444;">Discovery Call</span>
+            <?php if (!empty($settings['discovery_badge_label'])): ?>
+                <span class="section-badge" style="display: inline-block; font-size: 0.76rem; font-weight: 700; color: #dc2626; text-transform: uppercase; letter-spacing: 1.2px; margin-bottom: 8px;"><?php echo htmlspecialchars($settings['discovery_badge_label']); ?></span>
+            <?php endif; ?>
+            <h2 class="section-title discovery-main-title">
+                <?php echo htmlspecialchars($settings['discovery_headline_white'] ?? 'Book a'); ?> <span style="color: #ef4444;"><?php echo htmlspecialchars($settings['discovery_headline_red'] ?? 'Discovery Call'); ?></span>
             </h2>
-            <p class="section-subtitle discovery-main-subtitle">30 minutes. No sales pitch. Just a candid conversation
-                about your project.</p>
+            <p class="section-subtitle discovery-main-subtitle">
+                <?php echo htmlspecialchars($settings['discovery_subtitle'] ?? '30 minutes. No sales pitch. Just a candid conversation about your project.'); ?>
+            </p>
         </div>
 
         <!-- 2-Column Discovery Call Layout -->
@@ -487,56 +508,40 @@ if (empty($btsItems)) {
             <div class="discovery-left">
                 <!-- Top Hero Image Box with Available Badge -->
                 <div class="discovery-hero-box">
-                    <img src="/assets/img/discovery_call.jpg" alt="Book a Discovery Call - Falhen Productions"
-                        width="600" height="400" loading="lazy" decoding="async">
+                    <?php
+                    $discoveryImgRaw = $settings['discovery_hero_image'] ?? '/assets/img/discovery_call.jpg';
+                    $discoveryImgCdn = function_exists('getCloudinaryUrl') ? getCloudinaryUrl($discoveryImgRaw, 'f_auto,q_auto:good,w_800,h_533,c_fill') : $discoveryImgRaw;
+                    ?>
+                    <img src="<?php echo htmlspecialchars($discoveryImgCdn); ?>" alt="Book a Discovery Call - Falhen Productions"
+                        width="600" height="400" loading="lazy" decoding="async" onerror="this.src='/assets/img/discovery_call.jpg';">
                     <div class="discovery-hero-overlay">
                         <span class="discovery-available-pill">
-                            <span class="pulse-green-dot"></span> Available &mdash; Book your slot now
+                            <span class="pulse-green-dot"></span> <?php echo htmlspecialchars($settings['discovery_available_text'] ?? 'Available — Book your slot now'); ?>
                         </span>
                     </div>
                 </div>
 
                 <!-- 2x2 Feature Cards Grid -->
+                <?php
+                $discoveryFeatures = !empty($settings['discovery_features']) && is_array($settings['discovery_features'])
+                    ? $settings['discovery_features']
+                    : [
+                        ['icon' => 'fa-regular fa-clock', 'title' => '30-Min Deep Dive', 'desc' => 'No fluff — just a focused conversation about your project and goals.'],
+                        ['icon' => 'fa-regular fa-lightbulb', 'title' => 'Creative Direction', 'desc' => "We'll give you initial ideas and directional thoughts on the spot."],
+                        ['icon' => 'fa-regular fa-file-lines', 'title' => 'Proposal in 48hrs', 'desc' => 'A full scope, timeline, and budget proposal delivered fast after the call.'],
+                        ['icon' => 'fa-solid fa-lock', 'title' => 'Zero Commitment', 'desc' => 'No pressure, no contracts — just a conversation between creators.']
+                    ];
+                ?>
                 <div class="discovery-features-grid">
-                    <!-- Feature 1 -->
-                    <div class="discovery-feature-card">
-                        <div class="discovery-feature-header">
-                            <div class="discovery-icon-box"><i class="fa-regular fa-clock"></i></div>
-                            <h4 class="discovery-feature-title">30-Min Deep Dive</h4>
+                    <?php foreach ($discoveryFeatures as $df): ?>
+                        <div class="discovery-feature-card">
+                            <div class="discovery-feature-header">
+                                <div class="discovery-icon-box"><i class="<?php echo htmlspecialchars($df['icon'] ?? 'fa-solid fa-check'); ?>"></i></div>
+                                <h4 class="discovery-feature-title"><?php echo htmlspecialchars($df['title'] ?? ''); ?></h4>
+                            </div>
+                            <p class="discovery-feature-desc"><?php echo htmlspecialchars($df['desc'] ?? ''); ?></p>
                         </div>
-                        <p class="discovery-feature-desc">No fluff &mdash; just a focused conversation about your
-                            project and goals.</p>
-                    </div>
-
-                    <!-- Feature 2 -->
-                    <div class="discovery-feature-card">
-                        <div class="discovery-feature-header">
-                            <div class="discovery-icon-box"><i class="fa-regular fa-lightbulb"></i></div>
-                            <h4 class="discovery-feature-title">Creative Direction</h4>
-                        </div>
-                        <p class="discovery-feature-desc">We'll give you initial ideas and directional thoughts on the
-                            spot.</p>
-                    </div>
-
-                    <!-- Feature 3 -->
-                    <div class="discovery-feature-card">
-                        <div class="discovery-feature-header">
-                            <div class="discovery-icon-box"><i class="fa-regular fa-file-lines"></i></div>
-                            <h4 class="discovery-feature-title">Proposal in 48hrs</h4>
-                        </div>
-                        <p class="discovery-feature-desc">A full scope, timeline, and budget proposal delivered fast
-                            after the call.</p>
-                    </div>
-
-                    <!-- Feature 4 -->
-                    <div class="discovery-feature-card">
-                        <div class="discovery-feature-header">
-                            <div class="discovery-icon-box"><i class="fa-solid fa-lock"></i></div>
-                            <h4 class="discovery-feature-title">Zero Commitment</h4>
-                        </div>
-                        <p class="discovery-feature-desc">No pressure, no contracts &mdash; just a conversation between
-                            creators.</p>
-                    </div>
+                    <?php endforeach; ?>
                 </div>
 
             </div>
@@ -544,7 +549,7 @@ if (empty($btsItems)) {
             <!-- Right Side: Booking Form Card -->
             <div class="discovery-form-card">
                 <div class="discovery-form-header">
-                    <h3 class="discovery-form-title">Your Details</h3>
+                    <h3 class="discovery-form-title"><?php echo htmlspecialchars($settings['discovery_form_title'] ?? 'Your Details'); ?></h3>
                     <p class="discovery-form-subtitle">We'll confirm your slot within 2 hours.</p>
                 </div>
 
@@ -594,7 +599,7 @@ if (empty($btsItems)) {
                     </div>
 
                     <button type="submit" class="btn-discovery-submit" id="submitInquiryBtn">
-                        <i class="fa-regular fa-calendar-check"></i> Book My Discovery Call
+                        <i class="fa-regular fa-calendar-check"></i> <?php echo htmlspecialchars($settings['discovery_button_text'] ?? 'Book My Discovery Call'); ?>
                     </button>
 
                     <p class="discovery-form-footer-note">We'll confirm within 2 hours. No spam, ever.</p>

@@ -95,6 +95,10 @@ function isClientAuthorizedForFolder(string $email, int $albumId, string $albumT
         if (!empty($clientClean) && (strpos($emailPrefixClean, $clientClean) !== false || strpos($clientClean, $emailPrefixClean) !== false)) {
             return true;
         }
+        $nameClean = preg_replace('/[^a-z0-9]/', '', strtolower($name));
+        if (!empty($nameClean) && !empty($clientClean) && (strpos($nameClean, $clientClean) !== false || strpos($clientClean, $nameClean) !== false)) {
+            return true;
+        }
     }
 
     // 5. Check Database: clients / inquiries matching this specific email AND client name
@@ -379,7 +383,6 @@ if ($action === 'verify_code') {
         'download_zip_url' => $downloadZipUrl,
         'message'          => $successMsg
     ]);
-    exit;
     exit;
 }
 

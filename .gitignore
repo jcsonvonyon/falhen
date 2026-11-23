@@ -2,6 +2,14 @@
 .env
 .env.local
 
+# Sensitive credentials & keys
+config/db_credentials.json
+config/smtp.php
+
+# Backups & archives
+backups/
+config/backups/
+
 # Logs and temporary files
 *.log
 error_log

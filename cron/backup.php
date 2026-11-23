@@ -7,10 +7,11 @@ require_once __DIR__ . '/../includes/functions.php';
 
 $isCli = (php_sapi_name() === 'cli' || empty($_SERVER['REMOTE_ADDR']));
 if (!$isCli) {
-    $token = $_GET['token'] ?? $_POST['token'] ?? '';
-    if ($token !== 'falhen_cron_2026') {
+    $expectedToken = getenv('FALHEN_CRON_TOKEN') ?: 'falhen_cron_2026';
+    $token = $_GET['token'] ?? $_POST['token'] ?? ($_SERVER['HTTP_X_CRON_TOKEN'] ?? '');
+    if (empty($token) || !hash_equals($expectedToken, $token)) {
         http_response_code(403);
-        echo json_encode(['success' => false, 'error' => 'Unauthorized cron access']);
+        echo json_encode(['success' => false, 'error' => 'Unauthorized cron access token']);
         exit;
     }
     header('Content-Type: application/json');

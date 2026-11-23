@@ -55,7 +55,13 @@ ErrorDocument 404 /404.php
     RewriteRule ^client-portal/?$ client-portal.php [QSA,L]
     RewriteRule ^dashboard/?$ admin/login.php [QSA,L]
     RewriteRule ^admin/login/?$ admin/login.php [QSA,L]
+    RewriteRule ^admin/logout/?$ admin/logout.php [QSA,L]
     RewriteRule ^admin/?$ admin/index.php [QSA,L]
+
+    # Clean Admin Module Routing (e.g. /admin/hero -> admin/index.php?section=hero)
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^admin/([a-zA-Z0-9_-]+)/?$ admin/index.php?section=$1 [QSA,L]
     RewriteRule ^services/([^/]+)/?$ service-single.php?slug=$1 [QSA,L]
 
     # 4. Serve existing physical files and directories directly (images, css, js, etc.)

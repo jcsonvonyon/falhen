@@ -1,0 +1,17 @@
+# Falhen Productions - Admin Clean URL Routing
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteBase /admin/
+
+    # Direct authentication routing
+    RewriteRule ^login/?$ login.php [QSA,L]
+    RewriteRule ^logout/?$ logout.php [QSA,L]
+
+    # Serve physical files and directories directly (css, js, images, etc.)
+    RewriteCond %{REQUEST_FILENAME} -f [OR]
+    RewriteCond %{REQUEST_FILENAME} -d
+    RewriteRule ^ - [L]
+
+    # Clean module routing: /admin/<module> -> index.php?section=<module>
+    RewriteRule ^([a-zA-Z0-9_-]+)/?$ index.php?section=$1 [QSA,L]
+</IfModule>

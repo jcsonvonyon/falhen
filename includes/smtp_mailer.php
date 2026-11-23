@@ -4,7 +4,20 @@
  * Falhen Productions
  */
 
-require_once __DIR__ . '/../config/smtp.php';
+if (file_exists(__DIR__ . '/../config/smtp.php')) {
+    require_once __DIR__ . '/../config/smtp.php';
+}
+
+// Fallback SMTP constants if config/smtp.php is omitted or ignored
+if (!defined('SMTP_HOST')) define('SMTP_HOST', getenv('SMTP_HOST') ?: 'smtp.resend.com');
+if (!defined('SMTP_PORT')) define('SMTP_PORT', (int)(getenv('SMTP_PORT') ?: 465));
+if (!defined('SMTP_USER')) define('SMTP_USER', getenv('SMTP_USER') ?: 'resend');
+if (!defined('SMTP_PASS')) define('SMTP_PASS', getenv('SMTP_PASS') ?: (getenv('RESEND_API_KEY') ?: ''));
+if (!defined('SMTP_SECURE')) define('SMTP_SECURE', strtolower(getenv('SMTP_SECURE') ?: 'ssl'));
+if (!defined('SMTP_FROM_EMAIL')) define('SMTP_FROM_EMAIL', getenv('SMTP_FROM_EMAIL') ?: 'noreply@falhen.com');
+if (!defined('SMTP_FROM_NAME')) define('SMTP_FROM_NAME', getenv('SMTP_FROM_NAME') ?: 'Falhen Productions');
+if (!defined('MAIL_DRIVER')) define('MAIL_DRIVER', strtolower(getenv('MAIL_DRIVER') ?: 'resend'));
+if (!defined('RESEND_API_KEY')) define('RESEND_API_KEY', getenv('RESEND_API_KEY') ?: (str_starts_with(getenv('SMTP_PASS') ?: '', 're_') ? getenv('SMTP_PASS') : ''));
 
 class FalhenSMTPMailer {
     private $host;

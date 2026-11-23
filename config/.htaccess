@@ -1,5 +1,5 @@
-# Protect sensitive configuration files from direct HTTP access
-<FilesMatch "\.(json|sql|env|ini|log|sock)$">
+# Protect sensitive configuration files and archives from direct HTTP access
+<FilesMatch "\.(json|sql|env|ini|log|sock|zip|csv|tar|gz|bak)$">
     <IfModule mod_authz_core.c>
         Require all denied
     </IfModule>

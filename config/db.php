@@ -342,6 +342,9 @@ function initDatabaseSchema($pdo = null) {
 
         // 5. Run additional project DDL if present
         $schemaFile = __DIR__ . '/schema.sql';
+        if (!file_exists($schemaFile)) {
+            $schemaFile = dirname(__DIR__) . '/database/schema.sql';
+        }
         if (file_exists($schemaFile)) {
             $sql = file_get_contents($schemaFile);
             if (!empty($sql)) {

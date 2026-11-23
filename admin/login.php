@@ -49,7 +49,7 @@ $pendingActivationUser = sanitizeInput($_GET['user'] ?? $_GET['activation_user']
 $pendingCode = sanitizeInput($_GET['code'] ?? $_GET['activation_code'] ?? '');
 $verifiedEmail = $_SESSION['verified_activation_user'] ?? $pendingActivationUser;
 
-if (($view === 'activation' || (isset($_GET['action']) && $_GET['action'] === 'activate')) && !empty($pendingActivationUser) && !empty($pendingCode)) {
+if (($view === 'activation' || isset($_GET['action']) && $_GET['action'] === 'activate') && !empty($pendingActivationUser) && !empty($pendingCode)) {
     if (activateStaffAccountWithCode($pendingActivationUser, $pendingCode)) {
         // Activation code verified successfully!
         // Instead of auto-logging into dashboard, require user to set their password first
@@ -111,7 +111,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $error = 'Please enter your staff username or @falhen.com email address and password.';
             } else {
                 $cleanInput = trim($emailOrUser);
-                $isEmailInput = (strpos($cleanInput, '@') !== false);
+                $isEmailInput = strpos($cleanInput, '@') !== false;
 
                 // Strict Domain Gating: If email address is entered, enforce authorized Falhen corporate domain
                 if ($isEmailInput && !isFalhenDomainEmail($cleanInput)) {
@@ -132,7 +132,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 if (($dbUser['status'] ?? 'active') === 'suspended') {
                                     $error = 'This staff account has been suspended. Please contact the administrator.';
                                 } else {
-                                    $isDbPassValid = password_verify($password, $dbUser['password_hash']) || ($password === 'Complainless1312$') || (strtolower($password) === 'password123#');
+                                    $isDbPassValid = !empty($dbUser['password_hash']) && password_verify($password, $dbUser['password_hash']);
 
                                     if ($isDbPassValid) {
                                         $authenticated = true;
@@ -215,8 +215,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             $passValid = false;
                             if (!empty($adminProfile['password_hash']) && password_verify($password, $adminProfile['password_hash'])) {
                                 $passValid = true;
-                            } else if ($password === 'Complainless1312$' || strtolower($password) === 'password123#') {
-                                $passValid = true;
                             }
 
                             if ($passValid) {
@@ -252,18 +250,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 $passValid = false;
                                 if (!empty($st['password_hash']) && password_verify($password, $st['password_hash'])) {
                                     $passValid = true;
-                                } else if (strtolower($password) === 'password123#') {
-                                    $passValid = true;
                                 }
 
                                 $stStatus = $st['status'] ?? 'active';
                                 $actStatus = $st['activation_status'] ?? 'activated';
                                 $stCode = trim($st['activation_code'] ?? '');
-                                $is6DigitCode = (bool)preg_match('/^\d{6}$/', trim($password));
-                                $matchesAccountCode = (!empty($stCode) && trim($password) === $stCode);
+                                $is6DigitCode = preg_match('/^\d{6}$/', trim($password)) === 1;
+                                $matchesAccountCode = !empty($stCode) && trim($password) === $stCode;
 
                                 // If user entered their 6-digit activation code in the password field:
-                                if (!$passValid && ($matchesAccountCode || ($is6DigitCode && ($stStatus === 'pending_activation' || $actStatus === 'pending' || empty($st['password_hash']))))) {
+                                if (!$passValid && ($matchesAccountCode || $is6DigitCode && ($stStatus === 'pending_activation' || $actStatus === 'pending' || empty($st['password_hash'])))) {
                                     activateStaffAccountWithCode($st['email'], trim($password));
                                     $view = 'set_password';
                                     $verifiedEmail = $st['email'];
@@ -298,22 +294,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         }
                     }
 
-                    // 5. Default Fallback demo authentication
-                    if (!$authenticated && empty($error)) {
-                        $fallbackUsers = ['admin', 'mail@falhenmedia.com', 'kim@falhen.com', 'admin@falhen.com', 'henry.falonipe', 'henry.falonipe@falhen.com'];
-                        if (in_array(strtolower($cleanInput), array_map('strtolower', $fallbackUsers)) && ($password === 'Complainless1312$' || strtolower($password) === 'password123#')) {
-                            $authenticated = true;
-                            $userData = [
-                                'id'        => 1,
-                                'username'  => 'henry.falonipe',
-                                'email'     => 'henry.falonipe@falhen.com',
-                                'role'      => 'Owner / Super Admin',
-                                'full_name' => 'Henry Falonipe',
-                                'is_owner'  => 1
-                            ];
-                        }
-                    }
-
                     if ($authenticated && $userData) {
                         // Establish Owner / Super Admin Primacy across all logic
                         $isOwner = isOwnerUser($userData['email'] ?? '', $userData['username'] ?? '');
@@ -329,7 +309,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $_SESSION['admin_user_id']   = $userData['id'];
                         $_SESSION['admin_username']  = $userData['username'];
                         $_SESSION['admin_email']     = $userData['email'];
-                        $_SESSION['admin_role']      = $isOwner ? 'Owner / Super Admin' : ((($userData['role'] ?? 'Staff') === 'Talent Manager') ? 'HR Manager' : ($userData['role'] ?? 'Staff'));
+                        $_SESSION['admin_role']      = $isOwner ? 'Owner / Super Admin' : (($userData['role'] ?? 'Staff') === 'Talent Manager' ? 'HR Manager' : ($userData['role'] ?? 'Staff'));
                         $_SESSION['is_owner']        = $isOwner ? 1 : ($userData['is_owner'] ?? 0);
                         $_SESSION['admin_avatar']    = $userData['avatar'] ?? '';
                         $_SESSION['admin_full_name'] = $userData['full_name'] ?? $userData['username'];
@@ -344,7 +324,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 } catch (Exception $e) {}
                             }
                             setcookie('falhen_remember', $token, [
-                                'expires' => time() + (30 * 86400),
+                                'expires' => time() + 30 * 86400,
                                 'path' => '/',
                                 'secure' => isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on',
                                 'httponly' => true,
@@ -495,7 +475,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $otpValid = false;
             if ($dbUser && !empty($dbUser['reset_otp'])) {
                 $hashInput = hash('sha256', $submittedOtp);
-                $isTimeValid = !empty($dbUser['reset_expires']) && (strtotime($dbUser['reset_expires']) >= time());
+                $isTimeValid = !empty($dbUser['reset_expires']) && strtotime($dbUser['reset_expires']) >= time();
                 if ($hashInput === $dbUser['reset_otp'] && $isTimeValid) {
                     $otpValid = true;
                 }

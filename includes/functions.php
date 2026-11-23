@@ -30,9 +30,9 @@ if (session_status() === PHP_SESSION_NONE) {
         $isSecure = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (($_SERVER['SERVER_PORT'] ?? 80) == 443);
         session_set_cookie_params([
             'lifetime' => 0,
-            'path'     => '/',
-            'domain'   => '',
-            'secure'   => $isSecure,
+            'path' => '/',
+            'domain' => '',
+            'secure' => $isSecure,
             'httponly' => true,
             'samesite' => 'Lax'
         ]);
@@ -43,27 +43,27 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 
 require_once __DIR__ . '/cloudinary_helper.php';
+require_once __DIR__ . '/../config/db.php';
 if (file_exists(__DIR__ . '/../config/gdrive.php')) {
     require_once __DIR__ . '/../config/gdrive.php';
-}
-if (file_exists(__DIR__ . '/../config/db.php')) {
-    require_once __DIR__ . '/../config/db.php';
 }
 
 /**
  * Sanitize string input for XSS prevention
  */
-function sanitizeInput($data) {
+function sanitizeInput($data)
+{
     if (is_array($data)) {
         return array_map('sanitizeInput', $data);
     }
-    return htmlspecialchars(trim((string)$data), ENT_QUOTES, 'UTF-8');
+    return htmlspecialchars(trim((string) $data), ENT_QUOTES, 'UTF-8');
 }
 
 /**
  * Render Google Analytics (gtag.js) Tag
  */
-function renderGoogleAnalyticsTag() {
+function renderGoogleAnalyticsTag()
+{
     if (file_exists(__DIR__ . '/analytics.php')) {
         require_once __DIR__ . '/analytics.php';
     }
@@ -72,7 +72,8 @@ function renderGoogleAnalyticsTag() {
 /**
  * Generate CSRF Token
  */
-function generateCSRFToken() {
+function generateCSRFToken()
+{
     if (empty($_SESSION['csrf_token'])) {
         $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
     }
@@ -82,17 +83,19 @@ function generateCSRFToken() {
 /**
  * Validate CSRF Token
  */
-function validateCSRFToken($token) {
-    return isset($_SESSION['csrf_token']) && hash_equals($_SESSION['csrf_token'], (string)$token);
+function validateCSRFToken($token)
+{
+    return isset($_SESSION['csrf_token']) && hash_equals($_SESSION['csrf_token'], (string) $token);
 }
 
 /**
  * Send JSON Response
  */
-function sendJSONResponse($success, $message, $extra = []) {
+function sendJSONResponse($success, $message, $extra = [])
+{
     header('Content-Type: application/json');
     echo json_encode(array_merge([
-        'success' => (bool)$success,
+        'success' => (bool) $success,
         'message' => $message
     ], $extra));
     exit;
@@ -101,16 +104,18 @@ function sendJSONResponse($success, $message, $extra = []) {
 /**
  * Log Database Audit Event
  */
-function logDatabaseAudit($actorUsername, $actionType, $entityType, $entityId = null, $details = '') {
+function logDatabaseAudit($actorUsername, $actionType, $entityType, $entityId = null, $details = '')
+{
     if (function_exists('getDBConnection')) {
         $pdo = getDBConnection();
         $ip = $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1';
         if ($pdo) {
             try {
                 $stmt = $pdo->prepare("INSERT INTO `audit_logs` (`actor_username`, `action_type`, `entity_type`, `entity_id`, `details`, `ip_address`) VALUES (?, ?, ?, ?, ?, ?)");
-                $stmt->execute([$actorUsername, $actionType, $entityType, (string)$entityId, (string)$details, $ip]);
+                $stmt->execute([$actorUsername, $actionType, $entityType, (string) $entityId, (string) $details, $ip]);
                 return true;
-            } catch (Exception $e) {}
+            } catch (Exception $e) {
+            }
         }
     }
     return false;
@@ -119,7 +124,8 @@ function logDatabaseAudit($actorUsername, $actionType, $entityType, $entityId = 
 /**
  * Check if Admin/Staff is Logged In
  */
-function isAdminLoggedIn() {
+function isAdminLoggedIn()
+{
     if (!empty($_SESSION['admin_user_id'])) {
         return true;
     }
@@ -142,7 +148,8 @@ function isAdminLoggedIn() {
                         $_SESSION['admin_role'] = $user['role'] ?? 'Staff';
                         return true;
                     }
-                } catch (Exception $e) {}
+                } catch (Exception $e) {
+                }
             }
         }
     }
@@ -152,7 +159,8 @@ function isAdminLoggedIn() {
 /**
  * Require Admin Login
  */
-function requireAdmin() {
+function requireAdmin()
+{
     if (!isAdminLoggedIn()) {
         header('Location: /admin/login.php');
         exit;
@@ -162,11 +170,12 @@ function requireAdmin() {
 /**
  * Clear Admin Session and Cookies
  */
-function clearAdminSession() {
+function clearAdminSession()
+{
     if (session_status() === PHP_SESSION_NONE) {
         session_start();
     }
-    
+
     // Clear DB remember token if logged in
     if (!empty($_SESSION['admin_user_id']) && function_exists('getDBConnection')) {
         $pdo = getDBConnection();
@@ -174,16 +183,22 @@ function clearAdminSession() {
             try {
                 $stmt = $pdo->prepare("UPDATE `admin_users` SET `remember_token` = NULL WHERE `id` = ?");
                 $stmt->execute([$_SESSION['admin_user_id']]);
-            } catch (Exception $e) {}
+            } catch (Exception $e) {
+            }
         }
     }
 
     $_SESSION = [];
     if (ini_get("session.use_cookies")) {
         $params = session_get_cookie_params();
-        setcookie(session_name(), '', time() - 42000,
-            $params["path"], $params["domain"],
-            $params["secure"], $params["httponly"]
+        setcookie(
+            session_name(),
+            '',
+            time() - 42000,
+            $params["path"],
+            $params["domain"],
+            $params["secure"],
+            $params["httponly"]
         );
     }
     if (isset($_COOKIE['falhen_remember'])) {
@@ -195,7 +210,8 @@ function clearAdminSession() {
 /**
  * Get Team Members Data
  */
-function getTeamMembers() {
+function getTeamMembers()
+{
     $settings = getSiteSettings();
     $rawItems = $settings['team_items'] ?? [];
 
@@ -302,7 +318,7 @@ function getTeamMembers() {
 
     $formatted = [];
     foreach ($rawItems as $idx => $item) {
-        $id = (int)($item['id'] ?? ($idx + 1));
+        $id = (int) ($item['id'] ?? ($idx + 1));
         $num = !empty($item['number']) ? $item['number'] : sprintf("%02d", $id);
         $skills = is_array($item['skills'] ?? null) ? $item['skills'] : array_filter(array_map('trim', explode(',', $item['skills'] ?? '')));
         $formatted[$id] = [
@@ -321,18 +337,21 @@ function getTeamMembers() {
     return $formatted;
 }
 
-function getTeamMemberById($id) {
+function getTeamMemberById($id)
+{
     $members = getTeamMembers();
-    $id = (int)$id;
+    $id = (int) $id;
     return $members[$id] ?? $members[1];
 }
 
 /**
  * Extract 11-character YouTube Video ID from any URL or ID string
  */
-function extractYouTubeId($urlOrId) {
-    $urlOrId = trim((string)$urlOrId);
-    if (empty($urlOrId)) return '';
+function extractYouTubeId($urlOrId)
+{
+    $urlOrId = trim((string) $urlOrId);
+    if (empty($urlOrId))
+        return '';
     if (preg_match('/^[a-zA-Z0-9_-]{11}$/', $urlOrId)) {
         return $urlOrId;
     }
@@ -345,9 +364,11 @@ function extractYouTubeId($urlOrId) {
 /**
  * Extract Vimeo numeric ID from a Vimeo URL or raw numeric string
  */
-function extractVimeoId($urlOrId) {
-    $urlOrId = trim((string)$urlOrId);
-    if (empty($urlOrId)) return '';
+function extractVimeoId($urlOrId)
+{
+    $urlOrId = trim((string) $urlOrId);
+    if (empty($urlOrId))
+        return '';
     if (preg_match('/^\d{6,12}$/', $urlOrId)) {
         return $urlOrId;
     }
@@ -360,8 +381,9 @@ function extractVimeoId($urlOrId) {
 /**
  * Normalize a Cloudinary image or video URL with an exact responsive transformation
  */
-function getResponsiveCloudinaryAsset($pathOrUrl, $transform = 'f_auto,q_auto') {
-    $raw = trim((string)$pathOrUrl);
+function getResponsiveCloudinaryAsset($pathOrUrl, $transform = 'f_auto,q_auto')
+{
+    $raw = trim((string) $pathOrUrl);
     if ($raw === '') {
         return '/assets/img/hero.jpg';
     }
@@ -379,36 +401,37 @@ function getResponsiveCloudinaryAsset($pathOrUrl, $transform = 'f_auto,q_auto') 
 /**
  * Resolve Homepage Hero Media Stack (Backup Poster + Chromeless Primary Video Iframe / Direct Stream)
  */
-function resolveHeroMediaConfig($settings = null) {
+function resolveHeroMediaConfig($settings = null)
+{
     if (!is_array($settings)) {
         $settings = function_exists('getSiteSettings') ? getSiteSettings() : [];
     }
 
-    $showreelRaw = trim((string)($settings['showreel_youtube_id'] ?? 'Tf8rNMZ-Bw0'));
-    $showreelId  = extractYouTubeId($showreelRaw) ?: 'Tf8rNMZ-Bw0';
+    $showreelRaw = trim((string) ($settings['showreel_youtube_id'] ?? 'Tf8rNMZ-Bw0'));
+    $showreelId = extractYouTubeId($showreelRaw) ?: 'Tf8rNMZ-Bw0';
     $showreelModalUrl = 'https://www.youtube-nocookie.com/embed/' . rawurlencode($showreelId) . '?autoplay=1&rel=0&modestbranding=1&playsinline=1';
 
-    $rawPoster = !empty($settings['hero_poster_image']) ? trim((string)$settings['hero_poster_image']) : 'https://res.cloudinary.com/pnabfi91/image/upload/v1786578372/falhen/uploads/r96mxsji9cdogqrkxwoe.jpg';
+    $rawPoster = !empty($settings['hero_poster_image']) ? trim((string) $settings['hero_poster_image']) : 'https://res.cloudinary.com/pnabfi91/image/upload/v1786578372/falhen/uploads/r96mxsji9cdogqrkxwoe.jpg';
     $posterIsCloudinary = function_exists('isCloudinaryUrl') && isCloudinaryUrl($rawPoster);
     $posterPublicId = '';
     if ($posterIsCloudinary && preg_match('#/upload/(?:[^/]+/)*?(?:v\d+/)?(.+)$#i', $rawPoster, $pm)) {
         $posterPublicId = $pm[1];
     }
     $posterDesktop = getResponsiveCloudinaryAsset($rawPoster, 'f_auto,q_auto:good,w_1920,h_1080,c_fill');
-    $posterMobile  = getResponsiveCloudinaryAsset($rawPoster, 'f_auto,q_auto:good,w_750,h_422,c_fill');
-    $posterLqip    = getResponsiveCloudinaryAsset($rawPoster, 'f_auto,q_30,w_48,e_blur:200,c_fill');
+    $posterMobile = getResponsiveCloudinaryAsset($rawPoster, 'f_auto,q_auto:good,w_750,h_422,c_fill');
+    $posterLqip = getResponsiveCloudinaryAsset($rawPoster, 'f_auto,q_30,w_48,e_blur:200,c_fill');
 
-    $directVideoRaw = trim((string)($settings['hero_direct_video_url'] ?? ''));
+    $directVideoRaw = trim((string) ($settings['hero_direct_video_url'] ?? ''));
     $directVideoDesktop = $directVideoRaw !== '' ? getResponsiveCloudinaryAsset($directVideoRaw, 'f_auto,q_auto:eco,vc_auto,ac_none,w_1280') : '';
-    $directVideoMobile  = $directVideoRaw !== '' ? getResponsiveCloudinaryAsset($directVideoRaw, 'f_auto,q_auto:eco,vc_auto,ac_none,w_720') : '';
+    $directVideoMobile = $directVideoRaw !== '' ? getResponsiveCloudinaryAsset($directVideoRaw, 'f_auto,q_auto:eco,vc_auto,ac_none,w_720') : '';
 
     // Resolve Third-Party Chromeless Video Iframe (explicit YouTube/Vimeo override OR seamless Showreel sync)
-    $ytBgRaw    = trim((string)($settings['hero_youtube_bg'] ?? ''));
-    $vimeoBgRaw = trim((string)($settings['hero_vimeo_bg'] ?? ''));
-    $useShowreelAsBg = isset($settings['hero_bg_use_showreel']) ? (bool)$settings['hero_bg_use_showreel'] : true;
+    $ytBgRaw = trim((string) ($settings['hero_youtube_bg'] ?? ''));
+    $vimeoBgRaw = trim((string) ($settings['hero_vimeo_bg'] ?? ''));
+    $useShowreelAsBg = isset($settings['hero_bg_use_showreel']) ? (bool) $settings['hero_bg_use_showreel'] : true;
 
     $iframeProvider = '';
-    $iframeVideoId  = '';
+    $iframeVideoId = '';
     $iframeEmbedUrl = '';
 
     // Allow pasting either YouTube or Vimeo into hero_youtube_bg / unified iframe field
@@ -417,10 +440,10 @@ function resolveHeroMediaConfig($settings = null) {
         $vmCandidate = $ytCandidate === '' ? extractVimeoId($ytBgRaw) : '';
         if ($ytCandidate !== '') {
             $iframeProvider = 'youtube';
-            $iframeVideoId  = $ytCandidate;
+            $iframeVideoId = $ytCandidate;
         } elseif ($vmCandidate !== '') {
             $iframeProvider = 'vimeo';
-            $iframeVideoId  = $vmCandidate;
+            $iframeVideoId = $vmCandidate;
         }
     }
 
@@ -428,14 +451,14 @@ function resolveHeroMediaConfig($settings = null) {
         $vmCandidate = extractVimeoId($vimeoBgRaw);
         if ($vmCandidate !== '') {
             $iframeProvider = 'vimeo';
-            $iframeVideoId  = $vmCandidate;
+            $iframeVideoId = $vmCandidate;
         }
     }
 
     // Seamless fallback to existing Showreel interaction when enabled and no explicit override is set
     if ($iframeProvider === '' && $directVideoRaw === '' && $useShowreelAsBg && $showreelId !== '') {
         $iframeProvider = 'youtube';
-        $iframeVideoId  = $showreelId;
+        $iframeVideoId = $showreelId;
     }
 
     if ($iframeProvider === 'youtube' && $iframeVideoId !== '') {
@@ -466,42 +489,43 @@ function resolveHeroMediaConfig($settings = null) {
     }
 
     return [
-        'bg_mode'              => $bgMode,
-        'use_showreel_bg'      => $useShowreelAsBg,
-        'iframe_provider'      => $iframeProvider,
-        'iframe_video_id'      => $iframeVideoId,
-        'iframe_embed_url'     => $iframeEmbedUrl,
-        'direct_video_raw'     => $directVideoRaw,
+        'bg_mode' => $bgMode,
+        'use_showreel_bg' => $useShowreelAsBg,
+        'iframe_provider' => $iframeProvider,
+        'iframe_video_id' => $iframeVideoId,
+        'iframe_embed_url' => $iframeEmbedUrl,
+        'direct_video_raw' => $directVideoRaw,
         'direct_video_desktop' => $directVideoDesktop,
-        'direct_video_mobile'  => $directVideoMobile,
-        'poster_raw'           => $rawPoster,
+        'direct_video_mobile' => $directVideoMobile,
+        'poster_raw' => $rawPoster,
         'poster_is_cloudinary' => $posterIsCloudinary,
-        'poster_public_id'     => $posterPublicId,
-        'cloud_name'           => defined('CLOUDINARY_CLOUD_NAME') ? CLOUDINARY_CLOUD_NAME : 'pnabfi91',
-        'poster_desktop'       => $posterDesktop,
-        'poster_mobile'        => $posterMobile,
-        'poster_lqip'          => $posterLqip,
-        'showreel_id'          => $showreelId,
-        'showreel_modal_url'   => $showreelModalUrl
+        'poster_public_id' => $posterPublicId,
+        'cloud_name' => defined('CLOUDINARY_CLOUD_NAME') ? CLOUDINARY_CLOUD_NAME : 'pnabfi91',
+        'poster_desktop' => $posterDesktop,
+        'poster_mobile' => $posterMobile,
+        'poster_lqip' => $posterLqip,
+        'showreel_id' => $showreelId,
+        'showreel_modal_url' => $showreelModalUrl
     ];
 }
 
 /**
  * Resolve Homepage Hero / Impact Stats Counter Configuration
  */
-function resolveHeroStatsConfig($settings = null) {
+function resolveHeroStatsConfig($settings = null)
+{
     if (!is_array($settings)) {
         $settings = function_exists('getSiteSettings') ? getSiteSettings() : [];
     }
 
-    $visible = array_key_exists('stats_visible', $settings) ? (bool)$settings['stats_visible'] : true;
-    $rawPlacement = strtolower(trim((string)($settings['stats_placement'] ?? 'hero')));
+    $visible = array_key_exists('stats_visible', $settings) ? (bool) $settings['stats_visible'] : true;
+    $rawPlacement = strtolower(trim((string) ($settings['stats_placement'] ?? 'hero')));
     $placement = in_array($rawPlacement, ['hero', 'section'], true) ? $rawPlacement : 'hero';
 
     $defaultItems = [
         ['number' => '150', 'suffix' => '+', 'prefix' => '', 'label' => 'Projects Delivered', 'sublabel' => 'Across commercial, film & events', 'icon' => 'ri-film-line'],
-        ['number' => '12',  'suffix' => '+', 'prefix' => '', 'label' => 'Years Experience',   'sublabel' => 'Delivering world-class productions', 'icon' => 'ri-history-line'],
-        ['number' => '7',   'suffix' => '+', 'prefix' => '', 'label' => 'Industries Served',  'sublabel' => 'From tech to luxury to social',      'icon' => 'ri-earth-line']
+        ['number' => '12', 'suffix' => '+', 'prefix' => '', 'label' => 'Years Experience', 'sublabel' => 'Delivering world-class productions', 'icon' => 'ri-history-line'],
+        ['number' => '7', 'suffix' => '+', 'prefix' => '', 'label' => 'Industries Served', 'sublabel' => 'From tech to luxury to social', 'icon' => 'ri-earth-line']
     ];
 
     $rawItems = (isset($settings['stats_items']) && is_array($settings['stats_items']) && !empty($settings['stats_items']))
@@ -510,36 +534,39 @@ function resolveHeroStatsConfig($settings = null) {
 
     $items = [];
     foreach ($rawItems as $it) {
-        if (!is_array($it)) continue;
-        $num   = trim((string)($it['number'] ?? ''));
-        $label = trim((string)($it['label'] ?? ''));
-        if ($num === '' && $label === '') continue;
+        if (!is_array($it))
+            continue;
+        $num = trim((string) ($it['number'] ?? ''));
+        $label = trim((string) ($it['label'] ?? ''));
+        if ($num === '' && $label === '')
+            continue;
         $items[] = [
-            'number'   => $num !== '' ? $num : '0',
-            'suffix'   => trim((string)($it['suffix'] ?? '')),
-            'prefix'   => trim((string)($it['prefix'] ?? '')),
-            'label'    => $label,
-            'sublabel' => trim((string)($it['sublabel'] ?? '')),
-            'icon'     => trim((string)($it['icon'] ?? 'ri-film-line')) ?: 'ri-film-line'
+            'number' => $num !== '' ? $num : '0',
+            'suffix' => trim((string) ($it['suffix'] ?? '')),
+            'prefix' => trim((string) ($it['prefix'] ?? '')),
+            'label' => $label,
+            'sublabel' => trim((string) ($it['sublabel'] ?? '')),
+            'icon' => trim((string) ($it['icon'] ?? 'ri-film-line')) ?: 'ri-film-line'
         ];
     }
 
     return [
-        'visible'        => $visible && !empty($items),
-        'raw_visible'    => $visible,
-        'placement'      => $placement,
-        'badge_label'    => trim((string)($settings['stats_badge_label'] ?? '')),
-        'headline_white' => trim((string)($settings['stats_headline_white'] ?? 'A Decade of')),
-        'headline_red'   => trim((string)($settings['stats_headline_red'] ?? 'Impact')),
-        'description'    => trim((string)($settings['stats_description'] ?? "The numbers behind Falhen's reputation as one of Africa's most awarded and globally recognised production houses.")),
-        'items'          => $items
+        'visible' => $visible && !empty($items),
+        'raw_visible' => $visible,
+        'placement' => $placement,
+        'badge_label' => trim((string) ($settings['stats_badge_label'] ?? '')),
+        'headline_white' => trim((string) ($settings['stats_headline_white'] ?? 'A Decade of')),
+        'headline_red' => trim((string) ($settings['stats_headline_red'] ?? 'Impact')),
+        'description' => trim((string) ($settings['stats_description'] ?? "The numbers behind Falhen's reputation as one of Africa's most awarded and globally recognised production houses.")),
+        'items' => $items
     ];
 }
 
 /**
  * Get Production BTS Repository with authentic Cloudinary photography fallback
  */
-function getProductionBtsRepo() {
+function getProductionBtsRepo()
+{
     $settings = getSiteSettings();
     $rawItems = $settings['bts_items'] ?? [];
 
@@ -594,8 +621,9 @@ function getProductionBtsRepo() {
 
     $sanitized = [];
     foreach ($rawItems as $it) {
-        if (!is_array($it)) continue;
-        $img = trim((string)($it['image'] ?? ''));
+        if (!is_array($it))
+            continue;
+        $img = trim((string) ($it['image'] ?? ''));
         // If image is an unsplash stock url or empty, replace with authentic default counterpart
         if (empty($img) || strpos($img, 'unsplash.com') !== false) {
             $defMatch = array_values(array_filter($authenticBtsDefaults, fn($d) => ($d['id'] ?? 0) == ($it['id'] ?? 0)));
@@ -604,11 +632,11 @@ function getProductionBtsRepo() {
             }
         }
         $sanitized[] = [
-            'id'       => $it['id'] ?? (count($sanitized) + 1),
-            'title'    => trim((string)($it['title'] ?? '')),
-            'subtitle' => trim((string)($it['subtitle'] ?? '')),
-            'image'    => $img ?: '/assets/img/hero.jpg',
-            'visible'  => array_key_exists('visible', $it) ? (bool)$it['visible'] : true
+            'id' => $it['id'] ?? (count($sanitized) + 1),
+            'title' => trim((string) ($it['title'] ?? '')),
+            'subtitle' => trim((string) ($it['subtitle'] ?? '')),
+            'image' => $img ?: '/assets/img/hero.jpg',
+            'visible' => array_key_exists('visible', $it) ? (bool) $it['visible'] : true
         ];
     }
 
@@ -618,12 +646,13 @@ function getProductionBtsRepo() {
 /**
  * Get YouTube Thumbnail URL for a video ID or URL
  */
-function getYouTubeThumbnailUrl($urlOrId, $quality = 'hqdefault') {
+function getYouTubeThumbnailUrl($urlOrId, $quality = 'hqdefault')
+{
     $id = extractYouTubeId($urlOrId);
     if (!empty($id)) {
         return "https://i.ytimg.com/vi/{$id}/{$quality}.jpg";
     }
-    $url = trim((string)$urlOrId);
+    $url = trim((string) $urlOrId);
     if (preg_match('/^https?:\/\//i', $url) || preg_match('/^\//', $url)) {
         return $url;
     }
@@ -633,7 +662,8 @@ function getYouTubeThumbnailUrl($urlOrId, $quality = 'hqdefault') {
 /**
  * Get Site Settings: Database-First with local file fallback & auto-seeding
  */
-function getSiteSettings($forceReload = false) {
+function getSiteSettings($forceReload = false)
+{
     static $cachedSettings = null;
     if ($cachedSettings !== null && !$forceReload) {
         return $cachedSettings;
@@ -680,7 +710,8 @@ function getSiteSettings($forceReload = false) {
                 $valStr = is_string($v) ? $v : json_encode($v, JSON_UNESCAPED_SLASHES);
                 $ins->execute([$k, $valStr]);
             }
-        } catch (Exception $e) {}
+        } catch (Exception $e) {
+        }
     }
 
     $cachedSettings = !empty($fileSettings) ? $fileSettings : [
@@ -699,7 +730,8 @@ function getSiteSettings($forceReload = false) {
 /**
  * Get Single Setting Value with in-memory memoization
  */
-function getSiteSetting($key, $default = '') {
+function getSiteSetting($key, $default = '')
+{
     static $singleKeyCache = [];
     if (array_key_exists($key, $singleKeyCache)) {
         return $singleKeyCache[$key];
@@ -713,7 +745,8 @@ function getSiteSetting($key, $default = '') {
 /**
  * Save Site Settings array: writes to Database (canonical) AND disk cache
  */
-function saveSiteSettings($newSettings) {
+function saveSiteSettings($newSettings)
+{
     $current = getSiteSettings();
     $updated = array_merge($current, $newSettings);
 
@@ -744,7 +777,8 @@ function saveSiteSettings($newSettings) {
 /**
  * Log client download activity into MySQL database and append-only local telemetry stream
  */
-function logClientDownload($data) {
+function logClientDownload($data)
+{
     $pdo = function_exists('getDBConnection') ? getDBConnection() : null;
     $logged = false;
     if ($pdo) {
@@ -761,7 +795,7 @@ function logClientDownload($data) {
                 $data['access_tier'] ?? 'authorized_client',
                 !empty($data['email_sent']) ? 1 : 0,
                 $data['batch_id'] ?? null,
-                (int)($data['album_id'] ?? 0),
+                (int) ($data['album_id'] ?? 0),
                 $data['album_title'] ?? 'Gallery',
                 $data['download_type'] ?? 'ZIP Archive',
                 $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1',
@@ -779,20 +813,20 @@ function logClientDownload($data) {
     }
     $streamFile = $backupDir . '/client_downloads_stream.jsonl';
     $entry = [
-        'id'              => time(),
-        'client_name'     => $data['client_name'] ?? 'Client',
-        'client_email'    => $data['client_email'] ?? '',
-        'client_phone'    => $data['client_phone'] ?? '',
-        'organization'    => $data['organization'] ?? '',
+        'id' => time(),
+        'client_name' => $data['client_name'] ?? 'Client',
+        'client_email' => $data['client_email'] ?? '',
+        'client_phone' => $data['client_phone'] ?? '',
+        'organization' => $data['organization'] ?? '',
         'download_reason' => $data['download_reason'] ?? '',
-        'access_tier'     => $data['access_tier'] ?? 'authorized_client',
-        'email_sent'      => !empty($data['email_sent']) ? 1 : 0,
-        'batch_id'        => $data['batch_id'] ?? '',
-        'album_id'        => (int)($data['album_id'] ?? 0),
-        'album_title'     => $data['album_title'] ?? 'Gallery',
-        'download_type'   => $data['download_type'] ?? 'ZIP Archive',
-        'ip_address'      => $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1',
-        'downloaded_at'   => date('Y-m-d H:i:s')
+        'access_tier' => $data['access_tier'] ?? 'authorized_client',
+        'email_sent' => !empty($data['email_sent']) ? 1 : 0,
+        'batch_id' => $data['batch_id'] ?? '',
+        'album_id' => (int) ($data['album_id'] ?? 0),
+        'album_title' => $data['album_title'] ?? 'Gallery',
+        'download_type' => $data['download_type'] ?? 'ZIP Archive',
+        'ip_address' => $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1',
+        'downloaded_at' => date('Y-m-d H:i:s')
     ];
     @file_put_contents($streamFile, json_encode($entry, JSON_UNESCAPED_SLASHES) . "\n", FILE_APPEND | LOCK_EX);
 
@@ -802,20 +836,21 @@ function logClientDownload($data) {
 /**
  * Retrieve client download logs with pagination/search & disk-stream fallback
  */
-function getClientDownloadLogs($limit = 100, $albumId = null, $tier = null, $search = null) {
+function getClientDownloadLogs($limit = 100, $albumId = null, $tier = null, $search = null)
+{
     $pdo = function_exists('getDBConnection') ? getDBConnection() : null;
     $dbLogs = [];
     if ($pdo) {
         try {
             $sql = "SELECT * FROM `client_download_logs` WHERE 1=1";
             $params = [];
-            if ($albumId !== null && (int)$albumId > 0) {
+            if ($albumId !== null && (int) $albumId > 0) {
                 $sql .= " AND `album_id` = ?";
-                $params[] = (int)$albumId;
+                $params[] = (int) $albumId;
             }
             if ($tier !== null && $tier !== '' && $tier !== 'all') {
                 $sql .= " AND `access_tier` = ?";
-                $params[] = (string)$tier;
+                $params[] = (string) $tier;
             }
             if ($search !== null && trim($search) !== '') {
                 $sql .= " AND (`client_name` LIKE ? OR `client_email` LIKE ? OR `client_phone` LIKE ? OR `download_reason` LIKE ? OR `organization` LIKE ?)";
@@ -826,7 +861,7 @@ function getClientDownloadLogs($limit = 100, $albumId = null, $tier = null, $sea
                 $params[] = $q;
                 $params[] = $q;
             }
-            $sql .= " ORDER BY `id` DESC LIMIT " . (int)$limit;
+            $sql .= " ORDER BY `id` DESC LIMIT " . (int) $limit;
             $stmt = $pdo->prepare($sql);
             $stmt->execute($params);
             $dbLogs = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
@@ -843,11 +878,14 @@ function getClientDownloadLogs($limit = 100, $albumId = null, $tier = null, $sea
             foreach (array_reverse($lines) as $l) {
                 $j = json_decode($l, true);
                 if ($j && is_array($j)) {
-                    if ($albumId !== null && (int)$albumId > 0 && (int)($j['album_id'] ?? 0) !== (int)$albumId) continue;
-                    if ($tier !== null && $tier !== '' && $tier !== 'all' && ($j['access_tier'] ?? 'authorized_client') !== $tier) continue;
+                    if ($albumId !== null && (int) $albumId > 0 && (int) ($j['album_id'] ?? 0) !== (int) $albumId)
+                        continue;
+                    if ($tier !== null && $tier !== '' && $tier !== 'all' && ($j['access_tier'] ?? 'authorized_client') !== $tier)
+                        continue;
                     $diskLogs[] = $j;
                 }
-                if (count($diskLogs) >= $limit) break;
+                if (count($diskLogs) >= $limit)
+                    break;
             }
             return $diskLogs;
         }
@@ -859,7 +897,8 @@ function getClientDownloadLogs($limit = 100, $albumId = null, $tier = null, $sea
 /**
  * Log system backup snapshot to MySQL and local disk ledger
  */
-function logSystemBackup($filename, $backupType = 'manual_snapshot', $itemsCount = 0, $notes = '') {
+function logSystemBackup($filename, $backupType = 'manual_snapshot', $itemsCount = 0, $notes = '')
+{
     $baseFilename = basename($filename);
     $filePath = __DIR__ . '/../config/backups/' . $baseFilename;
     $size = file_exists($filePath) ? filesize($filePath) : 0;
@@ -873,17 +912,18 @@ function logSystemBackup($filename, $backupType = 'manual_snapshot', $itemsCount
     }
     $ledgerPath = $backupDir . '/backups_ledger.json';
     $ledger = file_exists($ledgerPath) ? json_decode(@file_get_contents($ledgerPath), true) : [];
-    if (!is_array($ledger)) $ledger = [];
-    
+    if (!is_array($ledger))
+        $ledger = [];
+
     $record = [
-        'id'          => count($ledger) + 1,
+        'id' => count($ledger) + 1,
         'backup_type' => $backupType,
-        'filename'    => $baseFilename,
-        'file_size'   => $size,
-        'items_count' => (int)$itemsCount,
-        'notes'       => $notes,
-        'created_by'  => $author,
-        'created_at'  => $createdAt
+        'filename' => $baseFilename,
+        'file_size' => $size,
+        'items_count' => (int) $itemsCount,
+        'notes' => $notes,
+        'created_by' => $author,
+        'created_at' => $createdAt
     ];
     $ledger[] = $record;
     @file_put_contents($ledgerPath, json_encode($ledger, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES), LOCK_EX);
@@ -914,7 +954,8 @@ function logSystemBackup($filename, $backupType = 'manual_snapshot', $itemsCount
 /**
  * Create a full codebase ZIP archive
  */
-function createCodebaseZipArchive($zipFilename) {
+function createCodebaseZipArchive($zipFilename)
+{
     if (!class_exists('ZipArchive')) {
         return ['success' => false, 'error' => 'ZipArchive extension not enabled in PHP'];
     }
@@ -955,14 +996,17 @@ function createCodebaseZipArchive($zipFilename) {
                 break;
             }
         }
-        if ($skip) continue;
+        if ($skip)
+            continue;
 
         if ($item->isDir()) {
             $zip->addEmptyDir($relativeNormalized);
         } elseif ($item->isFile()) {
             $ext = strtolower(pathinfo($filePath, PATHINFO_EXTENSION));
-            if (in_array($ext, $skipExts, true)) continue;
-            if ($item->getSize() > 20 * 1024 * 1024) continue; // skip files > 20MB
+            if (in_array($ext, $skipExts, true))
+                continue;
+            if ($item->getSize() > 20 * 1024 * 1024)
+                continue; // skip files > 20MB
 
             $zip->addFile($filePath, $relativeNormalized);
             $filesCount++;
@@ -972,10 +1016,10 @@ function createCodebaseZipArchive($zipFilename) {
     $zip->close();
     $fsize = file_exists($zipPath) ? filesize($zipPath) : 0;
     return [
-        'success'     => true,
-        'filename'    => basename($zipFilename),
-        'path'        => $zipPath,
-        'file_size'   => $fsize,
+        'success' => true,
+        'filename' => basename($zipFilename),
+        'path' => $zipPath,
+        'file_size' => $fsize,
         'files_count' => $filesCount
     ];
 }
@@ -984,7 +1028,8 @@ function createCodebaseZipArchive($zipFilename) {
  * Dump MySQL database schema and data to SQL file
  * Falls back to authoritative disk schema reconstruction if MySQL is offline
  */
-function createDatabaseSqlDump($sqlFilename) {
+function createDatabaseSqlDump($sqlFilename)
+{
     $backupDir = __DIR__ . '/../config/backups';
     if (!is_dir($backupDir)) {
         @mkdir($backupDir, 0755, true);
@@ -1021,9 +1066,11 @@ function createDatabaseSqlDump($sqlFilename) {
                     if (!empty($rows)) {
                         $out .= "-- Dumping data for: `{$tbl}` (" . count($rows) . " rows)\n";
                         foreach ($rows as $r) {
-                            $cols = array_map(function($c) { return "`{$c}`"; }, array_keys($r));
-                            $vals = array_map(function($v) use ($pdo) {
-                                if ($v === null) return 'NULL';
+                            $cols = array_map(function ($c) {
+                                return "`{$c}`"; }, array_keys($r));
+                            $vals = array_map(function ($v) use ($pdo) {
+                                if ($v === null)
+                                    return 'NULL';
                                 return $pdo->quote($v);
                             }, array_values($r));
                             $out .= "INSERT INTO `{$tbl}` (" . implode(', ', $cols) . ") VALUES (" . implode(', ', $vals) . ");\n";
@@ -1090,10 +1137,10 @@ function createDatabaseSqlDump($sqlFilename) {
     $fsize = file_exists($sqlPath) ? filesize($sqlPath) : 0;
 
     return [
-        'success'      => true,
-        'filename'     => basename($sqlFilename),
-        'path'         => $sqlPath,
-        'file_size'    => $fsize,
+        'success' => true,
+        'filename' => basename($sqlFilename),
+        'path' => $sqlPath,
+        'file_size' => $fsize,
         'tables_count' => $tablesCount
     ];
 }
@@ -1101,13 +1148,16 @@ function createDatabaseSqlDump($sqlFilename) {
 /**
  * Prune old backups, retaining the latest N archives
  */
-function pruneOldBackups($retentionLimit = 30) {
+function pruneOldBackups($retentionLimit = 30)
+{
     $backupDir = __DIR__ . '/../config/backups';
-    if (!is_dir($backupDir)) return;
+    if (!is_dir($backupDir))
+        return;
     $files = scandir($backupDir);
     $archives = [];
     foreach ($files as $f) {
-        if ($f === '.' || $f === '..' || $f === 'backups_ledger.json' || $f === '.htaccess') continue;
+        if ($f === '.' || $f === '..' || $f === 'backups_ledger.json' || $f === '.htaccess')
+            continue;
         if (preg_match('/\.(zip|sql|json|csv)$/i', $f)) {
             $archives[] = [
                 'path' => $backupDir . '/' . $f,
@@ -1115,7 +1165,7 @@ function pruneOldBackups($retentionLimit = 30) {
             ];
         }
     }
-    usort($archives, function($a, $b) {
+    usort($archives, function ($a, $b) {
         return $b['time'] - $a['time'];
     });
     if (count($archives) > $retentionLimit) {
@@ -1129,7 +1179,8 @@ function pruneOldBackups($retentionLimit = 30) {
 /**
  * Comprehensive Full Website, Codebase and Pipeline Backup Routine
  */
-function createFullSystemBackup($backupType = 'FULL_SYSTEM_SNAPSHOT', $notes = '') {
+function createFullSystemBackup($backupType = 'FULL_SYSTEM_SNAPSHOT', $notes = '')
+{
     $backupDir = __DIR__ . '/../config/backups';
     if (!is_dir($backupDir)) {
         @mkdir($backupDir, 0755, true);
@@ -1153,19 +1204,19 @@ function createFullSystemBackup($backupType = 'FULL_SYSTEM_SNAPSHOT', $notes = '
     $manifestFile = 'pipeline_manifest_' . $ts . '.json';
     $manifestPath = $backupDir . '/' . $manifestFile;
     $manifestData = [
-        'timestamp'        => date('Y-m-d H:i:s'),
-        'backup_type'      => $backupType,
+        'timestamp' => date('Y-m-d H:i:s'),
+        'backup_type' => $backupType,
         'codebase_archive' => $codebaseFile,
-        'codebase_size'    => $codebaseRes['file_size'] ?? 0,
-        'database_dump'    => $sqlFile,
-        'database_size'    => $sqlRes['file_size'] ?? 0,
-        'portfolio_count'  => count($settings['portfolio_items'] ?? []),
-        'bts_count'        => count($settings['bts_items'] ?? []),
-        'brands_count'     => count($settings['brand_logos_items'] ?? []),
-        'clients_count'    => count($settings['registered_clients'] ?? []),
-        'author'           => $author,
-        'php_version'      => PHP_VERSION,
-        'settings'         => $settings
+        'codebase_size' => $codebaseRes['file_size'] ?? 0,
+        'database_dump' => $sqlFile,
+        'database_size' => $sqlRes['file_size'] ?? 0,
+        'portfolio_count' => count($settings['portfolio_items'] ?? []),
+        'bts_count' => count($settings['bts_items'] ?? []),
+        'brands_count' => count($settings['brand_logos_items'] ?? []),
+        'clients_count' => count($settings['registered_clients'] ?? []),
+        'author' => $author,
+        'php_version' => PHP_VERSION,
+        'settings' => $settings
     ];
     @file_put_contents($manifestPath, json_encode($manifestData, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES), LOCK_EX);
 
@@ -1228,15 +1279,15 @@ function createFullSystemBackup($backupType = 'FULL_SYSTEM_SNAPSHOT', $notes = '
     pruneOldBackups(30);
 
     return [
-        'success'       => true,
-        'timestamp'     => date('Y-m-d H:i:s'),
-        'codebase_zip'  => $codebaseFile,
-        'database_sql'  => $sqlFile,
+        'success' => true,
+        'timestamp' => date('Y-m-d H:i:s'),
+        'codebase_zip' => $codebaseFile,
+        'database_sql' => $sqlFile,
         'manifest_json' => $manifestFile,
-        'dl_csv'        => $dlFile,
-        'bk_csv'        => $bkFile,
-        'items_count'   => $itemsCount,
-        'notes'         => $notes
+        'dl_csv' => $dlFile,
+        'bk_csv' => $bkFile,
+        'items_count' => $itemsCount,
+        'notes' => $notes
     ];
 }
 
@@ -1244,13 +1295,14 @@ function createFullSystemBackup($backupType = 'FULL_SYSTEM_SNAPSHOT', $notes = '
  * Retrieve system backup logs with disk scan fallback
  * Merges MySQL records, ledger entries, and physical disk archives so history is NEVER empty
  */
-function getSystemBackups($limit = 100) {
+function getSystemBackups($limit = 100)
+{
     $pdo = function_exists('getDBConnection') ? getDBConnection() : null;
     $dbBackups = [];
     if ($pdo) {
         try {
             $stmt = $pdo->prepare("SELECT * FROM `system_backups` ORDER BY `id` DESC LIMIT ?");
-            $stmt->bindValue(1, (int)$limit, PDO::PARAM_INT);
+            $stmt->bindValue(1, (int) $limit, PDO::PARAM_INT);
             $stmt->execute();
             $dbBackups = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
         } catch (Exception $e) {
@@ -1289,26 +1341,26 @@ function getSystemBackups($limit = 100) {
             $fsize = file_exists($filePath) ? filesize($filePath) : 0;
             $mtime = file_exists($filePath) ? filemtime($filePath) : time();
             $bType = str_starts_with($file, 'codebase_snapshot') ? 'CODEBASE_ZIP' :
-                    (str_starts_with($file, 'database_dump') ? 'DATABASE_SQL' :
+                (str_starts_with($file, 'database_dump') ? 'DATABASE_SQL' :
                     (str_starts_with($file, 'pipeline_manifest') ? 'FULL_SYSTEM' :
-                    (str_starts_with($file, 'full_backup') ? 'FULL_BUNDLE' :
-                    (str_starts_with($file, 'settings_pre_deploy') ? 'DEPLOY_SNAPSHOT' : 'SNAPSHOT'))));
+                        (str_starts_with($file, 'full_backup') ? 'FULL_BUNDLE' :
+                            (str_starts_with($file, 'settings_pre_deploy') ? 'DEPLOY_SNAPSHOT' : 'SNAPSHOT'))));
 
             $dbBackups[] = [
-                'id'          => $idCounter++,
+                'id' => $idCounter++,
                 'backup_type' => $bType,
-                'filename'    => $file,
-                'file_size'   => $fsize,
+                'filename' => $file,
+                'file_size' => $fsize,
                 'items_count' => 0,
-                'notes'       => 'Physical Disk Restore Point',
-                'created_by'  => 'System/Disk',
-                'created_at'  => date('Y-m-d H:i:s', $mtime)
+                'notes' => 'Physical Disk Restore Point',
+                'created_by' => 'System/Disk',
+                'created_at' => date('Y-m-d H:i:s', $mtime)
             ];
             $existingFilenames[] = strtolower($file);
         }
     }
 
-    usort($dbBackups, function($a, $b) {
+    usort($dbBackups, function ($a, $b) {
         return strcmp($b['created_at'] ?? '', $a['created_at'] ?? '');
     });
 
@@ -1319,66 +1371,67 @@ function getSystemBackups($limit = 100) {
  * Get Global Payment Gateways & Remittance Settings
  * (Raenest, LemFi, Taptap Send, Paystack, Direct Bank/Dom)
  */
-function getPaymentGatewaysSettings() {
+function getPaymentGatewaysSettings()
+{
     $settings = getSiteSettings();
     $gateways = $settings['payment_gateways'] ?? [];
 
     $defaults = [
         'raenest' => [
-            'enabled'            => true,
-            'mode'               => 'sandbox', // sandbox or live
-            'public_key'         => 'rae_pub_test_8921fa76b10',
-            'secret_key'         => 'rae_sec_test_9921abcf783',
-            'webhook_secret'     => 'rae_whsec_f89312b918',
-            'account_name'       => 'Falhen Productions Ltd',
-            'usd_bank_name'      => 'JPMorgan Chase / Lead Bank',
+            'enabled' => true,
+            'mode' => 'sandbox', // sandbox or live
+            'public_key' => 'rae_pub_test_8921fa76b10',
+            'secret_key' => 'rae_sec_test_9921abcf783',
+            'webhook_secret' => 'rae_whsec_f89312b918',
+            'account_name' => 'Falhen Productions Ltd',
+            'usd_bank_name' => 'JPMorgan Chase / Lead Bank',
             'usd_account_number' => '1029384756',
             'usd_routing_number' => '021000021',
-            'gbp_bank_name'      => 'Barclays Bank UK',
-            'gbp_sort_code'      => '20-00-00',
+            'gbp_bank_name' => 'Barclays Bank UK',
+            'gbp_sort_code' => '20-00-00',
             'gbp_account_number' => '83920194',
-            'eur_bank_name'      => 'Banking Circle',
-            'eur_iban'           => 'LU9200091823901923',
-            'eur_bic'            => 'BCIRLULL',
-            'ngn_bank_name'      => 'Wema Bank / VFD Microfinance Bank',
+            'eur_bank_name' => 'Banking Circle',
+            'eur_iban' => 'LU9200091823901923',
+            'eur_bic' => 'BCIRLULL',
+            'ngn_bank_name' => 'Wema Bank / VFD Microfinance Bank',
             'ngn_account_number' => '0129384756',
             'supported_currencies' => ['USD', 'GBP', 'EUR', 'NGN', 'CAD', 'USDC', 'USDT']
         ],
         'lemfi' => [
-            'enabled'         => true,
-            'tag'             => '@falhen',
-            'account_name'    => 'Falhen Productions Global',
-            'receiving_bank'  => 'LemFi Virtual Account (Providus Bank / Wema)',
-            'account_number'  => '9920192834',
-            'country'         => 'Nigeria / Global Diaspora (UK, US, Canada, EU)',
-            'instructions'    => 'Send zero-fee instant payments via the LemFi App directly to handle @falhen or transfer to our LemFi receiving account.'
+            'enabled' => true,
+            'tag' => '@falhen',
+            'account_name' => 'Falhen Productions Global',
+            'receiving_bank' => 'LemFi Virtual Account (Providus Bank / Wema)',
+            'account_number' => '9920192834',
+            'country' => 'Nigeria / Global Diaspora (UK, US, Canada, EU)',
+            'instructions' => 'Send zero-fee instant payments via the LemFi App directly to handle @falhen or transfer to our LemFi receiving account.'
         ],
         'taptap' => [
-            'enabled'          => true,
-            'recipient_name'   => 'Falhen Productions Limited',
-            'receiving_bank'   => 'Zenith Bank PLC / Access Bank',
-            'account_number'   => '1019283746',
-            'domiciliary_usd'  => '5071928340',
-            'country'          => 'Nigeria (Global Send: US, UK, EU, CA, UAE)',
+            'enabled' => true,
+            'recipient_name' => 'Falhen Productions Limited',
+            'receiving_bank' => 'Zenith Bank PLC / Access Bank',
+            'account_number' => '1019283746',
+            'domiciliary_usd' => '5071928340',
+            'country' => 'Nigeria (Global Send: US, UK, EU, CA, UAE)',
             'reference_prefix' => 'FAL-',
-            'instructions'     => 'Send via the Taptap Send mobile app. Select Nigeria (Bank Transfer), enter our account details, and input your invoice reference code.'
+            'instructions' => 'Send via the Taptap Send mobile app. Select Nigeria (Bank Transfer), enter our account details, and input your invoice reference code.'
         ],
         'paystack' => [
-            'enabled'    => true,
-            'mode'       => 'test',
+            'enabled' => true,
+            'mode' => 'test',
             'public_key' => 'pk_test_falhen892173819',
             'secret_key' => 'sk_test_falhen892173819'
         ],
         'bank_transfer' => [
-            'enabled'        => true,
-            'bank_name'      => 'Zenith Bank PLC',
-            'account_name'   => 'Falhen Productions Limited',
+            'enabled' => true,
+            'bank_name' => 'Zenith Bank PLC',
+            'account_name' => 'Falhen Productions Limited',
             'account_number' => '1019283746',
-            'dom_usd_bank'   => 'Zenith Bank PLC (USD Domiciliary)',
-            'dom_usd_acc'    => '5071928340',
-            'dom_gbp_acc'    => '5071928357',
-            'dom_eur_acc'    => '5071928364',
-            'swift_code'     => 'ZEIBNGLA'
+            'dom_usd_bank' => 'Zenith Bank PLC (USD Domiciliary)',
+            'dom_usd_acc' => '5071928340',
+            'dom_gbp_acc' => '5071928357',
+            'dom_eur_acc' => '5071928364',
+            'swift_code' => 'ZEIBNGLA'
         ]
     ];
 
@@ -1400,7 +1453,8 @@ function getPaymentGatewaysSettings() {
 /**
  * Save Global Payment Gateways & Remittance Settings
  */
-function savePaymentGatewaysSettings($gatewayData) {
+function savePaymentGatewaysSettings($gatewayData)
+{
     $current = getPaymentGatewaysSettings();
     $updated = array_merge($current, $gatewayData);
     saveSiteSettings(['payment_gateways' => $updated]);
@@ -1410,10 +1464,11 @@ function savePaymentGatewaysSettings($gatewayData) {
 /**
  * Get Dynamic Master Services Repository
  */
-function getServicesRepo($includeHidden = false) {
+function getServicesRepo($includeHidden = false)
+{
     $settings = getSiteSettings();
     $items = $settings['services_items'] ?? [];
-    
+
     if (empty($items)) {
         $items = [
             [
@@ -1429,7 +1484,7 @@ function getServicesRepo($includeHidden = false) {
             ]
         ];
     }
-    
+
     $repo = [];
     foreach ($items as $item) {
         if (!$includeHidden && !empty($item['hidden'])) {
@@ -1438,10 +1493,10 @@ function getServicesRepo($includeHidden = false) {
         $title = $item['title'] ?? 'Service';
         $slug = !empty($item['slug']) ? $item['slug'] : strtolower(trim(preg_replace('/[^a-zA-Z0-9]+/', '-', $title), '-'));
         $img = getCloudinaryUrl($item['image'] ?? '');
-        
+
         $cardFeatures = $item['card_features'] ?? [];
         $detailFeatures = $item['detail_features'] ?? [];
-        
+
         $included = [];
         foreach ($detailFeatures as $df) {
             $included[] = ['icon' => 'fa-solid fa-check', 'text' => $df];
@@ -1475,7 +1530,8 @@ function getServicesRepo($includeHidden = false) {
 /**
  * Get Dynamic Testimonials Repository
  */
-function getTestimonialsRepo() {
+function getTestimonialsRepo()
+{
     $settings = getSiteSettings();
     $items = $settings['testimonials_items'] ?? [];
 
@@ -1550,9 +1606,11 @@ function getTestimonialsRepo() {
 /**
  * Convert Google Drive share link to direct viewable image URL or format drive URL
  */
-function convertGoogleDriveUrlToDirect($url) {
-    $url = trim((string)$url);
-    if (empty($url)) return '';
+function convertGoogleDriveUrlToDirect($url)
+{
+    $url = trim((string) $url);
+    if (empty($url))
+        return '';
     if (preg_match('/(?:file\/d\/|id=)([a-zA-Z0-9_-]+)/i', $url, $matches)) {
         $fileId = $matches[1];
         return "https://lh3.googleusercontent.com/d/{$fileId}";
@@ -1563,39 +1621,42 @@ function convertGoogleDriveUrlToDirect($url) {
 /**
  * Clean URL slug generator per /seo-meta-optimizer guidelines (≤ 60 chars, lowercase, hyphenated)
  */
-function generateSlug($text, $maxLength = 60) {
-    $text = trim((string)$text);
-    if (empty($text)) return 'gallery';
-    
+function generateSlug($text, $maxLength = 60)
+{
+    $text = trim((string) $text);
+    if (empty($text))
+        return 'gallery';
+
     // Convert to lowercase and transliterate special characters
     $text = strtolower($text);
     $text = preg_replace('/[^\p{L}\p{N}]+/u', '-', $text);
     $text = trim($text, '-');
-    
+
     // Remove common stop words if slug is long
     if (strlen($text) > 40) {
         $stopWords = ['a', 'an', 'the', 'and', 'or', 'in', 'at', 'for', 'of', 'to', 'on', 'with', 'by'];
         $words = explode('-', $text);
-        $filtered = array_filter($words, function($w) use ($stopWords) {
+        $filtered = array_filter($words, function ($w) use ($stopWords) {
             return !in_array($w, $stopWords, true);
         });
         if (!empty($filtered)) {
             $text = implode('-', $filtered);
         }
     }
-    
+
     if (strlen($text) > $maxLength) {
         $text = substr($text, 0, $maxLength);
         $text = rtrim($text, '-');
     }
-    
+
     return $text ?: 'gallery';
 }
 
 /**
  * Retrieve all gallery/event categories: curated base + custom saved categories + existing album categories
  */
-function getGalleryCategories(): array {
+function getGalleryCategories(): array
+{
     $defaults = [
         'Portrait',
         'Wedding',
@@ -1621,7 +1682,7 @@ function getGalleryCategories(): array {
     $existingFromAlbums = [];
     if (function_exists('getPortfolioRepo')) {
         foreach (getPortfolioRepo() as $item) {
-            $cat = trim((string)($item['category'] ?? ''));
+            $cat = trim((string) ($item['category'] ?? ''));
             if ($cat !== '') {
                 $existingFromAlbums[] = $cat;
             }
@@ -1633,10 +1694,12 @@ function getGalleryCategories(): array {
     $seenLower = [];
 
     foreach ($merged as $cat) {
-        $clean = trim(preg_replace('/\s+/', ' ', strip_tags((string)$cat)));
-        if ($clean === '') continue;
+        $clean = trim(preg_replace('/\s+/', ' ', strip_tags((string) $cat)));
+        if ($clean === '')
+            continue;
         // Normalize singular "Event" -> "Events" so taxonomy stays clean
-        if (strcasecmp($clean, 'Event') === 0) $clean = 'Events';
+        if (strcasecmp($clean, 'Event') === 0)
+            $clean = 'Events';
         $lower = strtolower($clean);
         if (!isset($seenLower[$lower])) {
             $seenLower[$lower] = true;
@@ -1650,7 +1713,8 @@ function getGalleryCategories(): array {
 /**
  * Persist a new custom gallery/event category into site_settings
  */
-function addGalleryCategory(string $rawName): array {
+function addGalleryCategory(string $rawName): array
+{
     $clean = trim(preg_replace('/\s+/', ' ', strip_tags($rawName)));
     if ($clean === '' || strlen($clean) < 2) {
         return ['success' => false, 'message' => 'Category name must be at least 2 characters.', 'categories' => getGalleryCategories()];
@@ -1686,9 +1750,11 @@ function addGalleryCategory(string $rawName): array {
 /**
  * Detect deprecated hardcoded SEO boilerplate descriptions so they can be stripped cleanly
  */
-function isLegacyBoilerplateSeoDesc(string $desc): bool {
+function isLegacyBoilerplateSeoDesc(string $desc): bool
+{
     $d = trim($desc);
-    if ($d === '') return false;
+    if ($d === '')
+        return false;
     $legacyPatterns = [
         'Browse the exclusive photo gallery',
         'Editorial curation, proofs, and secure digital client access',
@@ -1706,15 +1772,16 @@ function isLegacyBoilerplateSeoDesc(string $desc): bool {
 /**
  * Dynamic SEO & Metadata Generator (Backstory-First, Zero Hardcoded Boilerplate)
  */
-function generateClientGallerySeo($title, $category = 'Gallery', $client = '', $desc = '', $location = '', $year = '') {
-    $cleanTitle = trim(strip_tags((string)$title));
-    $cleanCat = trim(strip_tags((string)$category)) ?: 'Gallery';
-    $cleanClient = trim(strip_tags((string)$client));
-    $cleanDesc = trim(preg_replace('/\s+/', ' ', strip_tags((string)$desc)));
-    $cleanLocation = trim(strip_tags((string)$location));
-    $cleanYear = trim(strip_tags((string)$year));
+function generateClientGallerySeo($title, $category = 'Gallery', $client = '', $desc = '', $location = '', $year = '')
+{
+    $cleanTitle = trim(strip_tags((string) $title));
+    $cleanCat = trim(strip_tags((string) $category)) ?: 'Gallery';
+    $cleanClient = trim(strip_tags((string) $client));
+    $cleanDesc = trim(preg_replace('/\s+/', ' ', strip_tags((string) $desc)));
+    $cleanLocation = trim(strip_tags((string) $location));
+    $cleanYear = trim(strip_tags((string) $year));
     $slug = generateSlug($cleanTitle);
-    
+
     // 1. Title Tag: 50-60 chars optimal, primary keyword up front, no forced brand boilerplate
     $seoTitle = preg_replace('/\s*[\|\-]\s*Falhen\s*(Media|Productions)?\s*$/i', '', $cleanTitle);
     if (strlen($seoTitle) < 42 && stripos($seoTitle, $cleanCat) === false) {
@@ -1727,7 +1794,7 @@ function generateClientGallerySeo($title, $category = 'Gallery', $client = '', $
         $seoTitle = substr($seoTitle, 0, 60);
         $seoTitle = rtrim($seoTitle, ' -|');
     }
-    
+
     // 2. Meta Description: Derive from actual Gallery Backstory first; otherwise synthesize cleanly from real shoot metadata
     $seoDesc = '';
     if ($cleanDesc !== '' && !isLegacyBoilerplateSeoDesc($cleanDesc)) {
@@ -1758,7 +1825,7 @@ function generateClientGallerySeo($title, $category = 'Gallery', $client = '', $
         $lastSpace = strrpos($cut, ' ');
         $seoDesc = ($lastSpace !== false && $lastSpace > 110) ? substr($cut, 0, $lastSpace) . '...' : rtrim($cut) . '...';
     }
-    
+
     // 3. Semantic Keywords tailored to actual gallery metadata
     $keywords = array_filter([
         strtolower($cleanTitle),
@@ -1767,40 +1834,43 @@ function generateClientGallerySeo($title, $category = 'Gallery', $client = '', $
         $cleanClient !== '' ? strtolower($cleanClient) . ' gallery' : '',
         'high resolution photo gallery'
     ]);
-    
+
     return [
-        'slug'            => $slug,
-        'seo_title'       => $seoTitle,
-        'seo_desc'        => $seoDesc,
-        'seo_keywords'    => implode(', ', array_unique($keywords)),
-        'canonical_url'   => "https://client.falhen.com/album/{$slug}",
-        'og_type'         => 'article'
+        'slug' => $slug,
+        'seo_title' => $seoTitle,
+        'seo_desc' => $seoDesc,
+        'seo_keywords' => implode(', ', array_unique($keywords)),
+        'canonical_url' => "https://client.falhen.com/album/{$slug}",
+        'og_type' => 'article'
     ];
 }
 
 /**
  * Resolve Portfolio / Client Gallery Item by Slug or ID
  */
-function getPortfolioItemBySlug($slugOrId) {
+function getPortfolioItemBySlug($slugOrId)
+{
     $repo = getPortfolioRepo();
-    if (empty($repo)) return null;
-    
-    $query = strtolower(trim((string)$slugOrId));
-    if (empty($query)) return reset($repo);
-    
+    if (empty($repo))
+        return null;
+
+    $query = strtolower(trim((string) $slugOrId));
+    if (empty($query))
+        return reset($repo);
+
     // Try matching numeric ID first
     if (is_numeric($query)) {
-        $numericId = (int)$query;
+        $numericId = (int) $query;
         foreach ($repo as $item) {
-            if ((int)($item['id'] ?? 0) === $numericId) {
+            if ((int) ($item['id'] ?? 0) === $numericId) {
                 return $item;
             }
         }
     }
-    
+
     // Try matching exact slug or slugified title
     foreach ($repo as $item) {
-        $itemSlug = strtolower(trim((string)($item['slug'] ?? '')));
+        $itemSlug = strtolower(trim((string) ($item['slug'] ?? '')));
         if ($itemSlug === $query) {
             return $item;
         }
@@ -1808,14 +1878,15 @@ function getPortfolioItemBySlug($slugOrId) {
             return $item;
         }
     }
-    
+
     return null;
 }
 
 /**
  * Get Dynamic Master Portfolio Repository
  */
-function getPortfolioRepo() {
+function getPortfolioRepo()
+{
     $settings = getSiteSettings();
     $items = $settings['portfolio_items'] ?? [];
 
@@ -2159,7 +2230,7 @@ function getPortfolioRepo() {
     $hasDuplicates = false;
     $maxId = 0;
     foreach ($items as $item) {
-        $id = (int)($item['id'] ?? 0);
+        $id = (int) ($item['id'] ?? 0);
         if ($id > $maxId) {
             $maxId = $id;
         }
@@ -2173,7 +2244,7 @@ function getPortfolioRepo() {
     if ($hasDuplicates) {
         $used = [];
         foreach ($items as &$item) {
-            $id = (int)($item['id'] ?? 0);
+            $id = (int) ($item['id'] ?? 0);
             if (empty($id) || isset($used[$id])) {
                 $maxId++;
                 $item['id'] = $maxId;
@@ -2201,7 +2272,8 @@ function getPortfolioRepo() {
 /**
  * Get Team Locations list
  */
-function getTeamLocations() {
+function getTeamLocations()
+{
     $settings = getSiteSettings();
     $defaults = ['USA', 'Nigeria', 'Canada', 'UK'];
     $saved = $settings['team_locations'] ?? [];
@@ -2217,7 +2289,8 @@ function getTeamLocations() {
 /**
  * Get Team Departments list
  */
-function getTeamDepartments() {
+function getTeamDepartments()
+{
     $settings = getSiteSettings();
     $defaults = ['Creative', 'Operations', 'Strategy'];
     $saved = $settings['team_departments'] ?? [];
@@ -2233,7 +2306,8 @@ function getTeamDepartments() {
 /**
  * Get Blog Repository (Dynamic array from settings.json)
  */
-function getBlogRepo() {
+function getBlogRepo()
+{
     $settings = getSiteSettings();
     $items = $settings['blog_items'] ?? null;
 
@@ -2325,7 +2399,7 @@ function getBlogRepo() {
 
     $keyed = [];
     foreach ($items as $item) {
-        $id = (int)($item['id'] ?? 0);
+        $id = (int) ($item['id'] ?? 0);
         if ($id > 0) {
             $keyed[$id] = $item;
         }
@@ -2336,7 +2410,8 @@ function getBlogRepo() {
 /**
  * Get Blog Categories list
  */
-function getBlogCategories() {
+function getBlogCategories()
+{
     $settings = getSiteSettings();
     $defaults = ['Social Media', 'Case Study', 'Tutorial', 'Strategy', 'Equipment', 'Industry Trends'];
     $saved = $settings['blog_categories'] ?? [];
@@ -2352,16 +2427,18 @@ function getBlogCategories() {
 /**
  * Get single blog post by ID
  */
-function getBlogPostById($id) {
+function getBlogPostById($id)
+{
     $repo = getBlogRepo();
-    $id = (int)$id;
+    $id = (int) $id;
     return $repo[$id] ?? null;
 }
 
 /**
  * Get Careers & Job Openings Repository
  */
-function getCareersRepo() {
+function getCareersRepo()
+{
     $settings = getSiteSettings();
     $items = $settings['job_openings'] ?? [];
 
@@ -2459,7 +2536,7 @@ function getCareersRepo() {
 
     $keyed = [];
     foreach ($items as $item) {
-        $id = (int)($item['id'] ?? 0);
+        $id = (int) ($item['id'] ?? 0);
         if ($id > 0) {
             $keyed[$id] = $item;
         }
@@ -2470,16 +2547,18 @@ function getCareersRepo() {
 /**
  * Get single career position by ID
  */
-function getCareerById($id) {
+function getCareerById($id)
+{
     $repo = getCareersRepo();
-    $id = (int)$id;
+    $id = (int) $id;
     return $repo[$id] ?? null;
 }
 
 /**
  * Get Job Applications Repository
  */
-function getJobApplicationsRepo() {
+function getJobApplicationsRepo()
+{
     $settings = getSiteSettings();
     $items = $settings['job_applications'] ?? [];
     if (!is_array($items)) {
@@ -2491,7 +2570,8 @@ function getJobApplicationsRepo() {
 /**
  * Get Brand Logos Repository (Trusted by World-Class Brands)
  */
-function getBrandLogosRepo() {
+function getBrandLogosRepo()
+{
     $settings = getSiteSettings();
     $items = $settings['brand_logos_items'] ?? [];
 
@@ -2520,27 +2600,30 @@ function getBrandLogosRepo() {
  * Save Brand Logos Repository
  * Persists directly to MySQL site_settings and disk cache
  */
-function saveBrandLogosRepo($items) {
-    if (!is_array($items)) return false;
+function saveBrandLogosRepo($items)
+{
+    if (!is_array($items))
+        return false;
     return saveSiteSettings(['brand_logos_items' => array_values($items)]);
 }
 
 /**
  * Get Admin User Profile Settings (With distinct Access Role and Corporate Designation)
  */
-function getAdminUserProfile() {
+function getAdminUserProfile()
+{
     $settings = getSiteSettings();
     $profile = $settings['admin_profile'] ?? [];
 
     if (empty($profile) || !is_array($profile)) {
         $profile = [
-            'full_name'     => 'Henry Falonipe',
-            'username'      => 'admin',
-            'email'         => 'admin@falhen.com',
-            'role'          => 'Super Admin',
-            'designation'   => 'Creative Director & Founder',
-            'avatar'        => 'https://res.cloudinary.com/pnabfi91/image/upload/v1786712075/falhen/team/ctxjp9mymgqdh2ecg2hu.jpg',
-            'bio'           => 'Visionary Creative Director and founder of Falhen Productions.',
+            'full_name' => 'Henry Falonipe',
+            'username' => 'admin',
+            'email' => 'admin@falhen.com',
+            'role' => 'Super Admin',
+            'designation' => 'Creative Director & Founder',
+            'avatar' => 'https://res.cloudinary.com/pnabfi91/image/upload/v1786712075/falhen/team/ctxjp9mymgqdh2ecg2hu.jpg',
+            'bio' => 'Visionary Creative Director and founder of Falhen Productions.',
             'password_hash' => password_hash('Password123#', PASSWORD_DEFAULT)
         ];
 
@@ -2569,7 +2652,8 @@ function getAdminUserProfile() {
 /**
  * Save Admin User Profile & Sync Active Session
  */
-function saveAdminUserProfile($data) {
+function saveAdminUserProfile($data)
+{
     $settings = getSiteSettings();
     $current = getAdminUserProfile();
     $updated = array_merge($current, $data);
@@ -2599,12 +2683,12 @@ function saveAdminUserProfile($data) {
     $activeSessionUser = strtolower(trim($_SESSION['admin_username'] ?? ''));
     $activeSessionEmail = strtolower(trim($_SESSION['admin_email'] ?? ''));
     if ($activeSessionUser === 'admin' || $activeSessionUser === 'henry.falonipe' || $activeSessionEmail === 'admin@falhen.com' || $activeSessionUser === strtolower($updated['username'] ?? '')) {
-        $_SESSION['admin_username']    = $updated['username'];
-        $_SESSION['admin_email']       = $updated['email'];
-        $_SESSION['admin_role']        = $updated['role'];
+        $_SESSION['admin_username'] = $updated['username'];
+        $_SESSION['admin_email'] = $updated['email'];
+        $_SESSION['admin_role'] = $updated['role'];
         $_SESSION['admin_designation'] = $updated['designation'] ?? ($updated['role'] ?? '');
-        $_SESSION['admin_avatar']      = $updated['avatar'];
-        $_SESSION['admin_full_name']   = $updated['full_name'];
+        $_SESSION['admin_avatar'] = $updated['avatar'];
+        $_SESSION['admin_full_name'] = $updated['full_name'];
     }
 
     return $updated;
@@ -2613,8 +2697,9 @@ function saveAdminUserProfile($data) {
 /**
  * Universal Currency Symbol Mapper (Multi-Currency Support)
  */
-function getCurrencySymbol($currency = 'NGN') {
-    $curr = strtoupper(trim((string)$currency));
+function getCurrencySymbol($currency = 'NGN')
+{
+    $curr = strtoupper(trim((string) $currency));
     $symbols = [
         'NGN' => '₦',
         'USD' => '$',
@@ -2632,7 +2717,8 @@ function getCurrencySymbol($currency = 'NGN') {
 /**
  * Get Staff Accounts Repository (Includes distinct Access Role, Multi-Currency, and Corporate Designation)
  */
-function getStaffAccountsRepo() {
+function getStaffAccountsRepo()
+{
     $settings = getSiteSettings();
     $items = $settings['staff_accounts'] ?? [];
 
@@ -2642,189 +2728,189 @@ function getStaffAccountsRepo() {
         $defaultPasswordHash = password_hash('Password123#', PASSWORD_DEFAULT);
         $items = [
             [
-                'id'            => 1,
-                'full_name'     => 'Henry Falonipe',
-                'username'      => 'henry.falonipe',
-                'email'         => 'henry.falonipe@falhen.com',
-                'alt_email'     => 'henry@falhen.com',
-                'role'          => 'Owner / Super Admin',
-                'is_owner'      => 1,
-                'designation'   => 'Creative Director & Founder',
-                'currency'      => 'USD',
-                'base_salary'   => 2700,
-                'allowances'    => 100,
-                'deductions'    => 200,
-                'bank_name'     => 'Zenith Bank PLC',
-                'account_number'=> '1012345678',
-                'account_name'  => 'Henry Falonipe',
+                'id' => 1,
+                'full_name' => 'Henry Falonipe',
+                'username' => 'henry.falonipe',
+                'email' => 'henry.falonipe@falhen.com',
+                'alt_email' => 'henry@falhen.com',
+                'role' => 'Owner / Super Admin',
+                'is_owner' => 1,
+                'designation' => 'Creative Director & Founder',
+                'currency' => 'USD',
+                'base_salary' => 2700,
+                'allowances' => 100,
+                'deductions' => 200,
+                'bank_name' => 'Zenith Bank PLC',
+                'account_number' => '1012345678',
+                'account_name' => 'Henry Falonipe',
                 'raenest_email' => 'henry@falhen.com',
-                'raenest_id'    => 'RAE-HFAL-01',
-                'lemfi_tag'     => '@henryfalhen',
-                'taptap_account'=> '01012345678',
-                'status'        => 'active',
-                'avatar'        => 'https://res.cloudinary.com/pnabfi91/image/upload/v1786712075/falhen/team/ctxjp9mymgqdh2ecg2hu.jpg',
-                'created_at'    => '2024-01-10',
+                'raenest_id' => 'RAE-HFAL-01',
+                'lemfi_tag' => '@henryfalhen',
+                'taptap_account' => '01012345678',
+                'status' => 'active',
+                'avatar' => 'https://res.cloudinary.com/pnabfi91/image/upload/v1786712075/falhen/team/ctxjp9mymgqdh2ecg2hu.jpg',
+                'created_at' => '2024-01-10',
                 'password_hash' => $defaultPasswordHash
             ],
             [
-                'id'            => 2,
-                'full_name'     => 'Kingsley Falonipe',
-                'username'      => 'kingsley.falonipe',
-                'email'         => 'kingsley@falhen.com',
-                'role'          => 'Production Manager',
-                'designation'   => 'Operations Specialist',
-                'currency'      => 'NGN',
-                'base_salary'   => 350000,
-                'allowances'    => 30000,
-                'deductions'    => 15000,
-                'bank_name'     => 'Guaranty Trust Bank (GTBank)',
-                'account_number'=> '0123456789',
-                'account_name'  => 'Kingsley Falonipe',
+                'id' => 2,
+                'full_name' => 'Kingsley Falonipe',
+                'username' => 'kingsley.falonipe',
+                'email' => 'kingsley@falhen.com',
+                'role' => 'Production Manager',
+                'designation' => 'Operations Specialist',
+                'currency' => 'NGN',
+                'base_salary' => 350000,
+                'allowances' => 30000,
+                'deductions' => 15000,
+                'bank_name' => 'Guaranty Trust Bank (GTBank)',
+                'account_number' => '0123456789',
+                'account_name' => 'Kingsley Falonipe',
                 'raenest_email' => 'kingsley@falhen.com',
-                'raenest_id'    => 'RAE-KFAL-02',
-                'lemfi_tag'     => '@kingsleyfalhen',
-                'taptap_account'=> '01023456789',
-                'status'        => 'active',
-                'avatar'        => 'https://res.cloudinary.com/pnabfi91/image/upload/v1786713360/falhen/team/ftmzlwwv1szlyurijyno.png',
-                'created_at'    => '2024-02-01',
+                'raenest_id' => 'RAE-KFAL-02',
+                'lemfi_tag' => '@kingsleyfalhen',
+                'taptap_account' => '01023456789',
+                'status' => 'active',
+                'avatar' => 'https://res.cloudinary.com/pnabfi91/image/upload/v1786713360/falhen/team/ftmzlwwv1szlyurijyno.png',
+                'created_at' => '2024-02-01',
                 'password_hash' => $defaultPasswordHash
             ],
             [
-                'id'            => 3,
-                'full_name'     => 'Lisa Okoli',
-                'username'      => 'lisa.okoli',
-                'email'         => 'lisa@falhen.com',
-                'role'          => 'Content Editor',
-                'designation'   => 'Head of Marketing & Client Partnerships',
-                'currency'      => 'NGN',
-                'base_salary'   => 280000,
-                'allowances'    => 25000,
-                'deductions'    => 12000,
-                'bank_name'     => 'Access Bank PLC',
-                'account_number'=> '0691234567',
-                'account_name'  => 'Lisa Okoli',
+                'id' => 3,
+                'full_name' => 'Lisa Okoli',
+                'username' => 'lisa.okoli',
+                'email' => 'lisa@falhen.com',
+                'role' => 'Content Editor',
+                'designation' => 'Head of Marketing & Client Partnerships',
+                'currency' => 'NGN',
+                'base_salary' => 280000,
+                'allowances' => 25000,
+                'deductions' => 12000,
+                'bank_name' => 'Access Bank PLC',
+                'account_number' => '0691234567',
+                'account_name' => 'Lisa Okoli',
                 'raenest_email' => 'lisa@falhen.com',
-                'raenest_id'    => 'RAE-LOKO-03',
-                'lemfi_tag'     => '@lisaokoli',
-                'taptap_account'=> '01069123456',
-                'status'        => 'active',
-                'avatar'        => 'https://res.cloudinary.com/pnabfi91/image/upload/v1786713962/falhen/team/b5v6o8oirs95xihokmgc.jpg',
-                'created_at'    => '2024-02-15',
+                'raenest_id' => 'RAE-LOKO-03',
+                'lemfi_tag' => '@lisaokoli',
+                'taptap_account' => '01069123456',
+                'status' => 'active',
+                'avatar' => 'https://res.cloudinary.com/pnabfi91/image/upload/v1786713962/falhen/team/b5v6o8oirs95xihokmgc.jpg',
+                'created_at' => '2024-02-15',
                 'password_hash' => $defaultPasswordHash
             ],
             [
-                'id'            => 4,
-                'full_name'     => 'Mojisola Emjay',
-                'username'      => 'mojisola.emjay',
-                'email'         => 'mojisola@falhen.com',
-                'role'          => 'HR Manager',
-                'designation'   => 'Resource & HR Manager',
-                'currency'      => 'NGN',
-                'base_salary'   => 300000,
-                'allowances'    => 25000,
-                'deductions'    => 15000,
-                'bank_name'     => 'United Bank for Africa (UBA)',
-                'account_number'=> '2098765432',
-                'account_name'  => 'Mojisola Emjay',
+                'id' => 4,
+                'full_name' => 'Mojisola Emjay',
+                'username' => 'mojisola.emjay',
+                'email' => 'mojisola@falhen.com',
+                'role' => 'HR Manager',
+                'designation' => 'Resource & HR Manager',
+                'currency' => 'NGN',
+                'base_salary' => 300000,
+                'allowances' => 25000,
+                'deductions' => 15000,
+                'bank_name' => 'United Bank for Africa (UBA)',
+                'account_number' => '2098765432',
+                'account_name' => 'Mojisola Emjay',
                 'raenest_email' => 'mojisola@falhen.com',
-                'raenest_id'    => 'RAE-MEMJ-04',
-                'lemfi_tag'     => '@mojisolaemjay',
-                'taptap_account'=> '02098765432',
-                'status'        => 'active',
-                'avatar'        => 'https://res.cloudinary.com/pnabfi91/image/upload/v1786714006/falhen/team/ini79za7jvbjokrf1dup.jpg',
-                'created_at'    => '2024-03-01',
+                'raenest_id' => 'RAE-MEMJ-04',
+                'lemfi_tag' => '@mojisolaemjay',
+                'taptap_account' => '02098765432',
+                'status' => 'active',
+                'avatar' => 'https://res.cloudinary.com/pnabfi91/image/upload/v1786714006/falhen/team/ini79za7jvbjokrf1dup.jpg',
+                'created_at' => '2024-03-01',
                 'password_hash' => $defaultPasswordHash
             ],
             [
-                'id'            => 5,
-                'full_name'     => 'Daniel Ifeoluwa',
-                'username'      => 'daniel.ifeoluwa',
-                'email'         => 'daniel@falhen.com',
-                'role'          => 'Staff',
-                'designation'   => 'Head of Creative Services',
-                'currency'      => 'NGN',
-                'base_salary'   => 260000,
-                'allowances'    => 20000,
-                'deductions'    => 10000,
-                'bank_name'     => 'First Bank of Nigeria',
-                'account_number'=> '3087654321',
-                'account_name'  => 'Daniel Ifeoluwa',
+                'id' => 5,
+                'full_name' => 'Daniel Ifeoluwa',
+                'username' => 'daniel.ifeoluwa',
+                'email' => 'daniel@falhen.com',
+                'role' => 'Staff',
+                'designation' => 'Head of Creative Services',
+                'currency' => 'NGN',
+                'base_salary' => 260000,
+                'allowances' => 20000,
+                'deductions' => 10000,
+                'bank_name' => 'First Bank of Nigeria',
+                'account_number' => '3087654321',
+                'account_name' => 'Daniel Ifeoluwa',
                 'raenest_email' => 'daniel@falhen.com',
-                'raenest_id'    => 'RAE-DIFE-05',
-                'lemfi_tag'     => '@danielife',
-                'taptap_account'=> '03087654321',
-                'status'        => 'active',
-                'avatar'        => 'https://res.cloudinary.com/pnabfi91/image/upload/v1786714147/falhen/team/xba4ep38ewfdq3chfx1h.jpg',
-                'created_at'    => '2024-03-10',
+                'raenest_id' => 'RAE-DIFE-05',
+                'lemfi_tag' => '@danielife',
+                'taptap_account' => '03087654321',
+                'status' => 'active',
+                'avatar' => 'https://res.cloudinary.com/pnabfi91/image/upload/v1786714147/falhen/team/xba4ep38ewfdq3chfx1h.jpg',
+                'created_at' => '2024-03-10',
                 'password_hash' => $defaultPasswordHash
             ],
             [
-                'id'            => 6,
-                'full_name'     => 'Victoria Opemipo',
-                'username'      => 'victoria.opemipo',
-                'email'         => 'victoria@falhen.com',
-                'role'          => 'Content Editor',
-                'designation'   => 'Social Media Manager',
-                'currency'      => 'NGN',
-                'base_salary'   => 220000,
-                'allowances'    => 20000,
-                'deductions'    => 10000,
-                'bank_name'     => 'Stanbic IBTC Bank',
-                'account_number'=> '0034567890',
-                'account_name'  => 'Victoria Opemipo',
+                'id' => 6,
+                'full_name' => 'Victoria Opemipo',
+                'username' => 'victoria.opemipo',
+                'email' => 'victoria@falhen.com',
+                'role' => 'Content Editor',
+                'designation' => 'Social Media Manager',
+                'currency' => 'NGN',
+                'base_salary' => 220000,
+                'allowances' => 20000,
+                'deductions' => 10000,
+                'bank_name' => 'Stanbic IBTC Bank',
+                'account_number' => '0034567890',
+                'account_name' => 'Victoria Opemipo',
                 'raenest_email' => 'victoria@falhen.com',
-                'raenest_id'    => 'RAE-VOPE-06',
-                'lemfi_tag'     => '@victoriaop',
-                'taptap_account'=> '00034567890',
-                'status'        => 'active',
-                'avatar'        => 'https://res.cloudinary.com/pnabfi91/image/upload/v1786714208/falhen/team/ri0fc0rdmjfvyzx1lihn.jpg',
-                'created_at'    => '2024-03-20',
+                'raenest_id' => 'RAE-VOPE-06',
+                'lemfi_tag' => '@victoriaop',
+                'taptap_account' => '00034567890',
+                'status' => 'active',
+                'avatar' => 'https://res.cloudinary.com/pnabfi91/image/upload/v1786714208/falhen/team/ri0fc0rdmjfvyzx1lihn.jpg',
+                'created_at' => '2024-03-20',
                 'password_hash' => $defaultPasswordHash
             ],
             [
-                'id'            => 7,
-                'full_name'     => 'Micheal Otuwho',
-                'username'      => 'micheal.otuwho',
-                'email'         => 'micheal@falhen.com',
-                'role'          => 'Content Editor',
-                'designation'   => 'Content Manager',
-                'currency'      => 'NGN',
-                'base_salary'   => 220000,
-                'allowances'    => 20000,
-                'deductions'    => 10000,
-                'bank_name'     => 'Kuda Microfinance Bank',
-                'account_number'=> '2001234567',
-                'account_name'  => 'Micheal Otuwho',
+                'id' => 7,
+                'full_name' => 'Micheal Otuwho',
+                'username' => 'micheal.otuwho',
+                'email' => 'micheal@falhen.com',
+                'role' => 'Content Editor',
+                'designation' => 'Content Manager',
+                'currency' => 'NGN',
+                'base_salary' => 220000,
+                'allowances' => 20000,
+                'deductions' => 10000,
+                'bank_name' => 'Kuda Microfinance Bank',
+                'account_number' => '2001234567',
+                'account_name' => 'Micheal Otuwho',
                 'raenest_email' => 'micheal@falhen.com',
-                'raenest_id'    => 'RAE-MOTU-07',
-                'lemfi_tag'     => '@michealotu',
-                'taptap_account'=> '02001234567',
-                'status'        => 'active',
-                'avatar'        => 'https://res.cloudinary.com/pnabfi91/image/upload/v1786713917/falhen/team/z0hyfbfy0z2g5m6q2t6f.jpg',
-                'created_at'    => '2024-04-18',
+                'raenest_id' => 'RAE-MOTU-07',
+                'lemfi_tag' => '@michealotu',
+                'taptap_account' => '02001234567',
+                'status' => 'active',
+                'avatar' => 'https://res.cloudinary.com/pnabfi91/image/upload/v1786713917/falhen/team/z0hyfbfy0z2g5m6q2t6f.jpg',
+                'created_at' => '2024-04-18',
                 'password_hash' => $defaultPasswordHash
             ],
             [
-                'id'            => 8,
-                'full_name'     => 'Ligali Oluwatosin',
-                'username'      => 'ligali.oluwatosin',
-                'email'         => 'ligali@falhen.com',
-                'role'          => 'Super Admin',
-                'designation'   => 'IT Support Specialist',
-                'currency'      => 'NGN',
-                'base_salary'   => 120000,
-                'allowances'    => 20000,
-                'deductions'    => 10000,
-                'bank_name'     => 'Zenith Bank PLC',
-                'account_number'=> '2089123456',
-                'account_name'  => 'Ligali Oluwatosin',
+                'id' => 8,
+                'full_name' => 'Ligali Oluwatosin',
+                'username' => 'ligali.oluwatosin',
+                'email' => 'ligali@falhen.com',
+                'role' => 'Super Admin',
+                'designation' => 'IT Support Specialist',
+                'currency' => 'NGN',
+                'base_salary' => 120000,
+                'allowances' => 20000,
+                'deductions' => 10000,
+                'bank_name' => 'Zenith Bank PLC',
+                'account_number' => '2089123456',
+                'account_name' => 'Ligali Oluwatosin',
                 'raenest_email' => 'ligali@falhen.com',
-                'raenest_id'    => 'RAE-TLIG-08',
-                'lemfi_tag'     => '@tosinligali',
-                'taptap_account'=> '02089123456',
-                'status'        => 'active',
-                'avatar'        => 'https://res.cloudinary.com/pnabfi91/image/upload/v1786753671/falhen/team/sptg6oyc6wudqirgzqxc.png',
-                'created_at'    => '2024-05-01',
+                'raenest_id' => 'RAE-TLIG-08',
+                'lemfi_tag' => '@tosinligali',
+                'taptap_account' => '02089123456',
+                'status' => 'active',
+                'avatar' => 'https://res.cloudinary.com/pnabfi91/image/upload/v1786753671/falhen/team/sptg6oyc6wudqirgzqxc.png',
+                'created_at' => '2024-05-01',
                 'password_hash' => $defaultPasswordHash
             ]
         ];
@@ -2855,7 +2941,7 @@ function getStaffAccountsRepo() {
                 $it['role'] = 'Super Admin';
                 $modified = true;
             }
-            if (!isset($it['base_salary']) || $it['base_salary'] === '' || (($it['currency'] ?? '') === 'USD' && (float)($it['deductions'] ?? 0) > 500)) {
+            if (!isset($it['base_salary']) || $it['base_salary'] === '' || (($it['currency'] ?? '') === 'USD' && (float) ($it['deductions'] ?? 0) > 500)) {
                 $it['base_salary'] = 2700;
                 $it['allowances'] = 100;
                 $it['deductions'] = 200;
@@ -3093,9 +3179,9 @@ function getStaffAccountsRepo() {
             $onb = $allOnboarding[$uLower] ?? ($uLower === 'admin' ? ($allOnboarding['henry.falonipe'] ?? null) : null);
             if ($onb && (!empty($onb['offer_letter']['issued']) || in_array($onb['offer_letter']['status'] ?? '', ['Issued', 'Accepted', 'Approved'], true))) {
                 $off = $onb['offer_letter'];
-                $rawBase = (float)str_replace(',', '', preg_replace('/^[₦$€£\s]+/u', '', $off['base_salary'] ?? '0'));
-                $rawTech = (float)str_replace(',', '', preg_replace('/^[₦$€£\s]+/u', '', $off['tech_allowance'] ?? '0'));
-                $rawWell = (float)str_replace(',', '', preg_replace('/^[₦$€£\s]+/u', '', $off['wellness_allowance'] ?? '0'));
+                $rawBase = (float) str_replace(',', '', preg_replace('/^[₦$€£\s]+/u', '', $off['base_salary'] ?? '0'));
+                $rawTech = (float) str_replace(',', '', preg_replace('/^[₦$€£\s]+/u', '', $off['tech_allowance'] ?? '0'));
+                $rawWell = (float) str_replace(',', '', preg_replace('/^[₦$€£\s]+/u', '', $off['wellness_allowance'] ?? '0'));
                 $offCurr = $off['currency'] ?? ($it['currency'] ?? 'NGN');
 
                 if ($rawBase > 0) {
@@ -3131,7 +3217,7 @@ function getStaffAccountsRepo() {
     $keyed = [];
     $modified = false;
     foreach ($items as $idx => $item) {
-        $id = (int)($item['id'] ?? 0);
+        $id = (int) ($item['id'] ?? 0);
         $nameLower = strtolower(trim($item['full_name'] ?? ''));
         $firstNameLower = strtolower(explode(' ', $nameLower)[0]);
 
@@ -3162,19 +3248,22 @@ function getStaffAccountsRepo() {
 /**
  * Get Staff Account By ID
  */
-function getStaffAccountById($id) {
+function getStaffAccountById($id)
+{
     $repo = getStaffAccountsRepo();
-    $id = (int)$id;
+    $id = (int) $id;
     return $repo[$id] ?? null;
 }
 
 /**
  * Get Staff Account By Username
  */
-function getStaffAccountByUsername($username) {
+function getStaffAccountByUsername($username)
+{
     $repo = getStaffAccountsRepo();
-    $uLower = strtolower(trim((string)$username));
-    if ($uLower === '') return null;
+    $uLower = strtolower(trim((string) $username));
+    if ($uLower === '')
+        return null;
 
     $uClean = preg_replace('/[^a-z0-9]/', '', $uLower);
     $matched = null;
@@ -3183,10 +3272,10 @@ function getStaffAccountByUsername($username) {
         $stUser = strtolower(trim($st['username'] ?? ''));
         $stEmail = strtolower(trim($st['email'] ?? ''));
         $stFullName = strtolower(trim($st['full_name'] ?? ''));
-        
+
         $stUserClean = preg_replace('/[^a-z0-9]/', '', $stUser);
         $stNameClean = preg_replace('/[^a-z0-9]/', '', $stFullName);
-        
+
         // Check reverse names (e.g. oluwatosin.ligali vs ligali.oluwatosin)
         $parts = explode('.', $stUser);
         $stRevClean = (count($parts) === 2) ? ($parts[1] . $parts[0]) : '';
@@ -3209,12 +3298,13 @@ function getStaffAccountByUsername($username) {
 /**
  * Update Staff Account Details By Username or Email
  */
-function saveStaffAccountByUsername($username, $data) {
+function saveStaffAccountByUsername($username, $data)
+{
     $settings = getSiteSettings();
     $items = $settings['staff_accounts'] ?? getStaffAccountsRepo();
     $updated = false;
 
-    $uLower = strtolower(trim((string)$username));
+    $uLower = strtolower(trim((string) $username));
     $uClean = preg_replace('/[^a-z0-9]/', '', $uLower);
     $matchedFullName = '';
 
@@ -3272,14 +3362,16 @@ function saveStaffAccountByUsername($username, $data) {
 /**
  * Generate 6-Digit Activation Code for Staff Account
  */
-function generateStaffActivationCode() {
+function generateStaffActivationCode()
+{
     return sprintf("%06d", mt_rand(100000, 999999));
 }
 
 /**
  * Activate Staff Account with 6-Digit Code
  */
-function activateStaffAccountWithCode($emailOrUser, $submittedCode) {
+function activateStaffAccountWithCode($emailOrUser, $submittedCode)
+{
     $settings = getSiteSettings();
     $items = $settings['staff_accounts'] ?? getStaffAccountsRepo();
     $activated = false;
@@ -3313,7 +3405,8 @@ function activateStaffAccountWithCode($emailOrUser, $submittedCode) {
 /**
  * Mask Email Address for Security (e.g. j***n@gmail.com)
  */
-function maskEmailForDisplay($email) {
+function maskEmailForDisplay($email)
+{
     if (empty($email) || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
         return $email;
     }
@@ -3332,7 +3425,8 @@ function maskEmailForDisplay($email) {
 /**
  * Synchronize Team (Content) Roster & Staff Accounts
  */
-function syncTeamAndStaffAccounts() {
+function syncTeamAndStaffAccounts()
+{
     $teamMembers = array_values(getTeamMembers());
     $staffAccounts = getStaffAccountsRepo();
 
@@ -3340,7 +3434,7 @@ function syncTeamAndStaffAccounts() {
     $updatedCount = 0;
 
     $staffByName = [];
-    foreach ($staffAccounts as $idx => $st) {
+    foreach ($staffAccounts as $st) {
         $nameKey = strtolower(trim($st['full_name'] ?? ''));
         $firstNameKey = strtolower(explode(' ', $nameKey)[0]);
         $staffByName[$nameKey] = $st['id'];
@@ -3353,7 +3447,8 @@ function syncTeamAndStaffAccounts() {
 
     foreach ($teamMembers as $tm) {
         $tmName = trim($tm['name'] ?? '');
-        if (empty($tmName)) continue;
+        if (empty($tmName))
+            continue;
 
         $tmNameLower = strtolower($tmName);
         $tmFirstLower = strtolower(explode(' ', $tmNameLower)[0]);
@@ -3379,22 +3474,23 @@ function syncTeamAndStaffAccounts() {
             // Auto-create matching staff account for team member
             $maxId = 0;
             foreach ($staffAccounts as $st) {
-                $id = (int)($st['id'] ?? 0);
-                if ($id > $maxId) $maxId = $id;
+                $id = (int) ($st['id'] ?? 0);
+                if ($id > $maxId)
+                    $maxId = $id;
             }
             $newId = $maxId + 1;
             $username = strtolower(str_replace(' ', '.', $tmName));
             $email = $tmFirstLower . '@falhen.com';
 
             $staffAccounts[$newId] = [
-                'id'            => $newId,
-                'full_name'     => $tmName,
-                'username'      => $username,
-                'email'         => $email,
-                'role'          => $tm['role'] ?? 'Staff',
-                'status'        => 'active',
-                'avatar'        => $tmImage,
-                'created_at'    => date('Y-m-d'),
+                'id' => $newId,
+                'full_name' => $tmName,
+                'username' => $username,
+                'email' => $email,
+                'role' => $tm['role'] ?? 'Staff',
+                'status' => 'active',
+                'avatar' => $tmImage,
+                'created_at' => date('Y-m-d'),
                 'password_hash' => $defaultPasswordHash
             ];
             $addedCount++;
@@ -3409,7 +3505,8 @@ function syncTeamAndStaffAccounts() {
  * Check if a user account is the Owner / Super Admin (Henry Falonipe)
  * Immutable primacy across all modules, authorization, and gating logic.
  */
-function isOwnerUser($email = null, $username = null) {
+function isOwnerUser($email = null, $username = null)
+{
     if ($email === null) {
         $email = $_SESSION['admin_email'] ?? '';
     }
@@ -3421,8 +3518,8 @@ function isOwnerUser($email = null, $username = null) {
         return true;
     }
 
-    $e = strtolower(trim((string)$email));
-    $u = strtolower(trim((string)$username));
+    $e = strtolower(trim((string) $email));
+    $u = strtolower(trim((string) $username));
 
     $ownerEmails = [
         'henry.falonipe@falhen.com',
@@ -3443,7 +3540,8 @@ function isOwnerUser($email = null, $username = null) {
  * Check if a user account is an Admin / Super Admin
  * Evaluates role title, staff email address, and username.
  */
-function isAdminUser($role = null, $email = null, $username = null) {
+function isAdminUser($role = null, $email = null, $username = null)
+{
     if ($role === null) {
         $role = $_SESSION['admin_role'] ?? '';
     }
@@ -3459,9 +3557,9 @@ function isAdminUser($role = null, $email = null, $username = null) {
         return true;
     }
 
-    $r = strtolower(trim((string)$role));
-    $e = strtolower(trim((string)$email));
-    $u = strtolower(trim((string)$username));
+    $r = strtolower(trim((string) $role));
+    $e = strtolower(trim((string) $email));
+    $u = strtolower(trim((string) $username));
 
     // Designated Admin Emails & Usernames
     $adminEmails = [
@@ -3494,30 +3592,361 @@ function isAdminUser($role = null, $email = null, $username = null) {
     return false;
 }
 
-function isTalentManager($role = null) {
+function isTalentManager($role = null)
+{
     if ($role === null) {
         $role = $_SESSION['admin_role'] ?? '';
     }
-    $r = strtolower(trim((string)$role));
+    $r = strtolower(trim((string) $role));
     return $r === 'hr manager' || $r === 'talent manager';
 }
 
-function isHRManager($role = null) {
+function isHRManager($role = null)
+{
     return isTalentManager($role);
 }
 
-function isContentEditor($role = null) {
+function isContentEditor($role = null)
+{
     if ($role === null) {
         $role = $_SESSION['admin_role'] ?? '';
     }
-    return strtolower(trim((string)$role)) === 'content editor';
+    return strtolower(trim((string) $role)) === 'content editor';
 }
 
-function isAdminRole($role) {
+function isAdminRole($role)
+{
     return isAdminUser($role);
 }
 
-function isSuperAdminUser($role = null, $email = null, $username = null) {
+function isITUser($role = null, $email = null, $username = null)
+{
+    if ($role === null) {
+        $role = $_SESSION['admin_role'] ?? '';
+    }
+    if ($email === null) {
+        $email = $_SESSION['admin_email'] ?? '';
+    }
+    if ($username === null) {
+        $username = $_SESSION['admin_username'] ?? '';
+    }
+
+    $r = strtolower(trim((string) $role));
+    $u = strtolower(trim((string) $username));
+    $e = strtolower(trim((string) $email));
+
+    // Specific IT staff checks or designated roles
+    if (
+        $r === 'it' || $r === 'it administrator' || $r === 'it specialist' || $r === 'it support specialist' ||
+        str_contains($r, 'it admin') || str_contains($r, 'developer') || str_contains($r, 'devops') ||
+        str_contains($r, 'systems engineer') || str_contains($r, 'lead engineer') || str_contains($r, 'software engineer') ||
+        $u === 'it' || $u === 'it.support' || $u === 'developer' || $e === 'it@falhen.com' || $e === 'dev@falhen.com'
+    ) {
+        return true;
+    }
+    return false;
+}
+
+function canManageModulePermissions($role = null, $email = null, $username = null)
+{
+    return isSuperAdminUser($role, $email, $username) || isITUser($role, $email, $username);
+}
+
+/**
+ * Registry of all modular CMS and administrative sections with clean URL endpoints
+ */
+function getAvailableAdminModules()
+{
+    return [
+        'hero' => [
+            'key' => 'hero',
+            'name' => 'Hero Stage & Showreel',
+            'icon' => 'fa-solid fa-play',
+            'category' => 'Homepage Studio',
+            'url' => '/admin/hero',
+            'description' => 'Main frontpage cinematic video hero, showreel modal & primary CTAs'
+        ],
+        'brands' => [
+            'key' => 'brands',
+            'name' => 'Brands Marquee',
+            'icon' => 'fa-solid fa-gem',
+            'category' => 'Homepage Studio',
+            'url' => '/admin/brands',
+            'description' => 'Client brand logos, partner marquee ticker and section heading'
+        ],
+        'services' => [
+            'key' => 'services',
+            'name' => 'Services Showcase',
+            'icon' => 'fa-solid fa-briefcase',
+            'category' => 'Homepage Studio',
+            'url' => '/admin/services',
+            'description' => 'Core production services, icons, descriptions and section title'
+        ],
+        'portfolio' => [
+            'key' => 'portfolio',
+            'name' => "Stories We've Told (Featured)",
+            'icon' => 'fa-solid fa-film',
+            'category' => 'Homepage Studio',
+            'url' => '/admin/featured',
+            'description' => 'Featured production videos, showreels, client films and category filter'
+        ],
+        'stats' => [
+            'key' => 'stats',
+            'name' => 'By The Numbers (Stats)',
+            'icon' => 'fa-solid fa-chart-line',
+            'category' => 'Homepage Studio',
+            'url' => '/admin/stats',
+            'description' => 'Impact metrics: total productions, client reach, watch time & retention'
+        ],
+        'testimonials' => [
+            'key' => 'testimonials',
+            'name' => 'Client Testimonials',
+            'icon' => 'fa-solid fa-quote-left',
+            'category' => 'Homepage Studio',
+            'url' => '/admin/testimonials',
+            'description' => 'Client reviews, headshots, project ratings and social proof'
+        ],
+        'bts' => [
+            'key' => 'bts',
+            'name' => 'Production BTS Gallery',
+            'icon' => 'fa-solid fa-camera-retro',
+            'category' => 'Homepage Studio',
+            'url' => '/admin/bts',
+            'description' => 'Behind-the-scenes cinematography gallery and film set stills'
+        ],
+        'discovery' => [
+            'key' => 'discovery',
+            'name' => 'Discovery Call & Booking',
+            'icon' => 'fa-solid fa-calendar-check',
+            'category' => 'Homepage Studio',
+            'url' => '/admin/discovery',
+            'description' => 'Discovery call booking hero image, value proposition cards & intake CTAs'
+        ],
+        'inquiries' => [
+            'key' => 'inquiries',
+            'name' => 'Client Inquiries & Quotes',
+            'icon' => 'fa-solid fa-inbox',
+            'category' => 'Business',
+            'url' => '/admin/inquiries',
+            'description' => 'Inbound client production requests, budget estimates & status tracking'
+        ],
+        'client_galleries' => [
+            'key' => 'client_galleries',
+            'name' => 'Client Galleries & Albums',
+            'icon' => 'fa-solid fa-images',
+            'category' => 'Media & Content',
+            'url' => '/admin/client_galleries',
+            'description' => 'Private media deliverables and client-facing digital albums'
+        ],
+        'vendors' => [
+            'key' => 'vendors',
+            'name' => 'Vendor Directory & Gigs',
+            'icon' => 'fa-solid fa-handshake',
+            'category' => 'Business',
+            'url' => '/admin/vendors',
+            'description' => 'External crew, production vendors, equipment rental houses and gigs'
+        ],
+        'directory' => [
+            'key' => 'directory',
+            'name' => 'Team Roster',
+            'icon' => 'fa-solid fa-users',
+            'category' => 'Operations',
+            'url' => '/admin/directory',
+            'description' => 'Falhen production crew, cinematographers and creative talent'
+        ],
+        'attendance' => [
+            'key' => 'attendance',
+            'name' => 'Attendance Management',
+            'icon' => 'fa-solid fa-clock',
+            'category' => 'Operations',
+            'url' => '/admin/attendance',
+            'description' => 'Daily clock-in/out studio presence tracking and timesheet logs'
+        ],
+        'leaves' => [
+            'key' => 'leaves',
+            'name' => 'Leave Requests',
+            'icon' => 'fa-solid fa-calendar-days',
+            'category' => 'Operations',
+            'url' => '/admin/leaves',
+            'description' => 'Staff leave balance and vacation scheduling'
+        ],
+        'payroll' => [
+            'key' => 'payroll',
+            'name' => 'Payroll & Compensation',
+            'icon' => 'fa-solid fa-wallet',
+            'category' => 'Operations',
+            'url' => '/admin/payroll',
+            'description' => 'Staff monthly compensation, payslips and payout processing'
+        ],
+        'staff_accounts' => [
+            'key' => 'staff_accounts',
+            'name' => 'Staff Accounts & Permissions',
+            'icon' => 'fa-solid fa-user-shield',
+            'category' => 'Administration',
+            'url' => '/admin/staff_accounts',
+            'description' => 'Role-based access control, account credentials and module delegations'
+        ],
+        'dev_logs' => [
+            'key' => 'dev_logs',
+            'name' => 'System & Dev Logs / Backups',
+            'icon' => 'fa-solid fa-terminal',
+            'category' => 'Administration',
+            'url' => '/admin/dev_logs',
+            'description' => 'Codebase backup manifests, database snapshots and technical audit trails'
+        ]
+    ];
+}
+
+/**
+ * Retrieve current dynamic module assignment registry from site_settings
+ */
+function getModulePermissionsRegistry()
+{
+    $settings = getSiteSettings();
+    $perms = $settings['module_permissions'] ?? [];
+    if (!is_array($perms)) {
+        $perms = [];
+    }
+    return $perms;
+}
+
+/**
+ * Get all modules assigned to an individual user account or role
+ */
+function getUserAssignedModules($username = null, $email = null, $role = null)
+{
+    if ($role === null)
+        $role = $_SESSION['admin_role'] ?? 'Staff';
+    if ($email === null)
+        $email = $_SESSION['admin_email'] ?? '';
+    if ($username === null)
+        $username = $_SESSION['admin_username'] ?? '';
+
+    // Super Admin & IT have universal access across ALL modules
+    if (isSuperAdminUser($role, $email, $username) || isITUser($role, $email, $username)) {
+        return ['*'];
+    }
+
+    $assigned = [];
+    $perms = getModulePermissionsRegistry();
+    $u = strtolower(trim((string) $username));
+    $e = strtolower(trim((string) $email));
+    $r = strtolower(trim((string) $role));
+
+    // 1. Check module_permissions dictionary: [ 'hero' => ['henry.falonipe', 'staff'], ... ]
+    foreach ($perms as $moduleKey => $assignees) {
+        if (!is_array($assignees))
+            continue;
+        foreach ($assignees as $assignee) {
+            $a = strtolower(trim((string) $assignee));
+            if ($a === $u || $a === $e || $a === $r || $a === '*') {
+                $assigned[] = strtolower(trim((string) $moduleKey));
+                break;
+            }
+        }
+    }
+
+    // 2. Check individual staff_accounts record
+    $staffList = getStaffAccountsRepo();
+    foreach ($staffList as $st) {
+        $stU = strtolower(trim((string) ($st['username'] ?? '')));
+        $stE = strtolower(trim((string) ($st['email'] ?? '')));
+        if ($stU === $u || $stE === $e) {
+            if (!empty($st['assigned_modules']) && is_array($st['assigned_modules'])) {
+                foreach ($st['assigned_modules'] as $m) {
+                    $assigned[] = strtolower(trim((string) $m));
+                }
+            }
+            break;
+        }
+    }
+
+    // 3. Role-based fallback defaults
+    if ($r === 'content editor' || str_contains($r, 'editor')) {
+        $assigned = array_merge($assigned, ['hero', 'brands', 'services', 'portfolio', 'featured', 'stats', 'testimonials', 'bts', 'discovery', 'blog', 'client_galleries']);
+    } elseif ($r === 'hr manager' || $r === 'talent manager') {
+        $assigned = array_merge($assigned, ['attendance', 'leaves', 'directory', 'payslips', 'onboarding', 'team']);
+    } elseif ($r === 'production manager') {
+        $assigned = array_merge($assigned, ['hero', 'portfolio', 'bts', 'vendors', 'client_galleries']);
+    }
+
+    return array_values(array_unique($assigned));
+}
+
+/**
+ * Assign, unassign or transfer module ownership across team members
+ */
+function setModuleAssignment($module, $assignee, $action = 'add')
+{
+    $settings = getSiteSettings();
+    $perms = $settings['module_permissions'] ?? [];
+    if (!is_array($perms))
+        $perms = [];
+
+    $m = strtolower(trim((string) $module));
+    $target = trim((string) (is_array($assignee) ? '' : $assignee));
+
+    if (!isset($perms[$m]) || !is_array($perms[$m])) {
+        $perms[$m] = [];
+    }
+
+    if ($action === 'add' || $action === 'assign') {
+        if (!empty($target) && !in_array($target, $perms[$m], true)) {
+            $perms[$m][] = $target;
+        }
+    } elseif ($action === 'remove' || $action === 'unassign') {
+        if (!empty($target)) {
+            $perms[$m] = array_values(array_filter($perms[$m], function ($x) use ($target) {
+                return strcasecmp((string) $x, $target) !== 0;
+            }));
+        }
+    } elseif ($action === 'replace') {
+        // Exclusively move/transfer module across team members
+        $perms[$m] = is_array($assignee) ? array_values(array_unique(array_filter($assignee))) : (!empty($target) ? [$target] : []);
+    }
+
+    saveSiteSettings(['module_permissions' => $perms]);
+    return $perms;
+}
+
+/**
+ * Cleanly resolve current admin module from query parameter or URL path (/admin/<module>)
+ */
+function resolveAdminSection()
+{
+    $sec = $_GET['section'] ?? null;
+    if ($sec === null || $sec === '') {
+        $uriPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH);
+        if ($uriPath && preg_match('#^/admin/([a-zA-Z0-9_-]+)#', $uriPath, $matches)) {
+            $candidate = strtolower(trim($matches[1]));
+            if (!in_array($candidate, ['index', 'login', 'logout', 'api', 'ajax'], true)) {
+                $sec = $candidate;
+            }
+        }
+    }
+    if ($sec === null || $sec === '') {
+        return null;
+    }
+    $sec = strtolower(trim((string) $sec));
+
+    // Normalize route aliases
+    $aliasMap = [
+        'homepage' => 'hero',
+        'featured-work' => 'portfolio',
+        'featured' => 'portfolio',
+        'discovery' => 'discovery',
+        'lets-talk' => 'discovery',
+        'staff' => 'staff_accounts',
+        'clients' => 'client_galleries',
+        'profile' => 'my_profile',
+        'team' => 'directory',
+        'home' => 'dashboard'
+    ];
+    return $aliasMap[$sec] ?? $sec;
+}
+
+function isSuperAdminUser($role = null, $email = null, $username = null)
+{
     if ($role === null) {
         $role = $_SESSION['admin_role'] ?? '';
     }
@@ -3532,9 +3961,9 @@ function isSuperAdminUser($role = null, $email = null, $username = null) {
         return true;
     }
 
-    $r = strtolower(trim((string)$role));
-    $e = strtolower(trim((string)$email));
-    $u = strtolower(trim((string)$username));
+    $r = strtolower(trim((string) $role));
+    $e = strtolower(trim((string) $email));
+    $u = strtolower(trim((string) $username));
 
     if (str_contains($r, 'owner') || $r === 'super admin' || $r === 'administrator' || $u === 'admin' || $u === 'henry' || $u === 'henry.falonipe' || $e === 'henry.falonipe@falhen.com' || $e === 'mail@falhenmedia.com' || $e === 'admin@falhen.com') {
         return true;
@@ -3546,8 +3975,9 @@ function isSuperAdminUser($role = null, $email = null, $username = null) {
  * Role-Based Access Control (RBAC) Permission Registry
  * Maps role title and user credentials to authorized section keys.
  */
-function getRolePermissions($role, $email = null, $username = null) {
-    if (isAdminUser($role, $email, $username)) {
+function getRolePermissions($role, $email = null, $username = null)
+{
+    if (isSuperAdminUser($role, $email, $username) || isITUser($role, $email, $username) || isAdminUser($role, $email, $username)) {
         return ['*'];
     }
 
@@ -3572,7 +4002,8 @@ function getRolePermissions($role, $email = null, $username = null) {
 /**
  * Check if a given user/role has permission to access a specific section
  */
-function hasSectionAccess($section, $role = null, $email = null, $username = null) {
+function hasSectionAccess($section, $role = null, $email = null, $username = null)
+{
     if ($role === null) {
         $role = $_SESSION['admin_role'] ?? 'Staff';
     }
@@ -3582,52 +4013,70 @@ function hasSectionAccess($section, $role = null, $email = null, $username = nul
     if ($username === null) {
         $username = $_SESSION['admin_username'] ?? '';
     }
-    
-    $role = trim((string)$role);
-    $section = strtolower(trim((string)$section));
 
-    // Personal profile, settings, studio communications, and task board are always accessible to logged-in team members
-    if ($section === 'profile' || $section === 'my_profile' || $section === 'comms' || $section === 'tasks' || $section === 'feeds' || $section === 'channels') {
+    $role = trim((string) $role);
+    $section = strtolower(trim((string) $section));
+
+    // Normalize aliases
+    $aliasMap = [
+        'homepage' => 'hero',
+        'featured-work' => 'portfolio',
+        'featured' => 'portfolio',
+        'lets-talk' => 'discovery',
+        'staff' => 'staff_accounts',
+        'clients' => 'client_galleries',
+        'profile' => 'my_profile',
+        'team' => 'directory',
+        'home' => 'dashboard'
+    ];
+    if (isset($aliasMap[$section])) {
+        $section = $aliasMap[$section];
+    }
+
+    // Base personal utilities accessible to all authenticated team members
+    if (in_array($section, ['profile', 'my_profile', 'comms', 'tasks', 'feeds', 'channels'], true)) {
         return true;
     }
 
-    // Website Dev Logs & Backup History accessible to Super Admin, Owner, and IT roles
-    if ($section === 'dev_logs') {
-        return isAdminUser($role, $email, $username) || stripos($role, 'IT') !== false || stripos($role, 'Developer') !== false || stripos($role, 'Super Admin') !== false || stripos($role, 'Owner') !== false;
+    // Super Admin (Owner) and IT have top-level unrestricted access across ALL modules
+    if (isSuperAdminUser($role, $email, $username) || isITUser($role, $email, $username)) {
+        return true;
     }
 
-    // Content Editor cannot access staff_accounts
+    // Technical audit logs & backups: strictly restricted to Super Admin & IT
+    if ($section === 'dev_logs') {
+        return false;
+    }
+
+    // Content Editor cannot access staff accounts
     if (isContentEditor($role) && $section === 'staff_accounts') {
         return false;
     }
 
-    if (isAdminUser($role, $email, $username)) {
+    // Check dynamic module delegation registry & individual assignments
+    $assignedModules = getUserAssignedModules($username, $email, $role);
+    if (in_array('*', $assignedModules, true) || in_array($section, $assignedModules, true)) {
         return true;
     }
 
+    // Fallback baseline role permissions
     $permissions = getRolePermissions($role, $email, $username);
-    if (in_array('*', $permissions, true)) {
+    if (in_array('*', $permissions, true) || in_array($section, $permissions, true)) {
         return true;
     }
 
-    // Map aliases
-    if ($section === 'home') {
-        $section = 'dashboard';
-    }
-    if ($section === 'team') {
-        $section = 'directory';
-    }
     if ($section === 'blog') {
         return in_array('blog', $permissions, true) || in_array('announcements', $permissions, true);
     }
 
-    return in_array($section, $permissions, true);
+    return false;
 }
 
 /**
  * Get default fallback section for a user account
  */
-function getUserFirstAllowedSection($role = null, $email = null, $username = null) {
+function getUserFirstAllowedSection($role = null, $email = null, $username = null)
+{
     if (isTalentManager($role)) {
         return 'dashboard';
     }
@@ -3640,18 +4089,20 @@ function getUserFirstAllowedSection($role = null, $email = null, $username = nul
 /**
  * Automatically clock out any attendance records from previous days that were left unclosed after midnight.
  */
-function autoCloseStaleAttendanceLogs() {
+function autoCloseStaleAttendanceLogs()
+{
     $settings = getSiteSettings();
     $logs = $settings['attendance_logs'] ?? [];
-    if (empty($logs)) return;
+    if (empty($logs))
+        return;
 
     $today = date('Y-m-d');
     $modified = false;
 
-    foreach ($logs as $idx => &$entry) {
+    foreach ($logs as &$entry) {
         $entryDate = $entry['date'] ?? '';
         $isUnclosed = empty($entry['clock_out']) || ($entry['clock_out'] === 'In Progress') || ($entry['status'] ?? '') === 'Clocked In' || ($entry['status'] ?? '') === 'On Break' || ($entry['duration'] ?? '') === 'In Progress';
-        
+
         // If the record date is earlier than today and it was left unclosed after midnight
         if (!empty($entryDate) && $entryDate < $today && $isUnclosed) {
             $clockInTimeStr = !empty($entry['clock_in']) && $entry['clock_in'] !== 'In Progress' ? $entry['clock_in'] : '09:00 AM';
@@ -3685,7 +4136,8 @@ function autoCloseStaleAttendanceLogs() {
 /**
  * Check if a user role/account is authorized to view attendance logs of all staff members
  */
-function canViewAllAttendanceLogs($role = null, $email = null, $username = null) {
+function canViewAllAttendanceLogs($role = null, $email = null, $username = null)
+{
     if ($role === null) {
         $role = $_SESSION['admin_role'] ?? '';
     }
@@ -3700,9 +4152,9 @@ function canViewAllAttendanceLogs($role = null, $email = null, $username = null)
         return true;
     }
 
-    $r = strtolower(trim((string)$role));
-    $e = strtolower(trim((string)$email));
-    $u = strtolower(trim((string)$username));
+    $r = strtolower(trim((string) $role));
+    $e = strtolower(trim((string) $email));
+    $u = strtolower(trim((string) $username));
 
     $adminEmails = [
         'oluwatosin.ligali@falhenmedia.com',
@@ -3731,7 +4183,8 @@ function canViewAllAttendanceLogs($role = null, $email = null, $username = null)
 /**
  * Get Attendance Logs Repository (Auto-cleans stale unclosed shifts)
  */
-function getAttendanceLogs($username = null, $role = null, $email = null) {
+function getAttendanceLogs($username = null, $role = null, $email = null)
+{
     autoCloseStaleAttendanceLogs();
     $settings = getSiteSettings();
     $logs = $settings['attendance_logs'] ?? [];
@@ -3789,8 +4242,8 @@ function getAttendanceLogs($username = null, $role = null, $email = null) {
     $canSeeAll = canViewAllAttendanceLogs($role, $email, $username);
 
     if (!$canSeeAll && !empty($username)) {
-        $u = strtolower(trim((string)$username));
-        $userLogs = array_filter($logs, function($item) use ($u) {
+        $u = strtolower(trim((string) $username));
+        $userLogs = array_filter($logs, function ($item) use ($u) {
             return strtolower(trim($item['username'] ?? '')) === $u;
         });
         return array_values($userLogs);
@@ -3802,7 +4255,8 @@ function getAttendanceLogs($username = null, $role = null, $email = null) {
 /**
  * Get today's attendance record for a specific user
  */
-function getUserTodayAttendance($username) {
+function getUserTodayAttendance($username)
+{
     $logs = getAttendanceLogs();
     $today = date('Y-m-d');
     $userLower = strtolower(trim($username));
@@ -3818,7 +4272,8 @@ function getUserTodayAttendance($username) {
 /**
  * Perform Clock In Action
  */
-function recordClockIn($username, $fullName) {
+function recordClockIn($username, $fullName)
+{
     $settings = getSiteSettings();
     $logs = $settings['attendance_logs'] ?? [];
     $today = date('Y-m-d');
@@ -3830,7 +4285,7 @@ function recordClockIn($username, $fullName) {
             if (empty($entry['clock_out'])) {
                 return ['success' => false, 'message' => 'You are already clocked in for today (at ' . ($entry['clock_in'] ?? 'earlier') . ')!'];
             }
-            
+
             // Re-open active shift session for today
             $logs[$idx]['clock_in'] = $now;
             $logs[$idx]['clock_out'] = null;
@@ -3872,7 +4327,8 @@ function recordClockIn($username, $fullName) {
 /**
  * Perform Start Break Action
  */
-function recordStartBreak($username) {
+function recordStartBreak($username)
+{
     $settings = getSiteSettings();
     $logs = $settings['attendance_logs'] ?? [];
     $today = date('Y-m-d');
@@ -3910,7 +4366,8 @@ function recordStartBreak($username) {
 /**
  * Perform End Break Action (Resume Work)
  */
-function recordEndBreak($username) {
+function recordEndBreak($username)
+{
     $settings = getSiteSettings();
     $logs = $settings['attendance_logs'] ?? [];
     $today = date('Y-m-d');
@@ -3945,7 +4402,8 @@ function recordEndBreak($username) {
 /**
  * Perform Clock Out Action
  */
-function recordClockOut($username) {
+function recordClockOut($username)
+{
     $settings = getSiteSettings();
     $logs = $settings['attendance_logs'] ?? [];
     $today = date('Y-m-d');
@@ -3990,14 +4448,15 @@ function recordClockOut($username) {
 /**
  * Get User Onboarding Data
  */
-function getUserOnboardingData($username) {
+function getUserOnboardingData($username)
+{
     $settings = getSiteSettings();
-    $userLower = strtolower(trim((string)$username));
+    $userLower = strtolower(trim((string) $username));
     $allOnboarding = $settings['user_onboarding'] ?? [];
 
     $staffObj = getStaffAccountByUsername($username);
     $canonicalUser = !empty($staffObj['username']) ? strtolower($staffObj['username']) : $userLower;
-    
+
     $userData = $allOnboarding[$canonicalUser] ?? ($allOnboarding[$userLower] ?? null);
 
     $empFullName = $staffObj['full_name'] ?? ucwords(str_replace('.', ' ', $username));
@@ -4008,13 +4467,11 @@ function getUserOnboardingData($username) {
     $empCurr = $staffObj['currency'] ?? ($userData['offer_letter']['currency'] ?? 'NGN');
     $currSym = getCurrencySymbol($empCurr);
 
-    $sal = (float)($staffObj['base_salary'] ?? 120000);
-    $allow = (float)($staffObj['allowances'] ?? 20000);
+    $sal = (float) ($staffObj['base_salary'] ?? 120000);
+    $allow = (float) ($staffObj['allowances'] ?? 20000);
     $tot = $sal + $allow;
 
     if (!$userData) {
-        $isMainAdmin = ($canonicalUser === 'admin' || $canonicalUser === 'ligali.oluwatosin' || $canonicalUser === 'oluwatosin.ligali');
-
         $userData = [
             'bank_details' => [
                 'status' => 'Pending',
@@ -4084,7 +4541,7 @@ function getUserOnboardingData($username) {
         if (empty($userData['offer_letter']['job_title'])) {
             $userData['offer_letter']['job_title'] = $empRole;
         }
-        
+
         // If offer letter has NOT been issued yet, keep it synchronized with staff accounts
         $isOfferIssued = !empty($userData['offer_letter']['issued']) || in_array($userData['offer_letter']['status'] ?? '', ['Issued', 'Accepted', 'Approved'], true);
         if (!$isOfferIssued) {
@@ -4105,9 +4562,10 @@ function getUserOnboardingData($username) {
 /**
  * Save User Onboarding Data Section
  */
-function saveUserOnboardingSection($username, $sectionKey, $sectionData) {
+function saveUserOnboardingSection($username, $sectionKey, $sectionData)
+{
     $settings = getSiteSettings();
-    $userLower = strtolower(trim((string)$username));
+    $userLower = strtolower(trim((string) $username));
     $allOnboarding = $settings['user_onboarding'] ?? [];
 
     $staffObj = getStaffAccountByUsername($username);
@@ -4129,7 +4587,8 @@ function saveUserOnboardingSection($username, $sectionKey, $sectionData) {
 /**
  * Calculate Onboarding Progress Metrics (X/8)
  */
-function getOnboardingProgress($username) {
+function getOnboardingProgress($username)
+{
     $data = getUserOnboardingData($username);
     $completedCount = 0;
     $totalTasks = 8;
@@ -4186,9 +4645,10 @@ function getOnboardingProgress($username) {
 /**
  * Update Onboarding Task Status & Admin Action (HR & Admin Feature)
  */
-function updateUserOnboardingTaskStatus($username, $taskKey, $newStatus, $extraData = []) {
+function updateUserOnboardingTaskStatus($username, $taskKey, $newStatus, $extraData = [])
+{
     $settings = getSiteSettings();
-    $userLower = strtolower(trim((string)$username));
+    $userLower = strtolower(trim((string) $username));
     $allOnboarding = $settings['user_onboarding'] ?? [];
 
     $staffObj = getStaffAccountByUsername($username);
@@ -4217,17 +4677,20 @@ function updateUserOnboardingTaskStatus($username, $taskKey, $newStatus, $extraD
 /**
  * Format Currency / Money Strings with Proper Thousands Comma (e.g. 250000 -> 250,000)
  */
-function formatMoneyWithCommas($str) {
-    if (empty($str) || !is_string($str)) return $str;
-    return preg_replace_callback('/\b(\d{4,})\b/', function($matches) {
-        return number_format((float)$matches[1]);
+function formatMoneyWithCommas($str)
+{
+    if (empty($str) || !is_string($str))
+        return $str;
+    return preg_replace_callback('/\b(\d{4,})\b/', function ($matches) {
+        return number_format((float) $matches[1]);
     }, $str);
 }
 
 /**
  * Get Onboarding Overview for All Staff Members (HR & Admin View)
  */
-function getAllStaffOnboardingSummary() {
+function getAllStaffOnboardingSummary()
+{
     $staffList = getStaffAccountsRepo();
     $summary = [];
 
@@ -4252,7 +4715,8 @@ function getAllStaffOnboardingSummary() {
 /**
  * Get Celebration Settings & Curated Templates (Birthdays & Work Milestones)
  */
-function getCelebrationSettings() {
+function getCelebrationSettings()
+{
     $settings = getSiteSettings();
     $defaults = [
         'auto_announce' => true,
@@ -4281,7 +4745,8 @@ function getCelebrationSettings() {
 /**
  * Save Celebration Settings
  */
-function saveCelebrationSettings($data) {
+function saveCelebrationSettings($data)
+{
     $settings = getSiteSettings();
     $current = getCelebrationSettings();
     $updatedCeleb = array_merge($current, $data);
@@ -4293,7 +4758,8 @@ function saveCelebrationSettings($data) {
 /**
  * Save or Update Employee Custom Celebration Wish (HR Curated)
  */
-function saveEmployeeCustomBirthdayWish($username, $customWish) {
+function saveEmployeeCustomBirthdayWish($username, $customWish)
+{
     $celebSettings = getCelebrationSettings();
     $uKey = strtolower(trim($username));
     if (!isset($celebSettings['custom_wishes']) || !is_array($celebSettings['custom_wishes'])) {
@@ -4307,7 +4773,8 @@ function saveEmployeeCustomBirthdayWish($username, $customWish) {
 /**
  * Get Site Announcements with Optional Category Filtering (Includes Birthdays, 45d/90d Milestones & Work Anniversaries)
  */
-function getSiteAnnouncements($category = 'all') {
+function getSiteAnnouncements($category = 'all')
+{
     $settings = getSiteSettings();
     $announcements = $settings['site_announcements'] ?? [
         [
@@ -4343,7 +4810,7 @@ function getSiteAnnouncements($category = 'all') {
     if ($autoAnnounce) {
         $todayMonthDay = date('m-d');
         $todayTs = strtotime(date('Y-m-d'));
-        $todayYear = (int)date('Y');
+        $todayYear = (int) date('Y');
 
         $allStaffAccounts = array_values(getStaffAccountsRepo());
         $adminProfile = getAdminUserProfile();
@@ -4354,16 +4821,17 @@ function getSiteAnnouncements($category = 'all') {
             $un = trim($st['username'] ?? '');
             $em = trim($st['email'] ?? '');
             $key = strtolower($fn ?: $un);
-            if (empty($key)) continue;
+            if (empty($key))
+                continue;
 
             $unifiedPeople[$key] = [
-                'username'   => $un ?: strtolower(str_replace(' ', '.', $fn)),
-                'name'       => $fn ?: $un,
-                'role'       => $st['designation'] ?? ($st['role'] ?? 'Staff Member'),
-                'access_role'=> $st['role'] ?? 'Staff',
-                'avatar'     => $st['avatar'] ?? ($st['image'] ?? ''),
-                'email'      => $em,
-                'dob'        => $st['dob'] ?? '',
+                'username' => $un ?: strtolower(str_replace(' ', '.', $fn)),
+                'name' => $fn ?: $un,
+                'role' => $st['designation'] ?? ($st['role'] ?? 'Staff Member'),
+                'access_role' => $st['role'] ?? 'Staff',
+                'avatar' => $st['avatar'] ?? ($st['image'] ?? ''),
+                'email' => $em,
+                'dob' => $st['dob'] ?? '',
                 'created_at' => $st['hire_date'] ?? ($st['created_at'] ?? '2024-01-10')
             ];
         }
@@ -4383,20 +4851,25 @@ function getSiteAnnouncements($category = 'all') {
             }
 
             if ($matchedKey) {
-                if (!empty($adminProfile['dob'])) $unifiedPeople[$matchedKey]['dob'] = $adminProfile['dob'];
-                if (!empty($adminProfile['avatar'])) $unifiedPeople[$matchedKey]['avatar'] = $adminProfile['avatar'];
-                if (!empty($admFn)) $unifiedPeople[$matchedKey]['name'] = $admFn;
-                if (!empty($adminProfile['designation'])) $unifiedPeople[$matchedKey]['role'] = $adminProfile['designation'];
-                if (!empty($adminProfile['hire_date'])) $unifiedPeople[$matchedKey]['created_at'] = $adminProfile['hire_date'];
+                if (!empty($adminProfile['dob']))
+                    $unifiedPeople[$matchedKey]['dob'] = $adminProfile['dob'];
+                if (!empty($adminProfile['avatar']))
+                    $unifiedPeople[$matchedKey]['avatar'] = $adminProfile['avatar'];
+                if (!empty($admFn))
+                    $unifiedPeople[$matchedKey]['name'] = $admFn;
+                if (!empty($adminProfile['designation']))
+                    $unifiedPeople[$matchedKey]['role'] = $adminProfile['designation'];
+                if (!empty($adminProfile['hire_date']))
+                    $unifiedPeople[$matchedKey]['created_at'] = $adminProfile['hire_date'];
             } else {
                 $unifiedPeople[$admKey] = [
-                    'username'   => $admUn,
-                    'name'       => $admFn ?: 'Admin User',
-                    'role'       => $adminProfile['designation'] ?? ($adminProfile['role'] ?? 'Super Admin'),
-                    'access_role'=> $adminProfile['role'] ?? 'Super Admin',
-                    'avatar'     => $adminProfile['avatar'] ?? '',
-                    'email'      => $admEm,
-                    'dob'        => $adminProfile['dob'] ?? '',
+                    'username' => $admUn,
+                    'name' => $admFn ?: 'Admin User',
+                    'role' => $adminProfile['designation'] ?? ($adminProfile['role'] ?? 'Super Admin'),
+                    'access_role' => $adminProfile['role'] ?? 'Super Admin',
+                    'avatar' => $adminProfile['avatar'] ?? '',
+                    'email' => $admEm,
+                    'dob' => $adminProfile['dob'] ?? '',
                     'created_at' => $adminProfile['hire_date'] ?? '2023-01-01'
                 ];
             }
@@ -4406,7 +4879,8 @@ function getSiteAnnouncements($category = 'all') {
             $siteTeamMembers = array_values(getTeamMembers());
             foreach ($siteTeamMembers as $tm) {
                 $tmName = trim($tm['name'] ?? '');
-                if (empty($tmName)) continue;
+                if (empty($tmName))
+                    continue;
                 $tmKey = strtolower($tmName);
 
                 if (isset($unifiedPeople[$tmKey])) {
@@ -4421,13 +4895,13 @@ function getSiteAnnouncements($category = 'all') {
                     }
                 } else {
                     $unifiedPeople[$tmKey] = [
-                        'username'   => strtolower(str_replace(' ', '.', $tmName)),
-                        'name'       => $tmName,
-                        'role'       => $tm['role'] ?? ($tm['title'] ?? 'Team Member'),
-                        'access_role'=> 'Staff',
-                        'avatar'     => $tm['image'] ?? '',
-                        'email'      => strtolower(str_replace(' ', '.', $tmName)) . '@falhen.com',
-                        'dob'        => $tm['dob'] ?? '',
+                        'username' => strtolower(str_replace(' ', '.', $tmName)),
+                        'name' => $tmName,
+                        'role' => $tm['role'] ?? ($tm['title'] ?? 'Team Member'),
+                        'access_role' => 'Staff',
+                        'avatar' => $tm['image'] ?? '',
+                        'email' => strtolower(str_replace(' ', '.', $tmName)) . '@falhen.com',
+                        'dob' => $tm['dob'] ?? '',
                         'created_at' => $tm['hire_date'] ?? ($tm['created_at'] ?? '2024-01-01')
                     ];
                 }
@@ -4463,18 +4937,18 @@ function getSiteAnnouncements($category = 'all') {
 
                     $celebIds++;
                     $celebrationAnnouncements[] = [
-                        'id'            => $celebIds,
-                        'is_birthday'   => true,
-                        'is_celebration'=> true,
+                        'id' => $celebIds,
+                        'is_birthday' => true,
+                        'is_celebration' => true,
                         'celebration_type' => 'birthday',
                         'employee_name' => $stName,
                         'employee_role' => $stRole,
-                        'avatar'        => $stAvatar,
-                        'title'         => '🎉 Happy Birthday, ' . $stName . '! 🎂',
-                        'category'      => 'Celebration',
-                        'posted_by'     => $authorTitle,
-                        'date_str'      => 'Birthday Today 🎈',
-                        'content'       => $content
+                        'avatar' => $stAvatar,
+                        'title' => '🎉 Happy Birthday, ' . $stName . '! 🎂',
+                        'category' => 'Celebration',
+                        'posted_by' => $authorTitle,
+                        'date_str' => 'Birthday Today 🎈',
+                        'content' => $content
                     ];
                 }
             }
@@ -4484,7 +4958,7 @@ function getSiteAnnouncements($category = 'all') {
             if (!empty($startDate)) {
                 $startTs = strtotime(date('Y-m-d', strtotime($startDate)));
                 if ($startTs && $todayTs >= $startTs) {
-                    $daysEmployed = (int)round(($todayTs - $startTs) / 86400);
+                    $daysEmployed = (int) round(($todayTs - $startTs) / 86400);
 
                     // 45-Day Milestone
                     if ($daysEmployed === 45 && !empty($celebSettings['enable_45d'])) {
@@ -4492,17 +4966,17 @@ function getSiteAnnouncements($category = 'all') {
                         $content = str_replace(['{name}', '{role}', '{first_name}'], [$stName, $stRole, $firstName], $template);
                         $celebIds++;
                         $celebrationAnnouncements[] = [
-                            'id'            => $celebIds,
-                            'is_celebration'=> true,
+                            'id' => $celebIds,
+                            'is_celebration' => true,
                             'celebration_type' => 'milestone_45d',
                             'employee_name' => $stName,
                             'employee_role' => $stRole,
-                            'avatar'        => $stAvatar,
-                            'title'         => '🌟 45-Day Milestone: Congratulations ' . $stName . '! 🚀',
-                            'category'      => 'Celebration',
-                            'posted_by'     => $authorTitle,
-                            'date_str'      => '45-Day Milestone 🌟',
-                            'content'       => $content
+                            'avatar' => $stAvatar,
+                            'title' => '🌟 45-Day Milestone: Congratulations ' . $stName . '! 🚀',
+                            'category' => 'Celebration',
+                            'posted_by' => $authorTitle,
+                            'date_str' => '45-Day Milestone 🌟',
+                            'content' => $content
                         ];
                     }
 
@@ -4512,17 +4986,17 @@ function getSiteAnnouncements($category = 'all') {
                         $content = str_replace(['{name}', '{role}', '{first_name}'], [$stName, $stRole, $firstName], $template);
                         $celebIds++;
                         $celebrationAnnouncements[] = [
-                            'id'            => $celebIds,
-                            'is_celebration'=> true,
+                            'id' => $celebIds,
+                            'is_celebration' => true,
                             'celebration_type' => 'milestone_90d',
                             'employee_name' => $stName,
                             'employee_role' => $stRole,
-                            'avatar'        => $stAvatar,
-                            'title'         => '🏆 90-Day Milestone: Congratulations ' . $stName . '! 🎉',
-                            'category'      => 'Celebration',
-                            'posted_by'     => $authorTitle,
-                            'date_str'      => '90-Day Milestone 🏆',
-                            'content'       => $content
+                            'avatar' => $stAvatar,
+                            'title' => '🏆 90-Day Milestone: Congratulations ' . $stName . '! 🎉',
+                            'category' => 'Celebration',
+                            'posted_by' => $authorTitle,
+                            'date_str' => '90-Day Milestone 🏆',
+                            'content' => $content
                         ];
                     }
 
@@ -4532,23 +5006,23 @@ function getSiteAnnouncements($category = 'all') {
                         $content = str_replace(['{name}', '{role}', '{first_name}'], [$stName, $stRole, $firstName], $template);
                         $celebIds++;
                         $celebrationAnnouncements[] = [
-                            'id'            => $celebIds,
-                            'is_celebration'=> true,
+                            'id' => $celebIds,
+                            'is_celebration' => true,
                             'celebration_type' => 'milestone_6m',
                             'employee_name' => $stName,
                             'employee_role' => $stRole,
-                            'avatar'        => $stAvatar,
-                            'title'         => '💫 Happy 6-Month Anniversary, ' . $stName . '! 🎊',
-                            'category'      => 'Celebration',
-                            'posted_by'     => $authorTitle,
-                            'date_str'      => '6-Month Anniversary 💫',
-                            'content'       => $content
+                            'avatar' => $stAvatar,
+                            'title' => '💫 Happy 6-Month Anniversary, ' . $stName . '! 🎊',
+                            'category' => 'Celebration',
+                            'posted_by' => $authorTitle,
+                            'date_str' => '6-Month Anniversary 💫',
+                            'content' => $content
                         ];
                     }
 
                     // Annual Work Anniversaries (1 Year, 2 Years, 3 Years, etc.)
                     $startMonthDay = date('m-d', $startTs);
-                    $startYear = (int)date('Y', $startTs);
+                    $startYear = (int) date('Y', $startTs);
                     if ($startMonthDay === $todayMonthDay && $todayYear > $startYear && !empty($celebSettings['enable_anniversaries'])) {
                         $years = $todayYear - $startYear;
                         if ($years === 1) {
@@ -4565,17 +5039,17 @@ function getSiteAnnouncements($category = 'all') {
 
                         $celebIds++;
                         $celebrationAnnouncements[] = [
-                            'id'            => $celebIds,
-                            'is_celebration'=> true,
+                            'id' => $celebIds,
+                            'is_celebration' => true,
                             'celebration_type' => 'work_anniversary',
                             'employee_name' => $stName,
                             'employee_role' => $stRole,
-                            'avatar'        => $stAvatar,
-                            'title'         => $title,
-                            'category'      => 'Celebration',
-                            'posted_by'     => $authorTitle,
-                            'date_str'      => $dateTag,
-                            'content'       => $content
+                            'avatar' => $stAvatar,
+                            'title' => $title,
+                            'category' => 'Celebration',
+                            'posted_by' => $authorTitle,
+                            'date_str' => $dateTag,
+                            'content' => $content
                         ];
                     }
                 }
@@ -4589,7 +5063,7 @@ function getSiteAnnouncements($category = 'all') {
 
     if ($category !== 'all' && !empty($category)) {
         $categoryLower = strtolower(trim($category));
-        $announcements = array_values(array_filter($announcements, function($item) use ($categoryLower) {
+        $announcements = array_values(array_filter($announcements, function ($item) use ($categoryLower) {
             return strtolower(trim($item['category'] ?? '')) === $categoryLower;
         }));
     }
@@ -4600,11 +5074,12 @@ function getSiteAnnouncements($category = 'all') {
 /**
  * Post New Site Announcement (HR & Admin)
  */
-function postSiteAnnouncement($data) {
+function postSiteAnnouncement($data)
+{
     $settings = getSiteSettings();
     $announcements = getSiteAnnouncements('all');
     $newId = count($announcements) + 1;
-    
+
     $newAnnouncement = [
         'id' => $newId,
         'title' => trim($data['title'] ?? 'Company Update'),
@@ -4624,7 +5099,8 @@ function postSiteAnnouncement($data) {
 /**
  * Get all leave requests from JSON storage
  */
-function getLeaveRequests() {
+function getLeaveRequests()
+{
     $filePath = __DIR__ . '/../config/leave_requests.json';
     if (!file_exists($filePath)) {
         // Default initial seed data if file does not exist yet
@@ -4702,11 +5178,12 @@ function getLeaveRequests() {
 /**
  * Submit a new leave request with custom Start & End Dates
  */
-function submitLeaveRequest($username, $fullName, $role, $type, $startDateInput = '', $endDateInput = '', $duration = 1, $reason = '') {
+function submitLeaveRequest($username, $fullName, $role, $type, $startDateInput = '', $endDateInput = '', $duration = 1, $reason = '')
+{
     $requests = getLeaveRequests();
-    
+
     $startTs = !empty($startDateInput) ? strtotime($startDateInput) : strtotime('+1 day');
-    $days = max(1, (int)$duration);
+    $days = max(1, (int) $duration);
 
     if (!empty($endDateInput)) {
         $endTs = strtotime($endDateInput);
@@ -4714,7 +5191,7 @@ function submitLeaveRequest($username, $fullName, $role, $type, $startDateInput 
             $endTs = $startTs;
         }
         $calcDays = max(1, round(($endTs - $startTs) / 86400) + 1);
-        $days = (int)$calcDays;
+        $days = (int) $calcDays;
     } else {
         $endTs = strtotime('+' . ($days - 1) . ' days', $startTs);
     }
@@ -4722,8 +5199,8 @@ function submitLeaveRequest($username, $fullName, $role, $type, $startDateInput 
     $startStr = date('M d, Y', $startTs);
     $endStr = date('M d, Y', $endTs);
 
-    $dateStr = ($startStr === $endStr || $days === 1) 
-        ? "{$startStr} (1 Day)" 
+    $dateStr = ($startStr === $endStr || $days === 1)
+        ? "{$startStr} (1 Day)"
         : "{$startStr} – {$endStr} ({$days} Days)";
 
     $newRequest = [
@@ -4753,12 +5230,13 @@ function submitLeaveRequest($username, $fullName, $role, $type, $startDateInput 
 /**
  * Update Leave Request Status (HR & Admin)
  */
-function updateLeaveRequestStatus($requestId, $newStatus) {
+function updateLeaveRequestStatus($requestId, $newStatus)
+{
     $requests = getLeaveRequests();
     $updated = false;
 
     foreach ($requests as &$req) {
-        if ((string)($req['id'] ?? '') === (string)$requestId) {
+        if ((string) ($req['id'] ?? '') === (string) $requestId) {
             $statusClean = ucfirst(strtolower(trim($newStatus)));
             if ($statusClean === 'Approved') {
                 $req['status'] = 'Approved';
@@ -4788,9 +5266,10 @@ function updateLeaveRequestStatus($requestId, $newStatus) {
 /**
  * Calculate dynamic leave balance statistics for a user
  */
-function getUserLeaveStats($username) {
+function getUserLeaveStats($username)
+{
     $allRequests = getLeaveRequests();
-    $userRequests = array_filter($allRequests, function($req) use ($username) {
+    $userRequests = array_filter($allRequests, function ($req) use ($username) {
         return strtolower(trim($req['username'] ?? '')) === strtolower(trim($username));
     });
 
@@ -4851,7 +5330,8 @@ function getUserLeaveStats($username) {
 /**
  * Fetch persistent team comms messages
  */
-function getCommsMessages($channel = 'general') {
+function getCommsMessages($channel = 'general')
+{
     $filePath = __DIR__ . '/../config/comms_messages.json';
     if (!file_exists($filePath)) {
         $initialData = [
@@ -4916,13 +5396,22 @@ function getCommsMessages($channel = 'general') {
 
     $content = @file_get_contents($filePath);
     $data = json_decode($content, true);
-    return is_array($data) ? $data : [];
+    if (!is_array($data)) {
+        return [];
+    }
+    if ($channel !== null && $channel !== 'all' && $channel !== '') {
+        $data = array_values(array_filter($data, function ($m) use ($channel) {
+            return strtolower($m['channel'] ?? '') === strtolower($channel);
+        }));
+    }
+    return $data;
 }
 
 /**
  * Send a new comms message
  */
-function sendCommsMessage($username, $senderName, $senderRole, $channel, $messageText) {
+function sendCommsMessage($username, $senderName, $senderRole, $channel, $messageText)
+{
     $messages = getCommsMessages();
     $newMsg = [
         'id' => time() . rand(100, 999),
@@ -4944,26 +5433,31 @@ function sendCommsMessage($username, $senderName, $senderRole, $channel, $messag
 /**
  * Studio Calls Repository Functions
  */
-function getStudioCallsFile() {
+function getStudioCallsFile()
+{
     return __DIR__ . '/../config/studio_calls.json';
 }
 
-function getActiveStudioCalls() {
+function getActiveStudioCalls()
+{
     $file = getStudioCallsFile();
-    if (!file_exists($file)) return [];
+    if (!file_exists($file))
+        return [];
     $data = json_decode(@file_get_contents($file), true);
     return is_array($data) ? $data : [];
 }
 
-function saveActiveStudioCalls($calls) {
+function saveActiveStudioCalls($calls)
+{
     $file = getStudioCallsFile();
     @file_put_contents($file, json_encode(array_values($calls), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES), LOCK_EX);
 }
 
-function initiateStudioCallState($callerUser, $callerName, $callerAvatar, $receiverUser, $receiverName, $receiverAvatar, $callType = 'audio') {
+function initiateStudioCallState($callerUser, $callerName, $callerAvatar, $receiverUser, $receiverName, $receiverAvatar, $callType = 'audio')
+{
     $calls = getActiveStudioCalls();
     $callId = 'call_' . time() . '_' . rand(100, 999);
-    
+
     $now = time();
     $calls = array_filter($calls, fn($c) => ($now - ($c['created_at'] ?? 0)) < 300);
 
@@ -4985,7 +5479,8 @@ function initiateStudioCallState($callerUser, $callerName, $callerAvatar, $recei
     return $newCall;
 }
 
-function updateStudioCallStatus($callId, $status) {
+function updateStudioCallStatus($callId, $status)
+{
     $calls = getActiveStudioCalls();
     $updated = null;
     foreach ($calls as &$c) {
@@ -4999,13 +5494,15 @@ function updateStudioCallStatus($callId, $status) {
     return $updated;
 }
 
-function checkUserStudioCallState($username) {
+function checkUserStudioCallState($username)
+{
     $userCanon = getCanonicalUsername($username);
-    if (empty($userCanon)) return null;
+    if (empty($userCanon))
+        return null;
 
     $calls = getActiveStudioCalls();
     $now = time();
-    
+
     // Check for incoming call targeted at this user
     foreach ($calls as $c) {
         if (($c['receiver_username'] ?? '') === $userCanon && ($c['status'] ?? '') === 'ringing' && ($now - ($c['created_at'] ?? 0)) < 60) {
@@ -5032,9 +5529,11 @@ function checkUserStudioCallState($username) {
 /**
  * Get Canonical Short Username for Consistent Channel Mapping
  */
-function getCanonicalUsername($username) {
-    $u = strtolower(trim((string)$username));
-    if (empty($u)) return '';
+function getCanonicalUsername($username)
+{
+    $u = strtolower(trim((string) $username));
+    if (empty($u))
+        return '';
 
     // If username is "admin", inspect active session full_name & email
     if ($u === 'admin') {
@@ -5059,22 +5558,22 @@ function getCanonicalUsername($username) {
 
     $aliasMap = [
         'kingsley.falonipe' => 'kingsley',
-        'kingsley'          => 'kingsley',
-        'mojisola.emjay'   => 'mojisola',
-        'mojisola'         => 'mojisola',
-        'henry'            => 'henry',
-        'henry.falonipe'   => 'henry',
-        'daniel.ifeoluwa'  => 'daniel',
-        'daniel'           => 'daniel',
+        'kingsley' => 'kingsley',
+        'mojisola.emjay' => 'mojisola',
+        'mojisola' => 'mojisola',
+        'henry' => 'henry',
+        'henry.falonipe' => 'henry',
+        'daniel.ifeoluwa' => 'daniel',
+        'daniel' => 'daniel',
         'victoria.opemipo' => 'victoria',
-        'victoria'         => 'victoria',
-        'ligali.oluwatosin'=> 'oluwatosin',
-        'oluwatosin.king'  => 'oluwatosin',
-        'oluwatosin'       => 'oluwatosin',
-        'micheal.otuwho'   => 'micheal',
-        'micheal'          => 'micheal',
-        'lisa.okoli'       => 'lisa',
-        'lisa'             => 'lisa'
+        'victoria' => 'victoria',
+        'ligali.oluwatosin' => 'oluwatosin',
+        'oluwatosin.king' => 'oluwatosin',
+        'oluwatosin' => 'oluwatosin',
+        'micheal.otuwho' => 'micheal',
+        'micheal' => 'micheal',
+        'lisa.okoli' => 'lisa',
+        'lisa' => 'lisa'
     ];
 
     if (isset($aliasMap[$u])) {
@@ -5091,7 +5590,8 @@ function getCanonicalUsername($username) {
 /**
  * Helper to generate consistent channel key for direct messages between two users
  */
-function getDmChannelKey($user1, $user2) {
+function getDmChannelKey($user1, $user2)
+{
     $c1 = getCanonicalUsername($user1);
     $c2 = getCanonicalUsername($user2);
     $arr = [$c1, $c2];
@@ -5102,7 +5602,8 @@ function getDmChannelKey($user1, $user2) {
 /**
  * Dynamic calculation of staff contacts sorted by DM frequency and recency
  */
-function getSortedRecentDmContacts($currentUsername) {
+function getSortedRecentDmContacts($currentUsername)
+{
     $repo = getStaffAccountsRepo();
     $allMessages = getCommsMessages();
     $userLower = strtolower(trim($currentUsername));
@@ -5120,8 +5621,9 @@ function getSortedRecentDmContacts($currentUsername) {
         $stUsername = strtolower(trim($staff['username'] ?? ''));
         $stEmail = strtolower(trim($staff['email'] ?? ''));
         $stFullName = strtolower(trim($staff['full_name'] ?? ''));
-        
-        if (empty($stUsername)) continue;
+
+        if (empty($stUsername))
+            continue;
 
         // Extract staff's first name
         $rawFullName = trim($staff['full_name'] ?? 'Staff Member');
@@ -5130,16 +5632,20 @@ function getSortedRecentDmContacts($currentUsername) {
         $stFirstNameLower = strtolower($firstName);
 
         // 1. Skip if username matches
-        if ($stUsername === $userLower) continue;
+        if ($stUsername === $userLower)
+            continue;
 
         // 2. Skip if email matches
-        if (!empty($userEmail) && $stEmail === $userEmail) continue;
+        if (!empty($userEmail) && $stEmail === $userEmail)
+            continue;
 
         // 3. Skip if full name matches
-        if (!empty($userFullName) && $stFullName === $userFullName) continue;
+        if (!empty($userFullName) && $stFullName === $userFullName)
+            continue;
 
         // 4. Skip if first name matches current user's first name (prevents self-chatting under name variations)
-        if (!empty($currentUserFirstName) && $stFirstNameLower === $currentUserFirstName) continue;
+        if (!empty($currentUserFirstName) && $stFirstNameLower === $currentUserFirstName)
+            continue;
 
         $u1 = getCanonicalUsername($userLower);
         $u2 = getCanonicalUsername($stUsername);
@@ -5187,7 +5693,7 @@ function getSortedRecentDmContacts($currentUsername) {
     }
 
     // Sort staff contacts: Most messages first, then latest message time, then name
-    usort($contactsMap, function($a, $b) {
+    usort($contactsMap, function ($a, $b) {
         if ($a['msg_count'] !== $b['msg_count']) {
             return $b['msg_count'] <=> $a['msg_count'];
         }
@@ -5203,11 +5709,13 @@ function getSortedRecentDmContacts($currentUsername) {
 /**
  * Studio Tasks (Zoho Style Kanban Board) Repository Functions
  */
-function getStudioTasksFile() {
+function getStudioTasksFile()
+{
     return __DIR__ . '/../config/studio_tasks.json';
 }
 
-function getStudioTasksRepo() {
+function getStudioTasksRepo()
+{
     $filePath = getStudioTasksFile();
     if (!file_exists($filePath)) {
         $initialTasks = [
@@ -5313,7 +5821,8 @@ function getStudioTasksRepo() {
             ]
         ];
         $dir = dirname($filePath);
-        if (!is_dir($dir)) @mkdir($dir, 0777, true);
+        if (!is_dir($dir))
+            @mkdir($dir, 0777, true);
         @file_put_contents($filePath, json_encode($initialTasks, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES), LOCK_EX);
         return $initialTasks;
     }
@@ -5322,16 +5831,18 @@ function getStudioTasksRepo() {
     return is_array($data) ? $data : [];
 }
 
-function saveStudioTasksRepo($tasks) {
+function saveStudioTasksRepo($tasks)
+{
     $filePath = getStudioTasksFile();
     @file_put_contents($filePath, json_encode(array_values($tasks), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES), LOCK_EX);
 }
 
-function createStudioTask($data) {
+function createStudioTask($data)
+{
     $tasks = getStudioTasksRepo();
     $id = 'task_' . time() . '_' . rand(10, 99);
     $dueDateStr = !empty($data['due_date']) ? date('M d', strtotime($data['due_date'])) : 'No date';
-    
+
     // Parse tags (comma separated)
     $tagsRaw = trim($data['tags'] ?? '');
     $tags = [];
@@ -5339,7 +5850,8 @@ function createStudioTask($data) {
         $parts = explode(',', $tagsRaw);
         foreach ($parts as $p) {
             $t = trim($p);
-            if (!empty($t)) $tags[] = $t;
+            if (!empty($t))
+                $tags[] = $t;
         }
     }
 
@@ -5397,13 +5909,14 @@ function createStudioTask($data) {
         'attachments_count' => count($attachments),
         'created_at' => date('Y-m-d H:i:s')
     ];
-    
+
     array_unshift($tasks, $newTask);
     saveStudioTasksRepo($tasks);
     return $newTask;
 }
 
-function toggleTaskChecklistItem($taskId, $itemId) {
+function toggleTaskChecklistItem($taskId, $itemId)
+{
     $tasks = getStudioTasksRepo();
     $updated = null;
     foreach ($tasks as &$t) {
@@ -5421,10 +5934,11 @@ function toggleTaskChecklistItem($taskId, $itemId) {
     return $updated;
 }
 
-function updateStudioTask($taskId, $data) {
+function updateStudioTask($taskId, $data)
+{
     $tasks = getStudioTasksRepo();
     $updated = null;
-    
+
     // Parse tags
     $tagsRaw = trim($data['tags'] ?? '');
     $tags = [];
@@ -5432,7 +5946,8 @@ function updateStudioTask($taskId, $data) {
         $parts = explode(',', $tagsRaw);
         foreach ($parts as $p) {
             $t = trim($p);
-            if (!empty($t)) $tags[] = $t;
+            if (!empty($t))
+                $tags[] = $t;
         }
     }
 
@@ -5501,7 +6016,8 @@ function updateStudioTask($taskId, $data) {
     return $updated;
 }
 
-function updateStudioTaskStage($taskId, $newStage) {
+function updateStudioTaskStage($taskId, $newStage)
+{
     $tasks = getStudioTasksRepo();
     $updated = null;
     foreach ($tasks as &$t) {
@@ -5515,18 +6031,21 @@ function updateStudioTaskStage($taskId, $newStage) {
     return $updated;
 }
 
-function deleteStudioTask($taskId) {
+function deleteStudioTask($taskId)
+{
     $tasks = getStudioTasksRepo();
     $filtered = array_filter($tasks, fn($t) => ($t['id'] ?? '') !== $taskId);
     saveStudioTasksRepo($filtered);
     return true;
 }
 
-function getStudioTaskStagesFile() {
+function getStudioTaskStagesFile()
+{
     return __DIR__ . '/../config/studio_task_stages.json';
 }
 
-function getStudioTaskStagesRepo() {
+function getStudioTaskStagesRepo()
+{
     $filePath = getStudioTaskStagesFile();
     if (file_exists($filePath)) {
         $json = @file_get_contents($filePath);
@@ -5545,16 +6064,19 @@ function getStudioTaskStagesRepo() {
     ];
 }
 
-function saveStudioTaskStagesRepo($stages) {
+function saveStudioTaskStagesRepo($stages)
+{
     $filePath = getStudioTaskStagesFile();
     @file_put_contents($filePath, json_encode(array_values($stages), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES), LOCK_EX);
 }
 
-function createStudioTaskStage($title, $color = '#3b82f6') {
+function createStudioTaskStage($title, $color = '#3b82f6')
+{
     $stages = getStudioTaskStagesRepo();
     $key = strtolower(preg_replace('/[^a-zA-Z0-9_]/', '_', trim($title)));
-    if (empty($key)) $key = 'stage_' . time();
-    
+    if (empty($key))
+        $key = 'stage_' . time();
+
     foreach ($stages as $s) {
         if (($s['key'] ?? '') === $key) {
             $key .= '_' . rand(10, 99);
@@ -5574,7 +6096,8 @@ function createStudioTaskStage($title, $color = '#3b82f6') {
     return $newStage;
 }
 
-function deleteStudioTaskStage($stageKey) {
+function deleteStudioTaskStage($stageKey)
+{
     $stages = getStudioTaskStagesRepo();
     $filtered = [];
     foreach ($stages as $s) {
@@ -5586,7 +6109,8 @@ function deleteStudioTaskStage($stageKey) {
     return true;
 }
 
-function updateStudioTaskStageLabel($stageKey, $title, $color = null) {
+function updateStudioTaskStageLabel($stageKey, $title, $color = null)
+{
     $stages = getStudioTaskStagesRepo();
     $updated = null;
     foreach ($stages as &$s) {
@@ -5608,7 +6132,8 @@ function updateStudioTaskStageLabel($stageKey, $title, $color = null) {
 /**
  * Get Payroll Disbursements Repository
  */
-function getPayrollDisbursements($username = null, $month = null, $year = null) {
+function getPayrollDisbursements($username = null, $month = null, $year = null)
+{
     $settings = getSiteSettings();
     $items = $settings['payroll_disbursements'] ?? [];
 
@@ -5616,64 +6141,64 @@ function getPayrollDisbursements($username = null, $month = null, $year = null) 
         // Default initial realistic disbursements for demonstration
         $items = [
             [
-                'id'            => 1,
-                'username'      => 'mojisola.emjay',
-                'full_name'     => 'Mojisola Emjay',
-                'email'         => 'mojisola.emjay@falhenmedia.com',
-                'role'          => 'HR Manager',
-                'pay_period'    => 'April 2026',
-                'period_month'  => '04',
-                'period_year'   => '2026',
-                'base_salary'   => 140000,
-                'allowances'    => 10000,
-                'deductions'    => 10000,
-                'net_pay'       => 140000,
-                'currency'      => 'NGN',
-                'status'        => 'Paid',
-                'payment_method'=> 'Direct Bank Transfer',
-                'tx_ref'        => 'FAL-PAY-202604-001',
-                'processed_at'  => '2026-04-28 10:30:00',
-                'processed_by'  => 'Super Admin'
+                'id' => 1,
+                'username' => 'mojisola.emjay',
+                'full_name' => 'Mojisola Emjay',
+                'email' => 'mojisola.emjay@falhenmedia.com',
+                'role' => 'HR Manager',
+                'pay_period' => 'April 2026',
+                'period_month' => '04',
+                'period_year' => '2026',
+                'base_salary' => 140000,
+                'allowances' => 10000,
+                'deductions' => 10000,
+                'net_pay' => 140000,
+                'currency' => 'NGN',
+                'status' => 'Paid',
+                'payment_method' => 'Direct Bank Transfer',
+                'tx_ref' => 'FAL-PAY-202604-001',
+                'processed_at' => '2026-04-28 10:30:00',
+                'processed_by' => 'Super Admin'
             ],
             [
-                'id'            => 2,
-                'username'      => 'mojisola.emjay',
-                'full_name'     => 'Mojisola Emjay',
-                'email'         => 'mojisola.emjay@falhenmedia.com',
-                'role'          => 'HR Manager',
-                'pay_period'    => 'March 2026',
-                'period_month'  => '03',
-                'period_year'   => '2026',
-                'base_salary'   => 140000,
-                'allowances'    => 10000,
-                'deductions'    => 10000,
-                'net_pay'       => 140000,
-                'currency'      => 'NGN',
-                'status'        => 'Paid',
-                'payment_method'=> 'Direct Bank Transfer',
-                'tx_ref'        => 'FAL-PAY-202603-002',
-                'processed_at'  => '2026-03-28 11:15:00',
-                'processed_by'  => 'Super Admin'
+                'id' => 2,
+                'username' => 'mojisola.emjay',
+                'full_name' => 'Mojisola Emjay',
+                'email' => 'mojisola.emjay@falhenmedia.com',
+                'role' => 'HR Manager',
+                'pay_period' => 'March 2026',
+                'period_month' => '03',
+                'period_year' => '2026',
+                'base_salary' => 140000,
+                'allowances' => 10000,
+                'deductions' => 10000,
+                'net_pay' => 140000,
+                'currency' => 'NGN',
+                'status' => 'Paid',
+                'payment_method' => 'Direct Bank Transfer',
+                'tx_ref' => 'FAL-PAY-202603-002',
+                'processed_at' => '2026-03-28 11:15:00',
+                'processed_by' => 'Super Admin'
             ],
             [
-                'id'            => 3,
-                'username'      => 'daniel.ifeoluwa',
-                'full_name'     => 'Daniel Ifeoluwa',
-                'email'         => 'daniel.ifeoluwa@falhenmedia.com',
-                'role'          => 'Staff',
-                'pay_period'    => 'April 2026',
-                'period_month'  => '04',
-                'period_year'   => '2026',
-                'base_salary'   => 250000,
-                'allowances'    => 20000,
-                'deductions'    => 20000,
-                'net_pay'       => 250000,
-                'currency'      => 'NGN',
-                'status'        => 'Paid',
-                'payment_method'=> 'Direct Bank Transfer',
-                'tx_ref'        => 'FAL-PAY-202604-003',
-                'processed_at'  => '2026-04-28 14:20:00',
-                'processed_by'  => 'Mojisola Emjay'
+                'id' => 3,
+                'username' => 'daniel.ifeoluwa',
+                'full_name' => 'Daniel Ifeoluwa',
+                'email' => 'daniel.ifeoluwa@falhenmedia.com',
+                'role' => 'Staff',
+                'pay_period' => 'April 2026',
+                'period_month' => '04',
+                'period_year' => '2026',
+                'base_salary' => 250000,
+                'allowances' => 20000,
+                'deductions' => 20000,
+                'net_pay' => 250000,
+                'currency' => 'NGN',
+                'status' => 'Paid',
+                'payment_method' => 'Direct Bank Transfer',
+                'tx_ref' => 'FAL-PAY-202604-003',
+                'processed_at' => '2026-04-28 14:20:00',
+                'processed_by' => 'Mojisola Emjay'
             ]
         ];
         $settings['payroll_disbursements'] = $items;
@@ -5682,21 +6207,21 @@ function getPayrollDisbursements($username = null, $month = null, $year = null) 
 
     if (!empty($username)) {
         $uLower = strtolower(trim($username));
-        $items = array_values(array_filter($items, function($it) use ($uLower) {
+        $items = array_values(array_filter($items, function ($it) use ($uLower) {
             return (strtolower($it['username'] ?? '') === $uLower || strtolower($it['email'] ?? '') === $uLower);
         }));
     }
 
     if (!empty($month)) {
-        $mStr = sprintf('%02d', (int)$month);
-        $items = array_values(array_filter($items, function($it) use ($mStr) {
+        $mStr = sprintf('%02d', (int) $month);
+        $items = array_values(array_filter($items, function ($it) use ($mStr) {
             return (($it['period_month'] ?? '') === $mStr);
         }));
     }
 
     if (!empty($year)) {
-        $yStr = (string)$year;
-        $items = array_values(array_filter($items, function($it) use ($yStr) {
+        $yStr = (string) $year;
+        $items = array_values(array_filter($items, function ($it) use ($yStr) {
             return (($it['period_year'] ?? '') === $yStr);
         }));
     }
@@ -5707,37 +6232,38 @@ function getPayrollDisbursements($username = null, $month = null, $year = null) 
 /**
  * Process Employee Payment & Persist Disbursement Record
  */
-function processEmployeePayment($data) {
+function processEmployeePayment($data)
+{
     $settings = getSiteSettings();
     $items = $settings['payroll_disbursements'] ?? getPayrollDisbursements();
 
     $payPeriod = trim($data['pay_period'] ?? date('F Y'));
-    $periodMonth = sprintf('%02d', (int)($data['period_month'] ?? date('m')));
-    $periodYear = (string)($data['period_year'] ?? date('Y'));
+    $periodMonth = sprintf('%02d', (int) ($data['period_month'] ?? date('m')));
+    $periodYear = (string) ($data['period_year'] ?? date('Y'));
     $uName = strtolower(trim($data['username'] ?? ''));
     $uEmail = strtolower(trim($data['email'] ?? ''));
 
     $newId = count($items) + 1;
     $disbursement = [
-        'id'            => $newId,
-        'username'      => trim($data['username'] ?? ''),
-        'full_name'     => trim($data['full_name'] ?? ''),
-        'email'         => trim($data['email'] ?? ''),
-        'role'          => trim($data['role'] ?? 'Staff'),
-        'pay_period'    => $payPeriod,
-        'period_month'  => $periodMonth,
-        'period_year'   => $periodYear,
-        'base_salary'   => (float)($data['base_salary'] ?? 0),
-        'allowances'    => (float)($data['allowances'] ?? 0),
-        'deductions'    => (float)($data['deductions'] ?? 0),
-        'net_pay'       => (float)($data['net_pay'] ?? 0),
-        'currency'      => trim($data['currency'] ?? 'NGN'),
-        'status'        => trim($data['status'] ?? 'Paid'),
-        'payment_method'=> trim($data['payment_method'] ?? 'Direct Bank Transfer'),
-        'tx_ref'        => trim($data['tx_ref'] ?? ('FAL-PAY-' . $periodYear . $periodMonth . '-' . sprintf('%03d', $newId))),
-        'note'          => trim($data['note'] ?? ''),
-        'processed_at'  => date('Y-m-d H:i:s'),
-        'processed_by'  => trim($data['processed_by'] ?? 'HR Manager')
+        'id' => $newId,
+        'username' => trim($data['username'] ?? ''),
+        'full_name' => trim($data['full_name'] ?? ''),
+        'email' => trim($data['email'] ?? ''),
+        'role' => trim($data['role'] ?? 'Staff'),
+        'pay_period' => $payPeriod,
+        'period_month' => $periodMonth,
+        'period_year' => $periodYear,
+        'base_salary' => (float) ($data['base_salary'] ?? 0),
+        'allowances' => (float) ($data['allowances'] ?? 0),
+        'deductions' => (float) ($data['deductions'] ?? 0),
+        'net_pay' => (float) ($data['net_pay'] ?? 0),
+        'currency' => trim($data['currency'] ?? 'NGN'),
+        'status' => trim($data['status'] ?? 'Paid'),
+        'payment_method' => trim($data['payment_method'] ?? 'Direct Bank Transfer'),
+        'tx_ref' => trim($data['tx_ref'] ?? ('FAL-PAY-' . $periodYear . $periodMonth . '-' . sprintf('%03d', $newId))),
+        'note' => trim($data['note'] ?? ''),
+        'processed_at' => date('Y-m-d H:i:s'),
+        'processed_by' => trim($data['processed_by'] ?? 'HR Manager')
     ];
 
     // Check if an existing disbursement exists for this staff member in this period
@@ -5745,8 +6271,8 @@ function processEmployeePayment($data) {
     foreach ($items as &$it) {
         $itUser = strtolower($it['username'] ?? '');
         $itEmail = strtolower($it['email'] ?? '');
-        $itMonth = sprintf('%02d', (int)($it['period_month'] ?? '0'));
-        $itYear = (string)($it['period_year'] ?? '');
+        $itMonth = sprintf('%02d', (int) ($it['period_month'] ?? '0'));
+        $itYear = (string) ($it['period_year'] ?? '');
 
         if (($itUser === $uName || $itEmail === $uEmail) && $itMonth === $periodMonth && $itYear === $periodYear) {
             $disbursement['id'] = $it['id'] ?? $newId;
@@ -5780,7 +6306,8 @@ function processEmployeePayment($data) {
 /**
  * Calculate Employee YTD Metrics (Earnings, Taxes, Pension)
  */
-function calculateEmployeeYTDMetrics($username = null, $year = '2026') {
+function calculateEmployeeYTDMetrics($username = null, $year = '2026')
+{
     $disbursements = getPayrollDisbursements($username, null, $year);
 
     $ytdNetEarnings = 0;
@@ -5789,8 +6316,8 @@ function calculateEmployeeYTDMetrics($username = null, $year = '2026') {
 
     foreach ($disbursements as $d) {
         if (($d['status'] ?? '') === 'Paid') {
-            $net = (float)($d['net_pay'] ?? 0);
-            $ded = (float)($d['deductions'] ?? 0);
+            $net = (float) ($d['net_pay'] ?? 0);
+            $ded = (float) ($d['deductions'] ?? 0);
 
             $ytdNetEarnings += $net;
             // 50% of deductions estimated as tax withholding, 50% pension
@@ -5801,8 +6328,8 @@ function calculateEmployeeYTDMetrics($username = null, $year = '2026') {
 
     return [
         'net_earnings' => $ytdNetEarnings,
-        'taxes'        => $ytdTaxes,
-        'pension'      => $ytdPension
+        'taxes' => $ytdTaxes,
+        'pension' => $ytdPension
     ];
 }
 
@@ -5815,14 +6342,16 @@ function calculateEmployeeYTDMetrics($username = null, $year = '2026') {
 /**
  * Generate Unique Vendor Reference Code (e.g., FAL-VND-2026-4821)
  */
-function generateVendorReference() {
-    return 'FAL-VND-' . date('Y') . '-' . str_pad((string)mt_rand(1000, 9999), 4, '0', STR_PAD_LEFT);
+function generateVendorReference()
+{
+    return 'FAL-VND-' . date('Y') . '-' . str_pad((string) mt_rand(1000, 9999), 4, '0', STR_PAD_LEFT);
 }
 
 /**
  * Get All Onboarded Vendors (Database + Settings Fallback)
  */
-function getVendorsList() {
+function getVendorsList()
+{
     $pdo = getDBConnection();
     if ($pdo) {
         try {
@@ -5846,8 +6375,10 @@ function getVendorsList() {
 /**
  * Get Single Vendor by ID or Reference Code
  */
-function getVendorById($idOrRef) {
-    if (empty($idOrRef)) return null;
+function getVendorById($idOrRef)
+{
+    if (empty($idOrRef))
+        return null;
 
     $pdo = getDBConnection();
     if ($pdo) {
@@ -5855,13 +6386,15 @@ function getVendorById($idOrRef) {
             $stmt = $pdo->prepare("SELECT * FROM `vendors` WHERE (`id` = ? OR `reference_code` = ?) AND `deleted_at` IS NULL LIMIT 1");
             $stmt->execute([$idOrRef, $idOrRef]);
             $row = $stmt->fetch(PDO::FETCH_ASSOC);
-            if ($row) return $row;
-        } catch (Exception $e) {}
+            if ($row)
+                return $row;
+        } catch (Exception $e) {
+        }
     }
 
     $vendors = getVendorsList();
     foreach ($vendors as $v) {
-        if ((string)($v['id'] ?? '') === (string)$idOrRef || (string)($v['reference_code'] ?? '') === (string)$idOrRef) {
+        if ((string) ($v['id'] ?? '') === (string) $idOrRef || (string) ($v['reference_code'] ?? '') === (string) $idOrRef) {
             return $v;
         }
     }
@@ -5871,7 +6404,8 @@ function getVendorById($idOrRef) {
 /**
  * Save Vendor Record (Onboarding Submission or Admin Edit)
  */
-function saveVendorRecord($data) {
+function saveVendorRecord($data)
+{
     $pdo = getDBConnection();
     $refCode = !empty($data['reference_code']) ? $data['reference_code'] : generateVendorReference();
     $now = date('Y-m-d H:i:s');
@@ -5879,50 +6413,49 @@ function saveVendorRecord($data) {
     $role = $data['role'] ?? 'photographer_videographer';
     $roleLabels = [
         'photographer_videographer' => 'Photographer / Videographer',
-        'contractor'                => 'Photographer / Videographer',
-        'intern'                    => 'Intern',
-        'volunteer'                 => 'Volunteer'
+        'contractor' => 'Photographer / Videographer',
+        'intern' => 'Intern',
+        'volunteer' => 'Volunteer'
     ];
     $roleLabel = $roleLabels[$role] ?? ucwords(str_replace('_', ' ', $role));
 
     $record = [
-        'reference_code'          => $refCode,
-        'role'                    => $role,
-        'role_label'              => $roleLabel,
-        'full_name'               => trim($data['full_name'] ?? ''),
-        'email'                   => trim(strtolower($data['email'] ?? '')),
-        'phone'                   => trim($data['phone'] ?? ''),
-        'address'                 => trim($data['address'] ?? ''),
-        'street_address'          => trim($data['street_address'] ?? ''),
-        'city'                    => trim($data['city'] ?? ''),
-        'state'                   => trim($data['state'] ?? ''),
-        'zip'                     => trim($data['zip'] ?? ''),
-        'id_type'                 => trim($data['id_type'] ?? 'W-9'),
-        'tax_form_type'           => trim($data['tax_form_type'] ?? 'W-9'),
-        'tax_id'                  => trim($data['tax_id'] ?? ''),
-        'additional_notes'        => trim($data['additional_notes'] ?? ''),
-        'id_document_url'         => trim($data['id_document_url'] ?? ''),
-        'currency'                => trim($data['currency'] ?? 'NGN'),
-        'bank_name'               => trim($data['bank_name'] ?? ''),
-        'account_number'          => trim($data['account_number'] ?? ''),
-        'account_name'            => trim($data['account_name'] ?? ''),
-        'emergency_name'          => trim($data['emergency_name'] ?? ''),
-        'emergency_relationship'  => trim($data['emergency_relationship'] ?? ''),
-        'emergency_phone'         => trim($data['emergency_phone'] ?? ''),
+        'reference_code' => $refCode,
+        'role' => $role,
+        'role_label' => $roleLabel,
+        'full_name' => trim($data['full_name'] ?? ''),
+        'email' => trim(strtolower($data['email'] ?? '')),
+        'phone' => trim($data['phone'] ?? ''),
+        'address' => trim($data['address'] ?? ''),
+        'street_address' => trim($data['street_address'] ?? ''),
+        'city' => trim($data['city'] ?? ''),
+        'state' => trim($data['state'] ?? ''),
+        'zip' => trim($data['zip'] ?? ''),
+        'id_type' => trim($data['id_type'] ?? 'W-9'),
+        'tax_form_type' => trim($data['tax_form_type'] ?? 'W-9'),
+        'tax_id' => trim($data['tax_id'] ?? ''),
+        'additional_notes' => trim($data['additional_notes'] ?? ''),
+        'id_document_url' => trim($data['id_document_url'] ?? ''),
+        'currency' => trim($data['currency'] ?? 'NGN'),
+        'bank_name' => trim($data['bank_name'] ?? ''),
+        'account_number' => trim($data['account_number'] ?? ''),
+        'account_name' => trim($data['account_name'] ?? ''),
+        'emergency_name' => trim($data['emergency_name'] ?? ''),
+        'emergency_relationship' => trim($data['emergency_relationship'] ?? ''),
+        'emergency_phone' => trim($data['emergency_phone'] ?? ''),
         'workplace_policy_agreed' => !empty($data['workplace_policy_agreed']) ? 1 : 0,
-        'nda_agreed'              => !empty($data['nda_agreed']) ? 1 : 0,
-        'msa_agreed'              => !empty($data['msa_agreed']) ? 1 : 0,
-        'signature_type'          => !empty($data['signature_type']) ? trim($data['signature_type']) : 'typed',
-        'signature_data'          => !empty($data['signature_data']) ? trim($data['signature_data']) : '',
-        'signature_name'          => trim($data['signature_name'] ?? $data['full_name'] ?? ''),
-        'signature_date'          => !empty($data['signature_date']) ? $data['signature_date'] : date('Y-m-d'),
-        'status'                  => !empty($data['status']) ? $data['status'] : 'active',
-        'password_hash'           => !empty($data['password_hash']) ? $data['password_hash'] : null,
-        'created_at'              => !empty($data['created_at']) ? $data['created_at'] : $now,
-        'updated_at'              => $now
+        'nda_agreed' => !empty($data['nda_agreed']) ? 1 : 0,
+        'msa_agreed' => !empty($data['msa_agreed']) ? 1 : 0,
+        'signature_type' => !empty($data['signature_type']) ? trim($data['signature_type']) : 'typed',
+        'signature_data' => !empty($data['signature_data']) ? trim($data['signature_data']) : '',
+        'signature_name' => trim($data['signature_name'] ?? $data['full_name'] ?? ''),
+        'signature_date' => !empty($data['signature_date']) ? $data['signature_date'] : date('Y-m-d'),
+        'status' => !empty($data['status']) ? $data['status'] : 'active',
+        'password_hash' => !empty($data['password_hash']) ? $data['password_hash'] : null,
+        'created_at' => !empty($data['created_at']) ? $data['created_at'] : $now,
+        'updated_at' => $now
     ];
 
-    $savedInDB = false;
     $recordId = $data['id'] ?? null;
 
     if ($pdo) {
@@ -5935,13 +6468,28 @@ function saveVendorRecord($data) {
                     `emergency_phone` = ?, `status` = ?, `password_hash` = COALESCE(?, `password_hash`), `updated_at` = ?
                     WHERE `id` = ? OR `reference_code` = ?");
                 $stmt->execute([
-                    $record['role'], $record['role_label'], $record['full_name'], $record['email'], $record['phone'],
-                    $record['address'], $record['id_type'], $record['tax_id'], $record['id_document_url'],
-                    $record['currency'], $record['bank_name'], $record['account_number'], $record['account_name'],
-                    $record['emergency_name'], $record['emergency_relationship'], $record['emergency_phone'],
-                    $record['status'], $record['password_hash'], $record['updated_at'], $recordId, $refCode
+                    $record['role'],
+                    $record['role_label'],
+                    $record['full_name'],
+                    $record['email'],
+                    $record['phone'],
+                    $record['address'],
+                    $record['id_type'],
+                    $record['tax_id'],
+                    $record['id_document_url'],
+                    $record['currency'],
+                    $record['bank_name'],
+                    $record['account_number'],
+                    $record['account_name'],
+                    $record['emergency_name'],
+                    $record['emergency_relationship'],
+                    $record['emergency_phone'],
+                    $record['status'],
+                    $record['password_hash'],
+                    $record['updated_at'],
+                    $recordId,
+                    $refCode
                 ]);
-                $savedInDB = true;
             } else {
                 $stmt = $pdo->prepare("INSERT INTO `vendors` (
                     `reference_code`, `role`, `role_label`, `full_name`, `email`, `phone`, `address`,
@@ -5951,16 +6499,33 @@ function saveVendorRecord($data) {
                     `status`, `created_at`, `updated_at`
                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
                 $stmt->execute([
-                    $record['reference_code'], $record['role'], $record['role_label'], $record['full_name'],
-                    $record['email'], $record['phone'], $record['address'], $record['id_type'], $record['tax_id'],
-                    $record['id_document_url'], $record['currency'], $record['bank_name'], $record['account_number'],
-                    $record['account_name'], $record['emergency_name'], $record['emergency_relationship'],
-                    $record['emergency_phone'], $record['workplace_policy_agreed'], $record['nda_agreed'],
-                    $record['msa_agreed'], $record['signature_name'], $record['signature_date'], $record['status'],
-                    $record['created_at'], $record['updated_at']
+                    $record['reference_code'],
+                    $record['role'],
+                    $record['role_label'],
+                    $record['full_name'],
+                    $record['email'],
+                    $record['phone'],
+                    $record['address'],
+                    $record['id_type'],
+                    $record['tax_id'],
+                    $record['id_document_url'],
+                    $record['currency'],
+                    $record['bank_name'],
+                    $record['account_number'],
+                    $record['account_name'],
+                    $record['emergency_name'],
+                    $record['emergency_relationship'],
+                    $record['emergency_phone'],
+                    $record['workplace_policy_agreed'],
+                    $record['nda_agreed'],
+                    $record['msa_agreed'],
+                    $record['signature_name'],
+                    $record['signature_date'],
+                    $record['status'],
+                    $record['created_at'],
+                    $record['updated_at']
                 ]);
-                $record['id'] = (int)$pdo->lastInsertId();
-                $savedInDB = true;
+                $record['id'] = (int) $pdo->lastInsertId();
             }
         } catch (Exception $e) {
             error_log("DB Vendor Save Error: " . $e->getMessage());
@@ -5980,8 +6545,10 @@ function saveVendorRecord($data) {
 
     $foundIndex = -1;
     foreach ($vendors as $idx => $v) {
-        if ((!empty($recordId) && (string)($v['id'] ?? '') === (string)$recordId) || 
-            (!empty($refCode) && (string)($v['reference_code'] ?? '') === (string)$refCode)) {
+        if (
+            (!empty($recordId) && (string) ($v['id'] ?? '') === (string) $recordId) ||
+            (!empty($refCode) && (string) ($v['reference_code'] ?? '') === (string) $refCode)
+        ) {
             $foundIndex = $idx;
             break;
         }
@@ -6006,34 +6573,37 @@ function saveVendorRecord($data) {
 /**
  * Delete / Soft-Delete Vendor Record
  */
-function deleteVendorRecord($idOrRef) {
+function deleteVendorRecord($idOrRef)
+{
     $pdo = getDBConnection();
     if ($pdo) {
         try {
             $stmt = $pdo->prepare("UPDATE `vendors` SET `deleted_at` = NOW() WHERE `id` = ? OR `reference_code` = ?");
             $stmt->execute([$idOrRef, $idOrRef]);
-        } catch (Exception $e) {}
+        } catch (Exception $e) {
+        }
     }
 
     $settings = getSiteSettings();
     $vendors = $settings['vendors'] ?? [];
     if (is_array($vendors)) {
-        $vendors = array_values(array_filter($vendors, function($v) use ($idOrRef) {
-            return (string)($v['id'] ?? '') !== (string)$idOrRef && (string)($v['reference_code'] ?? '') !== (string)$idOrRef;
+        $vendors = array_values(array_filter($vendors, function ($v) use ($idOrRef) {
+            return (string) ($v['id'] ?? '') !== (string) $idOrRef && (string) ($v['reference_code'] ?? '') !== (string) $idOrRef;
         }));
         $settings['vendors'] = $vendors;
         saveSiteSettings($settings);
     }
 
     $actor = $_SESSION['admin_username'] ?? 'Admin';
-    logDatabaseAudit($actor, 'vendor_deleted', 'vendor', (string)$idOrRef, "Vendor #{$idOrRef} deleted.");
+    logDatabaseAudit($actor, 'vendor_deleted', 'vendor', (string) $idOrRef, "Vendor #{$idOrRef} deleted.");
     return true;
 }
 
 /**
  * Clear All Vendor / Talent Records
  */
-function clearAllVendors() {
+function clearAllVendors()
+{
     $pdo = getDBConnection();
     if ($pdo) {
         try {
@@ -6055,7 +6625,8 @@ function clearAllVendors() {
 /**
  * Update Vendor Status (active, under_review, suspended)
  */
-function updateVendorStatus($idOrRef, $newStatus) {
+function updateVendorStatus($idOrRef, $newStatus)
+{
     $allowed = ['active', 'under_review', 'completed', 'suspended'];
     if (!in_array($newStatus, $allowed, true)) {
         return false;
@@ -6066,14 +6637,15 @@ function updateVendorStatus($idOrRef, $newStatus) {
         try {
             $stmt = $pdo->prepare("UPDATE `vendors` SET `status` = ?, `updated_at` = NOW() WHERE `id` = ? OR `reference_code` = ?");
             $stmt->execute([$newStatus, $idOrRef, $idOrRef]);
-        } catch (Exception $e) {}
+        } catch (Exception $e) {
+        }
     }
 
     $settings = getSiteSettings();
     $vendors = $settings['vendors'] ?? [];
     if (is_array($vendors)) {
         foreach ($vendors as &$v) {
-            if ((string)($v['id'] ?? '') === (string)$idOrRef || (string)($v['reference_code'] ?? '') === (string)$idOrRef) {
+            if ((string) ($v['id'] ?? '') === (string) $idOrRef || (string) ($v['reference_code'] ?? '') === (string) $idOrRef) {
                 $v['status'] = $newStatus;
                 $v['updated_at'] = date('Y-m-d H:i:s');
                 break;
@@ -6085,14 +6657,15 @@ function updateVendorStatus($idOrRef, $newStatus) {
     }
 
     $actor = $_SESSION['admin_username'] ?? 'Admin';
-    logDatabaseAudit($actor, 'vendor_status_update', 'vendor', (string)$idOrRef, "Vendor #{$idOrRef} status updated to {$newStatus}.");
+    logDatabaseAudit($actor, 'vendor_status_update', 'vendor', (string) $idOrRef, "Vendor #{$idOrRef} status updated to {$newStatus}.");
     return true;
 }
 
 /**
  * Get Authorized Counter-Signer for Company Agreements & Legal Documents
  */
-function getAuthorizedCounterSigner() {
+function getAuthorizedCounterSigner()
+{
     $settings = getSiteSettings();
     if (!empty($settings['authorized_counter_signer']) && is_array($settings['authorized_counter_signer'])) {
         return $settings['authorized_counter_signer'];
@@ -6104,12 +6677,12 @@ function getAuthorizedCounterSigner() {
         foreach ($staffList as $staff) {
             if (!empty($staff['is_authorized_counter_signer']) && !empty($staff['signature_data'])) {
                 return [
-                    'full_name'      => $staff['full_name'] ?? 'Oluwatosin Ligali',
-                    'designation'    => $staff['counter_signer_title'] ?? ($staff['designation'] ?? 'Executive Producer'),
+                    'full_name' => $staff['full_name'] ?? 'Oluwatosin Ligali',
+                    'designation' => $staff['counter_signer_title'] ?? ($staff['designation'] ?? 'Executive Producer'),
                     'signature_data' => $staff['signature_data'] ?? '',
                     'signature_type' => $staff['signature_type'] ?? 'draw',
-                    'username'       => $staff['username'] ?? '',
-                    'updated_at'     => $staff['signature_updated_at'] ?? date('Y-m-d H:i:s')
+                    'username' => $staff['username'] ?? '',
+                    'updated_at' => $staff['signature_updated_at'] ?? date('Y-m-d H:i:s')
                 ];
             }
         }
@@ -6120,39 +6693,40 @@ function getAuthorizedCounterSigner() {
         $admin = getAdminUserProfile();
         if (!empty($admin['signature_data'])) {
             return [
-                'full_name'      => $admin['full_name'] ?? 'Oluwatosin Ligali',
-                'designation'    => $admin['counter_signer_title'] ?? ($admin['designation'] ?? 'Executive Producer'),
+                'full_name' => $admin['full_name'] ?? 'Oluwatosin Ligali',
+                'designation' => $admin['counter_signer_title'] ?? ($admin['designation'] ?? 'Executive Producer'),
                 'signature_data' => $admin['signature_data'] ?? '',
                 'signature_type' => $admin['signature_type'] ?? 'draw',
-                'username'       => $admin['username'] ?? 'admin',
-                'updated_at'     => $admin['signature_updated_at'] ?? date('Y-m-d H:i:s')
+                'username' => $admin['username'] ?? 'admin',
+                'updated_at' => $admin['signature_updated_at'] ?? date('Y-m-d H:i:s')
             ];
         }
     }
 
     // Default fallback to company executive producer
     return [
-        'full_name'      => 'Oluwatosin Ligali',
-        'designation'    => 'Executive Producer',
+        'full_name' => 'Oluwatosin Ligali',
+        'designation' => 'Executive Producer',
         'signature_data' => '',
         'signature_type' => 'typed',
-        'username'       => 'oluwatosin.ligali',
-        'updated_at'     => date('Y-m-d H:i:s')
+        'username' => 'oluwatosin.ligali',
+        'updated_at' => date('Y-m-d H:i:s')
     ];
 }
 
 /**
  * Save Authorized Counter-Signer to Site Settings
  */
-function saveAuthorizedCounterSigner(array $signerData) {
+function saveAuthorizedCounterSigner(array $signerData)
+{
     $settings = getSiteSettings();
     $settings['authorized_counter_signer'] = [
-        'full_name'      => trim($signerData['full_name'] ?? 'Oluwatosin Ligali'),
-        'designation'    => trim($signerData['designation'] ?? 'Executive Producer'),
+        'full_name' => trim($signerData['full_name'] ?? 'Oluwatosin Ligali'),
+        'designation' => trim($signerData['designation'] ?? 'Executive Producer'),
         'signature_data' => trim($signerData['signature_data'] ?? ''),
         'signature_type' => trim($signerData['signature_type'] ?? 'draw'),
-        'username'       => trim($signerData['username'] ?? ''),
-        'updated_at'     => date('Y-m-d H:i:s')
+        'username' => trim($signerData['username'] ?? ''),
+        'updated_at' => date('Y-m-d H:i:s')
     ];
     saveSiteSettings($settings);
     return $settings['authorized_counter_signer'];
@@ -6161,8 +6735,10 @@ function saveAuthorizedCounterSigner(array $signerData) {
 /**
  * Get Vendor by Email Address
  */
-function getVendorByEmail($email) {
-    if (empty($email)) return null;
+function getVendorByEmail($email)
+{
+    if (empty($email))
+        return null;
     $email = strtolower(trim($email));
     $pdo = getDBConnection();
     if ($pdo) {
@@ -6170,8 +6746,10 @@ function getVendorByEmail($email) {
             $stmt = $pdo->prepare("SELECT * FROM `vendors` WHERE LOWER(`email`) = ? AND `deleted_at` IS NULL LIMIT 1");
             $stmt->execute([$email]);
             $row = $stmt->fetch(PDO::FETCH_ASSOC);
-            if ($row) return $row;
-        } catch (Exception $e) {}
+            if ($row)
+                return $row;
+        } catch (Exception $e) {
+        }
     }
 
     $vendors = getVendorsList();
@@ -6186,7 +6764,8 @@ function getVendorByEmail($email) {
 /**
  * Authenticate Vendor by Email and Reference Code / Password
  */
-function authenticateVendor($email, $refOrPassword) {
+function authenticateVendor($email, $refOrPassword)
+{
     if (empty($email) || empty($refOrPassword)) {
         return ['success' => false, 'message' => 'Please provide both email address and reference code / password.'];
     }
@@ -6216,7 +6795,8 @@ function authenticateVendor($email, $refOrPassword) {
                     }
                 }
             }
-        } catch (Exception $e) {}
+        } catch (Exception $e) {
+        }
     }
 
     // Fallback to JSON if not found via DB
@@ -6254,12 +6834,12 @@ function authenticateVendor($email, $refOrPassword) {
     if (session_status() === PHP_SESSION_NONE) {
         session_start();
     }
-    $_SESSION['vendor_logged_in']  = true;
-    $_SESSION['vendor_id']         = $vendor['id'];
-    $_SESSION['vendor_ref']        = $vendor['reference_code'];
-    $_SESSION['vendor_email']      = $vendor['email'];
-    $_SESSION['vendor_name']       = $vendor['full_name'];
-    $_SESSION['vendor_role']       = $vendor['role'];
+    $_SESSION['vendor_logged_in'] = true;
+    $_SESSION['vendor_id'] = $vendor['id'];
+    $_SESSION['vendor_ref'] = $vendor['reference_code'];
+    $_SESSION['vendor_email'] = $vendor['email'];
+    $_SESSION['vendor_name'] = $vendor['full_name'];
+    $_SESSION['vendor_role'] = $vendor['role'];
     $_SESSION['vendor_role_label'] = $vendor['role_label'] ?? 'Vendor';
 
     logDatabaseAudit($vendor['full_name'], 'vendor_login', 'vendor', $vendor['reference_code'], "Vendor logged in: {$vendor['full_name']} ({$vendor['reference_code']}).");
@@ -6270,7 +6850,8 @@ function authenticateVendor($email, $refOrPassword) {
 /**
  * Check if a Vendor is Logged In
  */
-function isVendorLoggedIn() {
+function isVendorLoggedIn()
+{
     if (session_status() === PHP_SESSION_NONE) {
         session_start();
     }
@@ -6280,17 +6861,21 @@ function isVendorLoggedIn() {
 /**
  * Get Current Logged-In Vendor Record
  */
-function getLoggedInVendor() {
-    if (!isVendorLoggedIn()) return null;
+function getLoggedInVendor()
+{
+    if (!isVendorLoggedIn())
+        return null;
     $ref = $_SESSION['vendor_ref'] ?? $_SESSION['vendor_id'] ?? null;
-    if (!$ref) return null;
+    if (!$ref)
+        return null;
     return getVendorById($ref);
 }
 
 /**
  * Clear Vendor Session (Logout)
  */
-function clearVendorSession() {
+function clearVendorSession()
+{
     if (session_status() === PHP_SESSION_NONE) {
         session_start();
     }
@@ -6308,9 +6893,11 @@ function clearVendorSession() {
 /**
  * Update Vendor Profile Info
  */
-function updateVendorProfile($idOrRef, $data) {
+function updateVendorProfile($idOrRef, $data)
+{
     $vendor = getVendorById($idOrRef);
-    if (!$vendor) return false;
+    if (!$vendor)
+        return false;
 
     $fields = ['phone', 'address', 'street_address', 'city', 'state', 'zip', 'emergency_name', 'emergency_relationship', 'emergency_phone', 'bank_name', 'account_number', 'account_name', 'currency'];
     foreach ($fields as $f) {
@@ -6331,10 +6918,13 @@ function updateVendorProfile($idOrRef, $data) {
 /**
  * Set or Change Vendor Password
  */
-function setVendorPassword($idOrRef, $newPassword) {
-    if (strlen($newPassword) < 6) return false;
+function setVendorPassword($idOrRef, $newPassword)
+{
+    if (strlen($newPassword) < 6)
+        return false;
     $vendor = getVendorById($idOrRef);
-    if (!$vendor) return false;
+    if (!$vendor)
+        return false;
 
     $hash = password_hash($newPassword, PASSWORD_DEFAULT);
     $vendor['password_hash'] = $hash;
@@ -6349,7 +6939,8 @@ function setVendorPassword($idOrRef, $newPassword) {
                 $pdo->exec("ALTER TABLE `vendors` ADD COLUMN `password_hash` VARCHAR(255) NULL AFTER `signature_date`");
                 $stmt = $pdo->prepare("UPDATE `vendors` SET `password_hash` = ?, `updated_at` = NOW() WHERE `id` = ? OR `reference_code` = ?");
                 $stmt->execute([$hash, $idOrRef, $idOrRef]);
-            } catch (Exception $e2) {}
+            } catch (Exception $e2) {
+            }
         }
     }
 
@@ -6359,7 +6950,8 @@ function setVendorPassword($idOrRef, $newPassword) {
 /**
  * Get Global Vendor Gigs Repository from settings.json
  */
-function getVendorGigsRepository() {
+function getVendorGigsRepository()
+{
     $settings = getSiteSettings();
     if (array_key_exists('vendor_gigs', $settings) && is_array($settings['vendor_gigs'])) {
         return $settings['vendor_gigs'];
@@ -6371,7 +6963,8 @@ function getVendorGigsRepository() {
 /**
  * Clear All Production Gigs from Repository
  */
-function clearAllVendorGigs() {
+function clearAllVendorGigs()
+{
     saveSiteSettings(['vendor_gigs' => []]);
     $actor = $_SESSION['admin_username'] ?? 'Admin';
     logDatabaseAudit($actor, 'vendor_gigs_cleared_all', 'vendor_gig', 'all', "All production gigs cleared.");
@@ -6381,7 +6974,8 @@ function clearAllVendorGigs() {
 /**
  * Get Gigs Assigned to a Specific Vendor
  */
-function getVendorGigs($vendorRefOrEmail) {
+function getVendorGigs($vendorRefOrEmail)
+{
     $allGigs = getVendorGigsRepository();
     $vendorKey = strtolower(trim($vendorRefOrEmail));
 
@@ -6413,16 +7007,17 @@ function getVendorGigs($vendorRefOrEmail) {
     }
 
     // Sort: upcoming dates first, then done
-    usort($matched, function($a, $b) {
+    usort($matched, function ($a, $b) {
         $statusWeight = [
             'in_progress' => 1,
-            'assigned'    => 2,
-            'confirmed'   => 3,
-            'done'        => 4
+            'assigned' => 2,
+            'confirmed' => 3,
+            'done' => 4
         ];
         $wA = $statusWeight[$a['status'] ?? 'assigned'] ?? 5;
         $wB = $statusWeight[$b['status'] ?? 'assigned'] ?? 5;
-        if ($wA !== $wB) return $wA <=> $wB;
+        if ($wA !== $wB)
+            return $wA <=> $wB;
         return strcmp($b['shoot_date'] ?? '', $a['shoot_date'] ?? '');
     });
 
@@ -6432,7 +7027,8 @@ function getVendorGigs($vendorRefOrEmail) {
 /**
  * Get Single Gig by ID
  */
-function getVendorGigById($gigId) {
+function getVendorGigById($gigId)
+{
     $allGigs = getVendorGigsRepository();
     foreach ($allGigs as $g) {
         if (($g['id'] ?? '') === $gigId) {
@@ -6445,10 +7041,11 @@ function getVendorGigById($gigId) {
 /**
  * Save / Update Single Gig in Repository
  */
-function saveVendorGig($gigData) {
+function saveVendorGig($gigData)
+{
     $allGigs = getVendorGigsRepository();
     if (empty($gigData['id'])) {
-        $gigData['id'] = 'GIG-' . date('Y') . '-' . str_pad((string)mt_rand(100, 999), 3, '0', STR_PAD_LEFT);
+        $gigData['id'] = 'GIG-' . date('Y') . '-' . str_pad((string) mt_rand(100, 999), 3, '0', STR_PAD_LEFT);
     }
     if (!empty($gigData['assigned_to_ref'])) {
         $vendor = getVendorById($gigData['assigned_to_ref']);
@@ -6475,7 +7072,8 @@ function saveVendorGig($gigData) {
 /**
  * Delete Production Gig from Repository
  */
-function deleteVendorGig($gigId) {
+function deleteVendorGig($gigId)
+{
     $allGigs = getVendorGigsRepository();
     $found = false;
     $filtered = [];
@@ -6489,7 +7087,7 @@ function deleteVendorGig($gigId) {
     if ($found) {
         saveSiteSettings(['vendor_gigs' => $filtered]);
         $actor = $_SESSION['admin_username'] ?? 'Admin';
-        logDatabaseAudit($actor, 'vendor_gig_deleted', 'vendor_gig', (string)$gigId, "Production Gig #{$gigId} deleted.");
+        logDatabaseAudit($actor, 'vendor_gig_deleted', 'vendor_gig', (string) $gigId, "Production Gig #{$gigId} deleted.");
         return true;
     }
     return false;
@@ -6498,9 +7096,11 @@ function deleteVendorGig($gigId) {
 /**
  * Update Gig Status (assigned -> confirmed -> done)
  */
-function updateVendorGigStatus($gigId, $status, $extraNotes = '') {
+function updateVendorGigStatus($gigId, $status, $extraNotes = '')
+{
     $gig = getVendorGigById($gigId);
-    if (!$gig) return false;
+    if (!$gig)
+        return false;
 
     $gig['status'] = $status;
     if (!empty($extraNotes)) {
@@ -6519,9 +7119,11 @@ function updateVendorGigStatus($gigId, $status, $extraNotes = '') {
 /**
  * Save Vendor Uploaded Call Sheet / Wrap Report
  */
-function saveVendorCallSheetUpload($gigId, $fileUrl, $fileName) {
+function saveVendorCallSheetUpload($gigId, $fileUrl, $fileName)
+{
     $gig = getVendorGigById($gigId);
-    if (!$gig) return false;
+    if (!$gig)
+        return false;
 
     $gig['uploaded_call_sheet'] = $fileUrl;
     $gig['uploaded_call_sheet_name'] = $fileName;
@@ -6533,27 +7135,29 @@ function saveVendorCallSheetUpload($gigId, $fileUrl, $fileName) {
 /**
  * Get Vendor Calendar Bookings & Availability
  */
-function getVendorAvailability($vendorRef) {
+function getVendorAvailability($vendorRef)
+{
     $settings = getSiteSettings();
     $availRepo = $settings['vendor_availability'] ?? [];
     return $availRepo[$vendorRef] ?? [
-        'available_dates'   => [],
+        'available_dates' => [],
         'unavailable_dates' => [],
-        'notes'             => ''
+        'notes' => ''
     ];
 }
 
 /**
  * Save Vendor Calendar Availability
  */
-function saveVendorAvailability($vendorRef, $availableDates, $unavailableDates = [], $notes = '') {
+function saveVendorAvailability($vendorRef, $availableDates, $unavailableDates = [], $notes = '')
+{
     $settings = getSiteSettings();
     $availRepo = $settings['vendor_availability'] ?? [];
     $availRepo[$vendorRef] = [
-        'available_dates'   => array_values(array_unique($availableDates)),
+        'available_dates' => array_values(array_unique($availableDates)),
         'unavailable_dates' => array_values(array_unique($unavailableDates)),
-        'notes'             => trim($notes),
-        'updated_at'        => date('Y-m-d H:i:s')
+        'notes' => trim($notes),
+        'updated_at' => date('Y-m-d H:i:s')
     ];
     saveSiteSettings(['vendor_availability' => $availRepo]);
     return true;
