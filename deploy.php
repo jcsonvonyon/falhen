@@ -226,6 +226,37 @@ if ($action === 'lint_admin') {
     exit;
 }
 
+if ($action === 'seed_brands') {
+    require_once $repoDir . '/config/db.php';
+    require_once $repoDir . '/includes/functions.php';
+    $brands = [
+        ['id' => 1, 'name' => 'WeatherTech', 'icon' => 'fa-solid fa-car', 'image' => '/assets/img/brands/weathertech.png', 'visible' => true],
+        ['id' => 2, 'name' => 'Coventry Direct', 'icon' => 'fa-solid fa-building-columns', 'image' => '/assets/img/brands/coventry-direct.png', 'visible' => true],
+        ['id' => 3, 'name' => 'WeatherTech Canada', 'icon' => 'fa-solid fa-leaf', 'image' => '/assets/img/brands/weathertech-ca.png', 'visible' => true],
+        ['id' => 4, 'name' => 'Garrett Popcorn Shops', 'icon' => 'fa-solid fa-bowl-food', 'image' => '/assets/img/brands/garrett-popcorn.png', 'visible' => true],
+        ['id' => 5, 'name' => 'Lumber Liquidators', 'icon' => 'fa-solid fa-hammer', 'image' => '/assets/img/brands/lumber-liquidators.png', 'visible' => true],
+        ['id' => 6, 'name' => 'Parkway Bank', 'icon' => 'fa-solid fa-vault', 'image' => '/assets/img/brands/parkway-bank.png', 'visible' => true],
+        ['id' => 7, 'name' => 'Skydeck The Ledge', 'icon' => 'fa-solid fa-city', 'image' => '/assets/img/brands/skydeck-chicago.png', 'visible' => true],
+        ['id' => 8, 'name' => '4Real', 'icon' => 'fa-solid fa-bolt', 'image' => '/assets/img/brands/4real.png', 'visible' => true],
+        ['id' => 9, 'name' => 'AES', 'icon' => 'fa-solid fa-industry', 'image' => '/assets/img/brands/aes.png', 'visible' => true],
+        ['id' => 10, 'name' => 'GentleCure', 'icon' => 'fa-solid fa-heart-pulse', 'image' => '/assets/img/brands/gentlecure.png', 'visible' => true],
+        ['id' => 11, 'name' => 'Warmies', 'icon' => 'fa-solid fa-paw', 'image' => '/assets/img/brands/warmies.png', 'visible' => true],
+        ['id' => 12, 'name' => "Kate's Real Food", 'icon' => 'fa-solid fa-cookie-bite', 'image' => '/assets/img/brands/kates-real-food.png', 'visible' => true],
+        ['id' => 13, 'name' => 'Shoreline Sightseeing', 'icon' => 'fa-solid fa-ship', 'image' => '/assets/img/brands/shoreline-sightseeing.png', 'visible' => true],
+        ['id' => 14, 'name' => 'Litter Genie', 'icon' => 'fa-solid fa-cat', 'image' => '/assets/img/brands/litter-genie.png', 'visible' => true],
+        ['id' => 15, 'name' => 'Diaper Genie', 'icon' => 'fa-solid fa-baby', 'image' => '/assets/img/brands/diaper-genie.png', 'visible' => true],
+        ['id' => 16, 'name' => 'SkinCure Oncology', 'icon' => 'fa-solid fa-shield-halved', 'image' => '/assets/img/brands/skincure-oncology.png', 'visible' => true],
+        ['id' => 17, 'name' => 'Better Business Bureau', 'icon' => 'fa-solid fa-award', 'image' => '/assets/img/brands/bbb.png', 'visible' => true],
+        ['id' => 18, 'name' => 'Group 1', 'icon' => 'fa-solid fa-users', 'image' => '/assets/img/brands/group-1.png', 'visible' => true],
+        ['id' => 19, 'name' => 'Cencora Triose', 'icon' => 'fa-solid fa-network-wired', 'image' => '/assets/img/brands/cencora-triose.png', 'visible' => true],
+        ['id' => 20, 'name' => 'Weaver Consultants Group', 'icon' => 'fa-solid fa-compass-drafting', 'image' => '/assets/img/brands/weaver-consultants.png', 'visible' => true]
+    ];
+    saveSiteSettings(['brand_logos_items' => $brands]);
+    if (function_exists('opcache_reset')) { @opcache_reset(); }
+    echo "SUCCESS: Seeded " . count($brands) . " brands into MySQL and live settings!";
+    exit;
+}
+
 if ($action === 'probe_db') {
     $hosts = ['localhost', '127.0.0.1'];
     $users = ['henadinnovate_falhen', 'henadinnovate_falhenmedia', 'henadinnovate_hub'];
