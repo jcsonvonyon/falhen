@@ -2611,7 +2611,7 @@ function getBrandLogosRepo()
             ['id' => 15, 'name' => 'Diaper Genie', 'icon' => 'fa-solid fa-baby', 'image' => '/assets/img/brands/diaper-genie.png', 'visible' => true],
             ['id' => 16, 'name' => 'SkinCure Oncology', 'icon' => 'fa-solid fa-shield-halved', 'image' => '/assets/img/brands/skincure-oncology.png', 'visible' => true],
             ['id' => 17, 'name' => 'Better Business Bureau', 'icon' => 'fa-solid fa-award', 'image' => '/assets/img/brands/bbb.png', 'visible' => true],
-            ['id' => 18, 'name' => 'Group 1', 'icon' => 'fa-solid fa-users', 'image' => '/assets/img/brands/group-1.png', 'visible': true],
+            ['id' => 18, 'name' => 'Group 1', 'icon' => 'fa-solid fa-users', 'image' => '/assets/img/brands/group-1.png', 'visible' => true],
             ['id' => 19, 'name' => 'Cencora Triose', 'icon' => 'fa-solid fa-network-wired', 'image' => '/assets/img/brands/cencora-triose.png', 'visible' => true],
             ['id' => 20, 'name' => 'Weaver Consultants Group', 'icon' => 'fa-solid fa-compass-drafting', 'image' => '/assets/img/brands/weaver-consultants.png', 'visible' => true],
         ];
