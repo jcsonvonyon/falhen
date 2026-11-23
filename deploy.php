@@ -331,6 +331,26 @@ try {
             } catch (Throwable $e) {}
         }
     }
+
+    // Ensure 20 real client brand partner logos are synced into MySQL if database brands have no images or < 10 items
+    $dbBrandHasImages = false;
+    foreach ($dbSettings['brand_logos_items'] ?? [] as $b) {
+        if (!empty($b['image'])) {
+            $dbBrandHasImages = true;
+            break;
+        }
+    }
+    if ((!$dbBrandHasImages || count($dbSettings['brand_logos_items'] ?? []) < 10) && !empty($repoSettings['brand_logos_items'])) {
+        $mergedSettings['brand_logos_items'] = $repoSettings['brand_logos_items'];
+        $pdo = function_exists('getDBConnection') ? getDBConnection() : null;
+        if ($pdo) {
+            try {
+                $stmt = $pdo->prepare("INSERT INTO `site_settings` (`setting_key`, `setting_value`) VALUES ('brand_logos_items', ?) ON DUPLICATE KEY UPDATE `setting_value` = VALUES(`setting_value`)");
+                $stmt->execute([json_encode($repoSettings['brand_logos_items'], JSON_UNESCAPED_SLASHES)]);
+                $output[] = "Synced 20 brand partner logos from repo to MySQL database.";
+            } catch (Throwable $e) {}
+        }
+    }
     
     // If MySQL is completely uninitialized ($dbCount === 0) or user explicitly requests ?sync_to_db=1
     if (($dbCount === 0 && $repoCount > 0) || isset($_GET['sync_to_db']) || isset($_GET['force_repo_seed'])) {
