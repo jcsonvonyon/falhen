@@ -1732,32 +1732,59 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if ($action === 'save_hero') {
-        $videoIframeRaw = trim(strip_tags($_POST['hero_video_iframe'] ?? ($_POST['hero_youtube_bg'] ?? '')));
+        // Direct Video Stream URL or File Upload
+        $directVideoUrl = trim(strip_tags($_POST['hero_direct_video_url'] ?? ''));
+        if (!empty($_FILES['hero_direct_video_file']['tmp_name']) && is_uploaded_file($_FILES['hero_direct_video_file']['tmp_name'])) {
+            if (function_exists('uploadToCloudinary')) {
+                $upVid = uploadToCloudinary($_FILES['hero_direct_video_file']['tmp_name'], 'falhen/videos');
+                if (!empty($upVid['success']) && !empty($upVid['url'])) {
+                    $directVideoUrl = $upVid['url'];
+                }
+            }
+        }
+
+        // Unified Background Video input (YouTube / Vimeo / Direct)
+        $videoInputRaw = trim(strip_tags($_POST['hero_video_url'] ?? ($_POST['hero_video_iframe'] ?? ($_POST['hero_youtube_bg'] ?? ''))));
         $ytBgVal    = '';
         $vimeoBgVal = trim(strip_tags($_POST['hero_vimeo_bg'] ?? ''));
 
-        if ($videoIframeRaw !== '') {
-            $detectedYt = function_exists('extractYouTubeId') ? extractYouTubeId($videoIframeRaw) : '';
-            $detectedVm = ($detectedYt === '' && function_exists('extractVimeoId')) ? extractVimeoId($videoIframeRaw) : '';
-            if ($detectedVm !== '' && $detectedYt === '') {
-                $vimeoBgVal = $videoIframeRaw;
-                $ytBgVal    = '';
+        if ($videoInputRaw !== '') {
+            // If user pasted an mp4/webm stream URL into video input, assign to direct video URL
+            if (preg_match('#\.(mp4|webm|mov|m4v)($|\?)#i', $videoInputRaw)) {
+                if ($directVideoUrl === '') {
+                    $directVideoUrl = $videoInputRaw;
+                }
             } else {
-                $ytBgVal    = $videoIframeRaw;
-                $vimeoBgVal = '';
+                $detectedYt = function_exists('extractYouTubeId') ? extractYouTubeId($videoInputRaw) : '';
+                $detectedVm = ($detectedYt === '' && function_exists('extractVimeoId')) ? extractVimeoId($videoInputRaw) : '';
+                if ($detectedVm !== '' && $detectedYt === '') {
+                    $vimeoBgVal = $videoInputRaw;
+                    $ytBgVal    = '';
+                } else {
+                    $ytBgVal    = $videoInputRaw;
+                    $vimeoBgVal = '';
+                }
             }
         } elseif (!isset($_POST['hero_vimeo_bg'])) {
             $vimeoBgVal = '';
         }
 
-        $primaryCtaUrl = trim(strip_tags($_POST['hero_primary_cta_url'] ?? '/portfolio.php'));
+        $primaryCtaUrl = trim(strip_tags($_POST['hero_primary_cta_url'] ?? ($_POST['hero_primary_cta_link'] ?? '/portfolio.php')));
         if ($primaryCtaUrl === '') {
             $primaryCtaUrl = '/portfolio.php';
         }
+        $secondaryCtaUrl = trim(strip_tags($_POST['hero_secondary_cta_url'] ?? ($_POST['hero_secondary_cta_link'] ?? '#showreel')));
 
-        // Ensure Backup Poster Image is synced to Cloudinary CDN when a remote URL or local file is saved
+        // Ensure Backup Poster Image is uploaded to Cloudinary or synced when local/remote
         $posterUrl = trim(strip_tags($_POST['hero_poster_image'] ?? ''));
-        if ($posterUrl !== '' && function_exists('isCloudinaryUrl') && !isCloudinaryUrl($posterUrl)) {
+        if (!empty($_FILES['hero_poster_file']['tmp_name']) && is_uploaded_file($_FILES['hero_poster_file']['tmp_name'])) {
+            if (function_exists('uploadToCloudinary')) {
+                $upPoster = uploadToCloudinary($_FILES['hero_poster_file']['tmp_name'], 'falhen/hero');
+                if (!empty($upPoster['success']) && !empty($upPoster['url'])) {
+                    $posterUrl = $upPoster['url'];
+                }
+            }
+        } elseif ($posterUrl !== '' && function_exists('isCloudinaryUrl') && !isCloudinaryUrl($posterUrl)) {
             $syncCandidate = null;
             if (preg_match('/^https?:\/\//i', $posterUrl) || preg_match('/^data:image\//i', $posterUrl)) {
                 $syncCandidate = $posterUrl;
@@ -1776,20 +1803,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
 
+        $line1 = trim(strip_tags($_POST['hero_headline_line1'] ?? ($_POST['hero_headline_white'] ?? 'Creating what the')));
+        $line2 = trim(strip_tags($_POST['hero_headline_line2'] ?? ($_POST['hero_headline_red'] ?? 'World Watches')));
+        $tagline = trim(strip_tags($_POST['hero_tagline'] ?? ($_POST['hero_subheadline'] ?? "From cinematic campaigns to viral content — we craft the visual stories your audience can't look away from.")));
+        $primaryCtaText = trim(strip_tags($_POST['hero_primary_cta_text'] ?? 'Explore Our Projects'));
+        $secondaryCtaText = trim(strip_tags($_POST['hero_secondary_cta_text'] ?? 'Watch Showreel'));
+        $showreelId = trim(strip_tags($_POST['showreel_youtube_id'] ?? 'Tf8rNMZ-Bw0'));
+
         $heroSettings = [
+            'hero_video_url'          => $videoInputRaw,
             'hero_youtube_bg'         => $ytBgVal,
             'hero_vimeo_bg'           => $vimeoBgVal,
             'hero_bg_use_showreel'    => !empty($_POST['hero_bg_use_showreel']),
-            'hero_direct_video_url'   => trim(strip_tags($_POST['hero_direct_video_url'] ?? '')),
+            'hero_direct_video_url'   => $directVideoUrl,
             'hero_poster_image'       => $posterUrl,
-            'showreel_youtube_id'     => trim(strip_tags($_POST['showreel_youtube_id'] ?? '')),
+            'showreel_youtube_id'     => $showreelId,
             'hero_badge_label'        => trim(strip_tags($_POST['hero_badge_label'] ?? '')),
-            'hero_headline_line1'     => trim(strip_tags($_POST['hero_headline_line1'] ?? 'Creating what the')),
-            'hero_headline_line2'     => trim(strip_tags($_POST['hero_headline_line2'] ?? 'World Watches')),
-            'hero_tagline'            => trim(strip_tags($_POST['hero_tagline'] ?? '')),
-            'hero_primary_cta_text'   => trim(strip_tags($_POST['hero_primary_cta_text'] ?? 'Explore Our Projects')),
+            'hero_headline_line1'     => $line1,
+            'hero_headline_line2'     => $line2,
+            'hero_headline_white'     => $line1,
+            'hero_headline_red'       => $line2,
+            'hero_tagline'            => $tagline,
+            'hero_subheadline'        => $tagline,
+            'hero_primary_cta_text'   => $primaryCtaText,
             'hero_primary_cta_url'    => $primaryCtaUrl,
-            'hero_secondary_cta_text' => trim(strip_tags($_POST['hero_secondary_cta_text'] ?? 'Watch Showreel'))
+            'hero_primary_cta_link'   => $primaryCtaUrl,
+            'hero_secondary_cta_text' => $secondaryCtaText,
+            'hero_secondary_cta_link' => $secondaryCtaUrl
         ];
 
         // Unified Stats Counter Persistence (consolidated inside Hero module)
@@ -1822,7 +1862,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         saveSiteSettings($heroSettings);
-        $_SESSION['saved_message'] = 'Hero section updated and synced successfully.';
+        $_SESSION['saved_message'] = 'Hero section updated and background video synced successfully.';
         header('Location: /admin/hero?saved=1');
         exit;
     } else if ($action === 'save_stats') {
@@ -6452,38 +6492,101 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                         <div class="card-title-text">Column A &bull; Visual Film &amp; Poster Media</div>
                                     </div>
 
-                                    <!-- Direct Video URL -->
-                                    <div class="form-field" style="margin-bottom: 16px;">
-                                        <label class="form-label-title">Direct Video URL (.mp4 / .webm)</label>
-                                        <input type="text" name="hero_direct_video_url" class="form-text-input" placeholder="https://res.cloudinary.com/.../hero.mp4" value="<?php echo htmlspecialchars($settings['hero_direct_video_url'] ?? ''); ?>">
-                                        <p class="form-label-help" style="font-size: 0.74rem; color: #94a3b8; margin-top: 4px;">Direct CDN stream plays with instant native hardware decoding.</p>
-                                    </div>
-
-                                    <!-- YouTube / Vimeo Fallback ID -->
-                                    <div class="form-field" style="margin-bottom: 16px;">
-                                        <label class="form-label-title">Video ID or Link (YouTube / Vimeo Fallback)</label>
-                                        <input type="text" name="hero_video_url" class="form-text-input" placeholder="YlmUJ16slrY" value="<?php echo htmlspecialchars($settings['hero_video_url'] ?? ''); ?>">
-                                    </div>
-
-                                    <!-- Poster Image URL with Cloudinary Upload -->
-                                    <div class="form-field" style="margin-bottom: 16px;">
-                                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-                                            <label class="form-label-title" style="margin: 0;">Poster Image URL</label>
-                                            <span style="font-size: 0.72rem; color: #64748b; font-weight: 600;">Recommended: 1920x1080</span>
+                                    <!-- 1. POSTER IMAGE SECTION -->
+                                    <div class="form-field" style="margin-bottom: 20px;">
+                                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                                            <label class="form-label-title" style="margin: 0; font-weight: 700;">Hero Poster Image (LCP Cover)</label>
+                                            <span style="font-size: 0.72rem; color: #64748b; font-weight: 600;">1920×1080 · High Quality CDN</span>
                                         </div>
-                                        <div style="display: flex; gap: 8px;">
-                                            <input type="text" id="heroPosterInput" name="hero_poster_image" class="form-text-input" placeholder="https://res.cloudinary.com/.../hero-poster.jpg" value="<?php echo htmlspecialchars($settings['hero_poster_image'] ?? '/assets/img/hero.jpg'); ?>">
-                                        </div>
-                                    </div>
 
-                                    <!-- Live Aspect Preview Frame -->
-                                    <div>
-                                        <label class="form-label-title" style="font-size: 0.76rem; margin-bottom: 6px; display: block;">16:9 Cinema Preview Frame</label>
-                                        <div style="aspect-ratio: 16/9; border-radius: 10px; overflow: hidden; background: #0f172a; border: 1px solid #e2e8f0; position: relative;">
-                                            <img id="heroPosterPreview" src="<?php echo htmlspecialchars($settings['hero_poster_image'] ?? '/assets/img/hero.jpg'); ?>" alt="Hero Poster Preview" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.src='/assets/img/hero.jpg';">
-                                            <div style="position: absolute; bottom: 12px; left: 12px; background: rgba(15,23,42,0.85); backdrop-filter: blur(8px); padding: 4px 10px; border-radius: 6px; color: #ffffff; font-size: 0.72rem; font-weight: 600; display: inline-flex; align-items: center; gap: 6px;">
-                                                <i class="fa-solid fa-video" style="color: #ef4444;"></i> Cinema Stage
+                                        <?php 
+                                        $activePosterVal = $settings['hero_poster_image'] ?? '/assets/img/hero.jpg';
+                                        if ($activePosterVal === 'https://res.cloudinary.com/pnabfi91/image/upload/v1786578372/falhen/uploads/r96mxsji9cdogqrkxwoe.jpg') {
+                                            $activePosterVal = '/assets/img/hero.jpg';
+                                        }
+                                        $isPosterCloud = (!empty($activePosterVal) && strpos($activePosterVal, 'cloudinary') !== false);
+                                        ?>
+                                        <!-- Live 16:9 Cinema Aspect Preview Frame -->
+                                        <div style="aspect-ratio: 16/9; border-radius: 10px; overflow: hidden; background: #09090b; border: 1px solid #e2e8f0; position: relative; margin-bottom: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08);">
+                                            <img id="heroPosterPreview" src="<?php echo htmlspecialchars($activePosterVal); ?>" alt="Hero Poster Preview" style="width: 100%; height: 100%; object-fit: cover; display: block;" onerror="this.src='/assets/img/hero.jpg';">
+                                            <div style="position: absolute; bottom: 10px; left: 10px; background: rgba(9,9,11,0.85); backdrop-filter: blur(8px); padding: 4px 10px; border-radius: 6px; color: #ffffff; font-size: 0.72rem; font-weight: 600; display: inline-flex; align-items: center; gap: 6px;">
+                                                <i class="fa-solid fa-image" style="color: #ef4444;"></i> Active Poster Frame
                                             </div>
+                                            <div id="posterCloudinaryPill" style="position: absolute; top: 10px; right: 10px; font-size: 0.7rem; font-weight: 600; padding: 3px 8px; border-radius: 5px; background: rgba(15,23,42,0.8); color: #fff; backdrop-filter: blur(4px);">
+                                                <?php echo $isPosterCloud ? '<i class="fa-solid fa-circle-check" style="color:#22c55e;"></i> Cloudinary CDN' : '<i class="fa-solid fa-globe"></i> Custom URL'; ?>
+                                            </div>
+                                        </div>
+
+                                        <!-- Poster URL Input & Actions -->
+                                        <div style="display: flex; gap: 8px; margin-bottom: 10px;">
+                                            <input type="text" id="hero_poster_image_input" name="hero_poster_image" class="form-text-input" placeholder="https://res.cloudinary.com/.../hero-poster.jpg" value="<?php echo htmlspecialchars($activePosterVal); ?>" oninput="updatePosterPreview(this.value)">
+                                        </div>
+
+                                        <!-- File Upload Dropzone / Buttons -->
+                                        <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                                            <label for="hero_poster_file_input" class="native-editor-btn" id="heroPosterUploadBtn" style="cursor: pointer; display: inline-flex; align-items: center; gap: 6px; height: 34px; padding: 0 14px; font-size: 0.78rem; font-weight: 700; background: #0f172a; color: #fff; border-radius: 6px;">
+                                                <i class="fa-solid fa-cloud-arrow-up" style="color: #ef4444;"></i> Upload Poster Picture
+                                            </label>
+                                            <input type="file" id="hero_poster_file_input" name="hero_poster_file" accept="image/*" style="display: none;" onchange="uploadHeroAssetAjax(this, 'poster')">
+                                            
+                                            <button type="button" id="syncPosterCloudBtn" class="native-editor-btn" onclick="syncPosterUrlToCloudinary()" style="<?php echo $isPosterCloud ? 'display: none;' : 'display: inline-flex;'; ?> height: 34px; padding: 0 12px; font-size: 0.78rem; font-weight: 700; align-items: center; gap: 6px;">
+                                                <i class="fa-solid fa-arrows-rotate" style="color: #0284c7;"></i> Sync to Cloudinary
+                                            </button>
+
+                                            <button type="button" class="native-editor-btn" onclick="resetHeroBackgroundDefaults()" style="height: 34px; padding: 0 12px; font-size: 0.78rem; color: #64748b;">
+                                                <i class="fa-solid fa-rotate-left"></i> Reset
+                                            </button>
+                                        </div>
+                                        <p class="form-label-help" style="font-size: 0.74rem; color: #64748b; margin-top: 6px;">
+                                            Upload an image from your computer to sync to Cloudinary CDN, or enter a remote image link above.
+                                        </p>
+                                    </div>
+
+                                    <hr style="border: none; border-top: 1px solid #f1f5f9; margin: 20px 0;">
+
+                                    <!-- 2. BACKGROUND VIDEO ENGINE -->
+                                    <div class="form-field" style="margin-bottom: 18px;">
+                                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                                            <label class="form-label-title" style="margin: 0; font-weight: 700;">Background Video (Chromeless Iframe or Direct)</label>
+                                            <span style="font-size: 0.72rem; color: #64748b; font-weight: 600;">Plays muted &amp; looped</span>
+                                        </div>
+
+                                        <!-- Unified Video URL / ID Input -->
+                                        <div style="margin-bottom: 14px;">
+                                            <label class="form-label-title" style="font-size: 0.78rem; color: #334155; margin-bottom: 4px; display: block;">Video Link or ID (YouTube / Vimeo Iframe)</label>
+                                            <?php 
+                                            $currVidVal = $settings['hero_video_url'] ?? ($settings['hero_youtube_bg'] ?? ($settings['hero_vimeo_bg'] ?? ''));
+                                            ?>
+                                            <input type="text" id="hero_video_url_input" name="hero_video_url" class="form-text-input" placeholder="e.g. Tf8rNMZ-Bw0 or https://www.youtube.com/watch?v=... or Vimeo" value="<?php echo htmlspecialchars($currVidVal); ?>" oninput="syncHeroStageMedia();">
+                                            <div id="videoProviderBadge" style="margin-top: 6px; font-size: 0.74rem; display: flex; align-items: center; gap: 6px; color: #64748b;">
+                                                <?php if (!empty($currVidVal)): ?>
+                                                    <i class="fa-brands fa-youtube" style="color: #ef4444;"></i> Configured for background playback: <strong><?php echo htmlspecialchars($currVidVal); ?></strong>
+                                                <?php else: ?>
+                                                    <i class="fa-solid fa-info-circle" style="color: #94a3b8;"></i> Paste a YouTube link/ID or Vimeo link/ID
+                                                <?php endif; ?>
+                                            </div>
+                                        </div>
+
+                                        <!-- Direct Video URL (.mp4 / .webm) -->
+                                        <div style="margin-bottom: 14px;">
+                                            <label class="form-label-title" style="font-size: 0.78rem; color: #334155; margin-bottom: 4px; display: block;">Direct Video Stream URL (.mp4 / .webm)</label>
+                                            <div style="display: flex; gap: 8px;">
+                                                <input type="text" id="hero_direct_video_input" name="hero_direct_video_url" class="form-text-input" placeholder="https://res.cloudinary.com/.../hero.mp4" value="<?php echo htmlspecialchars($settings['hero_direct_video_url'] ?? ''); ?>" oninput="syncHeroStageMedia()">
+                                            </div>
+                                            <div style="margin-top: 6px;">
+                                                <label for="hero_video_file_input" class="native-editor-btn" id="heroVideoUploadBtn" style="cursor: pointer; display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 12px; font-size: 0.76rem; font-weight: 700; background: #f8fafc; color: #334155; border: 1px solid #cbd5e1; border-radius: 6px;">
+                                                    <i class="fa-solid fa-video" style="color: #0284c7;"></i> Upload MP4 Video
+                                                </label>
+                                                <input type="file" id="hero_video_file_input" name="hero_direct_video_file" accept="video/mp4,video/webm" style="display: none;" onchange="uploadHeroAssetAjax(this, 'video')">
+                                            </div>
+                                        </div>
+
+                                        <!-- Showreel Sync Checkbox -->
+                                        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 14px; margin-top: 10px;">
+                                            <label style="display: flex; align-items: center; gap: 8px; font-size: 0.78rem; color: #334155; cursor: pointer; margin: 0;">
+                                                <input type="checkbox" id="hero_bg_use_showreel_input" name="hero_bg_use_showreel" value="1" <?php echo !empty($settings['hero_bg_use_showreel']) ? 'checked' : ''; ?> onchange="syncHeroStageMedia()">
+                                                <span>Use Main Showreel as background video if no custom video is provided</span>
+                                            </label>
                                         </div>
                                     </div>
                                 </div>
@@ -6491,7 +6594,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
 
                             <!-- Column B: Text Structure & Copy -->
                             <div>
-                                <div class="dashboard-card">
+                                <div class="dashboard-card" style="margin-bottom: 20px;">
                                     <div class="card-header-row" style="margin-bottom: 16px;">
                                         <div class="card-icon-badge"><i class="fa-solid fa-align-left"></i></div>
                                         <div class="card-title-text">Column B &bull; Typography &amp; Action Buttons</div>
@@ -6500,51 +6603,74 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                     <!-- Badge Label -->
                                     <div class="form-field" style="margin-bottom: 16px;">
                                         <label class="form-label-title">Pill Badge Label</label>
-                                        <input type="text" name="hero_badge_label" class="form-text-input" value="<?php echo htmlspecialchars($settings['hero_badge_label'] ?? 'EST. 2020 • PRODUCTION STUDIO'); ?>">
+                                        <input type="text" id="hero_badge_label_input" name="hero_badge_label" class="form-text-input" value="<?php echo htmlspecialchars($settings['hero_badge_label'] ?? 'EST. 2020 • PRODUCTION STUDIO'); ?>" oninput="updateHeroPreview()">
                                     </div>
 
                                     <!-- Split Headline -->
                                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
                                         <div>
-                                            <label class="form-label-title">Headline (White)</label>
-                                            <input type="text" name="hero_headline_white" class="form-text-input" value="<?php echo htmlspecialchars($settings['hero_headline_white'] ?? 'Crafting Cinematic'); ?>">
+                                            <label class="form-label-title">Headline Line 1 (White)</label>
+                                            <input type="text" id="hero_line1_input" name="hero_headline_line1" class="form-text-input" value="<?php echo htmlspecialchars($settings['hero_headline_line1'] ?? ($settings['hero_headline_white'] ?? 'Creating what the')); ?>" oninput="updateHeroPreview()">
                                         </div>
                                         <div>
-                                            <label class="form-label-title">Headline (Red Accent)</label>
-                                            <input type="text" name="hero_headline_red" class="form-text-input" value="<?php echo htmlspecialchars($settings['hero_headline_red'] ?? 'Visual Stories'); ?>">
+                                            <label class="form-label-title">Headline Line 2 (Red Accent)</label>
+                                            <input type="text" id="hero_line2_input" name="hero_headline_line2" class="form-text-input" value="<?php echo htmlspecialchars($settings['hero_headline_line2'] ?? ($settings['hero_headline_red'] ?? 'World Watches')); ?>" oninput="updateHeroPreview()">
                                         </div>
                                     </div>
 
                                     <!-- Subheadline with Character Counter -->
                                     <div class="form-field" style="margin-bottom: 16px;">
                                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-                                            <label class="form-label-title" style="margin: 0;">Subheadline Copy</label>
+                                            <label class="form-label-title" style="margin: 0;">Subheadline Copy / Tagline</label>
                                             <span id="heroSubCounter" style="font-size: 0.72rem; color: #94a3b8;">0 chars</span>
                                         </div>
-                                        <textarea name="hero_subheadline" id="heroSubTextarea" class="form-text-input" rows="3" oninput="document.getElementById('heroSubCounter').textContent = this.value.length + ' chars';"><?php echo htmlspecialchars($settings['hero_subheadline'] ?? 'Full-service video production company specializing in commercials, brand documentaries, and high-impact digital content.'); ?></textarea>
+                                        <textarea id="hero_tagline_input" name="hero_tagline" class="form-text-input" rows="3" oninput="document.getElementById('heroSubCounter').textContent = this.value.length + ' chars'; updateHeroPreview();"><?php echo htmlspecialchars($settings['hero_tagline'] ?? ($settings['hero_subheadline'] ?? "From cinematic campaigns to viral content — we craft the visual stories your audience can't look away from.")); ?></textarea>
                                     </div>
 
-                                    <!-- CTA 1 -->
+                                    <!-- Primary CTA -->
                                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
                                         <div>
                                             <label class="form-label-title">Primary CTA Text</label>
-                                            <input type="text" name="hero_primary_cta_text" class="form-text-input" value="<?php echo htmlspecialchars($settings['hero_primary_cta_text'] ?? 'View Showreel'); ?>">
+                                            <input type="text" id="primary_cta_input" name="hero_primary_cta_text" class="form-text-input" value="<?php echo htmlspecialchars($settings['hero_primary_cta_text'] ?? 'Explore Our Projects'); ?>" oninput="updateHeroPreview()">
                                         </div>
                                         <div>
                                             <label class="form-label-title">Primary CTA Link</label>
-                                            <input type="text" name="hero_primary_cta_link" class="form-text-input" value="<?php echo htmlspecialchars($settings['hero_primary_cta_link'] ?? '#showreel'); ?>">
+                                            <input type="text" id="primary_cta_url_input" name="hero_primary_cta_url" class="form-text-input" value="<?php echo htmlspecialchars($settings['hero_primary_cta_url'] ?? ($settings['hero_primary_cta_link'] ?? '/portfolio.php')); ?>">
                                         </div>
                                     </div>
 
-                                    <!-- CTA 2 -->
-                                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                                    <!-- Secondary CTA (Showreel Modal) -->
+                                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
                                         <div>
                                             <label class="form-label-title">Secondary CTA Text</label>
-                                            <input type="text" name="hero_secondary_cta_text" class="form-text-input" value="<?php echo htmlspecialchars($settings['hero_secondary_cta_text'] ?? 'Book Consultation'); ?>">
+                                            <input type="text" id="secondary_cta_input" name="hero_secondary_cta_text" class="form-text-input" value="<?php echo htmlspecialchars($settings['hero_secondary_cta_text'] ?? 'Watch Showreel'); ?>" oninput="updateHeroPreview()">
                                         </div>
                                         <div>
-                                            <label class="form-label-title">Secondary CTA Link</label>
-                                            <input type="text" name="hero_secondary_cta_link" class="form-text-input" value="<?php echo htmlspecialchars($settings['hero_secondary_cta_link'] ?? '#lets-talk'); ?>">
+                                            <label class="form-label-title">Showreel YouTube ID</label>
+                                            <input type="text" id="showreelInput" name="showreel_youtube_id" class="form-text-input" placeholder="Tf8rNMZ-Bw0" value="<?php echo htmlspecialchars($settings['showreel_youtube_id'] ?? 'Tf8rNMZ-Bw0'); ?>" oninput="updateShowreelPreview(this.value)">
+                                        </div>
+                                    </div>
+
+                                    <!-- Live Frontend Appearance Card -->
+                                    <div style="background: #09090b; border-radius: 10px; padding: 20px; color: #fff; text-align: center; border: 1px solid rgba(255,255,255,0.08); position: relative; overflow: hidden; margin-top: 10px;">
+                                        <div style="position: absolute; inset: 0; background: radial-gradient(circle at 50% 50%, rgba(220,38,38,0.12), transparent 70%); pointer-events: none;"></div>
+                                        <div id="previewBadge" style="display: inline-block; padding: 3px 10px; border-radius: 20px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.15); font-size: 0.68rem; font-weight: 700; letter-spacing: 0.05em; color: #e4e4e7; margin-bottom: 10px;">
+                                            <?php echo htmlspecialchars($settings['hero_badge_label'] ?? 'EST. 2020 • PRODUCTION STUDIO'); ?>
+                                        </div>
+                                        <h3 style="font-size: 1.15rem; font-weight: 800; line-height: 1.2; margin: 0 0 8px 0; color: #fff;">
+                                            <span id="previewLine1"><?php echo htmlspecialchars($settings['hero_headline_line1'] ?? ($settings['hero_headline_white'] ?? 'Creating what the')); ?></span><br>
+                                            <span id="previewLine2" style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;"><?php echo htmlspecialchars($settings['hero_headline_line2'] ?? ($settings['hero_headline_red'] ?? 'World Watches')); ?></span>
+                                        </h3>
+                                        <p id="previewTagline" style="font-size: 0.74rem; color: #94a3b8; max-width: 90%; margin: 0 auto 14px auto; line-height: 1.4;">
+                                            <?php echo htmlspecialchars($settings['hero_tagline'] ?? ($settings['hero_subheadline'] ?? "From cinematic campaigns to viral content — we craft the visual stories your audience can't look away from.")); ?>
+                                        </p>
+                                        <div style="display: flex; gap: 8px; justify-content: center; align-items: center;">
+                                            <span id="previewPrimaryCta" style="background: #dc2626; color: #fff; padding: 5px 12px; border-radius: 6px; font-size: 0.72rem; font-weight: 700;">
+                                                <?php echo htmlspecialchars($settings['hero_primary_cta_text'] ?? 'Explore Our Projects'); ?>
+                                            </span>
+                                            <span id="previewSecondaryCta" style="background: rgba(255,255,255,0.12); color: #fff; padding: 5px 12px; border-radius: 6px; font-size: 0.72rem; font-weight: 600; border: 1px solid rgba(255,255,255,0.2);">
+                                                <i class="fa-solid fa-play" style="font-size: 0.65rem; margin-right: 4px;"></i> <?php echo htmlspecialchars($settings['hero_secondary_cta_text'] ?? 'Watch Showreel'); ?>
+                                            </span>
                                         </div>
                                     </div>
                                 </div>
@@ -21846,9 +21972,9 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
             heroStageSyncTimer = setTimeout(() => {
                 const wrap = document.getElementById('adminStageMediaWrap');
                 const tag = document.getElementById('frameModeTag');
-                if (!wrap) return;
+                const badgeEl = document.getElementById('videoProviderBadge');
 
-                const iframeInputVal = document.getElementById('hero_video_iframe_input')?.value || '';
+                const iframeInputVal = (document.getElementById('hero_video_url_input')?.value || document.getElementById('hero_video_iframe_input')?.value || '').trim();
                 const directInputVal = (document.getElementById('hero_direct_video_input')?.value || '').trim();
                 const useShowreel = Boolean(document.getElementById('hero_bg_use_showreel_input')?.checked);
                 const showreelVal = document.getElementById('showreelInput')?.value || 'Tf8rNMZ-Bw0';
@@ -21859,6 +21985,22 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                 if (!ytId && !vmId && !directInputVal && useShowreel) {
                     ytId = extractAdminYtId(showreelVal) || 'Tf8rNMZ-Bw0';
                 }
+
+                if (badgeEl) {
+                    if (ytId) {
+                        badgeEl.innerHTML = '<i class="fa-brands fa-youtube" style="color: #ef4444;"></i> YouTube: <strong>' + ytId + '</strong> (Chromeless background iframe)';
+                    } else if (vmId) {
+                        badgeEl.innerHTML = '<i class="fa-brands fa-vimeo-v" style="color: #0284c7;"></i> Vimeo: <strong>' + vmId + '</strong> (Chromeless background iframe)';
+                    } else if (directInputVal) {
+                        badgeEl.innerHTML = '<i class="fa-solid fa-file-video" style="color: #0d9488;"></i> Direct MP4 Stream Active';
+                    } else if (useShowreel) {
+                        badgeEl.innerHTML = '<i class="fa-solid fa-arrows-rotate" style="color: #eab308;"></i> Syncing with Showreel (' + (extractAdminYtId(showreelVal) || 'Tf8rNMZ-Bw0') + ')';
+                    } else {
+                        badgeEl.innerHTML = '<i class="fa-solid fa-image" style="color: #64748b;"></i> Poster backup only (No background video)';
+                    }
+                }
+
+                if (!wrap) return;
 
                 if (ytId) {
                     const src = 'https://www.youtube-nocookie.com/embed/' + encodeURIComponent(ytId)
@@ -22003,23 +22145,27 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
 
         function updatePosterPreview(url) {
             const targetUrl = (url || '').trim() || '/assets/img/hero.jpg';
+            const heroPosterPreview = document.getElementById('heroPosterPreview');
             const posterImg = document.getElementById('posterPreviewImg');
             const liveImg = document.getElementById('liveBackgroundImg');
             const pill = document.getElementById('posterCloudinaryPill');
             const idText = document.getElementById('posterPublicIdText');
             const syncBtn = document.getElementById('syncPosterCloudBtn');
             const verifyLink = document.getElementById('posterOpenAssetLink');
+            const input = document.getElementById('hero_poster_image_input');
 
+            if (heroPosterPreview) heroPosterPreview.src = targetUrl;
             if (posterImg) posterImg.src = targetUrl;
             if (liveImg) liveImg.src = targetUrl;
             if (verifyLink) verifyLink.href = targetUrl;
+            if (input && input.value !== targetUrl) input.value = targetUrl;
 
             const isCloud = isCloudinaryAssetUrl(targetUrl);
             if (pill) {
                 pill.className = 'poster-sync-status-pill ' + (isCloud ? 'synced' : 'unsynced');
                 pill.innerHTML = isCloud
-                    ? '<i class="fa-solid fa-circle-check"></i> Synced to Cloudinary (pnabfi91)'
-                    : '<i class="fa-solid fa-triangle-exclamation"></i> Not synced to Cloudinary';
+                    ? '<i class="fa-solid fa-circle-check" style="color:#22c55e;"></i> Cloudinary CDN'
+                    : '<i class="fa-solid fa-globe"></i> Custom URL';
             }
 
             if (idText) {

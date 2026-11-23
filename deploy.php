@@ -204,7 +204,8 @@ if ($action === 'lint_client') {
         'api/admin-client-gallery.php',
         'api/verify-download.php',
         'api/download-album.php',
-        'includes/functions.php'
+        'includes/functions.php',
+        'index.php'
     ];
     $allOk = true;
     foreach ($targets as $rel) {

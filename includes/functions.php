@@ -411,7 +411,10 @@ function resolveHeroMediaConfig($settings = null)
     $showreelId = extractYouTubeId($showreelRaw) ?: 'Tf8rNMZ-Bw0';
     $showreelModalUrl = 'https://www.youtube-nocookie.com/embed/' . rawurlencode($showreelId) . '?autoplay=1&rel=0&modestbranding=1&playsinline=1';
 
-    $rawPoster = !empty($settings['hero_poster_image']) ? trim((string) $settings['hero_poster_image']) : 'https://res.cloudinary.com/pnabfi91/image/upload/v1786578372/falhen/uploads/r96mxsji9cdogqrkxwoe.jpg';
+    $rawPoster = !empty($settings['hero_poster_image']) ? trim((string) $settings['hero_poster_image']) : '/assets/img/hero.jpg';
+    if ($rawPoster === 'https://res.cloudinary.com/pnabfi91/image/upload/v1786578372/falhen/uploads/r96mxsji9cdogqrkxwoe.jpg') {
+        $rawPoster = '/assets/img/hero.jpg';
+    }
     $posterIsCloudinary = function_exists('isCloudinaryUrl') && isCloudinaryUrl($rawPoster);
     $posterPublicId = '';
     if ($posterIsCloudinary && preg_match('#/upload/(?:[^/]+/)*?(?:v\d+/)?(.+)$#i', $rawPoster, $pm)) {
@@ -428,7 +431,21 @@ function resolveHeroMediaConfig($settings = null)
     // Resolve Third-Party Chromeless Video Iframe (explicit YouTube/Vimeo override OR seamless Showreel sync)
     $ytBgRaw = trim((string) ($settings['hero_youtube_bg'] ?? ''));
     $vimeoBgRaw = trim((string) ($settings['hero_vimeo_bg'] ?? ''));
+    $heroVideoUrl = trim((string) ($settings['hero_video_url'] ?? ''));
     $useShowreelAsBg = isset($settings['hero_bg_use_showreel']) ? (bool) $settings['hero_bg_use_showreel'] : true;
+
+    // Check unified video URL input if specific provider fields are blank
+    if ($ytBgRaw === '' && $vimeoBgRaw === '' && $heroVideoUrl !== '') {
+        $ytCandidate = extractYouTubeId($heroVideoUrl);
+        $vmCandidate = $ytCandidate === '' ? extractVimeoId($heroVideoUrl) : '';
+        if ($ytCandidate !== '') {
+            $ytBgRaw = $heroVideoUrl;
+        } elseif ($vmCandidate !== '') {
+            $vimeoBgRaw = $heroVideoUrl;
+        } elseif ($directVideoRaw === '' && preg_match('#\.(mp4|webm|mov|m4v)($|\?)#i', $heroVideoUrl)) {
+            $directVideoRaw = $heroVideoUrl;
+        }
+    }
 
     $iframeProvider = '';
     $iframeVideoId = '';
@@ -718,7 +735,7 @@ function getSiteSettings($forceReload = false)
         'hero_direct_video_url' => '',
         'hero_youtube_bg' => '',
         'hero_vimeo_bg' => '',
-        'hero_poster_image' => 'https://res.cloudinary.com/pnabfi91/image/upload/v1786578372/falhen/uploads/r96mxsji9cdogqrkxwoe.jpg',
+        'hero_poster_image' => '/assets/img/hero.jpg',
         'showreel_youtube_id' => 'Tf8rNMZ-Bw0',
         'hero_title' => 'Cinematic Storytelling & High-Impact Media Production',
         'hero_subtitle' => 'Falhen Productions is a premier full-service media production studio crafting high-end corporate films, commercials, live broadcasts, and brand anthems.'
