@@ -1371,72 +1371,142 @@
   "brand_logos_items": [
     {
       "id": 1,
-      "name": "Universal",
-      "icon": "fa-solid fa-globe",
-      "image": "",
+      "name": "WeatherTech",
+      "icon": "fa-solid fa-car",
+      "image": "/assets/img/brands/weathertech.png",
       "visible": true
     },
     {
       "id": 2,
-      "name": "ESPN",
-      "icon": "fa-solid fa-trophy",
-      "image": "",
+      "name": "Coventry Direct",
+      "icon": "fa-solid fa-building-columns",
+      "image": "/assets/img/brands/coventry-direct.png",
       "visible": true
     },
     {
       "id": 3,
-      "name": "Warner",
-      "icon": "fa-solid fa-video",
-      "image": "",
+      "name": "WeatherTech Canada",
+      "icon": "fa-solid fa-leaf",
+      "image": "/assets/img/brands/weathertech-ca.png",
       "visible": true
     },
     {
       "id": 4,
-      "name": "RedBull",
-      "icon": "fa-solid fa-mug-hot",
-      "image": "",
+      "name": "Garrett Popcorn Shops",
+      "icon": "fa-solid fa-bowl-food",
+      "image": "/assets/img/brands/garrett-popcorn.png",
       "visible": true
     },
     {
       "id": 5,
-      "name": "Netflix",
-      "icon": "fa-solid fa-film",
-      "image": "",
+      "name": "Lumber Liquidators",
+      "icon": "fa-solid fa-hammer",
+      "image": "/assets/img/brands/lumber-liquidators.png",
       "visible": true
     },
     {
       "id": 6,
-      "name": "Nike",
-      "icon": "fa-solid fa-person-running",
-      "image": "",
+      "name": "Parkway Bank",
+      "icon": "fa-solid fa-vault",
+      "image": "/assets/img/brands/parkway-bank.png",
       "visible": true
     },
     {
       "id": 7,
-      "name": "Spotify",
-      "icon": "fa-brands fa-spotify",
-      "image": "",
+      "name": "Skydeck The Ledge",
+      "icon": "fa-solid fa-city",
+      "image": "/assets/img/brands/skydeck-chicago.png",
       "visible": true
     },
     {
       "id": 8,
-      "name": "Apple",
-      "icon": "fa-brands fa-apple",
-      "image": "",
+      "name": "4Real",
+      "icon": "fa-solid fa-bolt",
+      "image": "/assets/img/brands/4real.png",
       "visible": true
     },
     {
       "id": 9,
-      "name": "HBO",
-      "icon": "fa-solid fa-tv",
-      "image": "",
+      "name": "AES",
+      "icon": "fa-solid fa-industry",
+      "image": "/assets/img/brands/aes.png",
       "visible": true
     },
     {
       "id": 10,
-      "name": "Adidas",
-      "icon": "fa-solid fa-shirt",
-      "image": "",
+      "name": "GentleCure",
+      "icon": "fa-solid fa-heart-pulse",
+      "image": "/assets/img/brands/gentlecure.png",
+      "visible": true
+    },
+    {
+      "id": 11,
+      "name": "Warmies",
+      "icon": "fa-solid fa-paw",
+      "image": "/assets/img/brands/warmies.png",
+      "visible": true
+    },
+    {
+      "id": 12,
+      "name": "Kate's Real Food",
+      "icon": "fa-solid fa-cookie-bite",
+      "image": "/assets/img/brands/kates-real-food.png",
+      "visible": true
+    },
+    {
+      "id": 13,
+      "name": "Shoreline Sightseeing",
+      "icon": "fa-solid fa-ship",
+      "image": "/assets/img/brands/shoreline-sightseeing.png",
+      "visible": true
+    },
+    {
+      "id": 14,
+      "name": "Litter Genie",
+      "icon": "fa-solid fa-cat",
+      "image": "/assets/img/brands/litter-genie.png",
+      "visible": true
+    },
+    {
+      "id": 15,
+      "name": "Diaper Genie",
+      "icon": "fa-solid fa-baby",
+      "image": "/assets/img/brands/diaper-genie.png",
+      "visible": true
+    },
+    {
+      "id": 16,
+      "name": "SkinCure Oncology",
+      "icon": "fa-solid fa-shield-halved",
+      "image": "/assets/img/brands/skincure-oncology.png",
+      "visible": true
+    },
+    {
+      "id": 17,
+      "name": "Better Business Bureau",
+      "icon": "fa-solid fa-award",
+      "image": "/assets/img/brands/bbb.png",
+      "visible": true
+    },
+    {
+      "id": 18,
+      "name": "Group 1",
+      "icon": "fa-solid fa-users",
+      "image": "/assets/img/brands/group-1.png",
+      "visible": true
+    },
+    {
+      "id": 19,
+      "name": "Cencora Triose",
+      "icon": "fa-solid fa-network-wired",
+      "image": "/assets/img/brands/cencora-triose.png",
+      "visible": true
+    },
+    {
+      "id": 20,
+      "name": "Weaver Consultants Group",
+      "icon": "fa-solid fa-compass-drafting",
+      "image": "/assets/img/brands/weaver-consultants.png",
       "visible": true
     }
   ],

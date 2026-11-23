@@ -3138,8 +3138,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $name = trim(strip_tags($_POST['name'] ?? ''));
         $icon = trim(strip_tags($_POST['icon'] ?? 'fa-solid fa-star'));
         $visible = !empty($_POST['visible']);
+        $fullColor = !empty($_POST['full_color']);
 
-        $image = trim($_POST['existing_image'] ?? '');
+        $image = trim($_POST['image'] ?? $_POST['existing_image'] ?? '');
         $croppedData = trim($_POST['cropped_brand_image_data'] ?? '');
 
         if (!empty($croppedData)) {
@@ -3147,10 +3148,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($res['success']) {
                 $image = $res['url'];
             }
-        } else if (!empty($_FILES['brand_image_file']['tmp_name'])) {
+        } else if (!empty($_FILES['brand_image_file']['tmp_name']) && is_uploaded_file($_FILES['brand_image_file']['tmp_name'])) {
             $res = uploadToCloudinary($_FILES['brand_image_file']['tmp_name'], 'falhen/brands');
             if ($res['success']) {
                 $image = $res['url'];
+            } else {
+                // Reliable local fallback if Cloudinary upload fails
+                $ext = strtolower(pathinfo($_FILES['brand_image_file']['name'], PATHINFO_EXTENSION));
+                if (in_array($ext, ['png', 'jpg', 'jpeg', 'webp', 'svg', 'gif'])) {
+                    $safeSlug = preg_replace('/[^a-z0-9_-]/', '', strtolower(str_replace(' ', '-', $name))) ?: 'brand';
+                    $safeName = $safeSlug . '_' . time() . '.' . $ext;
+                    $destDir = __DIR__ . '/../assets/img/brands/';
+                    if (!is_dir($destDir)) {
+                        @mkdir($destDir, 0755, true);
+                    }
+                    if (@move_uploaded_file($_FILES['brand_image_file']['tmp_name'], $destDir . $safeName)) {
+                        $image = '/assets/img/brands/' . $safeName;
+                    }
+                }
             }
         } else if (preg_match('/^data:image\//i', $image) || (preg_match('/^https?:\/\//i', $image) && !isCloudinaryUrl($image))) {
             $res = uploadToCloudinary($image, 'falhen/brands');
@@ -3168,6 +3183,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $it['icon'] = $icon;
                 $it['image'] = $image;
                 $it['visible'] = $visible;
+                $it['full_color'] = $fullColor;
                 $found = true;
                 break;
             }
@@ -3186,7 +3202,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'name' => $name,
                 'icon' => $icon,
                 'image' => $image,
-                'visible' => $visible
+                'visible' => $visible,
+                'full_color' => $fullColor
             ];
         }
 
@@ -6743,7 +6760,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                     </div>
 
                                     <?php 
-                                    $brandLogos = $settings['brand_logos'] ?? [];
+                                    $brandLogos = getBrandLogosRepo();
                                     if (empty($brandLogos)): 
                                     ?>
                                         <div style="padding: 32px 16px; text-align: center; background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 10px; color: #64748b;">
@@ -6751,14 +6768,25 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                             <span style="font-size: 0.84rem; font-weight: 600;">No brand logos configured yet.</span>
                                         </div>
                                     <?php else: ?>
-                                        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 12px;">
+                                        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 12px;">
                                             <?php foreach ($brandLogos as $bIdx => $bLogo): ?>
-                                                <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 80px;">
-                                                    <img src="<?php echo htmlspecialchars($bLogo['logo_url'] ?? $bLogo['image'] ?? ''); ?>" alt="<?php echo htmlspecialchars($bLogo['brand_name'] ?? 'Brand'); ?>" style="max-height: 34px; max-width: 90%; object-fit: contain; filter: grayscale(100%); opacity: 0.8;" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
-                                                    <span style="font-size: 0.72rem; font-weight: 700; color: #334155; margin-top: 6px; display: none;"><?php echo htmlspecialchars($bLogo['brand_name'] ?? 'Brand'); ?></span>
-                                                    <span style="font-size: 0.7rem; font-weight: 600; color: #64748b; margin-top: 4px;"><?php echo htmlspecialchars($bLogo['brand_name'] ?? 'Brand #' . ($bIdx + 1)); ?></span>
-                                                </div>
+                                                <a href="/admin/index.php?section=brands&edit_id=<?php echo (int)($bLogo['id'] ?? 0); ?>" style="text-decoration: none; background: #0f172a; border: 1px solid #334155; border-radius: 10px; padding: 12px 8px; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 85px; transition: all 0.2s;" onmouseover="this.style.borderColor='#dc2626'" onmouseout="this.style.borderColor='#334155'">
+                                                    <?php if (!empty($bLogo['image'])): ?>
+                                                        <img src="<?php echo htmlspecialchars(getCloudinaryUrl($bLogo['image'], 'f_auto,q_auto:good,w_240,h_70,c_fit')); ?>" alt="<?php echo htmlspecialchars($bLogo['name'] ?? 'Brand'); ?>" style="max-height: 36px; max-width: 90%; object-fit: contain; filter: brightness(0) invert(1); opacity: 0.9;">
+                                                    <?php else: ?>
+                                                        <i class="<?php echo htmlspecialchars(!empty($bLogo['icon']) ? $bLogo['icon'] : 'fa-solid fa-star'); ?>" style="color: #ef4444; font-size: 1.2rem; margin-bottom: 4px;"></i>
+                                                    <?php endif; ?>
+                                                    <span style="font-size: 0.72rem; font-weight: 700; color: #f8fafc; margin-top: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 95%;"><?php echo htmlspecialchars($bLogo['name'] ?? 'Brand #' . ($bIdx + 1)); ?></span>
+                                                    <span style="font-size: 0.65rem; color: <?php echo !empty($bLogo['visible']) ? '#22c55e' : '#94a3b8'; ?>; font-weight: 600; margin-top: 2px;">
+                                                        ● <?php echo !empty($bLogo['visible']) ? 'Visible' : 'Hidden'; ?>
+                                                    </span>
+                                                </a>
                                             <?php endforeach; ?>
+                                        </div>
+                                        <div style="margin-top: 14px; text-align: right;">
+                                            <a href="/admin/index.php?section=brands" style="color: #dc2626; font-size: 0.82rem; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">
+                                                Manage All Brands in Full Screen <i class="fa-solid fa-arrow-right"></i>
+                                            </a>
                                         </div>
                                     <?php endif; ?>
                                 </div>
@@ -12511,49 +12539,66 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                 <div>
                                     <div class="form-field">
                                         <label class="form-label-title">Brand Name <span style="color: #ef4444;">*</span></label>
-                                        <input type="text" name="name" required class="form-text-input" value="<?php echo htmlspecialchars($editingBrand['name'] ?? ''); ?>" placeholder="e.g. RedBull">
+                                        <input type="text" name="name" required class="form-text-input" value="<?php echo htmlspecialchars($editingBrand['name'] ?? ''); ?>" placeholder="e.g. WeatherTech">
+                                    </div>
+
+                                    <div class="form-field">
+                                        <label class="form-label-title">Logo Image URL / Path (PNG / JPEG)</label>
+                                        <input type="text" name="image" id="brand_image_input" class="form-text-input" value="<?php echo htmlspecialchars($editingBrand['image'] ?? ''); ?>" placeholder="/assets/img/brands/weathertech.png or Cloudinary URL" oninput="updateBrandPreviewFromUrl(this.value)">
+                                        <small style="color: #64748b; font-size: 0.78rem; margin-top: 4px; display: block;">You can paste an image URL/path above, or upload a PNG/JPEG using the dropzone on the right.</small>
                                     </div>
 
                                     <div class="form-field">
                                         <label class="form-label-title">FontAwesome Icon Class (Fallback)</label>
                                         <div style="display: flex; gap: 10px; align-items: center;">
-                                            <input type="text" name="icon" class="form-text-input" value="<?php echo htmlspecialchars($editingBrand['icon'] ?? 'fa-solid fa-star'); ?>" placeholder="fa-solid fa-mug-hot">
+                                            <input type="text" name="icon" class="form-text-input" value="<?php echo htmlspecialchars($editingBrand['icon'] ?? 'fa-solid fa-star'); ?>" placeholder="fa-solid fa-star">
                                             <div style="width: 38px; height: 38px; border: 1px solid #cbd5e1; border-radius: 8px; display: flex; align-items: center; justify-content: center; background: #f8fafc; color: #0f172a; flex-shrink: 0;">
                                                 <i class="<?php echo htmlspecialchars($editingBrand['icon'] ?? 'fa-solid fa-star'); ?>"></i>
                                             </div>
                                         </div>
-                                        <small style="color: #64748b; font-size: 0.78rem; margin-top: 4px; display: block;">Used if no logo image is uploaded. e.g. <code>fa-brands fa-apple</code> or <code>fa-solid fa-film</code>.</small>
+                                        <small style="color: #64748b; font-size: 0.78rem; margin-top: 4px; display: block;">Used if no logo image is uploaded. e.g. <code>fa-solid fa-building</code> or <code>fa-solid fa-film</code>.</small>
                                     </div>
 
-                                    <div class="form-field" style="margin-top: 18px;">
+                                    <div class="form-field" style="margin-top: 18px; display: flex; flex-direction: column; gap: 10px;">
                                         <label style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; font-size: 0.9rem; color: #0f172a; cursor: pointer;">
                                             <input type="checkbox" name="visible" value="1" <?php echo (!isset($editingBrand['visible']) || !empty($editingBrand['visible'])) ? 'checked' : ''; ?>>
                                             Display in Homepage Ticker
                                         </label>
+
+                                        <label style="display: inline-flex; align-items: center; gap: 8px; font-weight: 600; font-size: 0.86rem; color: #475569; cursor: pointer;">
+                                            <input type="checkbox" name="full_color" id="brand_full_color" value="1" <?php echo !empty($editingBrand['full_color']) ? 'checked' : ''; ?> onchange="toggleBrandColorPreview(this.checked)">
+                                            Keep Original Full Colors (Disable white monochrome filter for dark theme)
+                                        </label>
                                     </div>
                                 </div>
 
-                                <!-- Right Column: Cloudinary Image Upload -->
+                                <!-- Right Column: Image Upload & Live Dark Preview -->
                                 <div>
                                     <div class="form-field">
-                                        <label class="form-label-title">Brand Logo Image (Cloudinary)</label>
-                                        <div style="border: 2px dashed #cbd5e1; border-radius: 12px; padding: 20px; text-align: center; background: #f8fafc; position: relative;">
-                                            <div id="brand_preview_container" style="margin-bottom: 12px;">
+                                        <label class="form-label-title">Brand Logo Image &amp; Live Dark Preview</label>
+                                        <div style="border: 2px dashed #cbd5e1; border-radius: 12px; padding: 22px; text-align: center; background: #f8fafc; position: relative;">
+                                            <div style="font-size: 0.76rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;">
+                                                Dark Marquee Live Preview
+                                            </div>
+                                            <div id="brand_preview_container" style="background: #09090b; border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 10px; padding: 18px; margin-bottom: 14px; min-height: 80px; display: flex; align-items: center; justify-content: center; box-shadow: inset 0 2px 8px rgba(0,0,0,0.4);">
                                                 <?php if (!empty($editingBrand['image'])): ?>
-                                                    <img id="brand_preview_img" src="<?php echo htmlspecialchars(getCloudinaryUrl($editingBrand['image'])); ?>" style="max-height: 50px; max-width: 160px; object-fit: contain;">
+                                                    <img id="brand_preview_img" src="<?php echo htmlspecialchars(getCloudinaryUrl($editingBrand['image'])); ?>" style="max-height: 48px; max-width: 170px; object-fit: contain; <?php echo empty($editingBrand['full_color']) ? 'filter: brightness(0) invert(1);' : ''; ?>">
+                                                    <div id="brand_no_preview" style="color: #64748b; font-size: 0.85rem; display: none;">No logo image uploaded yet.</div>
                                                 <?php else: ?>
-                                                    <div id="brand_no_preview" style="color: #94a3b8; font-size: 0.85rem;">No logo image uploaded yet.</div>
+                                                    <img id="brand_preview_img" src="" style="max-height: 48px; max-width: 170px; object-fit: contain; display: none;">
+                                                    <div id="brand_no_preview" style="color: #64748b; font-size: 0.85rem;">No logo image uploaded yet.</div>
                                                 <?php endif; ?>
                                             </div>
 
-                                            <div id="brand_upload_status" style="display: none; margin-bottom: 10px; font-weight: 700; font-size: 0.84rem; color: #2563eb;">
-                                                <i class="fa-solid fa-spinner fa-spin"></i> Uploading to Cloudinary...
+                                            <div id="brand_upload_status" style="display: none; margin-bottom: 12px; font-weight: 700; font-size: 0.84rem; color: #2563eb;">
+                                                <i class="fa-solid fa-spinner fa-spin"></i> Uploading brand logo to Cloudinary...
                                             </div>
 
-                                            <label class="btn-save-primary" style="background-color: #0f172a; cursor: pointer; display: inline-flex; font-size: 0.82rem; padding: 8px 16px;">
-                                                <i class="fa-solid fa-cloud-arrow-up"></i> Upload Brand Logo
-                                                <input type="file" id="brand_file_input" accept="image/*" style="display: none;" onchange="handleBrandFileUpload(this)">
+                                            <label class="btn-save-primary" style="background-color: #0f172a; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; font-size: 0.84rem; padding: 10px 20px;">
+                                                <i class="fa-solid fa-cloud-arrow-up"></i> Upload PNG / JPEG Logo
+                                                <input type="file" id="brand_file_input" name="brand_image_file" accept="image/png, image/jpeg, image/webp, image/svg+xml" style="display: none;" onchange="handleBrandFileUpload(this)">
                                             </label>
+                                            <p style="font-size: 0.74rem; color: #94a3b8; margin-top: 8px; margin-bottom: 0;">Supported formats: Transparent PNG, JPEG, SVG, WebP. High-resolution bold logos recommended.</p>
                                         </div>
                                     </div>
                                 </div>
@@ -12571,6 +12616,28 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                     </div>
 
                     <script>
+                        function updateBrandPreviewFromUrl(url) {
+                            const previewImg = document.getElementById('brand_preview_img');
+                            const noPreview = document.getElementById('brand_no_preview');
+                            const existingInput = document.getElementById('brand_existing_image');
+                            if (url && url.trim().length > 0) {
+                                previewImg.src = url.trim();
+                                previewImg.style.display = 'inline-block';
+                                if (noPreview) noPreview.style.display = 'none';
+                                if (existingInput) existingInput.value = url.trim();
+                            } else {
+                                previewImg.style.display = 'none';
+                                if (noPreview) noPreview.style.display = 'block';
+                            }
+                        }
+
+                        function toggleBrandColorPreview(isFullColor) {
+                            const previewImg = document.getElementById('brand_preview_img');
+                            if (previewImg) {
+                                previewImg.style.filter = isFullColor ? 'none' : 'brightness(0) invert(1)';
+                            }
+                        }
+
                         function handleBrandFileUpload(input) {
                             if (!input.files || !input.files[0]) return;
                             const file = input.files[0];
@@ -12578,6 +12645,18 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                             const previewImg = document.getElementById('brand_preview_img');
                             const noPreview = document.getElementById('brand_no_preview');
                             const existingInput = document.getElementById('brand_existing_image');
+                            const brandUrlInput = document.getElementById('brand_image_input');
+                            const isFullColor = document.getElementById('brand_full_color') ? document.getElementById('brand_full_color').checked : false;
+
+                            // Immediate instant preview using FileReader
+                            const reader = new FileReader();
+                            reader.onload = function(e) {
+                                previewImg.src = e.target.result;
+                                previewImg.style.display = 'inline-block';
+                                previewImg.style.filter = isFullColor ? 'none' : 'brightness(0) invert(1)';
+                                if (noPreview) noPreview.style.display = 'none';
+                            };
+                            reader.readAsDataURL(file);
 
                             statusBox.style.display = 'block';
                             statusBox.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Uploading brand logo to Cloudinary...';
@@ -12587,7 +12666,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                             formData.append('file', file);
                             formData.append('folder', 'falhen/brands');
 
-                            fetch('index.php', {
+                            fetch('/admin/index.php', {
                                 method: 'POST',
                                 body: formData
                             })
@@ -12596,21 +12675,21 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                 statusBox.style.display = 'none';
                                 if (data.success) {
                                     existingInput.value = data.url;
-                                    if (previewImg) {
-                                        previewImg.src = data.url;
-                                        previewImg.style.display = 'inline-block';
-                                    } else {
-                                        const container = document.getElementById('brand_preview_container');
-                                        container.innerHTML = '<img id="brand_preview_img" src="' + data.url + '" style="max-height: 50px; max-width: 160px; object-fit: contain;">';
-                                    }
+                                    if (brandUrlInput) brandUrlInput.value = data.url;
+                                    previewImg.src = data.url;
+                                    previewImg.style.display = 'inline-block';
                                     if (noPreview) noPreview.style.display = 'none';
                                 } else {
-                                    alert('Upload Error: ' + data.message);
+                                    // If Cloudinary AJAX upload fails, keep local preview and let native form upload handle it
+                                    statusBox.style.display = 'block';
+                                    statusBox.style.color = '#d97706';
+                                    statusBox.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> Ready to save locally on submit (' + (data.message || 'Cloudinary offline') + ').';
                                 }
                             })
                             .catch(err => {
-                                statusBox.style.display = 'none';
-                                alert('Cloudinary upload error.');
+                                statusBox.style.display = 'block';
+                                statusBox.style.color = '#d97706';
+                                statusBox.innerHTML = '<i class="fa-solid fa-check"></i> Image selected. Ready to save upon submit.';
                             });
                         }
                     </script>
@@ -12635,9 +12714,9 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                         </form>
                                     </div>
 
-                                    <div style="height: 60px; background: #0f172a; border-radius: 10px; display: flex; align-items: center; justify-content: center; margin-bottom: 14px; color: #ffffff; padding: 10px;">
+                                    <div style="height: 68px; background: #09090b; border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 10px; display: flex; align-items: center; justify-content: center; margin-bottom: 14px; color: #ffffff; padding: 10px;">
                                         <?php if (!empty($bItem['image'])): ?>
-                                            <img src="<?php echo htmlspecialchars(getCloudinaryUrl($bItem['image'])); ?>" alt="<?php echo htmlspecialchars($bItem['name']); ?>" style="max-height: 36px; max-width: 120px; object-fit: contain;">
+                                            <img src="<?php echo htmlspecialchars(getCloudinaryUrl($bItem['image'], 'f_auto,q_auto:good,w_300,h_80,c_fit')); ?>" alt="<?php echo htmlspecialchars($bItem['name']); ?>" style="max-height: 42px; max-width: 150px; object-fit: contain; <?php echo empty($bItem['full_color']) ? 'filter: brightness(0) invert(1);' : ''; ?>">
                                         <?php else: ?>
                                             <div style="display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 1rem;">
                                                 <i class="<?php echo htmlspecialchars(!empty($bItem['icon']) ? $bItem['icon'] : 'fa-solid fa-star'); ?>" style="color: #ef4444;"></i>

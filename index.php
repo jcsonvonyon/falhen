@@ -102,36 +102,36 @@ if (empty($visibleBrands)) {
     $visibleBrands = array_values($allBrandLogos);
 }
 ?>
-<section class="brands-section">
+<section class="brands-section" aria-label="Trusted Brand Partners">
     <div class="brands-title"><?php echo htmlspecialchars($settings['brands_section_title'] ?? 'TRUSTED BY WORLD-CLASS BRANDS'); ?></div>
     <div class="brands-ticker-wrapper">
         <div class="brands-ticker-track">
             <!-- First Set -->
             <?php foreach ($visibleBrands as $brand): ?>
-                <div class="brand-card">
+                <div class="brand-card" title="<?php echo htmlspecialchars($brand['name']); ?>">
                     <?php if (!empty($brand['image'])): ?>
-                        <img src="<?php echo htmlspecialchars(getCloudinaryUrl($brand['image'], 'f_auto,q_auto:good,w_220,h_52,c_fit')); ?>"
-                            alt="<?php echo htmlspecialchars($brand['name']); ?>" width="110" height="26" loading="lazy"
-                            decoding="async" style="max-height: 26px; max-width: 110px; object-fit: contain;">
+                        <img src="<?php echo htmlspecialchars(getCloudinaryUrl($brand['image'], 'f_auto,q_auto:good,w_360,h_90,c_fit')); ?>"
+                            alt="<?php echo htmlspecialchars($brand['name']); ?>"
+                            class="brand-logo-img <?php echo !empty($brand['full_color']) ? 'brand-logo-color' : 'brand-logo-monochrome'; ?>"
+                            loading="lazy" decoding="async">
                     <?php else: ?>
-                        <i
-                            class="<?php echo htmlspecialchars(!empty($brand['icon']) ? $brand['icon'] : 'fa-solid fa-star'); ?>"></i>
-                        <?php echo htmlspecialchars($brand['name']); ?>
+                        <i class="<?php echo htmlspecialchars(!empty($brand['icon']) ? $brand['icon'] : 'fa-solid fa-star'); ?>" style="color: #dc2626;"></i>
+                        <span class="brand-card-name"><?php echo htmlspecialchars($brand['name']); ?></span>
                     <?php endif; ?>
                 </div>
             <?php endforeach; ?>
 
             <!-- Duplicate Set for Seamless Infinite Ticker Loop -->
             <?php foreach ($visibleBrands as $brand): ?>
-                <div class="brand-card">
+                <div class="brand-card" title="<?php echo htmlspecialchars($brand['name']); ?>">
                     <?php if (!empty($brand['image'])): ?>
-                        <img src="<?php echo htmlspecialchars(getCloudinaryUrl($brand['image'], 'f_auto,q_auto:good,w_220,h_52,c_fit')); ?>"
-                            alt="<?php echo htmlspecialchars($brand['name']); ?>" width="110" height="26" loading="lazy"
-                            decoding="async" style="max-height: 26px; max-width: 110px; object-fit: contain;">
+                        <img src="<?php echo htmlspecialchars(getCloudinaryUrl($brand['image'], 'f_auto,q_auto:good,w_360,h_90,c_fit')); ?>"
+                            alt="<?php echo htmlspecialchars($brand['name']); ?>"
+                            class="brand-logo-img <?php echo !empty($brand['full_color']) ? 'brand-logo-color' : 'brand-logo-monochrome'; ?>"
+                            loading="lazy" decoding="async">
                     <?php else: ?>
-                        <i
-                            class="<?php echo htmlspecialchars(!empty($brand['icon']) ? $brand['icon'] : 'fa-solid fa-star'); ?>"></i>
-                        <?php echo htmlspecialchars($brand['name']); ?>
+                        <i class="<?php echo htmlspecialchars(!empty($brand['icon']) ? $brand['icon'] : 'fa-solid fa-star'); ?>" style="color: #dc2626;"></i>
+                        <span class="brand-card-name"><?php echo htmlspecialchars($brand['name']); ?></span>
                     <?php endif; ?>
                 </div>
             <?php endforeach; ?>
