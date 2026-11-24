@@ -3209,7 +3209,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         $targetId = $found ? $bId : $newId;
         saveSiteSettings(['brand_logos_items' => $items]);
-        header('Location: index.php?section=brands&edit_id=' . $targetId . '&saved=1');
+        header('Location: /admin/index.php?section=brands&edit_id=' . $targetId . '&saved=1');
         exit;
     } else if ($action === 'delete_brand_logo') {
         $bId = (int)($_POST['id'] ?? 0);
@@ -3218,7 +3218,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             return (int)($it['id'] ?? 0) !== $bId;
         }));
         saveSiteSettings(['brand_logos_items' => $newItems]);
-        header('Location: index.php?section=brands&deleted=1');
+        if (isset($_POST['ajax']) && $_POST['ajax'] == 1) {
+            sendJSONResponse(true, 'Brand removed successfully!');
+        }
+        header('Location: /admin/index.php?section=brands&deleted=1');
         exit;
     } else if ($action === 'toggle_brand_visibility') {
         $bId = (int)($_POST['id'] ?? 0);
@@ -3230,7 +3233,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
         saveSiteSettings(['brand_logos_items' => $items]);
-        header('Location: index.php?section=brands&saved=1');
+        if (isset($_POST['ajax']) && $_POST['ajax'] == 1) {
+            sendJSONResponse(true, 'Brand visibility updated!');
+        }
+        header('Location: /admin/index.php?section=brands&saved=1');
         exit;
     } else if ($action === 'reorder_brand_logos') {
         $orderedIds = $_POST['order'] ?? [];
@@ -3265,7 +3271,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (isset($_POST['ajax']) && $_POST['ajax'] == 1) {
             sendJSONResponse(true, 'Brand display order updated live!');
         }
-        header('Location: index.php?section=brands&saved=1');
+        header('Location: /admin/index.php?section=brands&saved=1');
         exit;
     } else if ($action === 'save_profile_details') {
         $fullName = trim(strip_tags($_POST['full_name'] ?? ''));
@@ -12501,7 +12507,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                         </p>
                     </div>
                     <?php if ($subAction !== 'add' && $editingBrandId === null): ?>
-                        <a href="index.php?section=brands&sub_action=add" class="btn-save-primary" style="text-decoration: none; padding: 10px 22px; background-color: #dc2626;">
+                        <a href="/admin/index.php?section=brands&sub_action=add" class="btn-save-primary" style="text-decoration: none; padding: 10px 22px; background-color: #dc2626;">
                             <i class="fa-solid fa-plus"></i> Add New Brand
                         </a>
                     <?php endif; ?>
@@ -12515,7 +12521,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                 <i class="fa-solid fa-pen-to-square" style="color: #dc2626;"></i>
                                 <?php echo ($editingBrand !== null) ? 'Editing Brand: ' . htmlspecialchars($editingBrand['name']) : 'Add New Client Brand'; ?>
                             </h2>
-                            <a href="index.php?section=brands" style="color: #64748b; font-size: 0.85rem; text-decoration: none; font-weight: 600;">
+                            <a href="/admin/index.php?section=brands" style="color: #64748b; font-size: 0.85rem; text-decoration: none; font-weight: 600;">
                                 <i class="fa-solid fa-xmark"></i> Close Form
                             </a>
                         </div>
@@ -12526,7 +12532,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                             </div>
                         <?php endif; ?>
 
-                        <form action="index.php?section=brands" method="POST" enctype="multipart/form-data" id="brandForm">
+                        <form action="/admin/index.php?section=brands" method="POST" enctype="multipart/form-data" id="brandForm">
                             <input type="hidden" name="action" value="save_brand_logo">
                             <?php if ($editingBrandId !== null): ?>
                                 <input type="hidden" name="id" value="<?php echo $editingBrandId; ?>">
@@ -12608,7 +12614,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                 <button type="submit" class="btn-save-primary" style="background-color: #dc2626; padding: 12px 28px;">
                                     <i class="fa-solid fa-floppy-disk"></i> Save Brand Logo
                                 </button>
-                                <a href="index.php?section=brands" style="padding: 12px 20px; background: #f1f5f9; color: #475569; border-radius: 8px; text-decoration: none; font-weight: 700; font-size: 0.9rem;">
+                                <a href="/admin/index.php?section=brands" style="padding: 12px 20px; background: #f1f5f9; color: #475569; border-radius: 8px; text-decoration: none; font-weight: 700; font-size: 0.9rem;">
                                     Cancel
                                 </a>
                             </div>
@@ -12695,26 +12701,62 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                     </script>
 
                 <?php else: ?>
-                    <!-- LIST VIEW: CLIENT BRANDS GRID -->
-                    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 20px;">
+                    <!-- TOAST CONTAINER FOR BRAND ACTIONS -->
+                    <div id="brand_toast_container" style="position: fixed; bottom: 28px; right: 28px; z-index: 99999; display: flex; flex-direction: column; gap: 10px; pointer-events: none;"></div>
+
+                    <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px 20px; margin-bottom: 24px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <span style="width: 32px; height: 32px; border-radius: 8px; background: #e0e7ff; color: #4338ca; display: flex; align-items: center; justify-content: center; font-size: 0.85rem;">
+                                <i class="fa-solid fa-arrows-up-down-left-right"></i>
+                            </span>
+                            <div>
+                                <strong style="font-size: 0.88rem; color: #0f172a; display: block;">Reorder &amp; Organize Ticker Display</strong>
+                                <span style="font-size: 0.78rem; color: #64748b;">Drag and drop cards or use the &larr; / &rarr; buttons to reorder how logos roll across the homepage marquee.</span>
+                            </div>
+                        </div>
+                        <div id="brand_save_indicator" style="display: none; align-items: center; gap: 6px; font-size: 0.82rem; font-weight: 700; color: #16a34a; background: #f0fdf4; border: 1px solid #bbf7d0; padding: 6px 14px; border-radius: 20px;">
+                            <i class="fa-solid fa-circle-check"></i> Order saved live!
+                        </div>
+                    </div>
+
+                    <!-- LIST VIEW: CLIENT BRANDS DRAGGABLE GRID -->
+                    <div id="brandLogosGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px;">
                         <?php foreach ($brandLogosList as $bIndex => $bItem): ?>
-                            <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 20px; display: flex; flex-direction: column; justify-content: space-between; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
+                            <div class="brand-sortable-card" id="brand-card-<?php echo (int)$bItem['id']; ?>" data-id="<?php echo (int)$bItem['id']; ?>" draggable="true" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 18px; display: flex; flex-direction: column; justify-content: space-between; box-shadow: 0 1px 3px rgba(0,0,0,0.02); position: relative; transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.25s ease;">
                                 <div>
-                                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
-                                        <form action="index.php?section=brands" method="POST" style="margin: 0;">
-                                            <input type="hidden" name="action" value="toggle_brand_visibility">
-                                            <input type="hidden" name="id" value="<?php echo $bItem['id']; ?>">
-                                            <button type="submit" style="border: none; background: none; cursor: pointer; padding: 0;">
+                                    <!-- Card Header: Rank, Drag Handle, Move Buttons & Visibility -->
+                                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid #f8fafc;">
+                                        <div class="brand-drag-handle" title="Drag to reorder" style="cursor: grab; display: inline-flex; align-items: center; gap: 7px; color: #64748b; font-size: 0.85rem; user-select: none;">
+                                            <i class="fa-solid fa-grip-vertical" style="color: #94a3b8;"></i>
+                                            <span style="background: #f1f5f9; color: #334155; font-size: 0.72rem; font-weight: 800; padding: 2px 7px; border-radius: 6px;">
+                                                #<span class="brand-rank-val"><?php echo ($bIndex + 1); ?></span>
+                                            </span>
+                                        </div>
+
+                                        <div style="display: flex; align-items: center; gap: 5px;">
+                                            <!-- Move Earlier Button -->
+                                            <button type="button" onclick="moveBrandCard(this, -1)" class="btn-brand-move" title="Move earlier in ticker" style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 6px; width: 26px; height: 26px; cursor: pointer; display: flex; align-items: center; justify-content: center; color: #475569; font-size: 0.7rem; transition: background 0.15s;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='#f8fafc'">
+                                                <i class="fa-solid fa-chevron-left"></i>
+                                            </button>
+
+                                            <!-- Move Later Button -->
+                                            <button type="button" onclick="moveBrandCard(this, 1)" class="btn-brand-move" title="Move later in ticker" style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 6px; width: 26px; height: 26px; cursor: pointer; display: flex; align-items: center; justify-content: center; color: #475569; font-size: 0.7rem; transition: background 0.15s;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='#f8fafc'">
+                                                <i class="fa-solid fa-chevron-right"></i>
+                                            </button>
+
+                                            <!-- Visibility Toggle -->
+                                            <button type="button" onclick="toggleBrandVisibilityDirect(<?php echo (int)$bItem['id']; ?>, this)" title="Toggle visibility in ticker" style="border: none; background: none; cursor: pointer; padding: 0; margin-left: 4px;">
                                                 <?php if (!empty($bItem['visible'])): ?>
-                                                    <span style="background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; font-size: 0.7rem; font-weight: 700; padding: 2px 8px; border-radius: 12px;">● Visible</span>
+                                                    <span class="badge-brand-status" style="background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; font-size: 0.68rem; font-weight: 700; padding: 2px 8px; border-radius: 12px; display: inline-block;">● Visible</span>
                                                 <?php else: ?>
-                                                    <span style="background: #f8fafc; color: #64748b; border: 1px solid #cbd5e1; font-size: 0.7rem; font-weight: 700; padding: 2px 8px; border-radius: 12px;">● Hidden</span>
+                                                    <span class="badge-brand-status" style="background: #f8fafc; color: #64748b; border: 1px solid #cbd5e1; font-size: 0.68rem; font-weight: 700; padding: 2px 8px; border-radius: 12px; display: inline-block;">● Hidden</span>
                                                 <?php endif; ?>
                                             </button>
-                                        </form>
+                                        </div>
                                     </div>
 
-                                    <div style="height: 68px; background: #09090b; border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 10px; display: flex; align-items: center; justify-content: center; margin-bottom: 14px; color: #ffffff; padding: 10px;">
+                                    <!-- Dark Logo Preview -->
+                                    <div style="height: 68px; background: #09090b; border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 10px; display: flex; align-items: center; justify-content: center; margin-bottom: 12px; color: #ffffff; padding: 10px; box-shadow: inset 0 2px 6px rgba(0,0,0,0.4);">
                                         <?php if (!empty($bItem['image'])): ?>
                                             <img src="<?php echo htmlspecialchars(getCloudinaryUrl($bItem['image'], 'f_auto,q_auto:good,w_300,h_80,c_fit')); ?>" alt="<?php echo htmlspecialchars($bItem['name']); ?>" style="max-height: 42px; max-width: 150px; object-fit: contain; <?php echo empty($bItem['full_color']) ? 'filter: brightness(0) invert(1);' : ''; ?>">
                                         <?php else: ?>
@@ -12725,27 +12767,238 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                         <?php endif; ?>
                                     </div>
 
-                                    <h3 style="font-size: 1.05rem; font-weight: 700; color: #0f172a; margin-bottom: 4px; text-align: center;">
+                                    <h3 style="font-size: 1rem; font-weight: 700; color: #0f172a; margin: 0 0 4px 0; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="<?php echo htmlspecialchars($bItem['name']); ?>">
                                         <?php echo htmlspecialchars($bItem['name']); ?>
                                     </h3>
                                 </div>
 
-                                <div style="display: flex; align-items: center; justify-content: space-between; border-top: 1px solid #f1f5f9; padding-top: 12px; margin-top: 14px;">
-                                    <a href="index.php?section=brands&edit_id=<?php echo $bItem['id']; ?>" style="color: #0f172a; font-size: 0.82rem; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 5px; background: #f1f5f9; padding: 6px 14px; border-radius: 8px;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='#f1f5f9'">
-                                        <i class="fa-solid fa-pen-to-square" style="font-size: 0.75rem; color: #dc2626;"></i> Edit Brand
+                                <!-- Card Footer: Edit and Delete Actions -->
+                                <div style="display: flex; align-items: center; justify-content: space-between; border-top: 1px solid #f1f5f9; padding-top: 12px; margin-top: 12px;">
+                                    <a href="/admin/index.php?section=brands&edit_id=<?php echo (int)$bItem['id']; ?>" style="color: #0f172a; font-size: 0.82rem; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 5px; background: #f1f5f9; padding: 6px 12px; border-radius: 8px; transition: background 0.15s;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='#f1f5f9'">
+                                        <i class="fa-solid fa-pen-to-square" style="font-size: 0.75rem; color: #dc2626;"></i> Edit
                                     </a>
 
-                                    <form action="index.php?section=brands" method="POST" onsubmit="return promptConfirmModal(this, 'Remove Client Brand', 'Are you sure you want to remove <?php echo htmlspecialchars(addslashes($bItem['name'])); ?> from client brands?');" style="margin: 0;">
-                                        <input type="hidden" name="action" value="delete_brand_logo">
-                                        <input type="hidden" name="id" value="<?php echo $bItem['id']; ?>">
-                                        <button type="submit" style="background: none; border: none; color: #94a3b8; font-size: 0.82rem; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; padding: 4px 8px;" onmouseover="this.style.color='#dc2626'" onmouseout="this.style.color='#94a3b8'">
-                                            <i class="fa-solid fa-trash-can" style="font-size: 0.75rem;"></i> Remove
-                                        </button>
-                                    </form>
+                                    <button type="button" onclick="deleteBrandDirect(<?php echo (int)$bItem['id']; ?>, '<?php echo htmlspecialchars(addslashes($bItem['name'])); ?>')" style="background: none; border: none; color: #94a3b8; font-size: 0.82rem; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; padding: 6px 10px; border-radius: 6px; transition: all 0.2s;" onmouseover="this.style.color='#dc2626'; this.style.background='#fef2f2'" onmouseout="this.style.color='#94a3b8'; this.style.background='none'">
+                                        <i class="fa-solid fa-trash-can" style="font-size: 0.75rem;"></i> Remove
+                                    </button>
                                 </div>
                             </div>
                         <?php endforeach; ?>
                     </div>
+
+                    <!-- REORDERING & DELETION SCRIPTS -->
+                    <script>
+                        function showBrandToast(msg, isSuccess = true) {
+                            const container = document.getElementById('brand_toast_container');
+                            if (!container) return;
+                            const toast = document.createElement('div');
+                            toast.style.cssText = 'background: ' + (isSuccess ? '#0f172a' : '#991b1b') + '; color: #ffffff; padding: 12px 18px; border-radius: 10px; font-size: 0.85rem; font-weight: 700; box-shadow: 0 10px 25px rgba(0,0,0,0.3); display: flex; align-items: center; gap: 10px; pointer-events: auto; opacity: 0; transform: translateY(10px); transition: all 0.25s ease; border-left: 4px solid ' + (isSuccess ? '#22c55e' : '#ef4444') + ';';
+                            toast.innerHTML = (isSuccess ? '<i class="fa-solid fa-circle-check" style="color: #22c55e;"></i>' : '<i class="fa-solid fa-circle-exclamation" style="color: #ef4444;"></i>') + ' <span>' + msg + '</span>';
+                            container.appendChild(toast);
+                            setTimeout(() => {
+                                toast.style.opacity = '1';
+                                toast.style.transform = 'translateY(0)';
+                            }, 10);
+                            setTimeout(() => {
+                                toast.style.opacity = '0';
+                                toast.style.transform = 'translateY(8px)';
+                                setTimeout(() => toast.remove(), 250);
+                            }, 3000);
+                        }
+
+                        function updateBrandRankNumbers() {
+                            const cards = document.querySelectorAll('.brand-sortable-card');
+                            cards.forEach((card, idx) => {
+                                const rankVal = card.querySelector('.brand-rank-val');
+                                if (rankVal) rankVal.textContent = idx + 1;
+                            });
+                            const headerCount = document.querySelector('.section-header-desc strong');
+                            if (headerCount) headerCount.textContent = cards.length + ' Client Brands';
+                        }
+
+                        function persistBrandOrder() {
+                            const grid = document.getElementById('brandLogosGrid');
+                            if (!grid) return;
+                            const cards = grid.querySelectorAll('.brand-sortable-card');
+                            const order = Array.from(cards).map(c => c.getAttribute('data-id')).filter(Boolean);
+                            if (order.length === 0) return;
+
+                            updateBrandRankNumbers();
+
+                            const indicator = document.getElementById('brand_save_indicator');
+                            if (indicator) {
+                                indicator.style.display = 'inline-flex';
+                                indicator.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Saving order...';
+                            }
+
+                            const fd = new FormData();
+                            fd.append('action', 'reorder_brand_logos');
+                            fd.append('order', order.join(','));
+                            fd.append('ajax', '1');
+
+                            fetch('/admin/index.php', {
+                                method: 'POST',
+                                body: fd
+                            })
+                            .then(res => res.json())
+                            .then(data => {
+                                if (indicator) {
+                                    indicator.innerHTML = '<i class="fa-solid fa-circle-check"></i> Order saved live!';
+                                    setTimeout(() => { indicator.style.display = 'none'; }, 2500);
+                                }
+                                showBrandToast('Brand display order updated live on homepage!');
+                            })
+                            .catch(err => {
+                                if (indicator) indicator.style.display = 'none';
+                                showBrandToast('Error saving brand order. Please retry.', false);
+                            });
+                        }
+
+                        function moveBrandCard(btn, dir) {
+                            const card = btn.closest('.brand-sortable-card');
+                            if (!card) return;
+                            const grid = card.parentNode;
+                            if (dir === -1) {
+                                const prev = card.previousElementSibling;
+                                if (prev && prev.classList.contains('brand-sortable-card')) {
+                                    grid.insertBefore(card, prev);
+                                    card.style.transform = 'scale(1.03)';
+                                    setTimeout(() => { card.style.transform = ''; }, 200);
+                                    persistBrandOrder();
+                                }
+                            } else if (dir === 1) {
+                                const next = card.nextElementSibling;
+                                if (next && next.classList.contains('brand-sortable-card')) {
+                                    grid.insertBefore(next, card);
+                                    card.style.transform = 'scale(1.03)';
+                                    setTimeout(() => { card.style.transform = ''; }, 200);
+                                    persistBrandOrder();
+                                }
+                            }
+                        }
+
+                        function deleteBrandDirect(id, name) {
+                            if (!confirm('Are you sure you want to remove \"' + name + '\" from client brands?')) {
+                                return;
+                            }
+                            const card = document.getElementById('brand-card-' + id);
+                            if (card) {
+                                card.style.opacity = '0.4';
+                                card.style.pointerEvents = 'none';
+                            }
+
+                            const fd = new FormData();
+                            fd.append('action', 'delete_brand_logo');
+                            fd.append('id', id);
+                            fd.append('ajax', '1');
+
+                            fetch('/admin/index.php', {
+                                method: 'POST',
+                                body: fd
+                            })
+                            .then(res => res.json())
+                            .then(data => {
+                                if (card) {
+                                    card.style.transform = 'scale(0.85)';
+                                    card.style.opacity = '0';
+                                    setTimeout(() => {
+                                        card.remove();
+                                        updateBrandRankNumbers();
+                                    }, 250);
+                                }
+                                showBrandToast('\"' + name + '\" removed from client brands.');
+                            })
+                            .catch(err => {
+                                if (card) {
+                                    card.style.opacity = '1';
+                                    card.style.pointerEvents = 'auto';
+                                }
+                                showBrandToast('Could not delete brand. Please try again.', false);
+                            });
+                        }
+
+                        function toggleBrandVisibilityDirect(id, btn) {
+                            const badge = btn.querySelector('.badge-brand-status');
+                            const fd = new FormData();
+                            fd.append('action', 'toggle_brand_visibility');
+                            fd.append('id', id);
+                            fd.append('ajax', '1');
+
+                            fetch('/admin/index.php', {
+                                method: 'POST',
+                                body: fd
+                            })
+                            .then(res => res.json())
+                            .then(data => {
+                                if (badge) {
+                                    const isNowVisible = badge.textContent.includes('Hidden');
+                                    if (isNowVisible) {
+                                        badge.textContent = '● Visible';
+                                        badge.style.background = '#f0fdf4';
+                                        badge.style.color = '#166534';
+                                        badge.style.borderColor = '#bbf7d0';
+                                    } else {
+                                        badge.textContent = '● Hidden';
+                                        badge.style.background = '#f8fafc';
+                                        badge.style.color = '#64748b';
+                                        badge.style.borderColor = '#cbd5e1';
+                                    }
+                                }
+                                showBrandToast('Brand visibility updated!');
+                            })
+                            .catch(err => {
+                                showBrandToast('Could not update visibility.', false);
+                            });
+                        }
+
+                        // Drag & Drop HTML5 Sortable
+                        document.addEventListener('DOMContentLoaded', function() {
+                            const grid = document.getElementById('brandLogosGrid');
+                            if (!grid) return;
+                            let draggedCard = null;
+
+                            grid.addEventListener('dragstart', function(e) {
+                                const card = e.target.closest('.brand-sortable-card');
+                                if (!card) return;
+                                draggedCard = card;
+                                e.dataTransfer.effectAllowed = 'move';
+                                e.dataTransfer.setData('text/plain', card.getAttribute('data-id'));
+                                setTimeout(() => { card.style.opacity = '0.35'; card.style.borderColor = '#dc2626'; }, 0);
+                            });
+
+                            grid.addEventListener('dragend', function(e) {
+                                if (draggedCard) {
+                                    draggedCard.style.opacity = '1';
+                                    draggedCard.style.borderColor = '#e2e8f0';
+                                    draggedCard = null;
+                                }
+                                grid.querySelectorAll('.brand-sortable-card').forEach(c => {
+                                    c.style.borderColor = '#e2e8f0';
+                                    c.style.transform = '';
+                                });
+                            });
+
+                            grid.addEventListener('dragover', function(e) {
+                                e.preventDefault();
+                                e.dataTransfer.dropEffect = 'move';
+                                const targetCard = e.target.closest('.brand-sortable-card');
+                                if (targetCard && targetCard !== draggedCard) {
+                                    const rect = targetCard.getBoundingClientRect();
+                                    const midX = rect.left + rect.width / 2;
+                                    if (e.clientX < midX) {
+                                        grid.insertBefore(draggedCard, targetCard);
+                                    } else {
+                                        grid.insertBefore(draggedCard, targetCard.nextSibling);
+                                    }
+                                }
+                            });
+
+                            grid.addEventListener('drop', function(e) {
+                                e.preventDefault();
+                                persistBrandOrder();
+                            });
+                        });
+                    </script>
                 <?php endif; ?>
 
             <!-- SECTION: MY PROFILE & ACCOUNT SETTINGS -->

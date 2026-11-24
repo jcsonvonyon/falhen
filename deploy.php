@@ -200,6 +200,7 @@ if ($action === 'lint_client') {
         'client-portal.php',
         'portfolio-photo.php',
         'portfolio.php',
+        'services.php',
         'admin/index.php',
         'api/admin-client-gallery.php',
         'api/verify-download.php',
@@ -363,7 +364,7 @@ try {
         }
     }
 
-    // Ensure 20 real client brand partner logos are synced into MySQL if database brands have no images or < 10 items
+    // Ensure client brand partner logos are initialized into MySQL only if database brands have no images or are empty
     $dbBrandHasImages = false;
     foreach ($dbSettings['brand_logos_items'] ?? [] as $b) {
         if (!empty($b['image'])) {
@@ -371,14 +372,14 @@ try {
             break;
         }
     }
-    if ((!$dbBrandHasImages || count($dbSettings['brand_logos_items'] ?? []) < 10) && !empty($repoSettings['brand_logos_items'])) {
+    if ((empty($dbSettings['brand_logos_items']) || !$dbBrandHasImages) && !empty($repoSettings['brand_logos_items'])) {
         $mergedSettings['brand_logos_items'] = $repoSettings['brand_logos_items'];
         $pdo = function_exists('getDBConnection') ? getDBConnection() : null;
         if ($pdo) {
             try {
                 $stmt = $pdo->prepare("INSERT INTO `site_settings` (`setting_key`, `setting_value`) VALUES ('brand_logos_items', ?) ON DUPLICATE KEY UPDATE `setting_value` = VALUES(`setting_value`)");
                 $stmt->execute([json_encode($repoSettings['brand_logos_items'], JSON_UNESCAPED_SLASHES)]);
-                $output[] = "Synced 20 brand partner logos from repo to MySQL database.";
+                $output[] = "Synced brand partner logos from repo to MySQL database.";
             } catch (Throwable $e) {}
         }
     }
