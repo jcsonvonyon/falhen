@@ -16,9 +16,11 @@
 @set_time_limit(600);
 @ini_set('memory_limit', '512M');
 @ignore_user_abort(true);
-@apache_setenv('no-gzip', '1');
-@apache_setenv('noabort', '1');
-@apache_setenv('noconntimeout', '1');
+if (function_exists('apache_setenv')) {
+    @apache_setenv('no-gzip', '1');
+    @apache_setenv('noabort', '1');
+    @apache_setenv('noconntimeout', '1');
+}
 
 require_once __DIR__ . '/../includes/functions.php';
 require_once __DIR__ . '/../config/db.php';
