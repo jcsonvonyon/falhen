@@ -366,6 +366,17 @@ if ($action === 'stash_list') {
     exit;
 }
 
+if ($action === 'warm_album_archive') {
+    $albId = (int)($_GET['album_id'] ?? 42);
+    $script = $repoDir . '/api/download-album.php';
+    echo "Starting CLI archive packaging for album #{$albId}...\n";
+    $cmd = "php " . escapeshellarg($script) . " --album_id={$albId} 2>&1";
+    exec($cmd, $out, $ret);
+    echo implode("\n", $out) . "\n";
+    echo "Return code: {$ret}\n";
+    exit;
+}
+
 echo "===========================================\n";
 echo "   FALHEN CPANEL GIT DEPLOYMENT SYSTEM     \n";
 echo "===========================================\n";

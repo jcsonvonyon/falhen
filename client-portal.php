@@ -3104,7 +3104,7 @@ foreach ($albumsRepo as $alb) {
                     }
 
                     // If not ready yet, trigger parallel packaging with progress notification
-                    showToast(`Packaging ${galleryItems.length} studio-master photos in parallel... Please wait a moment.`);
+                    showToast(`Packaging ${galleryItems.length} studio-master photos in background... Please wait a moment.`);
                     const prepResp = await fetch(`/api/download-album.php?action=prepare&album_id=${currentAlbumId}&token=${encodeURIComponent(activeToken)}`);
                     const prepData = await prepResp.json();
 
@@ -3112,8 +3112,28 @@ foreach ($albumsRepo as $alb) {
                         showToast(`✓ High-resolution archive complete! Downloading now...`);
                         initiateBrowserDownload(prepData.download_url || directUrl);
                     } else {
-                        // Fallback direct download
-                        initiateBrowserDownload(directUrl);
+                        // Background packaging initiated: poll status every 2.5s
+                        let pollCount = 0;
+                        const pollTimer = setInterval(async () => {
+                            pollCount++;
+                            try {
+                                const checkResp = await fetch(`/api/download-album.php?action=status&album_id=${currentAlbumId}&token=${encodeURIComponent(activeToken)}`);
+                                const checkData = await checkResp.json();
+                                if (checkData && checkData.ready) {
+                                    clearInterval(pollTimer);
+                                    showToast(`✓ High-resolution archive complete! Downloading ${galleryItems.length} photos (.ZIP)...`);
+                                    initiateBrowserDownload(checkData.download_url || directUrl);
+                                } else if (pollCount > 40) {
+                                    clearInterval(pollTimer);
+                                    initiateBrowserDownload(directUrl);
+                                } else if (pollCount % 3 === 0) {
+                                    showToast(`Building ${galleryItems.length} studio-master ZIP... (${pollCount * 2}s)`);
+                                }
+                            } catch (err) {
+                                clearInterval(pollTimer);
+                                initiateBrowserDownload(directUrl);
+                            }
+                        }, 2500);
                     }
                 } catch (e) {
                     // Fallback to direct download
