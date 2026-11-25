@@ -276,7 +276,7 @@ function initDatabaseSchema($pdo = null) {
                 VALUES ('henry.falonipe', 'henry.falonipe@falhen.com', 'henry@falhen.com', ?, 'Owner / Super Admin', 'Henry Falonipe', 1, 'active')");
             $insStmt->execute([$defaultHash]);
         } else {
-            @$pdo->exec("UPDATE `admin_users` SET `role` = 'Owner / Super Admin', `is_owner` = 1, `status` = 'active', `alt_email` = 'henry@falhen.com' WHERE LOWER(email) = 'henry.falonipe@falhen.com' OR username = 'henry.falonipe'");
+            @$pdo->exec("UPDATE `admin_users` SET `role` = 'Owner / Super Admin', `is_owner` = 1, `status` = 'active', `alt_email` = COALESCE(NULLIF(`alt_email`, ''), 'henry@falhen.com') WHERE LOWER(email) = 'henry.falonipe@falhen.com' OR username = 'henry.falonipe'");
         }
 
         // 4. Ensure site_settings, client_download_logs, and system_backups tables exist

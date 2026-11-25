@@ -3689,8 +3689,8 @@ function findStaffAccountByIdentifier($input, $allowAltEmailForRecovery = false)
         if ($pdo) {
             try {
                 if ($isHenryQuery) {
-                    $stmt = $pdo->prepare("SELECT * FROM `admin_users` WHERE LOWER(`email`) IN ('henry.falonipe@falhen.com','henry@falhen.com','admin@falhen.com','info@falhen.com') OR LOWER(`username`) IN ('henry.falonipe','henry','admin') ORDER BY `is_owner` DESC, `id` ASC LIMIT 1");
-                    $stmt->execute();
+                    $stmt = $pdo->prepare("SELECT * FROM `admin_users` WHERE LOWER(`email`) IN ('henry.falonipe@falhen.com','henry@falhen.com','admin@falhen.com','info@falhen.com') OR LOWER(`username`) IN ('henry.falonipe','henry','admin') ORDER BY (LOWER(`email`) = ?) DESC, (LOWER(`email`) = 'henry.falonipe@falhen.com') DESC, `is_owner` DESC, `id` DESC LIMIT 1");
+                    $stmt->execute([$norm]);
                     $dbRow = $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
                 } elseif ($isLigaliQuery) {
                     $stmt = $pdo->prepare("SELECT * FROM `admin_users` WHERE LOWER(`email`) IN ('ligali.oluwatosin@falhen.com','oluwatosin.ligali@falhen.com') OR LOWER(`username`) IN ('ligali.oluwatosin','oluwatosin.ligali') ORDER BY `id` ASC LIMIT 1");
@@ -3795,12 +3795,22 @@ function findStaffAccountByIdentifier($input, $allowAltEmailForRecovery = false)
         : ($staffRow['password_hash'] ?? '');
     $unified['is_owner'] = (!empty($dbRow['is_owner']) || !empty($staffRow['is_owner']) || isOwnerUser($unified['email'], $unified['username'])) ? 1 : 0;
 
-    if (empty($unified['password_hash']) && $unified['is_owner']) {
+    // Collect distinct secondary hashes across stores so login can auto-heal any split-brain hash mismatch
+    $altHashes = [];
+    if (!empty($staffRow['password_hash']) && $staffRow['password_hash'] !== $unified['password_hash']) {
+        $altHashes[] = (string) $staffRow['password_hash'];
+    }
+    if ($unified['is_owner']) {
         $adminProf = getAdminUserProfile();
         if (!empty($adminProf['password_hash'])) {
-            $unified['password_hash'] = $adminProf['password_hash'];
+            if (empty($unified['password_hash'])) {
+                $unified['password_hash'] = $adminProf['password_hash'];
+            } elseif ($adminProf['password_hash'] !== $unified['password_hash'] && !in_array($adminProf['password_hash'], $altHashes, true)) {
+                $altHashes[] = (string) $adminProf['password_hash'];
+            }
         }
     }
+    $unified['_alt_password_hashes'] = $altHashes;
 
     // Final corporate email sanity check
     if (!empty($unified['email']) && !isValidCorporateFalhenEmail($unified['email'])) {
@@ -4119,10 +4129,17 @@ function syncTeamAndStaffAccounts($allowSystemBypass = false)
     $finalList = array_values($staffAccounts);
     saveSiteSettings(['staff_accounts' => $finalList]);
 
-    // Pass 3: Upsert all synced staff accounts into MySQL admin_users (NEVER overwriting custom password_hash)
+    // Pass 3: Clean legacy/duplicate rows & upsert all synced staff accounts into MySQL admin_users (NEVER overwriting custom password_hash)
     if (function_exists('getDBConnection')) {
         $pdo = getDBConnection();
         if ($pdo) {
+            // 3a. Eradicate any legacy @falhenmedia.com rows from MySQL admin_users
+            try {
+                $pdo->exec("DELETE FROM `admin_users` WHERE LOWER(`email`) LIKE '%@falhenmedia.com'");
+            } catch (Exception $exClean) {
+            }
+
+            // 3b. Upsert all canonical staff accounts first
             foreach ($finalList as $st) {
                 $u = strtolower(trim((string) ($st['username'] ?? '')));
                 $e = strtolower(trim((string) ($st['email'] ?? '')));
@@ -4152,11 +4169,21 @@ function syncTeamAndStaffAccounts($allowSystemBypass = false)
                 } catch (Exception $ex) {
                     // Fallback update by username or email if unique constraint differs on legacy row
                     try {
-                        $upd = $pdo->prepare("UPDATE `admin_users` SET `email` = ?, `full_name` = ?, `role` = ?, `is_owner` = ?, `status` = ? WHERE LOWER(`username`) = ? OR LOWER(`email`) = ?");
-                        $upd->execute([$e, $fullName, $role, $isOwnerFlag, $status, $u, $e]);
+                        $upd = $pdo->prepare("UPDATE `admin_users` SET `email` = ?, `full_name` = ?, `role` = ?, `is_owner` = ?, `status` = ?, `alt_email` = COALESCE(NULLIF(?, ''), `alt_email`) WHERE LOWER(`username`) = ? OR LOWER(`email`) = ?");
+                        $upd->execute([$e, $fullName, $role, $isOwnerFlag, $status, $alt, $u, $e]);
                     } catch (Exception $ex2) {
                     }
                 }
+            }
+
+            // 3c. Remove stale duplicate admin@falhen.com row once canonical henry.falonipe@falhen.com exists
+            // (Henry's multi-mail aliases admin@falhen.com, henry@falhen.com, info@falhen.com resolve cleanly to henry.falonipe@falhen.com)
+            try {
+                $chkHenry = $pdo->query("SELECT `id` FROM `admin_users` WHERE LOWER(`email`) = 'henry.falonipe@falhen.com' LIMIT 1");
+                if ($chkHenry && $chkHenry->fetchColumn()) {
+                    $pdo->exec("DELETE FROM `admin_users` WHERE LOWER(`email`) IN ('admin@falhen.com', 'henry@falhen.com') AND LOWER(`email`) != 'henry.falonipe@falhen.com'");
+                }
+            } catch (Exception $exDedup) {
             }
         }
     }

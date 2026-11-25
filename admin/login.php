@@ -528,8 +528,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         }
 
                         if ($view === 'staff' && empty($error)) {
-                            // Tier 1: Local Password Hash Verification (MySQL admin_users / settings.json)
-                            if ($account && !empty($account['password_hash']) && password_verify($password, $account['password_hash'])) {
+                            // Tier 1: Local Password Hash Verification (MySQL admin_users / settings.json with split-brain auto-heal)
+                            $localHashMatched = false;
+                            $matchedAltHash = null;
+                            if ($account) {
+                                if (!empty($account['password_hash']) && password_verify($password, $account['password_hash'])) {
+                                    $localHashMatched = true;
+                                } elseif (!empty($account['_alt_password_hashes']) && is_array($account['_alt_password_hashes'])) {
+                                    foreach ($account['_alt_password_hashes'] as $altH) {
+                                        if (!empty($altH) && password_verify($password, $altH)) {
+                                            $localHashMatched = true;
+                                            $matchedAltHash = $altH;
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+                            if ($account && $localHashMatched) {
+                                if ($matchedAltHash !== null) {
+                                    // Auto-heal divergent hash across DB and settings.json immediately
+                                    syncStaffPasswordAcrossStores($account['email'] ?? $cleanInput, $account['username'] ?? '', $matchedAltHash);
+                                }
                                 $stStatus = strtolower(trim((string) ($account['status'] ?? 'active')));
                                 $actStatus = strtolower(trim((string) ($account['activation_status'] ?? 'activated')));
                                 if ($stStatus === 'pending_activation' || $actStatus === 'pending') {
@@ -811,12 +830,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             $pdo = getDBConnection();
                             if ($pdo) {
                                 try {
-                                    if (!empty($targetUser['id']) && is_numeric($targetUser['id'])) {
-                                        $uStmt = $pdo->prepare("UPDATE `admin_users` SET `reset_otp` = ?, `reset_expires` = ? WHERE `id` = ?");
-                                        $uStmt->execute([$codeHash, $expiresSql, $targetUser['id']]);
-                                    } elseif ($targetEmail !== '') {
+                                    if ($targetEmail !== '') {
                                         $uStmt = $pdo->prepare("UPDATE `admin_users` SET `reset_otp` = ?, `reset_expires` = ? WHERE LOWER(`email`) = ?");
                                         $uStmt->execute([$codeHash, $expiresSql, strtolower($targetEmail)]);
+                                    }
+                                    if ($targetEmail === '' || (isset($uStmt) && $uStmt->rowCount() === 0 && !empty($targetUser['id']) && is_numeric($targetUser['id']))) {
+                                        $uStmt = $pdo->prepare("UPDATE `admin_users` SET `reset_otp` = ?, `reset_expires` = ? WHERE `id` = ?");
+                                        $uStmt->execute([$codeHash, $expiresSql, $targetUser['id']]);
                                     }
                                 } catch (Exception $e) {
                                     error_log("Failed persisting OTP hash in DB: " . $e->getMessage());
@@ -970,13 +990,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $dbUser = null;
             if ($pdo) {
                 try {
-                    if ($userId && is_numeric($userId)) {
+                    if ($origEmail !== '') {
+                        $stmt = $pdo->prepare("SELECT * FROM `admin_users` WHERE LOWER(`email`) = ? LIMIT 1");
+                        $stmt->execute([strtolower($origEmail)]);
+                        $dbUser = $stmt->fetch();
+                    }
+                    if (!$dbUser && $origUsername !== '') {
+                        $stmt = $pdo->prepare("SELECT * FROM `admin_users` WHERE LOWER(`username`) = ? LIMIT 1");
+                        $stmt->execute([strtolower($origUsername)]);
+                        $dbUser = $stmt->fetch();
+                    }
+                    if (!$dbUser && $userId && is_numeric($userId)) {
                         $stmt = $pdo->prepare("SELECT * FROM `admin_users` WHERE `id` = ? LIMIT 1");
                         $stmt->execute([$userId]);
-                        $dbUser = $stmt->fetch();
-                    } else {
-                        $stmt = $pdo->prepare("SELECT * FROM `admin_users` WHERE LOWER(email) = ? OR LOWER(username) = ? LIMIT 1");
-                        $stmt->execute([strtolower($origEmail), strtolower($origUsername)]);
                         $dbUser = $stmt->fetch();
                     }
                 } catch (Exception $e) {}
@@ -992,7 +1018,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 if ($dbExpiresTs >= $now && hash_equals((string) $dbUser['reset_otp'], $hashInput)) {
                     $otpValid = true;
                 }
-            } elseif (!empty($_SESSION['reset_pending_code_hash']) && !empty($_SESSION['reset_pending_expires'])) {
+            }
+            if (!$otpValid && !empty($_SESSION['reset_pending_code_hash']) && !empty($_SESSION['reset_pending_expires'])) {
                 if ((int) $_SESSION['reset_pending_expires'] >= $now && hash_equals((string) $_SESSION['reset_pending_code_hash'], $hashInput)) {
                     $otpValid = true;
                 }
@@ -1069,10 +1096,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         ]);
                     }
 
-                    // Clear any login lockouts for this account after verified reset
+                    // Clear any login lockouts for this account (and all Owner aliases) after verified reset
                     falhenRateLimitLedgerOp('staff_login', $origEmail, 'clear', 5, 900);
                     falhenRateLimitLedgerOp('staff_login', $origUsername, 'clear', 5, 900);
                     falhenRateLimitLedgerOp('staff_login', $newUsername, 'clear', 5, 900);
+                    if (isOwnerUser($origEmail, $origUsername)) {
+                        foreach (['henry.falonipe@falhen.com', 'henry@falhen.com', 'admin@falhen.com', 'info@falhen.com', 'henry.falonipe', 'henry', 'admin'] as $ownerAlias) {
+                            falhenRateLimitLedgerOp('staff_login', $ownerAlias, 'clear', 5, 900);
+                        }
+                    }
 
                     unset(
                         $_SESSION['reset_pending_user_id'],

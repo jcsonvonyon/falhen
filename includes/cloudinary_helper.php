@@ -71,8 +71,7 @@ function uploadToCloudinary($fileOrUrl, $folder = 'falhen', $customPublicId = nu
     $paramsToSign = [
         'folder' => $folder,
         'image_metadata' => 'true',
-        'timestamp' => $timestamp,
-        'transformation' => 'c_limit,w_2560,h_2560,q_auto:best'
+        'timestamp' => $timestamp
     ];
     if (!empty($customPublicId)) {
         $paramsToSign['public_id'] = $customPublicId;
@@ -93,7 +92,6 @@ function uploadToCloudinary($fileOrUrl, $folder = 'falhen', $customPublicId = nu
         'timestamp' => $timestamp,
         'folder' => $folder,
         'image_metadata' => 'true',
-        'transformation' => 'c_limit,w_2560,h_2560,q_auto:best',
         'signature' => $signature
     ];
     if (!empty($customPublicId)) {
@@ -154,11 +152,14 @@ function syncDrivePhotoToCloudinary($photoUrl, $albumId = 0, $autoUpload = false
         return getCloudinaryUrl($photoUrl, 'f_auto,q_auto');
     }
 
-    // Check persistent sync map
-    $mapFile = __DIR__ . '/../config/cloudinary_sync_map.json';
-    $syncMap = file_exists($mapFile) ? @json_decode(file_get_contents($mapFile), true) : [];
-    if (!is_array($syncMap)) {
-        $syncMap = [];
+    // Check persistent sync map (cached in-memory for speed)
+    static $syncMap = null;
+    if ($syncMap === null) {
+        $mapFile = __DIR__ . '/../config/cloudinary_sync_map.json';
+        $syncMap = file_exists($mapFile) ? @json_decode(file_get_contents($mapFile), true) : [];
+        if (!is_array($syncMap)) {
+            $syncMap = [];
+        }
     }
 
     $hashKey = md5($photoUrl);
@@ -220,27 +221,36 @@ function buildClientGalleryPhotoItems(array $rawPhotos, $albumId = 0)
     foreach (array_values($rawPhotos) as $idx => $rawUrl) {
         $syncedUrl = syncDrivePhotoToCloudinary($rawUrl, $albumId, false);
         $thumbUrl = isCloudinaryUrl($syncedUrl)
-            ? getCloudinaryUrl($syncedUrl, 'f_auto,q_auto:eco,w_180,h_120,c_fill')
+            ? getCloudinaryUrl($syncedUrl, 'f_auto,q_auto:good,w_400,h_267,c_fill')
             : (strpos($syncedUrl, 'lh3.googleusercontent.com/d/') !== false
-                ? preg_replace('/=w\d+.*$/', '=w180-h120-p', $syncedUrl)
+                ? preg_replace('/=w\d+.*$/', '=w400-h267-p', $syncedUrl)
                 : $syncedUrl);
 
+        // High-fidelity Retina masonry preview (q_auto:best retains soft skin smoothing & gradient tones)
         $masonryUrl = isCloudinaryUrl($syncedUrl)
-            ? getCloudinaryUrl($syncedUrl, 'f_auto,q_auto:eco,w_800,c_limit')
+            ? getCloudinaryUrl($syncedUrl, 'f_auto,q_auto:best,w_1600,c_limit')
             : (strpos($syncedUrl, 'lh3.googleusercontent.com/d/') !== false
-                ? preg_replace('/=w\d+.*$/', '=w800', $syncedUrl)
+                ? preg_replace('/=w\d+.*$/', '=w1600', $syncedUrl)
                 : $syncedUrl);
 
         $mobileUrl = isCloudinaryUrl($syncedUrl)
-            ? getCloudinaryUrl($syncedUrl, 'f_auto,q_auto:good,w_1200,c_limit')
-            : (strpos($syncedUrl, 'lh3.googleusercontent.com/d/') !== false
-                ? preg_replace('/=w\d+.*$/', '=w1200', $syncedUrl)
-                : $syncedUrl);
-
-        $fullViewUrl = isCloudinaryUrl($syncedUrl)
-            ? getCloudinaryUrl($syncedUrl, 'f_auto,q_auto:good,w_1920,c_limit')
+            ? getCloudinaryUrl($syncedUrl, 'f_auto,q_auto:best,w_1920,c_limit')
             : (strpos($syncedUrl, 'lh3.googleusercontent.com/d/') !== false
                 ? preg_replace('/=w\d+.*$/', '=w1920', $syncedUrl)
+                : $syncedUrl);
+
+        // 4K Ultra-HD full view for lightbox slideshow
+        $fullViewUrl = isCloudinaryUrl($syncedUrl)
+            ? getCloudinaryUrl($syncedUrl, 'f_auto,q_auto:best,w_3840,c_limit')
+            : (strpos($syncedUrl, 'lh3.googleusercontent.com/d/') !== false
+                ? preg_replace('/=w\d+.*$/', '=w3840', $syncedUrl)
+                : $syncedUrl);
+
+        // Raw original full-resolution master download link
+        $directDownloadUrl = isCloudinaryUrl($syncedUrl)
+            ? getCloudinaryUrl($syncedUrl, 'fl_attachment')
+            : (strpos($syncedUrl, 'lh3.googleusercontent.com/d/') !== false
+                ? preg_replace('/=w\d+.*$/', '=s0', $syncedUrl)
                 : $syncedUrl);
 
         // Assign deterministic natural aspect ratio for editorial Masonry variety
@@ -256,6 +266,7 @@ function buildClientGalleryPhotoItems(array $rawPhotos, $albumId = 0)
             'mobile_url' => $mobileUrl,
             'full_url' => $fullViewUrl,
             'download_url' => "/api/download-album.php?album_id=" . (int) $albumId . "&photo_index=" . $idx,
+            'direct_download_url' => $directDownloadUrl,
             'aspect_ratio' => $aspectRatio,
             'is_cloudinary' => isCloudinaryUrl($syncedUrl),
             'is_gdrive' => (strpos($rawUrl, 'googleusercontent.com') !== false || strpos($rawUrl, 'drive.google.com') !== false)
@@ -368,10 +379,10 @@ function syncSinglePhotoToCloudinary($photoUrlOrFile, $slug = 'general', $index 
         ];
     }
 
-    // 3. Check if target source stream (with =w2560) is already mapped
+    // 3. Check if target high-resolution source stream (6K Ultra HD =w6000) is already mapped
     $targetSource = $photoUrlOrFile;
     if (strpos((string) $photoUrlOrFile, 'lh3.googleusercontent.com/d/') !== false) {
-        $targetSource = preg_replace('/=w\d+$/', '=w2560', (string) $photoUrlOrFile);
+        $targetSource = preg_replace('/=w\d+$/', '=w6000', (string) $photoUrlOrFile);
     }
     $targetHash = md5((string)$targetSource);
     if (!empty($syncMap[$targetHash]['cloudinary_url'])) {

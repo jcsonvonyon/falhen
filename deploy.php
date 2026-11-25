@@ -376,10 +376,14 @@ echo "Timestamp: " . date('Y-m-d H:i:s') . "\n";
 $output = [];
 $returnVar = 0;
 
-// 1. Back up live settings.json before any git action
+// 1. Back up live settings.json before any git action & ensure storage directories
 $backupDir = $repoDir . '/config/backups';
 if (!is_dir($backupDir)) {
     @mkdir($backupDir, 0755, true);
+}
+$archiveDir = $repoDir . '/storage/archives';
+if (!is_dir($archiveDir)) {
+    @mkdir($archiveDir, 0755, true);
 }
 $liveSettingsFile = $repoDir . '/config/settings.json';
 if (file_exists($liveSettingsFile)) {

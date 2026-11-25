@@ -2187,10 +2187,33 @@ $totalPhotoCount = count($clientPhotos);
             }, `<i class="fa-solid fa-images"></i> ${galleryPhotos.length} photos (.ZIP archive)`);
         }
 
-        function executeAllPhotosDownload(token) {
-            const url = `/api/download-album.php?album_id=${currentAlbumId}&token=${encodeURIComponent(token || '')}`;
-            showToast(`Packaging & downloading ${galleryPhotos.length} photos (.ZIP)...`);
-            window.location.href = url;
+        async function executeAllPhotosDownload(token) {
+            const directUrl = `/api/download-album.php?album_id=${currentAlbumId}&token=${encodeURIComponent(token || '')}`;
+            showToast(`Checking gallery archive for ${galleryPhotos.length} photos (.ZIP)...`);
+
+            try {
+                const statusResp = await fetch(`/api/download-album.php?action=status&album_id=${currentAlbumId}&token=${encodeURIComponent(token || '')}`);
+                const statusData = await statusResp.json();
+
+                if (statusData && statusData.ready) {
+                    showToast(`✓ Gallery package ready! Downloading ${galleryPhotos.length} photos (.ZIP)...`);
+                    window.location.href = statusData.download_url || directUrl;
+                    return;
+                }
+
+                showToast(`Packaging ${galleryPhotos.length} studio-master photos in parallel... Please wait a moment.`);
+                const prepResp = await fetch(`/api/download-album.php?action=prepare&album_id=${currentAlbumId}&token=${encodeURIComponent(token || '')}`);
+                const prepData = await prepResp.json();
+
+                if (prepData && prepData.ready) {
+                    showToast(`✓ High-resolution archive complete! Downloading now...`);
+                    window.location.href = prepData.download_url || directUrl;
+                } else {
+                    window.location.href = directUrl;
+                }
+            } catch (e) {
+                window.location.href = directUrl;
+            }
         }
 
         // Native Share Web API or Clipboard copy

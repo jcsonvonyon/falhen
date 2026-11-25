@@ -26,6 +26,8 @@ Thumbs.db
 # Temporary storage / uploads
 scratch/
 tmp/
+storage/
+storage/archives/
 backups/*gdrive_cache*
 config/downloads_log.json
 config/cloudinary_sync_map.json

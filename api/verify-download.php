@@ -371,6 +371,15 @@ if ($action === 'verify_code') {
         ? 'Identity verified! Your download has started and a copy of the download link has been sent to your email (' . htmlspecialchars($maskedEmail) . ').'
         : 'Identity verified! Preparing your gallery download...';
 
+    // Release session write lock immediately so client can browse/access without Cloudflare 524 timeouts
+    if (session_status() === PHP_SESSION_ACTIVE) {
+        session_write_close();
+    }
+
+    if (session_status() === PHP_SESSION_ACTIVE) {
+        session_write_close();
+    }
+
     echo json_encode([
         'success'          => true,
         'verified'         => true,
@@ -440,6 +449,10 @@ if ($action === 'verify_client_download') {
 
     $emailParts = explode('@', $email);
     $maskedEmail = substr($emailParts[0], 0, 2) . '***@' . ($emailParts[1] ?? '');
+
+    if (session_status() === PHP_SESSION_ACTIVE) {
+        session_write_close();
+    }
 
     echo json_encode([
         'success'          => true,

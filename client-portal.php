@@ -3031,7 +3031,7 @@ foreach ($albumsRepo as $alb) {
         function initiateBrowserDownload(url) {
             if (!url) return;
 
-            // 1. Invisible streaming iframe ensures browser starts native file download without popup suppression
+            // Clean single-trigger download via invisible streaming iframe (avoids duplicate requests and popup suppression)
             let dlFrame = document.getElementById('falhenDlIframe');
             if (!dlFrame) {
                 dlFrame = document.createElement('iframe');
@@ -3043,20 +3043,6 @@ foreach ($albumsRepo as $alb) {
                 document.body.appendChild(dlFrame);
             }
             dlFrame.src = url;
-
-            // 2. Direct location fallback if iframe stream is prevented by browser policy
-            setTimeout(() => {
-                try {
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = '';
-                    document.body.appendChild(a);
-                    a.click();
-                    document.body.removeChild(a);
-                } catch (e) {
-                    window.location.assign(url);
-                }
-            }, 80);
         }
 
         // ================= DOWNLOAD TRIGGERS =================
@@ -3065,17 +3051,45 @@ foreach ($albumsRepo as $alb) {
             requireVerification((token) => {
                 const activeToken = token || downloadToken;
                 const url = `/api/download-album.php?album_id=${currentAlbumId}&photo_index=${item.index}&token=${encodeURIComponent(activeToken)}`;
-                showToast('Downloading high-resolution photo...');
+                showToast('Downloading studio-master high-resolution photo...');
                 initiateBrowserDownload(url);
             });
         }
 
         function triggerBulkDownload() {
-            requireVerification((token) => {
+            requireVerification(async (token) => {
                 const activeToken = token || downloadToken;
-                const url = `/api/download-album.php?album_id=${currentAlbumId}&token=${encodeURIComponent(activeToken)}`;
-                showToast(`Packaging & downloading ${galleryItems.length} photos (.ZIP)...`);
-                initiateBrowserDownload(url);
+                const directUrl = `/api/download-album.php?album_id=${currentAlbumId}&token=${encodeURIComponent(activeToken)}`;
+
+                showToast(`Checking gallery archive for ${galleryItems.length} photos (.ZIP)...`);
+
+                try {
+                    // Check if archive is already prepared in server cache
+                    const statusResp = await fetch(`/api/download-album.php?action=status&album_id=${currentAlbumId}&token=${encodeURIComponent(activeToken)}`);
+                    const statusData = await statusResp.json();
+
+                    if (statusData && statusData.ready) {
+                        showToast(`✓ Gallery package ready! Downloading ${galleryItems.length} photos (.ZIP)...`);
+                        initiateBrowserDownload(statusData.download_url || directUrl);
+                        return;
+                    }
+
+                    // If not ready yet, trigger parallel packaging with progress notification
+                    showToast(`Packaging ${galleryItems.length} studio-master photos in parallel... Please wait a moment.`);
+                    const prepResp = await fetch(`/api/download-album.php?action=prepare&album_id=${currentAlbumId}&token=${encodeURIComponent(activeToken)}`);
+                    const prepData = await prepResp.json();
+
+                    if (prepData && prepData.ready) {
+                        showToast(`✓ High-resolution archive complete! Downloading now...`);
+                        initiateBrowserDownload(prepData.download_url || directUrl);
+                    } else {
+                        // Fallback direct download
+                        initiateBrowserDownload(directUrl);
+                    }
+                } catch (e) {
+                    // Fallback to direct download
+                    initiateBrowserDownload(directUrl);
+                }
             });
         }
 
