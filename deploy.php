@@ -164,6 +164,53 @@ if ($action === 'cat_error_log') {
     exit;
 }
 
+if ($action === 'diag_auth') {
+    require_once $repoDir . '/config/db.php';
+    require_once $repoDir . '/includes/functions.php';
+    require_once $repoDir . '/includes/mxroute_auth.php';
+    $pdo = function_exists('getDBConnection') ? getDBConnection() : null;
+    echo "=== ADMIN_USERS (DB) ===\n";
+    if ($pdo) {
+        try {
+            $rows = $pdo->query("SELECT id, username, email, alt_email, role, is_owner, status, LEFT(password_hash, 7) AS h_alg, LENGTH(password_hash) AS h_len, SUBSTR(SHA2(password_hash, 256), 1, 8) AS h_fp, (reset_otp IS NOT NULL) AS has_otp, last_login_at FROM `admin_users` ORDER BY id ASC")->fetchAll(PDO::FETCH_ASSOC);
+            foreach ($rows as $r) {
+                echo sprintf("id=%s user=%s email=%s alt=%s role=%s owner=%s status=%s h=%s(%s:%s) otp=%s\n",
+                    $r['id'], $r['username'], $r['email'], maskEmailForDisplay((string)$r['alt_email']), $r['role'], $r['is_owner'], $r['status'], $r['h_alg'], $r['h_len'], $r['h_fp'], $r['has_otp']);
+            }
+        } catch (Throwable $e) {
+            echo "DB QUERY ERR: " . $e->getMessage() . "\n";
+        }
+    }
+    echo "\n=== STAFF_ACCOUNTS (SETTINGS) ===\n";
+    $repo = getStaffAccountsRepo();
+    foreach ($repo as $st) {
+        $h = (string)($st['password_hash'] ?? '');
+        echo sprintf("id=%s user=%s email=%s alt=%s role=%s owner=%s status=%s act=%s h=%s(%d:%s)\n",
+            $st['id'] ?? '', $st['username'] ?? '', $st['email'] ?? '', maskEmailForDisplay((string)($st['alt_email'] ?? '')), $st['role'] ?? '', $st['is_owner'] ?? 0, $st['status'] ?? '', $st['activation_status'] ?? '', substr($h, 0, 7), strlen($h), $h ? substr(hash('sha256', $h), 0, 8) : 'none');
+    }
+    echo "\n=== RESOLVER CHECK (henry.falonipe@falhen.com) ===\n";
+    $acc = findStaffAccountByIdentifier('henry.falonipe@falhen.com', false);
+    if ($acc) {
+        $ah = (string)($acc['password_hash'] ?? '');
+        echo sprintf("FOUND: id=%s user=%s email=%s role=%s owner=%s status=%s act=%s h=%s(%d:%s)\n",
+            $acc['id'] ?? '', $acc['username'] ?? '', $acc['email'] ?? '', $acc['role'] ?? '', $acc['is_owner'] ?? 0, $acc['status'] ?? '', $acc['activation_status'] ?? '', substr($ah, 0, 7), strlen($ah), $ah ? substr(hash('sha256', $ah), 0, 8) : 'none');
+    } else {
+        echo "NOT FOUND (null)!\n";
+    }
+    echo "\n=== RECENT AUDIT_LOGS ===\n";
+    if ($pdo) {
+        try {
+            $logs = $pdo->query("SELECT id, actor_username, action_type, entity_id, details, created_at FROM `audit_logs` ORDER BY id DESC LIMIT 15")->fetchAll(PDO::FETCH_ASSOC);
+            foreach ($logs as $l) {
+                echo sprintf("[%s] #%s actor=%s action=%s eid=%s details=%s\n", $l['created_at'], $l['id'], $l['actor_username'], $l['action_type'], $l['entity_id'], $l['details']);
+            }
+        } catch (Throwable $e) {
+            echo "AUDIT_LOGS ERR: " . $e->getMessage() . "\n";
+        }
+    }
+    exit;
+}
+
 if ($action === 'diag_admin') {
     $out = [];
     $adminFile = __DIR__ . '/admin/index.php';
