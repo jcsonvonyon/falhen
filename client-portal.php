@@ -110,6 +110,35 @@ $downloadToken = $_SESSION['verified_album_tokens'][$currentAlbumId] ?? ($_SESSI
 $clientName = $_SESSION['registered_client_name'] ?? '';
 $clientPhone = $_SESSION['registered_client_phone'] ?? '';
 
+// Auto-authenticate client if arriving with valid signed delivery token
+$urlToken = trim($_GET['token'] ?? '');
+if (!$isClientVerified && !empty($urlToken) && function_exists('verifyClientDownloadToken')) {
+    $verifiedTokenData = verifyClientDownloadToken($urlToken, $currentAlbumId);
+    if ($verifiedTokenData !== null) {
+        $isClientVerified = true;
+        $downloadToken = $urlToken;
+        if (!isset($_SESSION['verified_albums']) || !is_array($_SESSION['verified_albums'])) {
+            $_SESSION['verified_albums'] = [];
+        }
+        $_SESSION['verified_albums'][$currentAlbumId] = true;
+        if (!isset($_SESSION['verified_album_tokens']) || !is_array($_SESSION['verified_album_tokens'])) {
+            $_SESSION['verified_album_tokens'] = [];
+        }
+        $_SESSION['verified_album_tokens'][$currentAlbumId] = $urlToken;
+        if (!empty($verifiedTokenData['name'])) {
+            $_SESSION['registered_client_name'] = $verifiedTokenData['name'];
+            $clientName = $verifiedTokenData['name'];
+        }
+        if (!empty($verifiedTokenData['email'])) {
+            $_SESSION['download_email'] = $verifiedTokenData['email'];
+        }
+        if (!empty($verifiedTokenData['phone'])) {
+            $_SESSION['registered_client_phone'] = $verifiedTokenData['phone'];
+            $clientPhone = $verifiedTokenData['phone'];
+        }
+    }
+}
+
 // Fetch photos: prefer synced/uploaded gallery_photos from Cloudinary, then Google Drive folder
 $rawPhotos = [];
 if (!empty($currentAlbum['gallery_photos']) && is_array($currentAlbum['gallery_photos'])) {

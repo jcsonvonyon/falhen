@@ -299,6 +299,19 @@ if ($action === 'verify_code') {
     unset($_SESSION['download_code_hash'], $_SESSION['download_code_plain'], $_SESSION['download_code_expires'], $_SESSION['download_code_attempts']);
 
     $downloadToken = bin2hex(random_bytes(24));
+
+    // Persist token in database and local cache so direct email links work across all devices and browsers
+    if (function_exists('saveClientDownloadToken')) {
+        saveClientDownloadToken($downloadToken, [
+            'album_id'    => $verifiedAlbumId,
+            'email'       => $savedEmail,
+            'name'        => $verifiedName,
+            'phone'       => $verifiedPhone,
+            'access_tier' => $accessTier,
+            'created_at'  => time(),
+            'expires_at'  => time() + (14 * 86400)
+        ]);
+    }
     
     // Strict folder-scoped session storage
     if (!isset($_SESSION['verified_albums']) || !is_array($_SESSION['verified_albums'])) {
@@ -423,6 +436,19 @@ if ($action === 'verify_client_download') {
     }
 
     $downloadToken = bin2hex(random_bytes(24));
+
+    if (function_exists('saveClientDownloadToken')) {
+        saveClientDownloadToken($downloadToken, [
+            'album_id'    => $albumId,
+            'email'       => $email,
+            'name'        => $name,
+            'phone'       => $phone,
+            'access_tier' => 'direct_client',
+            'created_at'  => time(),
+            'expires_at'  => time() + (14 * 86400)
+        ]);
+    }
+
     if (!isset($_SESSION['verified_albums']) || !is_array($_SESSION['verified_albums'])) {
         $_SESSION['verified_albums'] = [];
     }

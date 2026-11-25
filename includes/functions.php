@@ -932,8 +932,136 @@ function logClientDownload($data)
         'downloaded_at' => date('Y-m-d H:i:s')
     ];
     @file_put_contents($streamFile, json_encode($entry, JSON_UNESCAPED_SLASHES) . "\n", FILE_APPEND | LOCK_EX);
+    return true;
+}
 
-    return $logged;
+/**
+ * Save an issued client download token persistently (MySQL + local cache fallback)
+ */
+function saveClientDownloadToken(string $token, array $data): bool {
+    if (empty($token)) return false;
+
+    $albumId    = (int)($data['album_id'] ?? 0);
+    $email      = strtolower(trim((string)($data['email'] ?? '')));
+    $name       = trim((string)($data['name'] ?? 'Client'));
+    $phone      = trim((string)($data['phone'] ?? ''));
+    $accessTier = trim((string)($data['access_tier'] ?? 'authorized_client'));
+    $createdAt  = (int)($data['created_at'] ?? time());
+    $expiresAt  = (int)($data['expires_at'] ?? (time() + 14 * 86400)); // 14 days valid
+
+    // 1. Save to persistent MySQL table `client_download_tokens`
+    if (function_exists('getDBConnection')) {
+        $pdo = getDBConnection();
+        if ($pdo) {
+            try {
+                $stmt = $pdo->prepare("INSERT INTO `client_download_tokens` 
+                    (`token`, `album_id`, `email`, `name`, `phone`, `access_tier`, `created_at`, `expires_at`)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                    ON DUPLICATE KEY UPDATE `expires_at` = VALUES(`expires_at`)");
+                $stmt->execute([$token, $albumId, $email, $name, $phone, $accessTier, $createdAt, $expiresAt]);
+            } catch (Throwable $e) {
+                error_log("Failed to save download token to MySQL: " . $e->getMessage());
+            }
+        }
+    }
+
+    // 2. Also save to atomic file storage fallback `config/download_tokens.json`
+    $tokenFile = __DIR__ . '/../config/download_tokens.json';
+    $tokens = file_exists($tokenFile) ? @json_decode(file_get_contents($tokenFile), true) : [];
+    if (!is_array($tokens)) {
+        $tokens = [];
+    }
+
+    $tokens[$token] = [
+        'album_id'    => $albumId,
+        'email'       => $email,
+        'name'        => $name,
+        'phone'       => $phone,
+        'access_tier' => $accessTier,
+        'created_at'  => $createdAt,
+        'expires_at'  => $expiresAt
+    ];
+
+    // Prune expired tokens (> 30 days) to keep file compact
+    $cutoff = time() - 30 * 86400;
+    foreach ($tokens as $k => $v) {
+        if (!empty($v['expires_at']) && $v['expires_at'] < $cutoff) {
+            unset($tokens[$k]);
+        }
+    }
+
+    @file_put_contents($tokenFile, json_encode($tokens, JSON_PRETTY_PRINT), LOCK_EX);
+    return true;
+}
+
+/**
+ * Verify a client download token (checks MySQL, local JSON cache, and audit stream)
+ * @return array|null Token payload if valid, null if invalid/expired
+ */
+function verifyClientDownloadToken(string $token, int $albumId = 0): ?array {
+    if (empty($token) || strlen($token) < 16) {
+        return null;
+    }
+
+    $now = time();
+
+    // 1. Check MySQL client_download_tokens
+    if (function_exists('getDBConnection')) {
+        $pdo = getDBConnection();
+        if ($pdo) {
+            try {
+                if ($albumId > 0) {
+                    $stmt = $pdo->prepare("SELECT * FROM `client_download_tokens` WHERE `token` = ? AND (`album_id` = ? OR `album_id` = 0) LIMIT 1");
+                    $stmt->execute([$token, $albumId]);
+                } else {
+                    $stmt = $pdo->prepare("SELECT * FROM `client_download_tokens` WHERE `token` = ? LIMIT 1");
+                    $stmt->execute([$token]);
+                }
+                $row = $stmt->fetch(PDO::FETCH_ASSOC);
+                if ($row && (!isset($row['expires_at']) || (int)$row['expires_at'] === 0 || (int)$row['expires_at'] >= $now)) {
+                    return $row;
+                }
+            } catch (Throwable $e) {}
+        }
+    }
+
+    // 2. Check local JSON fallback config/download_tokens.json
+    $tokenFile = __DIR__ . '/../config/download_tokens.json';
+    if (file_exists($tokenFile)) {
+        $tokens = @json_decode(file_get_contents($tokenFile), true);
+        if (is_array($tokens) && isset($tokens[$token])) {
+            $entry = $tokens[$token];
+            $tAlbumId = (int)($entry['album_id'] ?? 0);
+            $expiresAt = (int)($entry['expires_at'] ?? 0);
+            if (($albumId === 0 || $tAlbumId === $albumId || $tAlbumId === 0) && ($expiresAt === 0 || $expiresAt >= $now)) {
+                return $entry;
+            }
+        }
+    }
+
+    // 3. Fallback: Check if the token was logged in downloads_log.json within last 14 days
+    $logFile = __DIR__ . '/../config/downloads_log.json';
+    if (file_exists($logFile)) {
+        $logs = @json_decode(file_get_contents($logFile), true);
+        if (is_array($logs)) {
+            foreach (array_reverse($logs) as $l) {
+                if (!empty($l['token']) && hash_equals($l['token'], $token)) {
+                    $lAlbId = (int)($l['album_id'] ?? 0);
+                    if ($albumId === 0 || $lAlbId === $albumId || $lAlbId === 0) {
+                        return [
+                            'album_id'    => $lAlbId ?: $albumId,
+                            'email'       => $l['email'] ?? '',
+                            'name'        => $l['name'] ?? 'Authorized Client',
+                            'phone'       => $l['phone'] ?? '',
+                            'access_tier' => $l['access_tier'] ?? 'authorized_client'
+                        ];
+                    }
+                }
+            }
+        }
+    }
+
+    return null;
 }
 
 /**

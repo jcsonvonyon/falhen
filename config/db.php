@@ -309,6 +309,20 @@ function initDatabaseSchema($pdo = null) {
             INDEX `idx_dl_date` (`downloaded_at`)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
 
+        // 4b. Persistent client download tokens table (enables secure, signed direct email download links)
+        $pdo->exec("CREATE TABLE IF NOT EXISTS `client_download_tokens` (
+            `token` VARCHAR(64) NOT NULL PRIMARY KEY,
+            `album_id` INT NOT NULL DEFAULT 0,
+            `email` VARCHAR(255) NOT NULL DEFAULT '',
+            `name` VARCHAR(255) DEFAULT 'Client',
+            `phone` VARCHAR(64) DEFAULT NULL,
+            `access_tier` VARCHAR(64) DEFAULT 'authorized_client',
+            `created_at` INT NOT NULL DEFAULT 0,
+            `expires_at` INT NOT NULL DEFAULT 0,
+            INDEX `idx_token_album` (`token`, `album_id`),
+            INDEX `idx_expires` (`expires_at`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+
         // Schema migration: ensure new audit columns exist on client_download_logs
         $dlColumns = [];
         try {

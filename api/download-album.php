@@ -39,6 +39,21 @@ if (!$albumVerified && !$tokenMatches && !empty($_SESSION['client_download_token
     }
 }
 
+// Persistent Token Verification (Database & JSON store for direct email delivery links)
+$verifiedTokenData = null;
+if (!$albumVerified && !$tokenMatches && !empty($providedToken)) {
+    if (function_exists('verifyClientDownloadToken')) {
+        $verifiedTokenData = verifyClientDownloadToken($providedToken, $albumId);
+        if ($verifiedTokenData !== null) {
+            $tokenMatches = true;
+            $albumVerified = true;
+            if ($albumId === 0 && !empty($verifiedTokenData['album_id'])) {
+                $albumId = (int)$verifiedTokenData['album_id'];
+            }
+        }
+    }
+}
+
 if (!$albumVerified && !$tokenMatches) {
     http_response_code(403);
     header('Content-Type: application/json');
@@ -50,15 +65,36 @@ if (!$albumVerified && !$tokenMatches) {
     exit;
 }
 
-// Extract client logging details from session BEFORE releasing write lock
+// Extract client logging details from session or verified token BEFORE releasing write lock
 $clientLogInfo = [
-    'client_name'     => $_SESSION['registered_client_name'] ?? 'Authorized Client',
-    'client_email'    => $_SESSION['download_email'] ?? ($_SESSION['portal_lookup_email'] ?? ($_SESSION['verified_client_emails'][$albumId] ?? '')),
-    'client_phone'    => $_SESSION['registered_client_phone'] ?? '',
-    'organization'    => $_SESSION['download_organization'] ?? null,
-    'download_reason' => $_SESSION['download_reason'] ?? null,
-    'access_tier'     => $_SESSION['download_access_tier'] ?? 'authorized_client',
+    'client_name'     => $verifiedTokenData['name'] ?? ($_SESSION['registered_client_name'] ?? 'Authorized Client'),
+    'client_email'    => $verifiedTokenData['email'] ?? ($_SESSION['download_email'] ?? ($_SESSION['portal_lookup_email'] ?? ($_SESSION['verified_client_emails'][$albumId] ?? ''))),
+    'client_phone'    => $verifiedTokenData['phone'] ?? ($_SESSION['registered_client_phone'] ?? ''),
+    'organization'    => $verifiedTokenData['organization'] ?? ($_SESSION['download_organization'] ?? null),
+    'download_reason' => $verifiedTokenData['download_reason'] ?? ($_SESSION['download_reason'] ?? null),
+    'access_tier'     => $verifiedTokenData['access_tier'] ?? ($_SESSION['download_access_tier'] ?? 'authorized_client'),
 ];
+
+// Re-hydrate session for this browser if verified via persistent token
+if ($verifiedTokenData !== null && session_status() === PHP_SESSION_ACTIVE) {
+    if (!isset($_SESSION['verified_albums']) || !is_array($_SESSION['verified_albums'])) {
+        $_SESSION['verified_albums'] = [];
+    }
+    $_SESSION['verified_albums'][$albumId] = true;
+    if (!isset($_SESSION['verified_album_tokens']) || !is_array($_SESSION['verified_album_tokens'])) {
+        $_SESSION['verified_album_tokens'] = [];
+    }
+    $_SESSION['verified_album_tokens'][$albumId] = $providedToken;
+    if (!empty($clientLogInfo['client_name'])) {
+        $_SESSION['registered_client_name'] = $clientLogInfo['client_name'];
+    }
+    if (!empty($clientLogInfo['client_email'])) {
+        $_SESSION['download_email'] = $clientLogInfo['client_email'];
+    }
+    if (!empty($clientLogInfo['client_phone'])) {
+        $_SESSION['registered_client_phone'] = $clientLogInfo['client_phone'];
+    }
+}
 
 // CRITICAL: Immediately release PHP session write lock!
 // This guarantees that any concurrent page loads or portal visits by the client never block waiting for session locks.
