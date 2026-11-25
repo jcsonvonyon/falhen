@@ -182,21 +182,8 @@ if ($action === 'request_code' || ($action === 'verify_client_download' && !empt
     $organization = trim($_POST['organization'] ?? '');
     $downloadReason = trim($_POST['download_reason'] ?? '');
 
-    // TWO-TIER GATING:
-    // If not on the pre-authorized client list, require Organization/Relationship and Download Reason
-    if (!$isAuthorized) {
-        if (empty($organization) || empty($downloadReason)) {
-            echo json_encode([
-                'success'                => true,
-                'is_authorized_client'   => false,
-                'requires_guest_details' => true,
-                'tier'                   => 'public_guest',
-                'message'                => 'This email is not listed on the primary client sheet. To download as a verified guest, please share your relationship to the event and reason for download.'
-            ]);
-            exit;
-        }
-    }
-
+    // Streamlined Access: Whether pre-authorized client or event attendee/guest,
+    // immediately dispatch a 6-digit OTP code to verify their email address without interrogation.
     // Generate cryptographically secure 6-digit OTP
     $code = (string)random_int(100000, 999999);
     $_SESSION['download_code_hash']    = hash('sha256', $code);
@@ -230,7 +217,7 @@ if ($action === 'request_code' || ($action === 'verify_client_download' && !empt
         'access_tier'          => $accessTier,
         'mail_sent'            => (bool)$mailSent,
         'expires_in'           => 600,
-        'message'              => 'A 6-digit security verification code has been dispatched to your ' . $tierNotice . '.'
+        'message'              => 'A 6-digit access code has been dispatched to ' . htmlspecialchars($email) . '.'
     ];
 
     echo json_encode($responsePayload);

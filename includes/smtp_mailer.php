@@ -815,70 +815,70 @@ function sendVerificationCodeEmail($toEmail, $code, $recipientName = '') {
             table, td { border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
             img { border: 0; height: auto; line-height: 100%; outline: none; text-decoration: none; -ms-interpolation-mode: bicubic; }
             
-            /* Nighttime (Dark Mode) Contrast Engine */
+            /* High-Contrast Dark Mode Engine */
             @media (prefers-color-scheme: dark) {
-                body, .email-body { background-color: #08090d !important; }
-                .email-card { background-color: #11131a !important; border-color: #232736 !important; box-shadow: 0 10px 30px rgba(0,0,0,0.6) !important; }
+                body, .email-body { background-color: #07080c !important; }
+                .email-card { background-color: #11131a !important; border-color: #232736 !important; box-shadow: 0 10px 30px rgba(0,0,0,0.7) !important; }
                 .text-headline { color: #ffffff !important; }
                 .text-body { color: #cbd5e1 !important; }
                 .text-secondary { color: #94a3b8 !important; }
-                .code-display { background-color: #171922 !important; border-color: #2e3344 !important; color: #ffffff !important; }
-                .wordmark-light { display: none !important; }
-                .wordmark-dark { display: block !important; }
-                .pill-tag { background-color: rgba(220, 38, 38, 0.16) !important; border-color: rgba(220, 38, 38, 0.35) !important; color: #f87171 !important; }
-                .divider { border-top-color: #1e2333 !important; }
+                .code-display { background-color: #171922 !important; border-color: #dc2626 !important; color: #ffffff !important; }
+                .code-num { color: #ffffff !important; }
+                .pill-tag { background-color: rgba(220, 38, 38, 0.2) !important; border-color: rgba(220, 38, 38, 0.45) !important; color: #f87171 !important; }
+                .divider { border-top-color: #222634 !important; }
             }
             @media only screen and (max-width: 600px) {
                 .email-wrapper { padding: 20px 12px !important; }
-                .email-card { padding: 28px 20px !important; border-radius: 14px !important; }
+                .email-card { padding: 28px 20px !important; border-radius: 16px !important; }
                 .code-num { font-size: 28px !important; letter-spacing: 6px !important; }
             }
         </style>
     </head>
-    <body class="email-body" style="margin: 0; padding: 0; background-color: #f4f4f5; font-family: -apple-system, BlinkMacSystemFont, \'Segoe UI\', Roboto, Helvetica, Arial, sans-serif;">
-        <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" class="email-body" style="background-color: #f4f4f5;">
+    <body class="email-body" style="margin: 0; padding: 0; background-color: #f1f5f9; font-family: -apple-system, BlinkMacSystemFont, \'Segoe UI\', Roboto, Helvetica, Arial, sans-serif;">
+        <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" class="email-body" style="background-color: #f1f5f9;">
             <tr>
                 <td align="center" class="email-wrapper" style="padding: 40px 16px;">
                     <!-- Centered Responsive Card Container -->
-                    <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" class="email-card" style="max-width: 480px; background-color: #ffffff; border: 1px solid #e4e4e7; border-radius: 18px; box-shadow: 0 4px 24px rgba(0,0,0,0.05); text-align: center; overflow: hidden;">
+                    <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" class="email-card" style="max-width: 480px; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 20px; box-shadow: 0 8px 30px rgba(0,0,0,0.06); text-align: center; overflow: hidden;">
                         <tr>
-                            <td style="padding: 38px 32px 30px 32px;">
-                                <!-- Falhen Responsive Wordmark -->
-                                <div style="margin-bottom: 24px;">
-                                    <a href="https://falhen.com" target="_blank" style="text-decoration: none; display: inline-block;">
-                                        <img src="https://falhen.com/assets/img/icons/wordmark-daylight.png" alt="Falhen Productions" width="135" class="wordmark-light" style="display: block; margin: 0 auto; height: 36px; width: auto; border: 0;">
-                                        <!--[if !mso]><!-->
-                                        <img src="https://falhen.com/assets/img/icons/wordmark-nighttime.png" alt="Falhen Productions" width="135" class="wordmark-dark" style="display: none; margin: 0 auto; height: 36px; width: auto; border: 0;">
-                                        <!--<![endif]-->
-                                    </a>
-                                </div>
+                            <td style="padding: 36px 30px 28px 30px;">
+                                <!-- Universal High-Contrast Falhen Brand Capsule -->
+                                <table role="presentation" border="0" cellpadding="0" cellspacing="0" align="center" style="margin: 0 auto 22px auto;">
+                                    <tr>
+                                        <td align="center" style="background-color: #09090b; padding: 10px 24px; border-radius: 9999px; border: 1px solid #27272a;">
+                                            <a href="https://falhen.com" target="_blank" style="text-decoration: none; display: block;">
+                                                <img src="https://falhen.com/assets/img/icons/wordmark-nighttime.png" alt="Falhen Productions" width="128" height="28" style="display: block; margin: 0 auto; height: 28px; width: auto; border: 0;">
+                                            </a>
+                                        </td>
+                                    </tr>
+                                </table>
 
-                                <!-- Editorial Category Pill -->
+                                <!-- Category Pill -->
                                 <div style="margin-bottom: 14px;">
-                                    <span class="pill-tag" style="display: inline-block; font-size: 10.5px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: #b91c1c; background-color: #fee2e2; border: 1px solid #fecaca; padding: 3px 12px; border-radius: 20px;">SECURITY CODE</span>
+                                    <span class="pill-tag" style="display: inline-block; font-size: 11px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: #dc2626; background-color: #fee2e2; border: 1px solid #fecaca; padding: 4px 14px; border-radius: 20px;">ACCESS CODE</span>
                                 </div>
 
                                 <!-- Headline -->
-                                <h1 class="text-headline" style="margin: 0 0 10px 0; font-size: 22px; font-weight: 700; color: #09090b; letter-spacing: -0.02em;">Access Verification</h1>
+                                <h1 class="text-headline" style="margin: 0 0 10px 0; font-size: 24px; font-weight: 800; color: #09090b; letter-spacing: -0.02em;">Access Verification</h1>
 
-                                <!-- Clear, Focused Prompt -->
-                                <p class="text-body" style="margin: 0 0 22px 0; font-size: 14.5px; line-height: 1.6; color: #52525b;">
-                                    Hello ' . $cleanName . ', enter the 6-digit access code below on the client portal to authorize your gallery download:
+                                <!-- Prompt -->
+                                <p class="text-body" style="margin: 0 0 22px 0; font-size: 15px; line-height: 1.6; color: #475569;">
+                                    Hello ' . $cleanName . ', enter the 6-digit access code below in the client portal to unlock your photos:
                                 </p>
 
                                 <!-- High-Contrast OTP Code Box -->
-                                <div class="code-display" style="display: inline-block; background-color: #fafafa; border: 1.5px solid #dc2626; border-radius: 12px; padding: 14px 24px; margin: 0 0 20px 0;">
-                                    <span class="code-num" style="font-size: 32px; font-weight: 800; letter-spacing: 8px; color: #09090b; font-family: \'SF Mono\', Monaco, Menlo, Consolas, monospace; display: inline-block; padding-left: 8px;">' . $cleanCode . '</span>
+                                <div class="code-display" style="display: inline-block; background-color: #f8fafc; border: 2px solid #dc2626; border-radius: 14px; padding: 16px 30px; margin: 0 0 20px 0;">
+                                    <span class="code-num" style="font-size: 34px; font-weight: 800; letter-spacing: 9px; color: #09090b; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; display: inline-block; padding-left: 9px;">' . $cleanCode . '</span>
                                 </div>
 
-                                <!-- Minimalist Expiry Note -->
-                                <p class="text-secondary" style="margin: 0; font-size: 12.5px; line-height: 1.5; color: #71717a;">
-                                    Valid for 10 minutes. If you did not request access, no action is needed.
+                                <!-- Expiry Note -->
+                                <p class="text-secondary" style="margin: 0; font-size: 13px; line-height: 1.5; color: #64748b;">
+                                    This code expires in 10 minutes. If you did not request access, you can safely ignore this email.
                                 </p>
 
-                                <!-- Quiet Editorial Footer -->
-                                <div class="divider" style="margin-top: 28px; padding-top: 18px; border-top: 1px solid #f4f4f5;">
-                                    <p style="margin: 0; font-size: 11.5px; color: #a1a1aa; line-height: 1.5;">
+                                <!-- Studio Footer -->
+                                <div class="divider" style="margin-top: 28px; padding-top: 18px; border-top: 1px solid #e2e8f0;">
+                                    <p style="margin: 0; font-size: 12px; color: #94a3b8; line-height: 1.5;">
                                         &copy; ' . date('Y') . ' Falhen Productions &bull; Editorial &amp; Commercial Photography
                                     </p>
                                 </div>
@@ -1271,55 +1271,54 @@ function sendClientGalleryDownloadDeliveryEmail($toEmail, $recipientName, $album
             table, td { border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
             img { border: 0; height: auto; line-height: 100%; outline: none; text-decoration: none; -ms-interpolation-mode: bicubic; }
 
-            /* Nighttime (Dark Mode) Contrast Engine */
+            /* High-Contrast Dark Mode Engine */
             @media (prefers-color-scheme: dark) {
-                body, .email-body { background-color: #08090d !important; }
-                .email-card { background-color: #11131a !important; border-color: #232736 !important; box-shadow: 0 10px 30px rgba(0,0,0,0.6) !important; }
+                body, .email-body { background-color: #07080c !important; }
+                .email-card { background-color: #11131a !important; border-color: #232736 !important; box-shadow: 0 10px 30px rgba(0,0,0,0.7) !important; }
                 .text-headline { color: #ffffff !important; }
                 .text-body { color: #cbd5e1 !important; }
                 .text-secondary { color: #94a3b8 !important; }
                 .cover-card { border-color: #2e3344 !important; }
-                .wordmark-light { display: none !important; }
-                .wordmark-dark { display: block !important; }
-                .pill-tag { background-color: rgba(220, 38, 38, 0.16) !important; border-color: rgba(220, 38, 38, 0.35) !important; color: #f87171 !important; }
-                .divider { border-top-color: #1e2333 !important; }
+                .pill-tag { background-color: rgba(220, 38, 38, 0.2) !important; border-color: rgba(220, 38, 38, 0.45) !important; color: #f87171 !important; }
+                .divider { border-top-color: #222634 !important; }
                 .link-subtle { color: #f87171 !important; }
             }
             @media only screen and (max-width: 600px) {
                 .email-wrapper { padding: 20px 12px !important; }
-                .email-card { padding: 28px 20px !important; border-radius: 14px !important; }
+                .email-card { padding: 28px 20px !important; border-radius: 16px !important; }
                 .btn-action { display: block !important; width: 100% !important; box-sizing: border-box !important; padding: 16px 20px !important; }
             }
         </style>
     </head>
-    <body class="email-body" style="margin: 0; padding: 0; background-color: #f4f4f5; font-family: -apple-system, BlinkMacSystemFont, \'Segoe UI\', Roboto, Helvetica, Arial, sans-serif;">
-        <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" class="email-body" style="background-color: #f4f4f5;">
+    <body class="email-body" style="margin: 0; padding: 0; background-color: #f1f5f9; font-family: -apple-system, BlinkMacSystemFont, \'Segoe UI\', Roboto, Helvetica, Arial, sans-serif;">
+        <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" class="email-body" style="background-color: #f1f5f9;">
             <tr>
                 <td align="center" class="email-wrapper" style="padding: 40px 16px;">
                     <!-- Centered Responsive Card Container -->
-                    <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" class="email-card" style="max-width: 520px; background-color: #ffffff; border: 1px solid #e4e4e7; border-radius: 18px; box-shadow: 0 4px 24px rgba(0,0,0,0.05); text-align: center; overflow: hidden;">
+                    <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" class="email-card" style="max-width: 520px; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 20px; box-shadow: 0 8px 30px rgba(0,0,0,0.06); text-align: center; overflow: hidden;">
                         <tr>
-                            <td style="padding: 38px 32px 30px 32px;">
-                                <!-- Falhen Responsive Wordmark -->
-                                <div style="margin-bottom: 24px;">
-                                    <a href="https://falhen.com" target="_blank" style="text-decoration: none; display: inline-block;">
-                                        <img src="https://falhen.com/assets/img/icons/wordmark-daylight.png" alt="Falhen Productions" width="135" class="wordmark-light" style="display: block; margin: 0 auto; height: 36px; width: auto; border: 0;">
-                                        <!--[if !mso]><!-->
-                                        <img src="https://falhen.com/assets/img/icons/wordmark-nighttime.png" alt="Falhen Productions" width="135" class="wordmark-dark" style="display: none; margin: 0 auto; height: 36px; width: auto; border: 0;">
-                                        <!--<![endif]-->
-                                    </a>
-                                </div>
+                            <td style="padding: 36px 30px 28px 30px;">
+                                <!-- Universal High-Contrast Falhen Brand Capsule -->
+                                <table role="presentation" border="0" cellpadding="0" cellspacing="0" align="center" style="margin: 0 auto 22px auto;">
+                                    <tr>
+                                        <td align="center" style="background-color: #09090b; padding: 10px 24px; border-radius: 9999px; border: 1px solid #27272a;">
+                                            <a href="https://falhen.com" target="_blank" style="text-decoration: none; display: block;">
+                                                <img src="https://falhen.com/assets/img/icons/wordmark-nighttime.png" alt="Falhen Productions" width="128" height="28" style="display: block; margin: 0 auto; height: 28px; width: auto; border: 0;">
+                                            </a>
+                                        </td>
+                                    </tr>
+                                </table>
 
                                 <!-- Category Pill -->
                                 <div style="margin-bottom: 14px;">
-                                    <span class="pill-tag" style="display: inline-block; font-size: 10.5px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: #b91c1c; background-color: #fee2e2; border: 1px solid #fecaca; padding: 3px 12px; border-radius: 20px;">DIGITAL DELIVERY</span>
+                                    <span class="pill-tag" style="display: inline-block; font-size: 11px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: #dc2626; background-color: #fee2e2; border: 1px solid #fecaca; padding: 4px 14px; border-radius: 20px;">DIGITAL DELIVERY</span>
                                 </div>
 
                                 <!-- Headline -->
-                                <h1 class="text-headline" style="margin: 0 0 10px 0; font-size: 22px; font-weight: 700; color: #09090b; letter-spacing: -0.02em;">Your Gallery is Ready</h1>
+                                <h1 class="text-headline" style="margin: 0 0 10px 0; font-size: 24px; font-weight: 800; color: #09090b; letter-spacing: -0.02em;">Your Gallery is Ready</h1>
 
                                 <!-- Intro Copy -->
-                                <p class="text-body" style="margin: 0 0 18px 0; font-size: 14.5px; line-height: 1.6; color: #52525b;">
+                                <p class="text-body" style="margin: 0 0 18px 0; font-size: 15px; line-height: 1.6; color: #475569;">
                                     Hello ' . $cleanName . ', your high-resolution collection for <strong>' . $cleanTitle . '</strong> is ready for download:
                                 </p>
 
@@ -1328,25 +1327,25 @@ function sendClientGalleryDownloadDeliveryEmail($toEmail, $recipientName, $album
 
                                 <!-- Metadata Bar -->
                                 <div style="margin: 12px 0 22px 0;">
-                                    <span class="text-headline" style="font-size: 14px; font-weight: 700; color: #09090b;">' . $cleanTitle . '</span>
-                                    <span class="text-secondary" style="font-size: 13px; color: #71717a; margin-left: 6px;">&bull; ' . $countBadge . '</span>
+                                    <span class="text-headline" style="font-size: 14.5px; font-weight: 700; color: #09090b;">' . $cleanTitle . '</span>
+                                    <span class="text-secondary" style="font-size: 13.5px; color: #64748b; margin-left: 6px;">&bull; ' . $countBadge . '</span>
                                 </div>
 
                                 <!-- Primary Download CTA Button -->
                                 <div style="margin: 0 0 18px 0;">
-                                    <a href="' . $fullDlUrl . '" class="btn-action" style="background-color: #dc2626; color: #ffffff !important; text-decoration: none; padding: 15px 36px; border-radius: 12px; font-weight: 700; font-size: 15px; display: inline-block; letter-spacing: 0.3px; box-shadow: 0 4px 16px rgba(220, 38, 38, 0.28);">
+                                    <a href="' . $fullDlUrl . '" class="btn-action" style="background-color: #dc2626; color: #ffffff !important; text-decoration: none; padding: 16px 36px; border-radius: 12px; font-weight: 700; font-size: 15px; display: inline-block; letter-spacing: 0.3px; box-shadow: 0 4px 16px rgba(220, 38, 38, 0.35);">
                                         &darr; Download Full Gallery (.ZIP)
                                     </a>
                                 </div>
 
                                 <!-- Clean, Discreet Fallback Link -->
-                                <p class="text-secondary" style="margin: 0; font-size: 12px; color: #71717a;">
-                                    Having trouble with the button? <a href="' . $fullDlUrl . '" class="link-subtle" style="color: #dc2626; text-decoration: underline;">Open direct link</a>
+                                <p class="text-secondary" style="margin: 0; font-size: 12.5px; color: #64748b;">
+                                    Having trouble with the button? <a href="' . $fullDlUrl . '" class="link-subtle" style="color: #dc2626; text-decoration: underline; font-weight: 600;">Open direct link</a>
                                 </p>
 
-                                <!-- Divider & Quiet Studio Footer -->
-                                <div class="divider" style="margin-top: 28px; padding-top: 18px; border-top: 1px solid #f4f4f5;">
-                                    <p style="margin: 0; font-size: 11.5px; color: #a1a1aa; line-height: 1.5;">
+                                <!-- Divider & Studio Footer -->
+                                <div class="divider" style="margin-top: 28px; padding-top: 18px; border-top: 1px solid #e2e8f0;">
+                                    <p style="margin: 0; font-size: 12px; color: #94a3b8; line-height: 1.5;">
                                         &copy; ' . date('Y') . ' Falhen Productions &bull; Editorial &amp; Commercial Photography
                                     </p>
                                 </div>

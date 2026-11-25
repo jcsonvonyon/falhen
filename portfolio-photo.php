@@ -1303,13 +1303,13 @@ $totalPhotoCount = count($clientPhotos);
             }
         }
 
-        /* Client Verification / Download Modal matching Readdy mockup */
+        /* Client Verification / Download Modal */
         .client-modal-backdrop {
             position: fixed;
             inset: 0;
-            background: rgba(0, 0, 0, 0.78);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
+            background: rgba(3, 7, 18, 0.82);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
             z-index: 100001;
             display: none;
             align-items: center;
@@ -1319,31 +1319,31 @@ $totalPhotoCount = count($clientPhotos);
         }
 
         .client-modal-box {
-            background: #111218;
+            background: #11131a;
             border: 1px solid rgba(255, 255, 255, 0.14);
             border-radius: 20px;
             width: 100%;
-            max-width: 480px;
+            max-width: 440px;
             overflow: hidden;
-            box-shadow: 0 25px 70px rgba(0, 0, 0, 0.9), 0 0 35px rgba(37, 99, 235, 0.15);
+            box-shadow: 0 28px 70px rgba(0, 0, 0, 0.9), 0 0 35px rgba(220, 38, 38, 0.12);
             position: relative;
         }
 
         .client-modal-header {
-            padding: 24px 28px 18px;
+            padding: 22px 26px 16px;
             border-bottom: 1px solid rgba(255, 255, 255, 0.08);
             display: flex;
             align-items: flex-start;
-            gap: 16px;
+            gap: 14px;
         }
 
         .client-icon-badge {
             width: 44px;
             height: 44px;
             border-radius: 12px;
-            background: rgba(37, 99, 235, 0.15);
-            border: 1px solid rgba(37, 99, 235, 0.35);
-            color: #3b82f6;
+            background: rgba(220, 38, 38, 0.14);
+            border: 1px solid rgba(220, 38, 38, 0.35);
+            color: #ef4444;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -1352,16 +1352,18 @@ $totalPhotoCount = count($clientPhotos);
         }
 
         .client-modal-title {
-            font-size: 1.2rem;
+            font-size: 1.25rem;
             font-weight: 700;
             color: #ffffff;
             margin: 0 0 4px 0;
+            letter-spacing: -0.01em;
         }
 
         .client-modal-subtitle {
             font-size: 0.85rem;
             color: #94a3b8;
-            margin: 0 0 8px 0;
+            margin: 0 0 6px 0;
+            line-height: 1.4;
         }
 
         .client-stats-pill {
@@ -1373,11 +1375,11 @@ $totalPhotoCount = count($clientPhotos);
             padding: 3px 10px;
             border-radius: 12px;
             font-size: 0.76rem;
-            color: #d4d4d8;
+            color: #cbd5e1;
         }
 
         .client-modal-body {
-            padding: 22px 28px 24px;
+            padding: 22px 26px;
         }
 
         .cdm-form-group {
@@ -1387,42 +1389,70 @@ $totalPhotoCount = count($clientPhotos);
 
         .cdm-label {
             display: block;
-            font-size: 0.82rem;
-            font-weight: 600;
-            color: #e4e4e7;
+            font-size: 0.78rem;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            color: #cbd5e1;
             margin-bottom: 6px;
         }
 
         .cdm-input {
             width: 100%;
-            background: #181922;
-            border: 1px solid rgba(255, 255, 255, 0.12);
+            background: #181a24;
+            border: 1px solid rgba(255, 255, 255, 0.15);
             border-radius: 10px;
-            padding: 10px 14px;
+            padding: 12px 14px;
             color: #ffffff;
-            font-size: 0.9rem;
+            font-size: 0.95rem;
             box-sizing: border-box;
             transition: all 0.2s ease;
             outline: none;
         }
 
         .cdm-input:focus {
-            border-color: #3b82f6;
-            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.25);
-            background: #1c1d28;
+            border-color: #dc2626;
+            box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.2);
+            background: #1d202e;
+        }
+
+        .cdm-error-alert {
+            background: #450a0a;
+            border: 1px solid #dc2626;
+            color: #fca5a5;
+            padding: 12px 16px;
+            border-radius: 10px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            line-height: 1.45;
+            margin-bottom: 16px;
+            display: none;
+        }
+
+        .cdm-info-alert {
+            background: #082f49;
+            border: 1px solid #0284c7;
+            color: #7dd3fc;
+            padding: 12px 16px;
+            border-radius: 10px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            line-height: 1.45;
+            margin-bottom: 16px;
+            display: none;
         }
 
         .cdm-privacy-note {
-            font-size: 0.77rem;
-            color: #71717a;
-            line-height: 1.5;
-            margin: 12px 0 0 0;
+            font-size: 0.78rem;
+            color: #94a3b8;
+            line-height: 1.45;
+            margin: 10px 0 0 0;
         }
 
         .client-modal-footer {
-            padding: 16px 28px 22px;
+            padding: 14px 26px 20px;
             background: rgba(0, 0, 0, 0.25);
-            border-top: 1px solid rgba(255, 255, 255, 0.06);
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
             display: flex;
             align-items: center;
             justify-content: flex-end;
@@ -1431,8 +1461,68 @@ $totalPhotoCount = count($clientPhotos);
 
         .btn-cdm-cancel {
             background: transparent;
-            border: 1px solid rgba(255, 255, 255, 0.14);
-            color: #d4d4d8;
+            border: none;
+            color: #94a3b8;
+            padding: 10px 16px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-cdm-cancel:hover {
+            color: #ffffff;
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .btn-cdm-submit {
+            background: #dc2626;
+            border: none;
+            color: #ffffff;
+            padding: 12px 24px;
+            border-radius: 10px;
+            font-size: 0.94rem;
+            font-weight: 700;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 14px rgba(220, 38, 38, 0.35);
+            transition: all 0.2s ease;
+        }
+
+        .btn-cdm-submit:hover {
+            background: #b91c1c;
+            transform: translateY(-1px);
+        }
+
+        @media (max-width: 640px) {
+            .client-modal-backdrop {
+                padding: 12px;
+            }
+            .client-modal-box {
+                max-width: 440px;
+                border-radius: 18px;
+            }
+            .cdm-input {
+                font-size: 16px !important;
+                padding: 12px 14px;
+            }
+            .btn-cdm-submit {
+                min-height: 48px;
+                width: 100%;
+                justify-content: center;
+            }
+            .client-modal-footer {
+                flex-direction: column-reverse;
+                gap: 8px;
+            }
+            .btn-cdm-cancel {
+                width: 100%;
+                text-align: center;
+            }
+        }
             padding: 9px 20px;
             border-radius: 10px;
             font-size: 0.88rem;
@@ -1727,65 +1817,63 @@ $totalPhotoCount = count($clientPhotos);
                     <i class="fa-solid fa-cloud-arrow-down"></i>
                 </div>
                 <div style="flex: 1; text-align: left;">
-                    <h3 class="client-modal-title">Security &amp; Download Gate</h3>
-                    <div class="client-modal-subtitle"><?php echo htmlspecialchars($currentAlbum['title']); ?></div>
+                    <h3 class="client-modal-title" id="cdmTitle">Download Collection</h3>
+                    <div class="client-modal-subtitle" id="cdmSubtitle"><?php echo htmlspecialchars($currentAlbum['title']); ?></div>
                     <div class="client-stats-pill" id="downloadModalStats">
                         <i class="fa-regular fa-image"></i> 1 photo ~5 MB
                     </div>
                 </div>
-                <button type="button" onclick="closeClientDownloadModal()" style="background:none; border:none; color:#a1a1aa; font-size:1.4rem; cursor:pointer; padding:0; line-height:1;">&times;</button>
+                <button type="button" onclick="closeClientDownloadModal()" style="background:none; border:none; color:#a1a1aa; font-size:1.4rem; cursor:pointer; padding:0; line-height:1;" aria-label="Close">&times;</button>
             </div>
 
             <!-- Modal Form Body -->
             <div class="client-modal-body">
                 <div id="cdm_error" class="cdm-error-alert"></div>
+                <div id="cdm_info" class="cdm-info-alert"></div>
 
-                <div class="cdm-form-group">
-                    <label class="cdm-label" for="cdm_name">Full Name *</label>
-                    <input type="text" id="cdm_name" class="cdm-input" placeholder="Your full name" value="" required>
-                </div>
-
-                <div class="cdm-form-group">
-                    <label class="cdm-label" for="cdm_email">Email Address *</label>
-                    <input type="email" id="cdm_email" class="cdm-input" placeholder="name@domain.com" value="" required autocomplete="email">
-                </div>
-
-                <div class="cdm-form-group">
-                    <label class="cdm-label" for="cdm_phone">Phone Number *</label>
-                    <input type="tel" id="cdm_phone" class="cdm-input" placeholder="+1 (555) 000-0000" required>
-                </div>
-
-                <!-- Enhanced Guest Security Protocol (Auto-revealed for unlisted public visitors) -->
-                <div id="cdmGuestFields" style="display: none; margin-top: 12px; padding-top: 12px; border-top: 1px dashed rgba(255,255,255,0.14);">
-                    <div style="font-size: 0.74rem; font-weight: 700; color: #f87171; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px;">
-                        <i class="fa-solid fa-shield-halved"></i> Guest Access Verification
-                    </div>
+                <div id="cdmIdentityStep">
                     <div class="cdm-form-group">
-                        <label class="cdm-label" for="cdm_org">Organization / Relationship to Event *</label>
-                        <input type="text" id="cdm_org" class="cdm-input" placeholder="e.g. Guest, Family, Vendor, Press">
+                        <label class="cdm-label" for="cdm_name">Full Name *</label>
+                        <input type="text" id="cdm_name" class="cdm-input" placeholder="Your full name" value="" autocomplete="name" required>
                     </div>
+
                     <div class="cdm-form-group">
-                        <label class="cdm-label" for="cdm_reason">Reason for Download *</label>
-                        <textarea id="cdm_reason" class="cdm-input" rows="2" placeholder="e.g. Personal keepsake, social media recap..." style="resize: vertical; min-height: 52px;"></textarea>
+                        <label class="cdm-label" for="cdm_email">Email Address *</label>
+                        <input type="email" id="cdm_email" class="cdm-input" placeholder="name@domain.com" value="" autocomplete="email" inputmode="email" required>
+                        <span style="font-size: 0.76rem; color: #94a3b8; margin-top: 5px; display: block; line-height: 1.4;">Your 6-digit access code and gallery delivery link will be sent here.</span>
+                    </div>
+
+                    <div class="cdm-form-group">
+                        <label class="cdm-label" for="cdm_phone">Phone Number *</label>
+                        <input type="tel" id="cdm_phone" class="cdm-input" placeholder="+1 (555) 000-0000" autocomplete="tel" inputmode="tel" required>
                     </div>
                 </div>
 
-                <div class="cdm-form-group" id="cdmOtpGroup" style="display:none; margin-top: 14px;">
-                    <label class="cdm-label" for="cdm_otp_code">6-Digit Security Verification Code *</label>
-                    <input type="text" id="cdm_otp_code" class="cdm-input" placeholder="Enter 6-digit OTP code" maxlength="6" inputmode="numeric" style="letter-spacing: 6px; font-weight: 800; text-align: center; font-size: 1.15rem;">
-                    <small id="cdmOtpHint" style="display:block; margin-top:6px; color:#6ee7b7; font-size:0.78rem;"></small>
+                <div class="cdm-form-group" id="cdmOtpGroup" style="display:none; margin-top: 4px;">
+                    <label class="cdm-label" for="cdm_otp_code" style="text-align: center;">Enter 6-Digit Passcode *</label>
+                    <input type="text"
+                           id="cdm_otp_code"
+                           class="cdm-input"
+                           placeholder="000000"
+                           maxlength="6"
+                           inputmode="numeric"
+                           pattern="[0-9]*"
+                           autocomplete="one-time-code"
+                           style="letter-spacing: 12px; font-weight: 800; text-align: center; font-size: 1.85rem; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; padding: 14px 16px; border-radius: 12px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.82rem; margin-top: 8px;">
+                        <span id="cdmOtpNoticeText" style="color: #94a3b8;">Code sent to your email</span>
+                        <button type="button" onclick="resetCdmToIdentityStep()" style="background: none; border: none; color: #f87171; font-weight: 700; cursor: pointer; text-decoration: underline; padding: 0;">
+                            Edit contact / Resend
+                        </button>
+                    </div>
                 </div>
-
-                <p class="cdm-privacy-note">
-                    <i class="fa-solid fa-shield-halved" style="color: #3b82f6; margin-right: 4px;"></i> Authorized clients receive an instant 6-digit passcode; public guests verify identity &amp; download reason. A delivery copy is also sent to your inbox.
-                </p>
             </div>
 
             <!-- Modal Action Buttons -->
             <div class="client-modal-footer">
                 <button type="button" class="btn-cdm-cancel" onclick="closeClientDownloadModal()">Cancel</button>
                 <button type="button" class="btn-cdm-submit" id="btnCdmSubmit" onclick="submitClientVerification()">
-                    <i class="fa-solid fa-download"></i> Start Download
+                    <i class="fa-solid fa-paper-plane"></i> Send Access Code
                 </button>
             </div>
         </div>
@@ -1977,14 +2065,34 @@ $totalPhotoCount = count($clientPhotos);
             }
         }
 
+        function resetCdmToIdentityStep() {
+            otpStepActive = false;
+            const idStep = document.getElementById('cdmIdentityStep');
+            const otpGroup = document.getElementById('cdmOtpGroup');
+            const errBox = document.getElementById('cdm_error');
+            const infoBox = document.getElementById('cdm_info');
+            const submitBtn = document.getElementById('btnCdmSubmit');
+            const titleEl = document.getElementById('cdmTitle');
+            const subEl = document.getElementById('cdmSubtitle');
+
+            if (idStep) idStep.style.display = 'block';
+            if (otpGroup) otpGroup.style.display = 'none';
+            if (errBox) errBox.style.display = 'none';
+            if (infoBox) infoBox.style.display = 'none';
+            if (titleEl) titleEl.textContent = 'Download Collection';
+            if (subEl) subEl.textContent = shootTitle;
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Send Access Code';
+            }
+        }
+
         function openClientDownloadModal(statsText) {
             const statsEl = document.getElementById('downloadModalStats');
             if (statsEl) {
                 statsEl.innerHTML = statsText || '<i class="fa-regular fa-image"></i> 1 photo ~5 MB';
             }
-            const errEl = document.getElementById('cdm_error');
-            if (errEl) errEl.style.display = 'none';
-
+            resetCdmToIdentityStep();
             document.getElementById('clientDownloadModal').style.display = 'flex';
             document.body.style.overflow = 'hidden';
 
@@ -1997,13 +2105,7 @@ $totalPhotoCount = count($clientPhotos);
         function closeClientDownloadModal() {
             document.getElementById('clientDownloadModal').style.display = 'none';
             document.body.style.overflow = '';
-            otpStepActive = false;
-            const otpGroup = document.getElementById('cdmOtpGroup');
-            const guestFields = document.getElementById('cdmGuestFields');
-            const submitBtn = document.getElementById('btnCdmSubmit');
-            if (otpGroup) otpGroup.style.display = 'none';
-            if (guestFields) guestFields.style.display = 'none';
-            if (submitBtn) submitBtn.innerHTML = '<i class="fa-solid fa-download"></i> Start Download';
+            resetCdmToIdentityStep();
         }
 
         let otpStepActive = false;
@@ -2012,101 +2114,96 @@ $totalPhotoCount = count($clientPhotos);
             const name = document.getElementById('cdm_name').value.trim();
             const email = document.getElementById('cdm_email').value.trim();
             const phone = document.getElementById('cdm_phone').value.trim();
-            const guestFields = document.getElementById('cdmGuestFields');
-            const orgInput = document.getElementById('cdm_org');
-            const reasonInput = document.getElementById('cdm_reason');
-            const org = orgInput ? orgInput.value.trim() : '';
-            const reason = reasonInput ? reasonInput.value.trim() : '';
+            const idStep = document.getElementById('cdmIdentityStep');
             const otpGroup = document.getElementById('cdmOtpGroup');
             const otpInput = document.getElementById('cdm_otp_code');
-            const otpHint = document.getElementById('cdmOtpHint');
             const errBox = document.getElementById('cdm_error');
+            const infoBox = document.getElementById('cdm_info');
             const submitBtn = document.getElementById('btnCdmSubmit');
+            const titleEl = document.getElementById('cdmTitle');
+            const subEl = document.getElementById('cdmSubtitle');
+            const noticeEl = document.getElementById('cdmOtpNoticeText');
 
-            if (!name || name.length < 2) {
-                errBox.style.display = 'block';
-                errBox.textContent = 'Please enter your full name.';
-                return;
-            }
-            if (!email || !email.includes('@')) {
-                errBox.style.display = 'block';
-                errBox.textContent = 'Please enter a valid email address.';
-                return;
-            }
-            if (!phone || phone.replace(/[^0-9+]/g, '').length < 7) {
-                errBox.style.display = 'block';
-                errBox.textContent = 'Please enter a valid phone number.';
-                return;
-            }
+            if (errBox) errBox.style.display = 'none';
 
-            const isGuestVisible = guestFields && guestFields.style.display !== 'none';
-            if (!otpStepActive && isGuestVisible) {
-                if (!org || org.length < 2) {
+            if (!otpStepActive) {
+                if (!name || name.length < 2) {
                     errBox.style.display = 'block';
-                    errBox.textContent = 'Please enter your organization or relationship to this event.';
-                    if (orgInput) orgInput.focus();
+                    errBox.textContent = 'Please enter your full name.';
                     return;
                 }
-                if (!reason || reason.length < 3) {
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                if (!email || !emailRegex.test(email)) {
                     errBox.style.display = 'block';
-                    errBox.textContent = 'Please share a brief reason for downloading.';
-                    if (reasonInput) reasonInput.focus();
+                    errBox.textContent = 'Please enter a valid email address.';
                     return;
                 }
-            }
+                const cleanPhone = phone.replace(/[^0-9+]/g, '');
+                if (!cleanPhone || cleanPhone.length < 7) {
+                    errBox.style.display = 'block';
+                    errBox.textContent = 'Please enter a valid phone number.';
+                    return;
+                }
 
-            errBox.style.display = 'none';
-            submitBtn.disabled = true;
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Sending Access Code...';
 
-            try {
-                if (!otpStepActive) {
-                    submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Checking Access...';
+                try {
                     const fd = new FormData();
                     fd.append('action', 'request_code');
                     fd.append('name', name);
                     fd.append('email', email);
                     fd.append('phone', phone);
-                    fd.append('organization', org);
-                    fd.append('download_reason', reason);
                     fd.append('album_id', currentAlbumId);
                     fd.append('album_title', shootTitle);
 
                     const resp = await fetch('/api/verify-download.php', { method: 'POST', body: fd });
                     const res = await resp.json();
 
-                    if (res.requires_guest_details) {
-                        if (guestFields) guestFields.style.display = 'block';
-                        errBox.style.display = 'none';
-                        otpHint.textContent = res.message || 'Please enter your organization and download reason to receive your verification code.';
-                        submitBtn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Verify &amp; Send Code';
-                        if (orgInput) orgInput.focus();
-                    } else if (res.success) {
+                    if (res.success) {
                         otpStepActive = true;
-                        otpGroup.style.display = 'block';
-                        otpHint.textContent = res.message || 'A 6-digit security verification code has been dispatched to your contact email.';
-                        submitBtn.innerHTML = '<i class="fa-solid fa-unlock-keyhole"></i> Verify Code &amp; Start Download';
-                        otpInput.focus();
+                        if (idStep) idStep.style.display = 'none';
+                        if (otpGroup) otpGroup.style.display = 'block';
+                        if (titleEl) titleEl.textContent = 'Enter Access Code';
+                        if (subEl) subEl.textContent = 'Enter the 6-digit passcode sent to your email.';
+                        if (infoBox) {
+                            infoBox.style.display = 'block';
+                            infoBox.innerHTML = `<i class="fa-solid fa-circle-check"></i> ${res.message || 'Passcode dispatched. Please check your inbox.'}`;
+                        }
+                        if (noticeEl) noticeEl.textContent = 'Sent to ' + email;
+                        submitBtn.innerHTML = '<i class="fa-solid fa-cloud-arrow-down"></i> Verify &amp; Download';
+                        if (otpInput) {
+                            otpInput.value = '';
+                            otpInput.focus();
+                        }
                     } else {
                         errBox.style.display = 'block';
                         errBox.textContent = res.message || 'Verification failed. Please check your details.';
-                        submitBtn.innerHTML = '<i class="fa-solid fa-download"></i> Start Download';
+                        submitBtn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Send Access Code';
                     }
-                } else {
-                    const code = otpInput.value.trim();
-                    if (!code || code.length !== 6) {
-                        errBox.style.display = 'block';
-                        errBox.textContent = 'Please enter the 6-digit verification code.';
-                        submitBtn.disabled = false;
-                        return;
-                    }
-                    submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Verifying Passcode...';
+                } catch (err) {
+                    errBox.style.display = 'block';
+                    errBox.textContent = 'Network error while requesting verification code. Please try again.';
+                    submitBtn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Send Access Code';
+                } finally {
+                    submitBtn.disabled = false;
+                }
+            } else {
+                const code = otpInput ? otpInput.value.trim() : '';
+                if (!code || code.length !== 6) {
+                    errBox.style.display = 'block';
+                    errBox.textContent = 'Please enter the 6-digit verification code.';
+                    return;
+                }
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Verifying Passcode...';
+
+                try {
                     const fd = new FormData();
                     fd.append('action', 'verify_code');
                     fd.append('name', name);
                     fd.append('email', email);
                     fd.append('phone', phone);
-                    fd.append('organization', org);
-                    fd.append('download_reason', reason);
                     fd.append('code', code);
                     fd.append('album_id', currentAlbumId);
                     fd.append('album_title', shootTitle);
@@ -2118,23 +2215,24 @@ $totalPhotoCount = count($clientPhotos);
                         isClientVerified = true;
                         activeDownloadToken = res.download_token || '';
                         closeClientDownloadModal();
-                        showToast(res.download_emailed ? '✓ Identity verified! Download started and sent to your inbox.' : '✓ Identity verified! Starting download...');
+                        const deliveryNote = res.download_emailed ? ' and delivery dispatched to your inbox' : '';
+                        showToast('✓ Access granted! High-resolution download started' + deliveryNote + '.');
                         if (typeof pendingDownload === 'function') {
                             pendingDownload(activeDownloadToken);
                             pendingDownload = null;
                         }
                     } else {
                         errBox.style.display = 'block';
-                        errBox.textContent = res.message || 'Invalid verification code.';
-                        submitBtn.innerHTML = '<i class="fa-solid fa-unlock-keyhole"></i> Verify Code &amp; Start Download';
+                        errBox.textContent = res.message || 'Invalid verification code. Please check your email.';
+                        submitBtn.innerHTML = '<i class="fa-solid fa-cloud-arrow-down"></i> Verify &amp; Download';
                     }
+                } catch (err) {
+                    errBox.style.display = 'block';
+                    errBox.textContent = 'Network error while verifying code.';
+                    submitBtn.innerHTML = '<i class="fa-solid fa-cloud-arrow-down"></i> Verify &amp; Download';
+                } finally {
+                    submitBtn.disabled = false;
                 }
-            } catch (err) {
-                errBox.style.display = 'block';
-                errBox.textContent = 'Connection error. Please try again.';
-                submitBtn.innerHTML = '<i class="fa-solid fa-download"></i> Start Download';
-            } finally {
-                submitBtn.disabled = false;
             }
         }
 

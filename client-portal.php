@@ -991,43 +991,55 @@ foreach ($albumsRepo as $alb) {
                 font-size: 0.74rem !important;
                 border-radius: 50% !important;
             }
-            /* Verification Modal Bottom-Sheet on Mobile */
+            /* Verification Modal Responsive on Mobile */
             .smug-modal-overlay {
-                padding: 8px !important;
-                align-items: flex-end !important;
+                padding: 12px !important;
+                align-items: center !important;
+                justify-content: center !important;
             }
             .smug-modal-box {
-                max-width: 100% !important;
+                max-width: 440px !important;
                 width: 100% !important;
-                max-height: 90dvh !important;
-                max-height: 90vh !important;
-                border-radius: 18px 18px 8px 8px !important;
+                max-height: 92vh !important;
+                border-radius: 18px !important;
                 display: flex !important;
                 flex-direction: column !important;
+                margin: auto !important;
             }
             .smug-modal-header {
-                padding: 16px 18px 12px !important;
+                padding: 18px 20px 14px !important;
                 flex-shrink: 0 !important;
             }
             .smug-modal-title {
-                font-size: 1.1rem !important;
+                font-size: 1.18rem !important;
             }
             .smug-modal-subtitle {
-                font-size: 0.8rem !important;
+                font-size: 0.82rem !important;
             }
             .smug-modal-body {
-                padding: 14px 18px !important;
+                padding: 16px 20px !important;
                 overflow-y: auto !important;
                 -webkit-overflow-scrolling: touch !important;
                 flex: 1 !important;
             }
             .smug-input {
                 font-size: 16px !important;
-                padding: 10px 12px !important;
+                padding: 12px 14px !important;
             }
             .smug-otp-input {
-                font-size: 1.45rem !important;
-                letter-spacing: 8px !important;
+                font-size: 1.7rem !important;
+                letter-spacing: 10px !important;
+                padding: 14px 16px !important;
+            }
+            .smug-modal-footer {
+                padding: 14px 20px 18px !important;
+                flex-shrink: 0 !important;
+            }
+            .btn-modal-submit {
+                min-height: 48px !important;
+                padding: 12px 20px !important;
+                font-size: 0.92rem !important;
+            }
             }
             .smug-modal-footer {
                 padding: 12px 18px 16px !important;
@@ -1926,9 +1938,9 @@ foreach ($albumsRepo as $alb) {
         .smug-modal-overlay {
             position: fixed;
             inset: 0;
-            background: rgba(0, 0, 0, 0.85);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
+            background: rgba(3, 7, 18, 0.78);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
             z-index: 10000;
             display: none;
             align-items: center;
@@ -1938,50 +1950,58 @@ foreach ($albumsRepo as $alb) {
 
         .smug-modal-box {
             background: var(--smug-surface-solid);
-            backdrop-filter: blur(24px);
-            -webkit-backdrop-filter: blur(24px);
-            border: 1px solid var(--smug-glass-border);
-            border-radius: 16px;
-            max-width: 480px;
+            border: 1px solid var(--smug-border);
+            border-radius: 20px;
+            max-width: 440px;
             width: 100%;
             overflow: hidden;
-            box-shadow: var(--smug-glass-glow-hover);
-            transition: background 0.3s ease;
+            box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(0, 0, 0, 0.05);
+            transition: background 0.3s ease, border-color 0.3s ease;
+        }
+
+        [data-theme="noir"] .smug-modal-box {
+            background: #0d0f17;
+            border-color: rgba(255, 255, 255, 0.12);
+            box-shadow: 0 28px 70px rgba(0, 0, 0, 0.85), 0 0 40px rgba(220, 38, 38, 0.1);
         }
 
         .smug-modal-header {
-            padding: 24px 28px 20px;
+            padding: 22px 26px 16px;
             border-bottom: 1px solid var(--smug-border);
             display: flex;
             align-items: flex-start;
             justify-content: space-between;
+            gap: 14px;
         }
 
         .smug-modal-title {
             font-size: 1.25rem;
             font-weight: 700;
             color: var(--smug-text-primary);
-            margin-bottom: 4px;
+            margin: 0 0 4px 0;
+            letter-spacing: -0.01em;
         }
 
         .smug-modal-subtitle {
-            font-size: 0.84rem;
-            color: var(--smug-text-secondary);
-            line-height: 1.4;
+            font-size: 0.85rem;
+            color: var(--smug-text-muted);
+            line-height: 1.45;
+            margin: 0;
         }
 
         .smug-modal-body {
-            padding: 24px 28px;
+            padding: 22px 26px;
         }
 
         .smug-field-group {
             margin-bottom: 16px;
+            text-align: left;
         }
 
         .smug-label {
             display: block;
             font-size: 0.78rem;
-            font-weight: 600;
+            font-weight: 700;
             letter-spacing: 0.5px;
             text-transform: uppercase;
             color: var(--smug-text-secondary);
@@ -1992,48 +2012,86 @@ foreach ($albumsRepo as $alb) {
             width: 100%;
             background: var(--smug-input-bg);
             border: 1px solid var(--smug-border-light);
-            border-radius: 8px;
-            padding: 11px 14px;
+            border-radius: 10px;
+            padding: 12px 14px;
             color: var(--smug-text-primary);
-            font-size: 0.92rem;
+            font-size: 0.95rem;
             outline: none;
-            transition: border-color 0.2s ease, background 0.2s ease;
+            box-sizing: border-box;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+        }
+
+        [data-theme="daylight"] .smug-input {
+            background: #ffffff;
+            border-color: #cbd5e1;
+            color: #0f172a;
+        }
+
+        [data-theme="daylight"] .smug-label {
+            color: #334155;
+        }
+
+        [data-theme="noir"] .smug-input {
+            background: #141622;
+            border-color: rgba(255, 255, 255, 0.16);
+            color: #ffffff;
         }
 
         .smug-input:focus {
             border-color: var(--smug-red);
-            box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.12);
+            box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.16);
         }
 
         .smug-otp-input {
-            font-size: 1.6rem;
+            font-size: 1.85rem;
             letter-spacing: 12px;
             text-align: center;
-            font-weight: 700;
+            font-weight: 800;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+            padding: 14px 16px;
+            border-radius: 12px;
         }
 
         .smug-modal-alert {
-            padding: 10px 14px;
-            border-radius: 6px;
-            font-size: 0.82rem;
-            margin-bottom: 16px;
+            padding: 12px 16px;
+            border-radius: 10px;
+            font-size: 0.85rem;
+            line-height: 1.45;
+            font-weight: 500;
+            margin-bottom: 18px;
             display: none;
         }
 
-        .smug-alert-error {
-            background: rgba(220, 38, 38, 0.15);
-            border: 1px solid rgba(220, 38, 38, 0.4);
-            color: #f87171;
+        /* High-Contrast Alerts: Daylight Mode (WCAG AAA compliant: > 7:1) */
+        .smug-alert-error,
+        [data-theme="daylight"] .smug-alert-error {
+            background: #fef2f2 !important;
+            border: 1px solid #fecaca !important;
+            color: #991b1b !important;
         }
 
-        .smug-alert-info {
-            background: rgba(37, 99, 235, 0.15);
-            border: 1px solid rgba(37, 99, 235, 0.4);
-            color: #93c5fd;
+        .smug-alert-info,
+        [data-theme="daylight"] .smug-alert-info {
+            background: #f0f9ff !important;
+            border: 1px solid #bae6fd !important;
+            color: #0369a1 !important;
+        }
+
+        /* High-Contrast Alerts: Noir Mode (WCAG AAA compliant: > 7:1) */
+        [data-theme="noir"] .smug-alert-error {
+            background: #450a0a !important;
+            border: 1px solid #dc2626 !important;
+            color: #fca5a5 !important;
+        }
+
+        [data-theme="noir"] .smug-alert-info {
+            background: #082f49 !important;
+            border: 1px solid #0284c7 !important;
+            color: #7dd3fc !important;
         }
 
         .smug-modal-footer {
-            padding: 16px 28px 24px;
+            padding: 14px 26px 22px;
             display: flex;
             align-items: center;
             justify-content: flex-end;
@@ -2045,10 +2103,17 @@ foreach ($albumsRepo as $alb) {
             background: none;
             border: none;
             color: var(--smug-text-secondary);
-            font-size: 0.88rem;
+            font-size: 0.9rem;
             font-weight: 600;
             cursor: pointer;
-            padding: 8px 16px;
+            padding: 10px 16px;
+            border-radius: 8px;
+            transition: color 0.2s ease, background 0.2s ease;
+        }
+
+        .btn-modal-cancel:hover {
+            color: var(--smug-text-primary);
+            background: var(--smug-pill-bg);
         }
 
         .btn-modal-cancel:hover {
@@ -2398,8 +2463,8 @@ foreach ($albumsRepo as $alb) {
         <div class="smug-modal-box">
             <div class="smug-modal-header">
                 <div>
-                    <h2 class="smug-modal-title" id="verifyModalTitle">Security &amp; Download Access Gate</h2>
-                    <p class="smug-modal-subtitle" id="verifyModalSubtitle">Verify your details to unlock high-resolution photos. A delivery link is also sent directly to your inbox.</p>
+                    <h2 class="smug-modal-title" id="verifyModalTitle">Download Collection</h2>
+                    <p class="smug-modal-subtitle" id="verifyModalSubtitle">Enter your contact details below to receive your 6-digit access code.</p>
                 </div>
                 <button type="button" class="smug-tool-close" onclick="closeVerifyModal()" aria-label="Close">
                     <i class="fa-solid fa-xmark"></i>
@@ -2410,61 +2475,42 @@ foreach ($albumsRepo as $alb) {
                 <div id="verifyErrorAlert" class="smug-modal-alert smug-alert-error"></div>
                 <div id="verifyInfoAlert" class="smug-modal-alert smug-alert-info"></div>
 
-                <!-- STEP 1: Name, Email, Phone & Guest Security Fields -->
+                <!-- STEP 1: Name, Email & Phone -->
                 <div id="verifyStepIdentity">
                     <div class="smug-field-group">
                         <label class="smug-label" for="client_input_name">Full Name *</label>
-                        <input type="text" id="client_input_name" class="smug-input" placeholder="Your full name" value="<?php echo htmlspecialchars($clientName); ?>" required>
+                        <input type="text" id="client_input_name" class="smug-input" placeholder="Your full name" value="<?php echo htmlspecialchars($clientName); ?>" autocomplete="name" required>
                     </div>
 
                     <div class="smug-field-group">
                         <label class="smug-label" for="client_input_email">Email Address *</label>
-                        <input type="email" id="client_input_email" class="smug-input" placeholder="name@domain.com" value="" required autocomplete="email">
-                        <span style="font-size: 0.74rem; color: var(--smug-text-muted); margin-top: 4px; display: block;">Authorized clients and verified guests receive a 6-digit passcode and direct download delivery here.</span>
+                        <input type="email" id="client_input_email" class="smug-input" placeholder="name@domain.com" value="" required autocomplete="email" inputmode="email">
+                        <span style="font-size: 0.76rem; color: var(--smug-text-muted); margin-top: 5px; display: block; line-height: 1.4;">Your 6-digit access code and gallery delivery link will be sent here.</span>
                     </div>
 
                     <div class="smug-field-group">
                         <label class="smug-label" for="client_input_phone">Phone Number *</label>
-                        <input type="tel" id="client_input_phone" class="smug-input" placeholder="+1 (555) 000-0000" value="<?php echo htmlspecialchars($clientPhone); ?>" required>
-                    </div>
-
-                    <!-- Enhanced Security Layer for Public Guest Access -->
-                    <div id="verifyGuestDetails" style="display: none; margin-top: 16px; padding-top: 14px; border-top: 1px dashed rgba(255,255,255,0.14);">
-                        <div style="font-size: 0.76rem; font-weight: 700; color: #f87171; letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
-                            <i class="fa-solid fa-shield-halved"></i> Guest Security &amp; Usage Protocol
-                        </div>
-                        <p style="font-size: 0.8rem; color: #94a3b8; line-height: 1.45; margin: 0 0 12px 0;">
-                            This gallery is protected. As an event attendee, relative, or partner, please confirm your relationship and download purpose.
-                        </p>
-
-                        <div class="smug-field-group">
-                            <label class="smug-label" for="client_input_org">Organization / Relationship to Event *</label>
-                            <input type="text" id="client_input_org" class="smug-input" placeholder="e.g. Wedding Guest, Family Member, Sponsor, Press / Media, Vendor">
-                        </div>
-
-                        <div class="smug-field-group">
-                            <label class="smug-label" for="client_input_reason">Reason for Download *</label>
-                            <textarea id="client_input_reason" class="smug-input" rows="2" placeholder="e.g. Personal keepsake and printing, social media recap, editorial coverage..." style="resize: vertical; min-height: 54px;"></textarea>
-                        </div>
+                        <input type="tel" id="client_input_phone" class="smug-input" placeholder="+1 (555) 000-0000" value="<?php echo htmlspecialchars($clientPhone); ?>" autocomplete="tel" inputmode="tel" required>
                     </div>
                 </div>
 
                 <!-- STEP 2: 6-Digit OTP -->
                 <div id="verifyStepOtp" style="display: none;">
                     <div class="smug-field-group">
-                        <label class="smug-label" for="client_input_otp">Enter 6-Digit Security Code *</label>
+                        <label class="smug-label" for="client_input_otp" style="text-align: center;">Enter 6-Digit Passcode *</label>
                         <input type="text"
                                id="client_input_otp"
                                class="smug-input smug-otp-input"
                                placeholder="000000"
                                maxlength="6"
                                inputmode="numeric"
+                               pattern="[0-9]*"
                                autocomplete="one-time-code">
                     </div>
-                    <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.8rem; color:var(--smug-text-muted);">
-                        <span id="otpNoticeText">Code sent to your contact info</span>
-                        <button type="button" onclick="resetToIdentityStep()" style="background:none; border:none; color:#ef4444; font-weight:600; cursor:pointer;">
-                            Edit info / Resend
+                    <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.82rem; margin-top: 8px;">
+                        <span id="otpNoticeText" style="color: var(--smug-text-muted);">Passcode sent to your email</span>
+                        <button type="button" onclick="resetToIdentityStep()" style="background: none; border: none; color: #dc2626; font-weight: 700; cursor: pointer; text-decoration: underline; padding: 0;">
+                            Edit contact / Resend
                         </button>
                     </div>
                 </div>
@@ -2473,6 +2519,11 @@ foreach ($albumsRepo as $alb) {
             <div class="smug-modal-footer">
                 <button type="button" class="btn-modal-cancel" onclick="closeVerifyModal()">Cancel</button>
                 <button type="button" class="btn-modal-submit" id="btnVerifySubmit" onclick="submitVerification()">
+                    <i class="fa-solid fa-paper-plane"></i> Send Access Code
+                </button>
+            </div>
+        </div>
+    </div>
                     <i class="fa-solid fa-paper-plane"></i> Send Verification Code
                 </button>
             </div>
@@ -2888,22 +2939,17 @@ foreach ($albumsRepo as $alb) {
             document.getElementById('verifyStepOtp').style.display = 'none';
             document.getElementById('verifyErrorAlert').style.display = 'none';
             document.getElementById('verifyInfoAlert').style.display = 'none';
-            const guestBox = document.getElementById('verifyGuestDetails');
-            if (guestBox) guestBox.style.display = 'none';
+            document.getElementById('verifyModalTitle').textContent = 'Download Collection';
+            document.getElementById('verifyModalSubtitle').textContent = 'Enter your contact details below to receive your 6-digit access code.';
             const btn = document.getElementById('btnVerifySubmit');
             btn.disabled = false;
-            btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Send Verification Code';
+            btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Send Access Code';
         }
 
         async function submitVerification() {
             const name = document.getElementById('client_input_name').value.trim();
             const email = document.getElementById('client_input_email').value.trim();
             const phone = document.getElementById('client_input_phone').value.trim();
-            const guestBox = document.getElementById('verifyGuestDetails');
-            const orgInput = document.getElementById('client_input_org');
-            const reasonInput = document.getElementById('client_input_reason');
-            const org = orgInput ? orgInput.value.trim() : '';
-            const reason = reasonInput ? reasonInput.value.trim() : '';
             const errBox = document.getElementById('verifyErrorAlert');
             const infoBox = document.getElementById('verifyInfoAlert');
             const submitBtn = document.getElementById('btnVerifySubmit');
@@ -2916,36 +2962,21 @@ foreach ($albumsRepo as $alb) {
                     errBox.style.display = 'block';
                     return;
                 }
-                if (!email || !email.includes('@')) {
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                if (!email || !emailRegex.test(email)) {
                     errBox.textContent = 'Please enter a valid email address.';
                     errBox.style.display = 'block';
                     return;
                 }
-                if (!phone || phone.replace(/[^0-9+]/g, '').length < 7) {
+                const cleanPhone = phone.replace(/[^0-9+]/g, '');
+                if (!cleanPhone || cleanPhone.length < 7) {
                     errBox.textContent = 'Please enter a valid phone number.';
                     errBox.style.display = 'block';
                     return;
                 }
 
-                // If guest details are displayed, validate required fields
-                const isGuestSectionVisible = guestBox && guestBox.style.display !== 'none';
-                if (isGuestSectionVisible) {
-                    if (!org || org.length < 2) {
-                        errBox.textContent = 'Please enter your organization or relationship to this event.';
-                        errBox.style.display = 'block';
-                        if (orgInput) orgInput.focus();
-                        return;
-                    }
-                    if (!reason || reason.length < 3) {
-                        errBox.textContent = 'Please enter a brief reason for requesting this download.';
-                        errBox.style.display = 'block';
-                        if (reasonInput) reasonInput.focus();
-                        return;
-                    }
-                }
-
                 submitBtn.disabled = true;
-                submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Checking Access Permissions...';
+                submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Sending Access Code...';
 
                 try {
                     const fd = new FormData();
@@ -2953,41 +2984,35 @@ foreach ($albumsRepo as $alb) {
                     fd.append('name', name);
                     fd.append('email', email);
                     fd.append('phone', phone);
-                    fd.append('organization', org);
-                    fd.append('download_reason', reason);
                     fd.append('album_id', currentAlbumId);
                     fd.append('album_title', currentAlbumTitle);
 
                     const resp = await fetch('/api/verify-download.php', { method: 'POST', body: fd });
                     const res = await resp.json();
 
-                    if (res.requires_guest_details) {
-                        // Unlisted public requester: show enhanced guest verification form
-                        if (guestBox) guestBox.style.display = 'block';
-                        infoBox.style.display = 'block';
-                        infoBox.innerHTML = '<i class="fa-solid fa-shield-halved"></i> <strong>Guest Access Protocol:</strong> ' + (res.message || 'Please specify your organization and reason to receive your verification code.');
-                        submitBtn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Verify Identity &amp; Send Code';
-                        if (orgInput) orgInput.focus();
-                    } else if (res.success) {
+                    if (res.success) {
                         verificationStep = 'otp';
                         document.getElementById('verifyStepIdentity').style.display = 'none';
                         document.getElementById('verifyStepOtp').style.display = 'block';
+                        document.getElementById('verifyModalTitle').textContent = 'Enter Access Code';
+                        document.getElementById('verifyModalSubtitle').textContent = 'Enter the 6-digit passcode sent to your email to unlock your download.';
                         infoBox.style.display = 'block';
-                        const tierLabel = res.access_tier === 'public_verified' ? 'Verified Guest Access' : 'Client Access Passcode';
-                        infoBox.innerHTML = `<i class="fa-solid fa-envelope-circle-check"></i> <strong>${tierLabel}:</strong> ${res.message}`;
+                        infoBox.innerHTML = `<i class="fa-solid fa-circle-check"></i> ${res.message || 'Passcode dispatched. Please check your inbox.'}`;
                         const otpNotice = document.getElementById('otpNoticeText');
-                        if (otpNotice) otpNotice.textContent = 'Verification code sent to your contact email';
-                        submitBtn.innerHTML = '<i class="fa-solid fa-unlock-keyhole"></i> Verify &amp; Unlock Download';
-                        document.getElementById('client_input_otp').focus();
+                        if (otpNotice) otpNotice.textContent = 'Sent to ' + email;
+                        submitBtn.innerHTML = '<i class="fa-solid fa-cloud-arrow-down"></i> Verify &amp; Download';
+                        const otpInput = document.getElementById('client_input_otp');
+                        otpInput.value = '';
+                        otpInput.focus();
                     } else {
                         errBox.textContent = res.message || 'Verification failed. Please check your credentials.';
                         errBox.style.display = 'block';
-                        submitBtn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Send Verification Code';
+                        submitBtn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Send Access Code';
                     }
                 } catch (err) {
                     errBox.textContent = 'Network error while requesting verification code. Please try again.';
                     errBox.style.display = 'block';
-                    submitBtn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Send Verification Code';
+                    submitBtn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Send Access Code';
                 } finally {
                     submitBtn.disabled = false;
                 }
@@ -3008,8 +3033,6 @@ foreach ($albumsRepo as $alb) {
                     fd.append('email', email);
                     fd.append('name', name);
                     fd.append('phone', phone);
-                    fd.append('organization', org);
-                    fd.append('download_reason', reason);
                     fd.append('code', otp);
                     fd.append('album_id', currentAlbumId);
                     fd.append('album_title', currentAlbumTitle);
@@ -3023,21 +3046,35 @@ foreach ($albumsRepo as $alb) {
                         const badge = document.getElementById('verifiedStatusBadge');
                         if (badge) {
                             badge.style.display = 'inline-flex';
-                            if (res.access_tier === 'public_verified') {
-                                badge.innerHTML = '<i class="fa-solid fa-user-check"></i> Verified Guest';
-                            } else {
-                                badge.innerHTML = '<i class="fa-solid fa-circle-check"></i> Verified Client';
-                            }
+                            badge.innerHTML = '<i class="fa-solid fa-circle-check"></i> Verified';
                         }
                         closeVerifyModal();
 
                         const deliveryNote = res.download_emailed ? ' and delivery dispatched to your inbox' : '';
-                        showToast('✓ Identity verified! High-res download started' + deliveryNote + '.');
+                        showToast('✓ Access granted! High-resolution download started' + deliveryNote + '.');
 
                         // Immediately trigger the requested file download without synthetic click blocking
                         if (typeof pendingDownloadCallback === 'function') {
                             const cb = pendingDownloadCallback;
                             pendingDownloadCallback = null;
+                            cb(downloadToken);
+                        } else if (res.download_zip_url) {
+                            initiateBrowserDownload(res.download_zip_url);
+                        }
+                    } else {
+                        errBox.textContent = res.message || 'Invalid verification code. Please check your email.';
+                        errBox.style.display = 'block';
+                        submitBtn.innerHTML = '<i class="fa-solid fa-cloud-arrow-down"></i> Verify &amp; Download';
+                    }
+                } catch (err) {
+                    errBox.textContent = 'Network error while verifying code.';
+                    errBox.style.display = 'block';
+                    submitBtn.innerHTML = '<i class="fa-solid fa-cloud-arrow-down"></i> Verify &amp; Download';
+                } finally {
+                    submitBtn.disabled = false;
+                }
+            }
+        }
                             cb(downloadToken);
                         } else if (res.download_zip_url) {
                             initiateBrowserDownload(res.download_zip_url);
