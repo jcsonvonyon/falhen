@@ -2320,6 +2320,12 @@ foreach ($albumsRepo as $alb) {
                         <i class="fa-solid fa-cloud-arrow-down"></i>
                         <span>Download Gallery</span>
                     </button>
+                    <?php if (!empty($currentAlbum['gdrive_url'])): ?>
+                        <button type="button" class="btn-smug-action btn-smug-ghost" onclick="triggerDriveOriginalDownload()" title="Download original uncompressed studio files via Google Drive">
+                            <i class="fa-brands fa-google-drive"></i>
+                            <span>Studio Drive</span>
+                        </button>
+                    <?php endif; ?>
                     <button type="button" class="btn-smug-action btn-smug-ghost" onclick="openDynamicFullView(0)">
                         <i class="fa-solid fa-play"></i>
                         <span>Slideshow</span>
@@ -3050,7 +3056,7 @@ foreach ($albumsRepo as $alb) {
                         }
                         closeVerifyModal();
 
-                        const deliveryNote = res.download_emailed ? ' and delivery dispatched to your inbox' : '';
+                        const deliveryNote = (res.download_emailed || res.email_sent) ? ' and delivery dispatched to your inbox' : '';
                         showToast('✓ Access granted! High-resolution download started' + deliveryNote + '.');
 
                         // Immediately trigger the requested file download without synthetic click blocking
@@ -3075,22 +3081,14 @@ foreach ($albumsRepo as $alb) {
                 }
             }
         }
-                            cb(downloadToken);
-                        } else if (res.download_zip_url) {
-                            initiateBrowserDownload(res.download_zip_url);
-                        }
-                    } else {
-                        errBox.textContent = res.message || 'Invalid verification code. Please check your email.';
-                        errBox.style.display = 'block';
-                    }
-                } catch (err) {
-                    errBox.textContent = 'Network error while verifying code.';
-                    errBox.style.display = 'block';
-                } finally {
-                    submitBtn.disabled = false;
-                    submitBtn.innerHTML = '<i class="fa-solid fa-unlock-keyhole"></i> Verify &amp; Unlock Download';
-                }
-            }
+
+        const currentAlbumGdriveUrl = <?php echo json_encode($currentAlbum['gdrive_url'] ?? ''); ?>;
+        function triggerDriveOriginalDownload() {
+            if (!currentAlbumGdriveUrl) return;
+            requireVerification(() => {
+                showToast('Opening original studio files on Google Drive...');
+                window.open(currentAlbumGdriveUrl, '_blank', 'noopener,noreferrer');
+            });
         }
 
         // ================= NATIVE INSTANT DOWNLOAD ENGINE =================

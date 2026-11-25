@@ -154,8 +154,8 @@ function syncDrivePhotoToCloudinary($photoUrl, $albumId = 0, $autoUpload = false
 
     // Check persistent sync map (cached in-memory for speed)
     static $syncMap = null;
+    $mapFile = __DIR__ . '/../config/cloudinary_sync_map.json';
     if ($syncMap === null) {
-        $mapFile = __DIR__ . '/../config/cloudinary_sync_map.json';
         $syncMap = file_exists($mapFile) ? @json_decode(file_get_contents($mapFile), true) : [];
         if (!is_array($syncMap)) {
             $syncMap = [];
@@ -195,11 +195,7 @@ function syncDrivePhotoToCloudinary($photoUrl, $albumId = 0, $autoUpload = false
                 'album_id' => (int) $albumId,
                 'synced_at' => date('c')
             ];
-            $isDirty = true;
-        if ($index % 8 === 0) {
             @file_put_contents($mapFile, json_encode($syncMap, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES), LOCK_EX);
-            $isDirty = false;
-        }
             return getCloudinaryUrl($uploaded['url'], 'f_auto,q_auto');
         }
     }

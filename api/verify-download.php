@@ -199,6 +199,11 @@ if ($action === 'request_code' || ($action === 'verify_client_download' && !empt
     $_SESSION['download_album_id']     = $albumId;
     $_SESSION['download_album_title']  = $albumTitle;
 
+    // Release PHP session write lock BEFORE external SMTP/Resend network call
+    if (session_status() === PHP_SESSION_ACTIVE) {
+        session_write_close();
+    }
+
     // Dispatch 6-digit OTP via SMTP / Resend Email
     $mailSent = false;
     if (function_exists('sendVerificationCodeEmail')) {
@@ -318,6 +323,12 @@ if ($action === 'verify_code') {
     $_SESSION['registered_client_name']   = $verifiedName;
     $_SESSION['registered_client_phone']  = $verifiedPhone;
 
+    // Release session write lock immediately BEFORE external email dispatch & DB logging
+    // so client can browse/download concurrently without Cloudflare 524 timeouts
+    if (session_status() === PHP_SESSION_ACTIVE) {
+        session_write_close();
+    }
+
     // Build absolute download link
     $host = $_SERVER['HTTP_HOST'] ?? 'client.falhen.com';
     $proto = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
@@ -371,20 +382,12 @@ if ($action === 'verify_code') {
         ? 'Identity verified! Your download has started and a copy of the download link has been sent to your email (' . htmlspecialchars($maskedEmail) . ').'
         : 'Identity verified! Preparing your gallery download...';
 
-    // Release session write lock immediately so client can browse/access without Cloudflare 524 timeouts
-    if (session_status() === PHP_SESSION_ACTIVE) {
-        session_write_close();
-    }
-
-    if (session_status() === PHP_SESSION_ACTIVE) {
-        session_write_close();
-    }
-
     echo json_encode([
         'success'          => true,
         'verified'         => true,
         'access_tier'      => $accessTier,
         'email_sent'       => (bool)$emailSent,
+        'download_emailed' => (bool)$emailSent,
         'masked_email'     => $maskedEmail,
         'name'             => $verifiedName,
         'album_id'         => $verifiedAlbumId,
