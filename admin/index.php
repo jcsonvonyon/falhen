@@ -12,7 +12,8 @@ require_once __DIR__ . '/../includes/mxroute_auth.php';
 // Automated Scheduled Cron Endpoint (cPanel Cron & Webhook)
 if (isset($_GET['cron_backup']) || (php_sapi_name() === 'cli' && in_array('--cron-backup', $argv ?? [], true))) {
     $token = $_GET['token'] ?? '';
-    if (php_sapi_name() === 'cli' || $token === 'falhen_cron_2026') {
+    $expectedCronToken = getenv('FALHEN_CRON_TOKEN') ?: 'falhen_cron_2026';
+    if (php_sapi_name() === 'cli' || hash_equals((string)$expectedCronToken, (string)$token)) {
         $res = function_exists('createFullSystemBackup') ? createFullSystemBackup('SCHEDULED_CRON', 'Automated Scheduled Backup via cPanel Cron') : ['error' => 'Backup function unavailable'];
         header('Content-Type: application/json');
         echo json_encode($res, JSON_PRETTY_PRINT);
@@ -28,6 +29,10 @@ requireAdmin();
 
 // CSV Exports for Super Admin / IT
 if (isset($_GET['export_download_logs_csv'])) {
+    if (!hasSectionAccess('dev_logs', $_SESSION['admin_role'] ?? 'Staff', $_SESSION['admin_email'] ?? '', $_SESSION['admin_username'] ?? '')) {
+        http_response_code(403);
+        die('Access Denied: Super Admin or IT Administrator privileges required.');
+    }
     $albumFilter = !empty($_GET['album_id']) ? (int)$_GET['album_id'] : null;
     $tierFilter = !empty($_GET['tier']) ? trim($_GET['tier']) : null;
     $searchFilter = !empty($_GET['q']) ? trim($_GET['q']) : null;
@@ -83,6 +88,10 @@ if (isset($_GET['export_download_logs_csv'])) {
 }
 
 if (isset($_GET['export_backups_csv'])) {
+    if (!hasSectionAccess('dev_logs', $_SESSION['admin_role'] ?? 'Staff', $_SESSION['admin_email'] ?? '', $_SESSION['admin_username'] ?? '')) {
+        http_response_code(403);
+        die('Access Denied: Super Admin or IT Administrator privileges required.');
+    }
     $backups = function_exists('getSystemBackups') ? getSystemBackups(500) : [];
     header('Content-Type: text/csv; charset=utf-8');
     header('Content-Disposition: attachment; filename="falhen_system_backups_' . date('Ymd_His') . '.csv"');
@@ -105,6 +114,10 @@ if (isset($_GET['export_backups_csv'])) {
 }
 
 if (isset($_GET['download_backup_file'])) {
+    if (!hasSectionAccess('dev_logs', $_SESSION['admin_role'] ?? 'Staff', $_SESSION['admin_email'] ?? '', $_SESSION['admin_username'] ?? '')) {
+        http_response_code(403);
+        die('Access Denied: Super Admin or IT Administrator privileges required.');
+    }
     $fn = basename($_GET['download_backup_file']);
     $file = __DIR__ . '/../config/backups/' . $fn;
     if (file_exists($file)) {
@@ -154,9 +167,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
     $action = $_POST['action'] ?? (($_GET['ajax'] ?? '') === 'upload_cloudinary' ? 'upload_cloudinary_ajax' : 'save_settings');
     $currentRole = $_SESSION['admin_role'] ?? 'Staff';
+    $currentEmail = $_SESSION['admin_email'] ?? '';
+    $currentUsername = $_SESSION['admin_username'] ?? '';
     if ($currentRole === 'Talent Manager') {
         $currentRole = 'HR Manager';
         $_SESSION['admin_role'] = 'HR Manager';
+    }
+
+    $privilegedDevLogsActions = [
+        'create_full_backup_bundle',
+        'create_full_system_snapshot',
+        'test_db_credentials',
+        'save_db_credentials',
+        'trigger_cron_backup_now',
+        'sync_db_and_disk',
+        'optimize_db_tables',
+        'test_db_diagnostics',
+        'create_manual_backup',
+    ];
+    if (in_array($action, $privilegedDevLogsActions, true) && !hasSectionAccess('dev_logs', $currentRole, $currentEmail, $currentUsername)) {
+        http_response_code(403);
+        if (in_array($action, ['test_db_credentials', 'save_db_credentials', 'trigger_cron_backup_now', 'test_db_diagnostics'], true) || !empty($_SERVER['HTTP_X_REQUESTED_WITH'])) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'error' => 'Access Denied: Super Admin or IT Administrator privileges required.']);
+            exit;
+        }
+        die('Access Denied: Super Admin or IT Administrator privileges required.');
     }
 
     if ($action === 'create_full_backup_bundle' || $action === 'create_full_system_snapshot') {
@@ -434,6 +470,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'save_staff_account'         => 'staff_accounts',
         'delete_staff_account'       => 'staff_accounts',
         'toggle_staff_status'        => 'staff_accounts',
+        'send_staff_reset_otp'       => 'staff_accounts',
+        'sync_team_and_staff'        => 'staff_accounts',
         'save_profile_details'       => 'my_profile',
         'save_counter_signature'     => 'my_profile',
         'change_profile_password'    => 'my_profile',
@@ -3446,7 +3484,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $targetUser = $existingAdmin['username'] ?? ($username ?: 'admin');
             $currentHash = $existingAdmin['password_hash'] ?? '';
         } else {
-            $isTargetAdmin = (strtolower($username) === 'admin' || strtolower($username) === 'henry.falonipe' || strtolower($userEmail) === 'admin@falhen.com' || strtolower($userEmail) === 'mail@falhenmedia.com' || isAdminUser($userRole, $userEmail, $username));
+            $isTargetAdmin = (strtolower($username) === 'admin' || strtolower($username) === 'henry.falonipe' || strtolower($userEmail) === 'admin@falhen.com' || strtolower($userEmail) === 'henry.falonipe@falhen.com' || strtolower($userEmail) === 'henry@falhen.com' || strtolower($userEmail) === 'info@falhen.com' || isOwnerUser($userEmail, $username));
             if ($isTargetAdmin) {
                 $profile = getAdminUserProfile();
                 $currentHash = $profile['password_hash'] ?? '';
@@ -3486,7 +3524,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         $newHash = password_hash($newPassword, PASSWORD_DEFAULT);
-        $isTargetAdmin = (strtolower($username) === 'admin' || strtolower($username) === 'henry.falonipe' || strtolower($userEmail) === 'admin@falhen.com' || strtolower($userEmail) === 'mail@falhenmedia.com' || isAdminUser($userRole, $userEmail, $username));
+        $isTargetAdmin = (strtolower($username) === 'admin' || strtolower($username) === 'henry.falonipe' || strtolower($userEmail) === 'admin@falhen.com' || strtolower($userEmail) === 'henry.falonipe@falhen.com' || strtolower($userEmail) === 'henry@falhen.com' || strtolower($userEmail) === 'info@falhen.com' || isOwnerUser($userEmail, $username));
 
         $pwdDataUpdate = ['password_hash' => $newHash];
         if (!empty($phone)) $pwdDataUpdate['phone'] = $phone;
@@ -3506,12 +3544,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             saveStaffAccountByUsername('admin@falhen.com', $pwdDataUpdate);
         }
 
-        if ($pdo) {
+        if (function_exists('syncStaffPasswordAcrossStores')) {
+            syncStaffPasswordAcrossStores($userEmail, $username, $newHash);
+        } elseif ($pdo) {
             try {
                 $stmt = $pdo->prepare("UPDATE `admin_users` SET `password_hash` = ? WHERE `username` = ? OR `email` = ?");
                 $stmt->execute([$newHash, $username, $userEmail]);
                 if ($isTargetAdmin || isOwnerUser($userEmail, $username)) {
-                    $stmt = $pdo->prepare("UPDATE `admin_users` SET `password_hash` = ? WHERE `username` IN ('admin', 'henry.falonipe') OR `email` IN ('admin@falhen.com', 'henry.falonipe@falhen.com', 'henry@falhen.com')");
+                    $stmt = $pdo->prepare("UPDATE `admin_users` SET `password_hash` = ? WHERE `username` IN ('admin', 'henry.falonipe') OR `email` IN ('admin@falhen.com', 'henry.falonipe@falhen.com', 'henry@falhen.com', 'info@falhen.com')");
                     $stmt->execute([$newHash]);
                 }
             } catch (Exception $e) {}
@@ -3532,9 +3572,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         header('Location: index.php?section=my_profile&pwd_saved=1');
         exit;
     } else if ($action === 'save_staff_account') {
+        if (!canManageStaffAccounts($currentRole, $currentEmail, $currentUsername)) {
+            http_response_code(403);
+            header('Location: index.php?section=dashboard&error=' . urlencode('Access Denied: Only Super Admin, IT Manager, and HR Manager can update or sync staff accounts.'));
+            exit;
+        }
         $sId = (int)($_POST['id'] ?? 0);
         $fullName = trim(strip_tags($_POST['full_name'] ?? ''));
-        $email = trim(strip_tags($_POST['email'] ?? ''));
+        $email = strtolower(trim(strip_tags($_POST['email'] ?? '')));
+        if (!isValidCorporateFalhenEmail($email)) {
+            $redirTarget = ($sId > 0) ? ('index.php?section=staff_accounts&edit_id=' . $sId) : 'index.php?section=staff_accounts&sub_action=add';
+            header('Location: ' . $redirTarget . '&error=' . urlencode('Invalid company email address. Use strict firstname.lastname@falhen.com format (falhenmedia.com and non-Henry firstname@falhen.com addresses are rejected).'));
+            exit;
+        }
         $username = trim(strip_tags($_POST['username'] ?? ''));
         if (empty($username) && !empty($email)) {
             $username = strtolower(trim(explode('@', $email)[0]));
@@ -3544,7 +3594,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $role = trim(strip_tags($_POST['role'] ?? 'Staff'));
         $designation = trim(strip_tags($_POST['designation'] ?? ''));
         if (empty($designation)) {
-            $designation = ($role === 'Super Admin') ? 'IT Support Specialist' : (($role === 'Staff') ? 'Creative Specialist' : $role);
+            $designation = ($role === 'Super Admin' || $role === 'IT Administrator' || $role === 'IT Manager') ? 'IT Support Specialist' : (($role === 'Staff') ? 'Creative Specialist' : $role);
         }
         $status = trim(strip_tags($_POST['status'] ?? 'pending_activation'));
         $password = $_POST['password'] ?? '';
@@ -3577,6 +3627,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $items = array_values(getStaffAccountsRepo());
         $found = false;
         $activeCodeUsed = '';
+        $newPwdHash = !empty($password) ? password_hash($password, PASSWORD_DEFAULT) : null;
 
         foreach ($items as &$it) {
             if ((int)($it['id'] ?? 0) === $sId) {
@@ -3597,8 +3648,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
                 $activeCodeUsed = $it['activation_code'];
 
-                if (!empty($password)) {
-                    $it['password_hash'] = password_hash($password, PASSWORD_DEFAULT);
+                if ($newPwdHash !== null) {
+                    $it['password_hash'] = $newPwdHash;
                 }
                 $found = true;
                 break;
@@ -3614,6 +3665,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
             $newId = $maxId + 1;
             $activeCodeUsed = generateStaffActivationCode();
+            $initialHash = $newPwdHash ?? password_hash('Password123#', PASSWORD_DEFAULT);
 
             $items[] = [
                 'id'                => $newId,
@@ -3630,7 +3682,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'dob'               => $dob,
                 'assigned_modules'  => $assignedModules,
                 'created_at'        => date('Y-m-d'),
-                'password_hash'     => password_hash(!empty($password) ? $password : 'Password123#', PASSWORD_DEFAULT)
+                'password_hash'     => $initialHash
             ];
         }
 
@@ -3642,17 +3694,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($pdo) {
             try {
                 $isOwnerFlag = isOwnerUser($email, $username) ? 1 : 0;
-                $pwdHash = !empty($password) ? password_hash($password, PASSWORD_DEFAULT) : null;
-                if ($pwdHash) {
+                if ($newPwdHash !== null) {
                     $dbUpsert = $pdo->prepare("INSERT INTO `admin_users` (`username`, `email`, `alt_email`, `password_hash`, `role`, `full_name`, `is_owner`, `status`)
                         VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-                        ON DUPLICATE KEY UPDATE `username` = VALUES(`username`), `alt_email` = VALUES(`alt_email`), `password_hash` = VALUES(`password_hash`), `role` = VALUES(`role`), `full_name` = VALUES(`full_name`), `is_owner` = VALUES(`is_owner`), `status` = VALUES(`status`)");
-                    $dbUpsert->execute([$username, $email, $altEmail, $pwdHash, $role, $fullName, $isOwnerFlag, $status]);
+                        ON DUPLICATE KEY UPDATE `username` = VALUES(`username`), `email` = VALUES(`email`), `alt_email` = VALUES(`alt_email`), `password_hash` = VALUES(`password_hash`), `role` = VALUES(`role`), `full_name` = VALUES(`full_name`), `is_owner` = VALUES(`is_owner`), `status` = VALUES(`status`)");
+                    $dbUpsert->execute([$username, $email, $altEmail, $newPwdHash, $role, $fullName, $isOwnerFlag, $status]);
                 } else {
+                    $fallbackHash = password_hash('Password123#', PASSWORD_DEFAULT);
                     $dbUpsert = $pdo->prepare("INSERT INTO `admin_users` (`username`, `email`, `alt_email`, `password_hash`, `role`, `full_name`, `is_owner`, `status`)
-                        VALUES (?, ?, ?, '$2y$10$w8T.N0V3F0r.rC3TqN197.W84d7O8w4Q8gU4E9hR2F1H0Z3F4X5Y6', ?, ?, ?, ?)
-                        ON DUPLICATE KEY UPDATE `username` = VALUES(`username`), `alt_email` = VALUES(`alt_email`), `role` = VALUES(`role`), `full_name` = VALUES(`full_name`), `is_owner` = VALUES(`is_owner`), `status` = VALUES(`status`)");
-                    $dbUpsert->execute([$username, $email, $altEmail, $role, $fullName, $isOwnerFlag, $status]);
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                        ON DUPLICATE KEY UPDATE `username` = VALUES(`username`), `email` = VALUES(`email`), `alt_email` = VALUES(`alt_email`), `role` = VALUES(`role`), `full_name` = VALUES(`full_name`), `is_owner` = VALUES(`is_owner`), `status` = VALUES(`status`)");
+                    $dbUpsert->execute([$username, $email, $altEmail, $fallbackHash, $role, $fullName, $isOwnerFlag, $status]);
                 }
             } catch (Exception $e) {
                 error_log("Failed to sync staff account to admin_users: " . $e->getMessage());
@@ -3664,9 +3716,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             sendStaffActivationEmail($altEmail, $activeCodeUsed, $fullName, $email);
         }
 
-        header('Location: index.php?section=staff_accounts&edit_id=' . $targetId . '&saved=1&activation_code=' . urlencode($activeCodeUsed) . '&alt_email=' . urlencode($altEmail));
+        if (!empty($activeCodeUsed)) {
+            $_SESSION['flash_activation_notice'] = [
+                'code' => $activeCodeUsed,
+                'alt_email' => $altEmail,
+            ];
+        }
+
+        header('Location: index.php?section=staff_accounts&edit_id=' . $targetId . '&saved=1');
         exit;
     } else if ($action === 'delete_staff_account') {
+        if (!canManageStaffAccounts($currentRole, $currentEmail, $currentUsername)) {
+            http_response_code(403);
+            header('Location: index.php?section=dashboard&error=' . urlencode('Access Denied: Only Super Admin, IT Manager, and HR Manager can update or sync staff accounts.'));
+            exit;
+        }
         $sId = (int)($_POST['id'] ?? 0);
         $items = array_values(getStaffAccountsRepo());
 
@@ -3701,6 +3765,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         header('Location: index.php?section=staff_accounts&deleted=1');
         exit;
     } else if ($action === 'toggle_staff_status') {
+        if (!canManageStaffAccounts($currentRole, $currentEmail, $currentUsername)) {
+            http_response_code(403);
+            header('Location: index.php?section=dashboard&error=' . urlencode('Access Denied: Only Super Admin, IT Manager, and HR Manager can update or sync staff accounts.'));
+            exit;
+        }
         $sId = (int)($_POST['id'] ?? 0);
         $items = array_values(getStaffAccountsRepo());
         foreach ($items as &$it) {
@@ -3727,6 +3796,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         header('Location: index.php?section=staff_accounts&saved=1');
         exit;
     } else if ($action === 'send_staff_reset_otp') {
+        if (!canManageStaffAccounts($currentRole, $currentEmail, $currentUsername)) {
+            http_response_code(403);
+            header('Location: index.php?section=dashboard&error=' . urlencode('Access Denied: Only Super Admin, IT Manager, and HR Manager can update or sync staff accounts.'));
+            exit;
+        }
         $sId = (int)($_POST['id'] ?? 0);
         $items = array_values(getStaffAccountsRepo());
         $targetAccount = null;
@@ -3738,7 +3812,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         if ($targetAccount) {
-            $altEmail = !empty($targetAccount['alt_email']) ? trim($targetAccount['alt_email']) : trim($targetAccount['email'] ?? '');
+            $corpEmail = trim((string)($targetAccount['email'] ?? ''));
+            $altEmail = !empty($targetAccount['alt_email']) ? trim((string)$targetAccount['alt_email']) : $corpEmail;
             $code = sprintf("%06d", random_int(100000, 999999));
             $codeHash = hash('sha256', $code);
             $expires = date('Y-m-d H:i:s', strtotime('+15 minutes'));
@@ -3747,20 +3822,57 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($pdo) {
                 try {
                     $uStmt = $pdo->prepare("UPDATE `admin_users` SET `reset_otp` = ?, `reset_expires` = ? WHERE LOWER(email) = ? OR LOWER(username) = ?");
-                    $uStmt->execute([$codeHash, $expires, strtolower($targetAccount['email'] ?? ''), strtolower($targetAccount['username'] ?? '')]);
+                    $uStmt->execute([$codeHash, $expires, strtolower($corpEmail), strtolower($targetAccount['username'] ?? '')]);
                 } catch (Exception $e) {}
             }
 
-            sendStaffPasswordResetOtpEmail($altEmail, $code, $targetAccount['full_name'] ?? 'Staff Member', $targetAccount['username'] ?? '', $targetAccount['email'] ?? '');
-            header('Location: index.php?section=staff_accounts&otp_sent=1&alt_email=' . urlencode($altEmail));
+            $deliveredTo = '';
+            $sentPrimary = !empty($altEmail) && sendStaffPasswordResetOtpEmail(
+                $altEmail,
+                $code,
+                $targetAccount['full_name'] ?? 'Staff Member',
+                $targetAccount['username'] ?? '',
+                $corpEmail
+            );
+            if ($sentPrimary) {
+                $deliveredTo = $altEmail;
+            } elseif (!empty($corpEmail) && strtolower($corpEmail) !== strtolower($altEmail)) {
+                $sentFailover = sendStaffPasswordResetOtpEmail(
+                    $corpEmail,
+                    $code,
+                    $targetAccount['full_name'] ?? 'Staff Member',
+                    $targetAccount['username'] ?? '',
+                    $corpEmail
+                );
+                if ($sentFailover) {
+                    $deliveredTo = $corpEmail;
+                }
+            }
+
+            if ($deliveredTo !== '') {
+                header('Location: index.php?section=staff_accounts&otp_sent=1&alt_email=' . urlencode($deliveredTo));
+                exit;
+            }
+
+            $mailErr = $GLOBALS['falhen_last_mail_result']['error'] ?? 'SMTP/mail delivery failed';
+            header('Location: index.php?section=staff_accounts&error=' . urlencode('Unable to deliver reset OTP email to ' . ($altEmail ?: 'recovery address') . (($corpEmail !== '' && strtolower($corpEmail) !== strtolower($altEmail)) ? ' or failover ' . $corpEmail : '') . '. Reason: ' . $mailErr));
             exit;
         }
         header('Location: index.php?section=staff_accounts&error=' . urlencode('Staff account not found.'));
         exit;
     } else if ($action === 'sync_team_and_staff') {
+        if (!canManageStaffAccounts($currentRole, $currentEmail, $currentUsername)) {
+            http_response_code(403);
+            header('Location: index.php?section=dashboard&error=' . urlencode('Access Denied: Only Super Admin, IT Manager, and HR Manager can update or sync staff accounts.'));
+            exit;
+        }
         $result = syncTeamAndStaffAccounts();
-        $targetSection = $_GET['section'] ?? 'team';
-        header("Location: index.php?section={$targetSection}&synced=1&added={$result['added']}&updated={$result['updated']}");
+        $targetSection = $_GET['section'] ?? 'staff_accounts';
+        if (!empty($result['error'])) {
+            header('Location: index.php?section=' . urlencode($targetSection) . '&error=' . urlencode($result['error']));
+            exit;
+        }
+        header("Location: index.php?section=" . urlencode($targetSection) . "&synced=1&added=" . (int)($result['added'] ?? 0) . "&updated=" . (int)($result['updated'] ?? 0));
         exit;
     } else if ($action === 'upload_cloudinary') {
         if (!empty($_FILES['cloudinary_file']['tmp_name'])) {
@@ -4436,7 +4548,7 @@ if ($userRole === 'Talent Manager') {
     $_SESSION['admin_role'] = 'HR Manager';
 }
 
-$isSuperAdmin = (strtolower($username) === 'admin' || strtolower($username) === 'oluwatosin.ligali' || strtolower($userEmail) === 'mail@falhenmedia.com' || strtolower($userEmail) === 'admin@falhen.com' || strtolower($userRole) === 'super admin');
+$isSuperAdmin = isSuperAdminUser($userRole, $userEmail, $username);
 
     $currentStaffAcc = getStaffAccountByUsername($username);
     if (!$currentStaffAcc && !empty($userEmail)) {
@@ -8761,6 +8873,12 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                     }
                 }
             ?>
+                <?php if (!empty($_GET['error'])): ?>
+                    <div style="background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; padding: 12px 18px; border-radius: 10px; font-weight: 700; font-size: 0.9rem; margin-bottom: 24px; display: flex; align-items: center; gap: 10px;">
+                        <i class="fa-solid fa-triangle-exclamation" style="color: #dc2626;"></i> <?php echo htmlspecialchars($_GET['error']); ?>
+                    </div>
+                <?php endif; ?>
+
                 <?php if (isset($_GET['synced'])): ?>
                     <div style="background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; padding: 12px 18px; border-radius: 12px; margin-bottom: 20px; font-size: 0.9rem; font-weight: 700; display: flex; align-items: center; gap: 10px;">
                         <i class="fa-solid fa-arrows-rotate" style="font-size: 1.1rem; color: #22c55e;"></i> Team Roster &amp; Staff Accounts fully synchronized! (<?php echo (int)($_GET['added'] ?? 0); ?> added, <?php echo (int)($_GET['updated'] ?? 0); ?> updated)
@@ -11508,6 +11626,12 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                     </div>
                 <?php endif; ?>
 
+                <?php if (!empty($_GET['error'])): ?>
+                    <div style="background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; padding: 12px 18px; border-radius: 10px; font-weight: 700; font-size: 0.9rem; margin-bottom: 24px; display: flex; align-items: center; gap: 10px;">
+                        <i class="fa-solid fa-triangle-exclamation" style="color: #dc2626;"></i> <?php echo htmlspecialchars($_GET['error']); ?>
+                    </div>
+                <?php endif; ?>
+
                 <?php if (isset($_GET['synced'])): ?>
                     <div style="background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; padding: 12px 18px; border-radius: 10px; font-weight: 700; font-size: 0.88rem; margin-bottom: 20px;">
                         <i class="fa-solid fa-circle-check" style="color: #22c55e;"></i> Database and config/settings.json disk cache successfully synchronized!
@@ -13829,6 +13953,12 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                     <?php endif; ?>
                 </div>
 
+                <?php if (!empty($_GET['error'])): ?>
+                    <div style="background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; padding: 12px 18px; border-radius: 10px; font-weight: 700; font-size: 0.9rem; margin-bottom: 24px; display: flex; align-items: center; gap: 10px;">
+                        <i class="fa-solid fa-triangle-exclamation" style="color: #dc2626;"></i> <?php echo htmlspecialchars($_GET['error']); ?>
+                    </div>
+                <?php endif; ?>
+
                 <?php if (isset($_GET['synced'])): ?>
                     <div style="background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; padding: 12px 18px; border-radius: 10px; font-weight: 700; font-size: 0.9rem; margin-bottom: 24px; display: flex; align-items: center; gap: 10px;">
                         <i class="fa-solid fa-arrows-rotate" style="color: #22c55e;"></i> Team Roster &amp; Staff Accounts fully synchronized! (<?php echo (int)($_GET['added'] ?? 0); ?> added, <?php echo (int)($_GET['updated'] ?? 0); ?> updated)
@@ -13846,9 +13976,13 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                         <div style="display: flex; align-items: center; gap: 10px;">
                             <i class="fa-solid fa-circle-check" style="color: #22c55e; font-size: 1.1rem;"></i> <span>Staff account details saved successfully!</span>
                         </div>
-                        <?php if (!empty($_GET['activation_code'])): ?>
+                        <?php
+                        $flashActivationNotice = $_SESSION['flash_activation_notice'] ?? null;
+                        unset($_SESSION['flash_activation_notice']);
+                        ?>
+                        <?php if (!empty($flashActivationNotice['code'])): ?>
                             <div style="margin-top: 6px; padding-top: 8px; border-top: 1px solid #dcfce7; color: #0f172a; font-size: 0.86rem; font-weight: 600;">
-                                <i class="fa-solid fa-envelope-circle-check" style="color: #2563eb;"></i> <strong>Activation Code Dispatched:</strong> 6-Digit Activation Code <strong style="font-size: 1.15rem; color: #dc2626; letter-spacing: 2px; padding: 2px 8px; background: #ffffff; border: 1px solid #fecaca; border-radius: 6px;"><?php echo htmlspecialchars($_GET['activation_code']); ?></strong> has been sent to the staff member's alternative email (<strong><?php echo htmlspecialchars($_GET['alt_email'] ?? 'Alternative Email'); ?></strong>) to activate login access.
+                                <i class="fa-solid fa-envelope-circle-check" style="color: #2563eb;"></i> <strong>Activation Code Dispatched:</strong> 6-Digit Activation Code <strong style="font-size: 1.15rem; color: #dc2626; letter-spacing: 2px; padding: 2px 8px; background: #ffffff; border: 1px solid #fecaca; border-radius: 6px;"><?php echo htmlspecialchars($flashActivationNotice['code']); ?></strong> has been sent to the staff member's alternative email (<strong><?php echo htmlspecialchars($flashActivationNotice['alt_email'] ?: 'Alternative Email'); ?></strong>) to activate login access.
                             </div>
                         <?php endif; ?>
                     </div>
@@ -13917,7 +14051,8 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
 
                                 <div class="form-field">
                                     <label class="form-label-title">Company Email Address <span style="color: #ef4444;">*</span></label>
-                                    <input type="email" name="email" required class="form-text-input" value="<?php echo htmlspecialchars($editingStaffId !== null ? ($editingStaff['email'] ?? '') : ''); ?>" placeholder="diane@falhen.com" autocomplete="off">
+                                    <input type="email" name="email" required class="form-text-input" value="<?php echo htmlspecialchars($editingStaffId !== null ? ($editingStaff['email'] ?? '') : ''); ?>" placeholder="firstname.lastname@falhen.com" autocomplete="off">
+                                    <span class="form-label-help" style="font-size: 0.74rem; color: #64748b; margin-top: 3px; display: block;">Strict corporate format: <strong>firstname.lastname@falhen.com</strong> (e.g. <code>diane.max@falhen.com</code>). Legacy <code>@falhenmedia.com</code> and single-name emails are rejected.</span>
                                 </div>
 
                                 <div class="form-field">
@@ -13935,14 +14070,14 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                     <label class="form-label-title">Assign Access Role <span style="font-size: 0.74rem; font-weight: 600; color: #64748b;">(System Permissions)</span></label>
                                     <select name="role" class="form-text-input">
                                         <?php 
-                                            $roles = ['Owner / Super Admin', 'Super Admin', 'IT Administrator', 'Content Editor', 'Production Manager', 'HR Manager', 'Staff'];
+                                            $roles = ['Owner / Super Admin', 'Super Admin', 'IT Administrator', 'IT Manager', 'Content Editor', 'Production Manager', 'HR Manager', 'Staff'];
                                             $currentRole = $editingStaff['role'] ?? 'Staff';
                                             foreach ($roles as $r):
                                         ?>
                                             <option value="<?php echo $r; ?>" <?php echo ($currentRole === $r) ? 'selected' : ''; ?>><?php echo $r; ?></option>
                                         <?php endforeach; ?>
                                     </select>
-                                    <span class="form-label-help" style="font-size: 0.74rem; color: #64748b; margin-top: 3px; display: block;">Super Admin &amp; IT Administrator have top-level access across all modules.</span>
+                                    <span class="form-label-help" style="font-size: 0.74rem; color: #64748b; margin-top: 3px; display: block;">Super Admin, IT Administrator, and IT Manager have top-level access across all modules. Only Super Admin, IT, and HR Manager can manage staff accounts.</span>
                                 </div>
 
                                 <div class="form-field">
@@ -13988,7 +14123,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                             ? $editingStaff['assigned_modules'] 
                                             : getUserAssignedModules($editingStaff['username'] ?? '', $editingStaff['email'] ?? '', $editingStaff['role'] ?? 'Staff');
                                         
-                                        $isHighLevelRole = in_array($currentRole, ['Owner / Super Admin', 'Super Admin', 'IT Administrator'], true);
+                                        $isHighLevelRole = in_array($currentRole, ['Owner / Super Admin', 'Super Admin', 'IT Administrator', 'IT Manager'], true);
                                         foreach ($allModules as $mKey => $mInfo):
                                             $hasMod = $isHighLevelRole || in_array('*', $assignedStaffModules, true) || in_array($mKey, $assignedStaffModules, true);
                                     ?>
@@ -15876,7 +16011,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
 
                     $agrSigned = !empty($agrData['signed']);
                     $agrSignedAt = $agrData['signed_at'] ?? date('Y-m-d H:i:s');
-                    $targetUserEmail = $activeTargetObj['email'] ?? ($activeOnboardingUser . '@falhenmedia.com');
+                    $targetUserEmail = $activeTargetObj['email'] ?? ($activeOnboardingUser . '@falhen.com');
                 ?>
                 <div id="viewAgreementModal" class="modal-overlay" style="display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.75); backdrop-filter: blur(4px); z-index: 9999; align-items: center; justify-content: center; padding: 20px;">
                     <div style="background: #ffffff; width: 100%; max-width: 860px; max-height: 90vh; border-radius: 16px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); display: flex; flex-direction: column; overflow: hidden; border: 1px solid #e2e8f0;">

@@ -1,23 +1,126 @@
 <?php
 /**
- * Resend & Socket-based SMTP Mailer Class & Helpers
+ * Multi-Provider High-Deliverability SMTP & Resend Mailer Class & Helpers
  * Falhen Productions
+ *
+ * Transport Priority Order:
+ *  1. MXroute Authenticated SMTP (full SPF/DKIM alignment for falhen.com)
+ *  2. Resend REST API (HTTPS failover)
+ *  3. Configured Socket SMTP (skipped if identical to MXroute host+user)
+ *  4. Native PHP mail() fallback (RFC 5322 multipart/alternative)
  */
 
-if (file_exists(__DIR__ . '/../config/smtp.php')) {
-    require_once __DIR__ . '/../config/smtp.php';
+// Auto-load .env configuration if present
+if (function_exists('falhenLoadEnv')) {
+    falhenLoadEnv();
+} else {
+    function falhenLoadEnv($envFile = null) {
+        if ($envFile === null) {
+            $envFile = dirname(__DIR__) . '/.env';
+        }
+        if (!file_exists($envFile) || !is_readable($envFile)) {
+            return;
+        }
+        $lines = file($envFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+        if (!is_array($lines)) {
+            return;
+        }
+        foreach ($lines as $line) {
+            $line = trim($line);
+            if ($line === '' || strpos($line, '#') === 0) {
+                continue;
+            }
+            if (strpos($line, '=') !== false) {
+                list($key, $val) = explode('=', $line, 2);
+                $key = trim($key);
+                $val = trim($val);
+                if (strlen($val) >= 2 && (
+                    ($val[0] === '"' && substr($val, -1) === '"') ||
+                    ($val[0] === "'" && substr($val, -1) === "'")
+                )) {
+                    $val = substr($val, 1, -1);
+                }
+                if ($key !== '' && !array_key_exists($key, $_SERVER) && !array_key_exists($key, $_ENV) && getenv($key) === false) {
+                    putenv("{$key}={$val}");
+                    $_ENV[$key] = $val;
+                    $_SERVER[$key] = $val;
+                }
+            }
+        }
+    }
+    falhenLoadEnv();
 }
 
-// Fallback SMTP constants if config/smtp.php is omitted or ignored
-if (!defined('SMTP_HOST')) define('SMTP_HOST', getenv('SMTP_HOST') ?: 'smtp.resend.com');
-if (!defined('SMTP_PORT')) define('SMTP_PORT', (int)(getenv('SMTP_PORT') ?: 465));
-if (!defined('SMTP_USER')) define('SMTP_USER', getenv('SMTP_USER') ?: 'resend');
-if (!defined('SMTP_PASS')) define('SMTP_PASS', getenv('SMTP_PASS') ?: (getenv('RESEND_API_KEY') ?: ''));
-if (!defined('SMTP_SECURE')) define('SMTP_SECURE', strtolower(getenv('SMTP_SECURE') ?: 'ssl'));
+// Load config/smtp.php seamlessly whether it defines constants OR returns an associative array
+$__falhenSmtpConfigPath = __DIR__ . '/../config/smtp.php';
+if (file_exists($__falhenSmtpConfigPath)) {
+    $__smtpCfg = require_once $__falhenSmtpConfigPath;
+    if ($__smtpCfg === true && !defined('SMTP_HOST') && !defined('MXROUTE_SMTP_HOST')) {
+        $__smtpCfg = include $__falhenSmtpConfigPath;
+    }
+    if (is_array($__smtpCfg)) {
+        $__smtpConstMap = [
+            'smtp_host'           => 'SMTP_HOST',
+            'smtp_port'           => 'SMTP_PORT',
+            'smtp_user'           => 'SMTP_USER',
+            'smtp_pass'           => 'SMTP_PASS',
+            'smtp_secure'         => 'SMTP_SECURE',
+            'smtp_from_email'     => 'SMTP_FROM_EMAIL',
+            'smtp_from_name'      => 'SMTP_FROM_NAME',
+            'mail_driver'         => 'MAIL_DRIVER',
+            'resend_api_key'      => 'RESEND_API_KEY',
+            'mxroute_smtp_host'   => 'MXROUTE_SMTP_HOST',
+            'mxroute_smtp_port'   => 'MXROUTE_SMTP_PORT',
+            'mxroute_smtp_user'   => 'MXROUTE_SMTP_USER',
+            'mxroute_smtp_pass'   => 'MXROUTE_SMTP_PASS',
+            'mxroute_smtp_secure' => 'MXROUTE_SMTP_SECURE',
+        ];
+        foreach ($__smtpConstMap as $__lowerKey => $__constName) {
+            if (defined($__constName)) {
+                continue;
+            }
+            $__val = null;
+            if (array_key_exists($__constName, $__smtpCfg)) {
+                $__val = $__smtpCfg[$__constName];
+            } elseif (array_key_exists($__lowerKey, $__smtpCfg)) {
+                $__val = $__smtpCfg[$__lowerKey];
+            }
+            if ($__val !== null && $__val !== '') {
+                if ($__constName === 'SMTP_PORT' || $__constName === 'MXROUTE_SMTP_PORT') {
+                    define($__constName, (int)$__val);
+                } elseif ($__constName === 'SMTP_SECURE' || $__constName === 'MXROUTE_SMTP_SECURE' || $__constName === 'MAIL_DRIVER') {
+                    define($__constName, strtolower(trim((string)$__val)));
+                } else {
+                    define($__constName, (string)$__val);
+                }
+            }
+        }
+    }
+    unset($__smtpCfg, $__smtpConstMap, $__lowerKey, $__constName, $__val);
+}
+unset($__falhenSmtpConfigPath);
+
+// Fallback MXroute SMTP constants (SPF/DKIM aligned primary for falhen.com)
+if (!defined('MXROUTE_SMTP_HOST'))   define('MXROUTE_SMTP_HOST', getenv('MXROUTE_SMTP_HOST') ?: 'sunfire.mxrouting.net');
+if (!defined('MXROUTE_SMTP_PORT'))   define('MXROUTE_SMTP_PORT', (int)(getenv('MXROUTE_SMTP_PORT') ?: 465));
+if (!defined('MXROUTE_SMTP_SECURE')) define('MXROUTE_SMTP_SECURE', strtolower(getenv('MXROUTE_SMTP_SECURE') ?: 'ssl'));
+if (!defined('MXROUTE_SMTP_USER'))   define('MXROUTE_SMTP_USER', getenv('MXROUTE_SMTP_USER') ?: '');
+if (!defined('MXROUTE_SMTP_PASS'))   define('MXROUTE_SMTP_PASS', getenv('MXROUTE_SMTP_PASS') ?: '');
+
+// Fallback generic SMTP / Resend constants if config/smtp.php is omitted or partial
+if (!defined('SMTP_HOST'))       define('SMTP_HOST', getenv('SMTP_HOST') ?: 'smtp.resend.com');
+if (!defined('SMTP_PORT'))       define('SMTP_PORT', (int)(getenv('SMTP_PORT') ?: 465));
+if (!defined('SMTP_USER'))       define('SMTP_USER', getenv('SMTP_USER') ?: 'resend');
+if (!defined('SMTP_PASS'))       define('SMTP_PASS', getenv('SMTP_PASS') ?: (getenv('RESEND_API_KEY') ?: ''));
+if (!defined('SMTP_SECURE'))     define('SMTP_SECURE', strtolower(getenv('SMTP_SECURE') ?: 'ssl'));
 if (!defined('SMTP_FROM_EMAIL')) define('SMTP_FROM_EMAIL', getenv('SMTP_FROM_EMAIL') ?: 'noreply@falhen.com');
-if (!defined('SMTP_FROM_NAME')) define('SMTP_FROM_NAME', getenv('SMTP_FROM_NAME') ?: 'Falhen Productions');
-if (!defined('MAIL_DRIVER')) define('MAIL_DRIVER', strtolower(getenv('MAIL_DRIVER') ?: 'resend'));
-if (!defined('RESEND_API_KEY')) define('RESEND_API_KEY', getenv('RESEND_API_KEY') ?: (str_starts_with(getenv('SMTP_PASS') ?: '', 're_') ? getenv('SMTP_PASS') : ''));
+if (!defined('SMTP_FROM_NAME'))  define('SMTP_FROM_NAME', getenv('SMTP_FROM_NAME') ?: 'Falhen Productions');
+if (!defined('MAIL_DRIVER'))     define('MAIL_DRIVER', strtolower(getenv('MAIL_DRIVER') ?: 'mxroute'));
+if (!defined('RESEND_API_KEY')) {
+    $__envPass = getenv('SMTP_PASS') ?: (defined('SMTP_PASS') ? (string)SMTP_PASS : '');
+    define('RESEND_API_KEY', getenv('RESEND_API_KEY') ?: (strpos($__envPass, 're_') === 0 ? $__envPass : ''));
+    unset($__envPass);
+}
 
 class FalhenSMTPMailer {
     private $host;
@@ -30,86 +133,354 @@ class FalhenSMTPMailer {
     private $apiKey;
     private $driver;
 
+    private $mxrouteHost;
+    private $mxroutePort;
+    private $mxrouteUser;
+    private $mxroutePass;
+    private $mxrouteSecure;
+
     public function __construct() {
-        $this->host      = SMTP_HOST;
-        $this->port      = (int)SMTP_PORT;
-        $this->user      = SMTP_USER;
-        $this->pass      = SMTP_PASS;
-        $this->secure    = strtolower(SMTP_SECURE);
-        $this->fromEmail = SMTP_FROM_EMAIL;
-        $this->fromName  = SMTP_FROM_NAME;
-        $this->apiKey    = RESEND_API_KEY;
-        $this->driver    = defined('MAIL_DRIVER') ? MAIL_DRIVER : 'resend';
+        $this->host          = SMTP_HOST;
+        $this->port          = (int)SMTP_PORT;
+        $this->user          = SMTP_USER;
+        $this->pass          = SMTP_PASS;
+        $this->secure        = strtolower(SMTP_SECURE);
+        $this->fromEmail     = SMTP_FROM_EMAIL;
+        $this->fromName      = SMTP_FROM_NAME;
+        $this->apiKey        = RESEND_API_KEY;
+        $this->driver        = defined('MAIL_DRIVER') ? strtolower((string)MAIL_DRIVER) : 'mxroute';
+
+        $this->mxrouteHost   = MXROUTE_SMTP_HOST;
+        $this->mxroutePort   = (int)MXROUTE_SMTP_PORT;
+        $this->mxrouteUser   = MXROUTE_SMTP_USER;
+        $this->mxroutePass   = MXROUTE_SMTP_PASS;
+        $this->mxrouteSecure = strtolower(MXROUTE_SMTP_SECURE);
     }
 
     /**
-     * Send HTML email using Resend API / Socket SMTP with automatic fallback
+     * Send email with structured delivery diagnostics across fast multi-provider failover.
+     *
+     * @param string $to Recipient email address
+     * @param string $subject Email subject
+     * @param string $htmlBody HTML email content
+     * @param string $toName Optional recipient display name
+     * @param string $textBody Optional plain-text alternative (auto-generated when empty)
+     * @param bool   $highPriority Mark transactional/OTP message as high priority
+     * @return array ['sent' => bool, 'provider' => string|null, 'error' => string|null, 'duration_ms' => int]
+     */
+    public function sendMailWithDetails($to, $subject, $htmlBody, $toName = '', $textBody = '', $highPriority = false) {
+        $startedAt = microtime(true);
+        $to = trim((string)$to);
+        $toName = trim(str_replace(["\r", "\n"], '', (string)$toName));
+        $subject = trim(str_replace(["\r", "\n"], '', (string)$subject));
+
+        if (empty($to) || !filter_var($to, FILTER_VALIDATE_EMAIL)) {
+            $err = "Invalid recipient email address: '{$to}'";
+            error_log("FalhenSMTPMailer: {$err}");
+            $result = [
+                'sent'        => false,
+                'provider'    => null,
+                'error'       => $err,
+                'duration_ms' => (int)round((microtime(true) - $startedAt) * 1000)
+            ];
+            $GLOBALS['falhen_last_mail_result'] = $result;
+            return $result;
+        }
+
+        if ($textBody === '' || $textBody === null) {
+            $textBody = $this->buildPlainTextBody($htmlBody);
+        }
+
+        $errors = [];
+        $mxrouteAttempted = false;
+
+        // 1. Primary: MXroute Authenticated SMTP (SPF/DKIM aligned for falhen.com = instant external delivery)
+        if (!empty($this->mxrouteHost) && !empty($this->mxrouteUser) && !empty($this->mxroutePass)) {
+            $mxrouteAttempted = true;
+            try {
+                $mxConfig = [
+                    'host'   => $this->mxrouteHost,
+                    'port'   => $this->mxroutePort ?: 465,
+                    'user'   => $this->mxrouteUser,
+                    'pass'   => $this->mxroutePass,
+                    'secure' => $this->mxrouteSecure ?: 'ssl',
+                ];
+                if ($this->sendViaSocketSmtp($to, $subject, $htmlBody, $toName, $textBody, $highPriority, $mxConfig)) {
+                    $result = [
+                        'sent'        => true,
+                        'provider'    => 'mxroute_smtp',
+                        'error'       => null,
+                        'duration_ms' => (int)round((microtime(true) - $startedAt) * 1000)
+                    ];
+                    $GLOBALS['falhen_last_mail_result'] = $result;
+                    return $result;
+                }
+                $errors[] = 'mxroute_smtp: dispatch returned false';
+            } catch (Exception $e) {
+                $errors[] = 'mxroute_smtp: ' . $e->getMessage();
+                error_log("FalhenSMTPMailer MXroute SMTP Error: " . $e->getMessage());
+            }
+        }
+
+        // 2. Failover: Resend REST API (HTTPS port 443, fast 3s connect / 6s total timeout)
+        if (!empty($this->apiKey)) {
+            try {
+                if ($this->sendViaResendApi($to, $subject, $htmlBody, $toName, $textBody, $highPriority)) {
+                    $result = [
+                        'sent'        => true,
+                        'provider'    => 'resend_api',
+                        'error'       => null,
+                        'duration_ms' => (int)round((microtime(true) - $startedAt) * 1000)
+                    ];
+                    $GLOBALS['falhen_last_mail_result'] = $result;
+                    return $result;
+                }
+                $errors[] = 'resend_api: API rejected request';
+            } catch (Exception $e) {
+                $errors[] = 'resend_api: ' . $e->getMessage();
+                error_log("FalhenSMTPMailer Resend API Error: " . $e->getMessage());
+            }
+        }
+
+        // 3. Secondary: Configured Socket SMTP (skip if identical to already-tried MXroute host+user)
+        $isSameAsMxroute = $mxrouteAttempted
+            && strtolower(trim((string)$this->host)) === strtolower(trim((string)$this->mxrouteHost))
+            && (int)$this->port === (int)$this->mxroutePort
+            && strtolower(trim((string)$this->user)) === strtolower(trim((string)$this->mxrouteUser));
+
+        if (!$isSameAsMxroute && !empty($this->host) && !empty($this->port)) {
+            // Avoid wasting timeout on Resend SMTP when no password/key is configured
+            $isUnconfiguredResendSmtp = (stripos($this->host, 'resend.com') !== false && empty($this->pass));
+            if (!$isUnconfiguredResendSmtp) {
+                try {
+                    if ($this->sendViaSocketSmtp($to, $subject, $htmlBody, $toName, $textBody, $highPriority)) {
+                        $result = [
+                            'sent'        => true,
+                            'provider'    => 'socket_smtp',
+                            'error'       => null,
+                            'duration_ms' => (int)round((microtime(true) - $startedAt) * 1000)
+                        ];
+                        $GLOBALS['falhen_last_mail_result'] = $result;
+                        return $result;
+                    }
+                    $errors[] = 'socket_smtp: dispatch returned false';
+                } catch (Exception $e) {
+                    $errors[] = 'socket_smtp: ' . $e->getMessage();
+                    error_log("FalhenSMTPMailer Socket SMTP Error: " . $e->getMessage());
+                }
+            }
+        }
+
+        // 4. Last-resort fallback: Native PHP mail() with RFC 5322 Message-ID & multipart/alternative
+        try {
+            if ($this->sendViaNativeMail($to, $subject, $htmlBody, $toName, $textBody, $highPriority)) {
+                $result = [
+                    'sent'        => true,
+                    'provider'    => 'native_mail',
+                    'error'       => null,
+                    'duration_ms' => (int)round((microtime(true) - $startedAt) * 1000)
+                ];
+                $GLOBALS['falhen_last_mail_result'] = $result;
+                return $result;
+            }
+            $errors[] = 'native_mail: PHP mail() returned false';
+        } catch (Exception $e) {
+            $errors[] = 'native_mail: ' . $e->getMessage();
+            error_log("FalhenSMTPMailer Native mail() Error: " . $e->getMessage());
+        }
+
+        $result = [
+            'sent'        => false,
+            'provider'    => null,
+            'error'       => !empty($errors) ? implode(' | ', $errors) : 'All mail transports failed',
+            'duration_ms' => (int)round((microtime(true) - $startedAt) * 1000)
+        ];
+        $GLOBALS['falhen_last_mail_result'] = $result;
+        return $result;
+    }
+
+    /**
+     * Send HTML email using multi-provider transport with automatic failover.
      *
      * @param string $to Recipient email address
      * @param string $subject Email subject
      * @param string $htmlBody HTML content
      * @param string $toName Optional recipient display name
-     * @return bool True if mail was accepted by provider, false otherwise
+     * @param string $textBody Optional plain-text content
+     * @param bool   $highPriority Mark message as high-priority transactional mail
+     * @return bool True if mail was accepted by a provider, false otherwise
      */
-    public function sendMail($to, $subject, $htmlBody, $toName = '') {
-        $to = trim($to);
-        if (empty($to) || !filter_var($to, FILTER_VALIDATE_EMAIL)) {
-            error_log("FalhenSMTPMailer: Invalid recipient email address: '{$to}'");
-            return false;
-        }
+    public function sendMail($to, $subject, $htmlBody, $toName = '', $textBody = '', $highPriority = false) {
+        $res = $this->sendMailWithDetails($to, $subject, $htmlBody, $toName, $textBody, $highPriority);
+        $GLOBALS['falhen_last_mail_result'] = $res;
+        return (bool)$res['sent'];
+    }
 
-        // 1. If Resend Driver and API Key available, attempt Resend REST API (fastest & most reliable)
-        if ($this->driver === 'resend' && !empty($this->apiKey)) {
-            try {
-                if ($this->sendViaResendApi($to, $subject, $htmlBody, $toName)) {
-                    return true;
-                }
-            } catch (Exception $e) {
-                error_log("FalhenSMTPMailer Resend API Error: " . $e->getMessage());
+    /**
+     * Generate a clean plain-text body from HTML (strips style/script blocks first).
+     */
+    private function buildPlainTextBody($htmlBody) {
+        $text = (string)$htmlBody;
+        $text = preg_replace('/<(style|script)\b[^>]*>.*?<\/\1>/is', '', $text);
+        $text = preg_replace('/<br\s*\/?>/i', "\n", $text);
+        $text = preg_replace('/<\/(p|div|h[1-6]|tr|li|blockquote)>/i', "\n", $text);
+        $text = strip_tags($text);
+        $text = html_entity_decode($text, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        $text = preg_replace("/[ \t]+/", ' ', $text);
+        $text = preg_replace("/\r\n|\r/", "\n", $text);
+        $text = preg_replace("/\n[ \t]+/", "\n", $text);
+        $text = preg_replace("/\n{3,}/", "\n\n", $text);
+        return trim($text);
+    }
+
+    /**
+     * Generate RFC 5322 compliant unique Message-ID on the sender domain.
+     */
+    private function generateMessageId() {
+        $domain = 'falhen.com';
+        if (strpos($this->fromEmail, '@') !== false) {
+            $parts = explode('@', $this->fromEmail, 2);
+            $candidate = strtolower(trim($parts[1]));
+            if ($candidate !== '' && preg_match('/^[a-z0-9.-]+\.[a-z]{2,}$/', $candidate)) {
+                $domain = $candidate;
             }
         }
-
-        // 2. Attempt Socket-based SMTP (Resend SMTP or custom host)
         try {
-            if ($this->sendViaSocketSmtp($to, $subject, $htmlBody, $toName)) {
-                return true;
-            }
+            $token = bin2hex(random_bytes(12));
         } catch (Exception $e) {
-            error_log("FalhenSMTPMailer Socket SMTP Error: " . $e->getMessage());
+            $token = bin2hex(openssl_random_pseudo_bytes(12) ?: md5(uniqid('', true)));
+        }
+        return '<' . $token . '.' . time() . '@' . $domain . '>';
+    }
+
+    /**
+     * Encode RFC 2047 UTF-8 Base64 header value when non-ASCII characters are present.
+     */
+    private function encodeHeaderValue($value) {
+        $clean = str_replace(["\r", "\n"], '', (string)$value);
+        if (preg_match('/[^\x20-\x7E]/', $clean)) {
+            return '=?UTF-8?B?' . base64_encode($clean) . '?=';
+        }
+        return $clean;
+    }
+
+    /**
+     * Format an RFC 5322 email address header with optional display name.
+     */
+    private function formatAddressHeader($email, $name = '') {
+        $cleanEmail = str_replace(["\r", "\n", '<', '>'], '', trim((string)$email));
+        $cleanName = str_replace(["\r", "\n"], '', trim((string)$name));
+        if ($cleanName === '') {
+            return $cleanEmail;
+        }
+        if (preg_match('/[^\x20-\x7E]/', $cleanName)) {
+            return '=?UTF-8?B?' . base64_encode($cleanName) . "?= <{$cleanEmail}>";
+        }
+        $escapedName = str_replace(['\\', '"'], ['\\\\', '\\"'], $cleanName);
+        return "\"{$escapedName}\" <{$cleanEmail}>";
+    }
+
+    /**
+     * Build RFC 5322 multipart/alternative MIME headers & Base64-encoded parts.
+     *
+     * @return array ['headers' => string, 'body' => string, 'boundary' => string, 'message_id' => string]
+     */
+    private function buildMimePayload($to, $subject, $htmlBody, $toName, $textBody, $highPriority, $includeToAndSubject = true) {
+        if ($textBody === '' || $textBody === null) {
+            $textBody = $this->buildPlainTextBody($htmlBody);
         }
 
-        // 3. Fallback to PHP native mail() with full HTML & From headers
-        return $this->sendViaNativeMail($to, $subject, $htmlBody, $toName);
+        try {
+            $boundary = '=_FalhenAlt_' . bin2hex(random_bytes(12));
+        } catch (Exception $e) {
+            $boundary = '=_FalhenAlt_' . md5(uniqid('falhen_', true));
+        }
+
+        $messageId  = $this->generateMessageId();
+        $fromHeader = $this->formatAddressHeader($this->fromEmail, $this->fromName);
+        $toHeader   = $this->formatAddressHeader($to, $toName);
+        $encodedSub = $this->encodeHeaderValue($subject);
+
+        $headers  = "Date: " . date('r') . "\r\n";
+        $headers .= "Message-ID: {$messageId}\r\n";
+        $headers .= "From: {$fromHeader}\r\n";
+        $headers .= "Reply-To: {$this->fromEmail}\r\n";
+        if ($includeToAndSubject) {
+            $headers .= "To: {$toHeader}\r\n";
+            $headers .= "Subject: {$encodedSub}\r\n";
+        }
+        $headers .= "MIME-Version: 1.0\r\n";
+        if ($highPriority) {
+            $headers .= "X-Priority: 1 (Highest)\r\n";
+            $headers .= "Importance: high\r\n";
+            $headers .= "Auto-Submitted: auto-generated\r\n";
+        }
+        $headers .= "X-Mailer: Falhen-Productions-Mailer/3.0\r\n";
+        $headers .= "Content-Type: multipart/alternative; boundary=\"{$boundary}\"\r\n";
+
+        $textB64 = rtrim(chunk_split(base64_encode((string)$textBody), 76, "\r\n"));
+        $htmlB64 = rtrim(chunk_split(base64_encode((string)$htmlBody), 76, "\r\n"));
+
+        $body  = "This is a multi-part message in MIME format.\r\n\r\n";
+        $body .= "--{$boundary}\r\n";
+        $body .= "Content-Type: text/plain; charset=UTF-8\r\n";
+        $body .= "Content-Transfer-Encoding: base64\r\n\r\n";
+        $body .= $textB64 . "\r\n\r\n";
+        $body .= "--{$boundary}\r\n";
+        $body .= "Content-Type: text/html; charset=UTF-8\r\n";
+        $body .= "Content-Transfer-Encoding: base64\r\n\r\n";
+        $body .= $htmlB64 . "\r\n\r\n";
+        $body .= "--{$boundary}--\r\n";
+
+        return [
+            'headers'    => $headers,
+            'body'       => $body,
+            'boundary'   => $boundary,
+            'message_id' => $messageId,
+            'subject'    => $encodedSub,
+        ];
     }
 
     /**
      * Send email via Resend official REST API (https://api.resend.com/emails)
      */
-    public function sendViaResendApi($to, $subject, $htmlBody, $toName = '') {
+    public function sendViaResendApi($to, $subject, $htmlBody, $toName = '', $textBody = '', $highPriority = false) {
         $apiKey = $this->apiKey;
         if (empty($apiKey)) {
             return false;
         }
 
-        $fromAddress = !empty($this->fromName) 
-            ? "{$this->fromName} <{$this->fromEmail}>" 
+        if ($textBody === '' || $textBody === null) {
+            $textBody = $this->buildPlainTextBody($htmlBody);
+        }
+
+        $fromAddress = !empty($this->fromName)
+            ? "{$this->fromName} <{$this->fromEmail}>"
             : $this->fromEmail;
 
         $toRecipient = !empty($toName) ? "{$toName} <{$to}>" : $to;
+
+        $customHeaders = [
+            'X-Entity-Ref-ID' => uniqid('falhen_', true),
+        ];
+        if ($highPriority) {
+            $customHeaders['X-Priority'] = '1 (Highest)';
+            $customHeaders['Importance'] = 'high';
+            $customHeaders['Auto-Submitted'] = 'auto-generated';
+        }
 
         $payload = [
             'from'    => $fromAddress,
             'to'      => [$toRecipient],
             'subject' => $subject,
             'html'    => $htmlBody,
-            'headers' => [
-                'X-Entity-Ref-ID' => uniqid('falhen_', true)
-            ]
+            'text'    => $textBody,
+            'headers' => $customHeaders,
         ];
 
         $jsonPayload = json_encode($payload);
 
-        // Prefer cURL for performance and SSL management
+        // Prefer cURL with strict TLS verification and fast connect/read timeouts
         if (function_exists('curl_init')) {
             $ch = curl_init('https://api.resend.com/emails');
             curl_setopt_array($ch, [
@@ -120,11 +491,12 @@ class FalhenSMTPMailer {
                     'Authorization: Bearer ' . $apiKey,
                     'Content-Type: application/json',
                     'Content-Length: ' . strlen($jsonPayload),
-                    'User-Agent: Falhen-Media-Resend/2.0'
+                    'User-Agent: Falhen-Productions-Mailer/3.0'
                 ],
-                CURLOPT_TIMEOUT        => 12,
-                CURLOPT_SSL_VERIFYPEER => false,
-                CURLOPT_SSL_VERIFYHOST => false
+                CURLOPT_CONNECTTIMEOUT => 3,
+                CURLOPT_TIMEOUT        => 6,
+                CURLOPT_SSL_VERIFYPEER => true,
+                CURLOPT_SSL_VERIFYHOST => 2
             ]);
 
             $rawResponse = curl_exec($ch);
@@ -134,7 +506,7 @@ class FalhenSMTPMailer {
 
             if ($curlErr) {
                 error_log("FalhenSMTPMailer cURL Error to Resend API: " . $curlErr);
-                return false;
+                throw new Exception("cURL error: " . $curlErr);
             }
 
             if ($httpCode >= 200 && $httpCode < 300) {
@@ -142,7 +514,7 @@ class FalhenSMTPMailer {
             }
 
             error_log("FalhenSMTPMailer Resend API HTTP {$httpCode}: " . $rawResponse);
-            return false;
+            throw new Exception("HTTP {$httpCode}: " . substr((string)$rawResponse, 0, 200));
         }
 
         // Stream context fallback if cURL is disabled
@@ -152,14 +524,14 @@ class FalhenSMTPMailer {
                 'header'        => "Authorization: Bearer {$apiKey}\r\n" .
                                    "Content-Type: application/json\r\n" .
                                    "Content-Length: " . strlen($jsonPayload) . "\r\n" .
-                                   "User-Agent: Falhen-Media-Resend/2.0\r\n",
+                                   "User-Agent: Falhen-Productions-Mailer/3.0\r\n",
                 'content'       => $jsonPayload,
-                'timeout'       => 12,
+                'timeout'       => 6,
                 'ignore_errors' => true
             ],
             'ssl' => [
-                'verify_peer'      => false,
-                'verify_peer_name' => false
+                'verify_peer'      => true,
+                'verify_peer_name' => true
             ]
         ];
 
@@ -172,158 +544,207 @@ class FalhenSMTPMailer {
         }
 
         error_log("FalhenSMTPMailer file_get_contents Resend API Error: {$statusLine} - {$result}");
-        return false;
+        throw new Exception("Stream HTTP error: {$statusLine}");
     }
 
     /**
-     * Send email via direct Socket SMTP connection (Resend SMTP: smtp.resend.com)
+     * Send email via direct RFC 5321/5322 Socket SMTP connection (MXroute or configured SMTP host)
      */
-    public function sendViaSocketSmtp($to, $subject, $htmlBody, $toName = '') {
-        if (empty($this->host) || empty($this->port)) {
+    public function sendViaSocketSmtp($to, $subject, $htmlBody, $toName = '', $textBody = '', $highPriority = false, $overrideConfig = null) {
+        $host   = is_array($overrideConfig) && !empty($overrideConfig['host']) ? $overrideConfig['host'] : $this->host;
+        $port   = is_array($overrideConfig) && !empty($overrideConfig['port']) ? (int)$overrideConfig['port'] : $this->port;
+        $user   = is_array($overrideConfig) && array_key_exists('user', $overrideConfig) ? (string)$overrideConfig['user'] : $this->user;
+        $pass   = is_array($overrideConfig) && array_key_exists('pass', $overrideConfig) ? (string)$overrideConfig['pass'] : $this->pass;
+        $secure = is_array($overrideConfig) && !empty($overrideConfig['secure']) ? strtolower((string)$overrideConfig['secure']) : $this->secure;
+
+        if (empty($host) || empty($port)) {
             return false;
         }
 
         $context = stream_context_create([
             'ssl' => [
-                'verify_peer'       => false,
-                'verify_peer_name'  => false,
-                'allow_self_signed' => true
+                'verify_peer'       => true,
+                'verify_peer_name'  => true,
+                'allow_self_signed' => false,
+                'peer_name'         => $host,
+                'SNI_enabled'       => true,
             ]
         ]);
 
-        $isTls = ($this->secure === 'tls' || $this->port === 587);
+        $isTls = ($secure === 'tls' || $port === 587);
         $hostPrefix = $isTls ? 'tcp://' : 'ssl://';
-        $fullHost = $hostPrefix . $this->host . ':' . $this->port;
+        $fullHost = $hostPrefix . $host . ':' . $port;
 
-        $socket = @stream_socket_client($fullHost, $errno, $errstr, 8, STREAM_CLIENT_CONNECT, $context);
+        // Fast 4s connect timeout & 6s stream read timeout
+        $socket = @stream_socket_client($fullHost, $errno, $errstr, 4, STREAM_CLIENT_CONNECT, $context);
         if (!$socket) {
             error_log("FalhenSMTPMailer Socket connection failed to {$fullHost}: {$errstr} ({$errno})");
-            return false;
+            throw new Exception("Socket connection failed to {$fullHost}: {$errstr} ({$errno})");
         }
 
-        stream_set_timeout($socket, 10);
+        stream_set_timeout($socket, 6);
 
-        // 1. Initial Greeting
-        $greeting = $this->getResponse($socket);
-        if (strpos($greeting, '220') === false) {
-            fclose($socket);
-            throw new Exception("Unexpected SMTP banner: " . trim($greeting));
-        }
-
-        // 2. EHLO
-        $ehloHost = gethostname() ?: 'falhen.com';
-        $this->sendCommand($socket, "EHLO " . $ehloHost);
-
-        // 3. STARTTLS if TLS mode
-        if ($isTls) {
-            $starttlsRes = $this->sendCommand($socket, "STARTTLS");
-            if (strpos($starttlsRes, '220') === false) {
-                fclose($socket);
-                throw new Exception("STARTTLS failed: " . trim($starttlsRes));
-            }
-            $crypto = @stream_socket_enable_crypto($socket, true, STREAM_CRYPTO_METHOD_TLS_CLIENT);
-            if (!$crypto) {
-                fclose($socket);
-                throw new Exception("TLS negotiation failed with {$this->host}");
-            }
-            $this->sendCommand($socket, "EHLO " . $ehloHost);
-        }
-
-        // 4. AUTH LOGIN (Username = 'resend', Password = Resend API Key)
-        if (!empty($this->user) && !empty($this->pass)) {
-            $authInit = $this->sendCommand($socket, "AUTH LOGIN");
-            if (strpos($authInit, '334') === false) {
-                fclose($socket);
-                throw new Exception("AUTH LOGIN rejected: " . trim($authInit));
+        try {
+            // 1. Initial Greeting
+            $greeting = $this->getResponse($socket);
+            if (strpos($greeting, '220') === false) {
+                throw new Exception("Unexpected SMTP banner: " . trim($greeting));
             }
 
-            $this->sendCommand($socket, base64_encode($this->user));
-            $authRes = $this->sendCommand($socket, base64_encode($this->pass));
-            if (strpos($authRes, '235') === false) {
-                fclose($socket);
-                throw new Exception("SMTP Authentication failed: " . trim($authRes));
+            // 2. EHLO
+            $ehloHost = gethostname() ?: 'falhen.com';
+            $ehloRes = $this->sendCommand($socket, "EHLO " . $ehloHost);
+            if (strpos($ehloRes, '250') === false) {
+                throw new Exception("EHLO rejected: " . trim($ehloRes));
             }
-        }
 
-        // 5. Envelope Sender (Must be an email address, e.g. noreply@falhen.com, NOT 'resend')
-        $envelopeSender = !empty($this->fromEmail) ? $this->fromEmail : 'noreply@falhen.com';
-        $mailFromRes = $this->sendCommand($socket, "MAIL FROM: <" . $envelopeSender . ">");
-        if (strpos($mailFromRes, '250') === false) {
+            // 3. STARTTLS if TLS mode (port 587)
+            if ($isTls) {
+                $starttlsRes = $this->sendCommand($socket, "STARTTLS");
+                if (strpos($starttlsRes, '220') === false) {
+                    throw new Exception("STARTTLS failed: " . trim($starttlsRes));
+                }
+                $cryptoMethod = STREAM_CRYPTO_METHOD_TLSv1_2_CLIENT;
+                if (defined('STREAM_CRYPTO_METHOD_TLSv1_3_CLIENT')) {
+                    $cryptoMethod |= STREAM_CRYPTO_METHOD_TLSv1_3_CLIENT;
+                }
+                $crypto = @stream_socket_enable_crypto($socket, true, $cryptoMethod);
+                if (!$crypto) {
+                    throw new Exception("TLS negotiation failed with {$host}");
+                }
+                $ehloRes = $this->sendCommand($socket, "EHLO " . $ehloHost);
+                if (strpos($ehloRes, '250') === false) {
+                    throw new Exception("Post-TLS EHLO rejected: " . trim($ehloRes));
+                }
+            }
+
+            // 4. SMTP AUTH (supports both AUTH LOGIN and AUTH PLAIN cleanly)
+            if (!empty($user) && !empty($pass)) {
+                $this->authenticateSmtp($socket, $user, $pass, $ehloRes);
+            }
+
+            // 5. Envelope Sender (Must be a valid email address, e.g. noreply@falhen.com)
+            $envelopeSender = !empty($this->fromEmail) ? $this->fromEmail : 'noreply@falhen.com';
+            $mailFromRes = $this->sendCommand($socket, "MAIL FROM:<" . $envelopeSender . ">");
+            if (strpos($mailFromRes, '250') === false) {
+                throw new Exception("MAIL FROM rejected: " . trim($mailFromRes));
+            }
+
+            // 6. Recipient
+            $rcptRes = $this->sendCommand($socket, "RCPT TO:<" . $to . ">");
+            if (strpos($rcptRes, '250') === false && strpos($rcptRes, '251') === false) {
+                throw new Exception("RCPT TO rejected: " . trim($rcptRes));
+            }
+
+            // 7. DATA Command
+            $dataRes = $this->sendCommand($socket, "DATA");
+            if (strpos($dataRes, '354') === false) {
+                throw new Exception("DATA command rejected: " . trim($dataRes));
+            }
+
+            // 8. RFC 5322 Headers & Base64 multipart/alternative Body Payload
+            $mime = $this->buildMimePayload($to, $subject, $htmlBody, $toName, $textBody, $highPriority, true);
+            $content = $mime['headers'] . "\r\n" . $mime['body'] . "\r\n.\r\n";
+
+            $written = @fwrite($socket, $content);
+            if ($written === false) {
+                throw new Exception("Failed writing DATA payload to {$host}");
+            }
+
+            $deliveryRes = $this->getResponse($socket);
+            $this->sendCommand($socket, "QUIT");
             fclose($socket);
-            throw new Exception("MAIL FROM rejected: " . trim($mailFromRes));
+            $socket = null;
+
+            if (strpos($deliveryRes, '250') !== false) {
+                return true;
+            }
+
+            throw new Exception("SMTP DATA delivery failed: " . trim($deliveryRes));
+        } catch (Exception $e) {
+            if (is_resource($socket)) {
+                @fclose($socket);
+            }
+            throw $e;
         }
-
-        // 6. Recipient
-        $rcptRes = $this->sendCommand($socket, "RCPT TO: <" . $to . ">");
-        if (strpos($rcptRes, '250') === false && strpos($rcptRes, '251') === false) {
-            fclose($socket);
-            throw new Exception("RCPT TO rejected: " . trim($rcptRes));
-        }
-
-        // 7. DATA Command
-        $dataRes = $this->sendCommand($socket, "DATA");
-        if (strpos($dataRes, '354') === false) {
-            fclose($socket);
-            throw new Exception("DATA command rejected: " . trim($dataRes));
-        }
-
-        // 8. Headers & Body Payload
-        $fromHeader = !empty($this->fromName) 
-            ? "{$this->fromName} <{$this->fromEmail}>" 
-            : $this->fromEmail;
-        $toHeader = !empty($toName) ? "{$toName} <{$to}>" : $to;
-
-        $headers  = "MIME-Version: 1.0\r\n";
-        $headers .= "Content-Type: text/html; charset=UTF-8\r\n";
-        $headers .= "From: {$fromHeader}\r\n";
-        $headers .= "Reply-To: {$this->fromEmail}\r\n";
-        $headers .= "To: {$toHeader}\r\n";
-        $headers .= "Subject: {$subject}\r\n";
-        $headers .= "Date: " . date("r") . "\r\n";
-        $headers .= "X-Mailer: FalhenMedia-Resend/2.0\r\n";
-
-        $content = $headers . "\r\n" . $htmlBody . "\r\n.\r\n";
-        fwrite($socket, $content);
-        $deliveryRes = $this->getResponse($socket);
-
-        $this->sendCommand($socket, "QUIT");
-        fclose($socket);
-
-        if (strpos($deliveryRes, '250') !== false) {
-            return true;
-        }
-
-        throw new Exception("SMTP DATA delivery failed: " . trim($deliveryRes));
     }
 
     /**
-     * Fallback to native PHP mail() function
+     * Authenticate over SMTP supporting both AUTH LOGIN and AUTH PLAIN.
      */
-    private function sendViaNativeMail($to, $subject, $htmlBody, $toName = '') {
-        $fromHeader = !empty($this->fromName) 
-            ? "{$this->fromName} <{$this->fromEmail}>" 
-            : $this->fromEmail;
+    private function authenticateSmtp($socket, $user, $pass, $ehloRes) {
+        $supportsPlain = (stripos($ehloRes, 'AUTH') !== false && stripos($ehloRes, 'PLAIN') !== false);
+        $supportsLogin = (stripos($ehloRes, 'AUTH') !== false && stripos($ehloRes, 'LOGIN') !== false);
 
-        $nativeHeaders  = "MIME-Version: 1.0\r\n";
-        $nativeHeaders .= "Content-Type: text/html; charset=UTF-8\r\n";
-        $nativeHeaders .= "From: {$fromHeader}\r\n";
-        $nativeHeaders .= "Reply-To: {$this->fromEmail}\r\n";
-        $nativeHeaders .= "X-Mailer: PHP/" . phpversion() . "\r\n";
+        // If server advertises PLAIN exclusively, use AUTH PLAIN directly
+        if ($supportsPlain && !$supportsLogin) {
+            $this->authenticatePlain($socket, $user, $pass);
+            return;
+        }
 
-        $extraParam = !empty($this->fromEmail) ? "-f" . $this->fromEmail : '';
-        return @mail($to, $subject, $htmlBody, $nativeHeaders, $extraParam);
+        // Try AUTH LOGIN first
+        $authInit = $this->sendCommand($socket, "AUTH LOGIN");
+        if (strpos($authInit, '334') !== false) {
+            $userRes = $this->sendCommand($socket, base64_encode($user));
+            if (strpos($userRes, '334') === false) {
+                throw new Exception("SMTP AUTH LOGIN username rejected: " . trim($userRes));
+            }
+            $authRes = $this->sendCommand($socket, base64_encode($pass));
+            if (strpos($authRes, '235') !== false) {
+                return;
+            }
+            throw new Exception("SMTP AUTH LOGIN failed: " . trim($authRes));
+        }
+
+        // Fallback cleanly to AUTH PLAIN if AUTH LOGIN was not accepted
+        if ($supportsPlain || strpos($authInit, '504') !== false || strpos($authInit, '500') !== false) {
+            $this->authenticatePlain($socket, $user, $pass);
+            return;
+        }
+
+        throw new Exception("SMTP AUTH rejected: " . trim($authInit));
+    }
+
+    /**
+     * Perform RFC 4616 SMTP AUTH PLAIN handshake.
+     */
+    private function authenticatePlain($socket, $user, $pass) {
+        $token = base64_encode("\0{$user}\0{$pass}");
+        $res = $this->sendCommand($socket, "AUTH PLAIN {$token}");
+        if (strpos($res, '334') !== false) {
+            $res = $this->sendCommand($socket, $token);
+        }
+        if (strpos($res, '235') === false) {
+            throw new Exception("SMTP AUTH PLAIN failed: " . trim($res));
+        }
+    }
+
+    /**
+     * Fallback to native PHP mail() function with RFC 5322 Message-ID & multipart/alternative
+     */
+    private function sendViaNativeMail($to, $subject, $htmlBody, $toName = '', $textBody = '', $highPriority = false) {
+        $mime = $this->buildMimePayload($to, $subject, $htmlBody, $toName, $textBody, $highPriority, false);
+        $safeFrom = preg_replace('/[^a-zA-Z0-9._@+-]/', '', (string)$this->fromEmail);
+        $extraParam = !empty($safeFrom) ? "-f" . $safeFrom : '';
+        return @mail($to, $mime['subject'], $mime['body'], rtrim($mime['headers'], "\r\n"), $extraParam);
     }
 
     private function sendCommand($socket, $cmd) {
-        fwrite($socket, $cmd . "\r\n");
+        @fwrite($socket, $cmd . "\r\n");
         return $this->getResponse($socket);
     }
 
     private function getResponse($socket) {
         $response = "";
-        while ($str = fgets($socket, 512)) {
+        while (($str = fgets($socket, 512)) !== false) {
             $response .= $str;
-            if (isset($str[3]) && $str[3] === " ") break;
+            if (isset($str[3]) && $str[3] === " ") {
+                break;
+            }
+        }
+        $meta = stream_get_meta_data($socket);
+        if (!empty($meta['timed_out'])) {
+            throw new Exception("SMTP read timed out");
         }
         return $response;
     }
@@ -333,22 +754,27 @@ class FalhenSMTPMailer {
      */
     public function testConnection($testRecipient = null) {
         $results = [
-            'driver'     => $this->driver,
-            'host'       => $this->host,
-            'port'       => $this->port,
-            'secure'     => $this->secure,
-            'user'       => $this->user,
-            'has_api_key'=> !empty($this->apiKey),
-            'from'       => "{$this->fromName} <{$this->fromEmail}>",
-            'api_test'   => null,
-            'smtp_test'  => null,
-            'overall'    => false
+            'driver'            => $this->driver,
+            'mxroute_host'      => $this->mxrouteHost,
+            'mxroute_port'      => $this->mxroutePort,
+            'mxroute_secure'    => $this->mxrouteSecure,
+            'has_mxroute_creds' => (!empty($this->mxrouteUser) && !empty($this->mxroutePass)),
+            'host'              => $this->host,
+            'port'              => $this->port,
+            'secure'            => $this->secure,
+            'user'              => $this->user,
+            'has_api_key'       => !empty($this->apiKey),
+            'from'              => "{$this->fromName} <{$this->fromEmail}>",
+            'last_result'       => null,
+            'overall'           => false
         ];
 
         if (!empty($testRecipient)) {
-            $subject = "Falhen Productions — Resend SMTP Connection Test";
-            $html = "<h3>Resend Mail Test Successful</h3><p>This is a test notification dispatched from Falhen Productions on " . date('Y-m-d H:i:s') . ".</p>";
-            $results['overall'] = $this->sendMail($testRecipient, $subject, $html, "Test Recipient");
+            $subject = "Falhen Productions — Mail Transport Connection Test";
+            $html = "<h3>Mail Transport Test Successful</h3><p>This is a test notification dispatched from Falhen Productions on " . date('Y-m-d H:i:s') . ".</p>";
+            $res = $this->sendMailWithDetails($testRecipient, $subject, $html, "Test Recipient", '', true);
+            $results['last_result'] = $res;
+            $results['overall'] = (bool)$res['sent'];
         }
 
         return $results;
@@ -358,9 +784,9 @@ class FalhenSMTPMailer {
 /**
  * Helper: General Email Dispatcher
  */
-function sendFalhenEmail($toEmail, $subject, $htmlBody, $recipientName = '') {
+function sendFalhenEmail($toEmail, $subject, $htmlBody, $recipientName = '', $textBody = '', $highPriority = false) {
     $mailer = new FalhenSMTPMailer();
-    return $mailer->sendMail($toEmail, $subject, $htmlBody, $recipientName);
+    return $mailer->sendMail($toEmail, $subject, $htmlBody, $recipientName, $textBody, $highPriority);
 }
 
 /**
@@ -399,10 +825,20 @@ function sendVerificationCodeEmail($toEmail, $code, $recipientName = '') {
     </body>
     </html>';
 
+    $textBody = "Falhen Productions — Download Verification Code\n\n"
+        . "Hello " . ($recipientName ?: 'Valued Client') . ",\n\n"
+        . "Use the verification code below to authorize your album asset download:\n\n"
+        . "Verification Code: {$code}\n\n"
+        . "This code will expire in 10 minutes. If you did not request this download, please ignore this email.\n\n"
+        . "Falhen Productions";
+
     try {
-        return $mailer->sendMail($toEmail, $subject, $html, $recipientName);
+        $res = $mailer->sendMailWithDetails($toEmail, $subject, $html, $recipientName, $textBody, true);
+        $GLOBALS['falhen_last_mail_result'] = $res;
+        return (bool)$res['sent'];
     } catch (Exception $e) {
         error_log("Failed to send Verification SMTP/Resend email: " . $e->getMessage());
+        $GLOBALS['falhen_last_mail_result'] = ['sent' => false, 'provider' => null, 'error' => $e->getMessage(), 'duration_ms' => 0];
         return false;
     }
 }
@@ -467,10 +903,23 @@ function sendStaffActivationEmail($toEmail, $code, $recipientName = '', $staffEm
     </body>
     </html>';
 
+    $activateUrl = "https://falhen.com/admin/login.php?action=activate&user=" . urlencode($staffEmail) . "&code=" . urlencode($code);
+    $textBody = "Falhen Portal — Staff Account Activation Code\n\n"
+        . "Hello " . ($recipientName ?: 'Team Member') . ",\n\n"
+        . "Your Falhen Staff Portal account has been created.\n"
+        . (!empty($staffEmail) ? "Official Login Staff Email: {$staffEmail}\n" : "")
+        . "6-Digit Activation Code: {$code}\n\n"
+        . "Activate your account here:\n{$activateUrl}\n\n"
+        . "Security Notice: Keep this activation code confidential. Do not share it with anyone outside Falhen Productions.\n\n"
+        . "Falhen Productions Ltd.";
+
     try {
-        return $mailer->sendMail($toEmail, $subject, $html, $recipientName);
+        $res = $mailer->sendMailWithDetails($toEmail, $subject, $html, $recipientName, $textBody, true);
+        $GLOBALS['falhen_last_mail_result'] = $res;
+        return (bool)$res['sent'];
     } catch (Exception $e) {
         error_log("Failed to send Staff Activation SMTP/Resend email: " . $e->getMessage());
+        $GLOBALS['falhen_last_mail_result'] = ['sent' => false, 'provider' => null, 'error' => $e->getMessage(), 'duration_ms' => 0];
         return false;
     }
 }
@@ -534,10 +983,23 @@ function sendStaffPasswordResetOtpEmail($toAltEmail, $code, $recipientName = '',
     </body>
     </html>';
 
+    $textBody = "Falhen Staff Security — Password & Username Reset Code (OTP)\n\n"
+        . "Hello " . ($recipientName ?: 'Staff Member') . ",\n\n"
+        . "A request was received to reset the username and password for your Falhen Staff Portal account.\n"
+        . (!empty($staffUsername) ? "Staff Username: {$staffUsername}\n" : "")
+        . (!empty($staffEmail) ? "Official Falhen Email: {$staffEmail}\n" : "")
+        . "\nYour 6-Digit Reset OTP Code: {$code}\n\n"
+        . "Enter this code on the reset page to authorize and update your username and password. This code expires in 15 minutes.\n\n"
+        . "If you did not initiate this request, your credentials remain unchanged. Notify the system administrator immediately.\n\n"
+        . "Falhen Productions Ltd.";
+
     try {
-        return $mailer->sendMail($toAltEmail, $subject, $html, $recipientName);
+        $res = $mailer->sendMailWithDetails($toAltEmail, $subject, $html, $recipientName, $textBody, true);
+        $GLOBALS['falhen_last_mail_result'] = $res;
+        return (bool)$res['sent'];
     } catch (Exception $e) {
         error_log("Failed to send Staff Password Reset OTP SMTP/Resend email: " . $e->getMessage());
+        $GLOBALS['falhen_last_mail_result'] = ['sent' => false, 'provider' => null, 'error' => $e->getMessage(), 'duration_ms' => 0];
         return false;
     }
 }

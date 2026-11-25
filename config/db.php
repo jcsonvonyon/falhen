@@ -219,6 +219,7 @@ function initDatabaseSchema($pdo = null) {
             `password_hash` VARCHAR(255) NOT NULL,
             `full_name` VARCHAR(150) NOT NULL DEFAULT 'Staff Member',
             `role` VARCHAR(50) DEFAULT 'Staff',
+            `avatar` VARCHAR(500) DEFAULT NULL,
             `is_owner` TINYINT(1) DEFAULT 0,
             `status` ENUM('active', 'pending_activation', 'suspended') DEFAULT 'active',
             `reset_otp` VARCHAR(64) DEFAULT NULL,
@@ -244,6 +245,11 @@ function initDatabaseSchema($pdo = null) {
         }
         if (!in_array('full_name', $columns)) {
             @$pdo->exec("ALTER TABLE `admin_users` ADD COLUMN `full_name` VARCHAR(150) NOT NULL DEFAULT 'Staff Member' AFTER `password_hash`");
+        }
+        if (!in_array('avatar', $columns)) {
+            try {
+                $pdo->exec("ALTER TABLE `admin_users` ADD COLUMN `avatar` VARCHAR(500) DEFAULT NULL AFTER `role`");
+            } catch (Exception $e) {}
         }
         if (!in_array('is_owner', $columns)) {
             @$pdo->exec("ALTER TABLE `admin_users` ADD COLUMN `is_owner` TINYINT(1) DEFAULT 0 AFTER `role`");
@@ -338,6 +344,21 @@ function initDatabaseSchema($pdo = null) {
             `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
             INDEX `idx_backup_type` (`backup_type`),
             INDEX `idx_backup_date` (`created_at`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+
+        $pdo->exec("CREATE TABLE IF NOT EXISTS `audit_logs` (
+            `id` BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            `actor_username` VARCHAR(150) NOT NULL DEFAULT 'system',
+            `action_type` VARCHAR(100) NOT NULL,
+            `entity_type` VARCHAR(100) NOT NULL DEFAULT 'system',
+            `entity_id` VARCHAR(100) DEFAULT NULL,
+            `details` TEXT DEFAULT NULL,
+            `ip_address` VARCHAR(45) DEFAULT NULL,
+            `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+            INDEX `idx_audit_actor` (`actor_username`),
+            INDEX `idx_audit_action` (`action_type`),
+            INDEX `idx_audit_entity` (`entity_type`, `entity_id`),
+            INDEX `idx_audit_created` (`created_at`)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
 
         // 5. Run additional project DDL if present

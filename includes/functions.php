@@ -25,22 +25,48 @@ if (!empty($rawHostHeader) && filter_var($rawHostHeader, FILTER_VALIDATE_IP) && 
     exit;
 }
 
-if (session_status() === PHP_SESSION_NONE) {
-    if (!headers_sent()) {
-        $isSecure = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (($_SERVER['SERVER_PORT'] ?? 80) == 443);
-        session_set_cookie_params([
-            'lifetime' => 0,
-            'path' => '/',
-            'domain' => '',
-            'secure' => $isSecure,
-            'httponly' => true,
-            'samesite' => 'Lax'
-        ]);
-        session_start();
-    } else {
-        @session_start();
+/**
+ * Determine cross-subdomain SSO cookie domain (.falhen.com on production hosts)
+ */
+function falhenGetCookieDomain()
+{
+    $host = strtolower(trim((string) ($_SERVER['HTTP_HOST'] ?? '')));
+    $host = preg_replace('/:\d+$/', '', $host);
+    if ($host === '' || $host === 'localhost' || filter_var($host, FILTER_VALIDATE_IP)) {
+        return '';
+    }
+    if ($host === 'falhen.com' || str_ends_with($host, '.falhen.com')) {
+        return '.falhen.com';
+    }
+    return '';
+}
+
+/**
+ * Initialize PHP session with cross-subdomain SSO cookie parameters
+ */
+function falhenInitSession()
+{
+    if (session_status() === PHP_SESSION_NONE) {
+        $isSecure = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+            || (($_SERVER['SERVER_PORT'] ?? 80) == 443)
+            || (strtolower((string) ($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '')) === 'https');
+        if (!headers_sent()) {
+            session_set_cookie_params([
+                'lifetime' => 0,
+                'path' => '/',
+                'domain' => falhenGetCookieDomain(),
+                'secure' => $isSecure,
+                'httponly' => true,
+                'samesite' => 'Lax'
+            ]);
+            session_start();
+        } else {
+            @session_start();
+        }
     }
 }
+
+falhenInitSession();
 
 require_once __DIR__ . '/cloudinary_helper.php';
 require_once __DIR__ . '/../config/db.php';
@@ -122,17 +148,56 @@ function logDatabaseAudit($actorUsername, $actionType, $entityType, $entityId = 
 }
 
 /**
+ * Validate strict corporate Falhen email format:
+ * - Domain MUST be @falhen.com (never @falhenmedia.com or external domains)
+ * - Only Henry Falonipe / core admin has multi-mail access (henry.falonipe, henry, admin, info)
+ * - All other staff MUST strictly use firstname.lastname@falhen.com
+ */
+if (!function_exists('isValidCorporateFalhenEmail')) {
+    function isValidCorporateFalhenEmail($email)
+    {
+        $clean = strtolower(trim((string) $email));
+        if ($clean === '' || !filter_var($clean, FILTER_VALIDATE_EMAIL)) {
+            return false;
+        }
+        $parts = explode('@', $clean);
+        if (count($parts) !== 2) {
+            return false;
+        }
+        [$local, $domain] = $parts;
+        if ($domain !== 'falhen.com') {
+            return false;
+        }
+        $ownerMultiMailLocals = ['henry.falonipe', 'henry', 'admin', 'info'];
+        if (in_array($local, $ownerMultiMailLocals, true)) {
+            return true;
+        }
+        return preg_match('/^[a-z][a-z0-9_-]*\.[a-z][a-z0-9_-]*(?:\.[a-z0-9_-]+)*$/', $local) === 1;
+    }
+}
+
+/**
  * Check if Admin/Staff is Logged In
  */
 function isAdminLoggedIn()
 {
+    falhenInitSession();
+
     if (!empty($_SESSION['admin_user_id'])) {
+        // Verify User-Agent binding if recorded on login to prevent cross-subdomain session hijacking
+        if (!empty($_SESSION['admin_ua_hash'])) {
+            $currentUaHash = hash('sha256', (string) ($_SERVER['HTTP_USER_AGENT'] ?? ''));
+            if (!hash_equals((string) $_SESSION['admin_ua_hash'], $currentUaHash)) {
+                clearAdminSession();
+                return false;
+            }
+        }
         return true;
     }
 
-    // Auto-login via remember_me cookie if set
-    if (!empty($_COOKIE['falhen_remember'])) {
-        $rememberToken = $_COOKIE['falhen_remember'];
+    // Auto-login via remember_me cookie if set (supports both falhen_remember_token and legacy falhen_remember)
+    $rememberToken = $_COOKIE['falhen_remember_token'] ?? $_COOKIE['falhen_remember'] ?? '';
+    if (!empty($rememberToken) && is_string($rememberToken)) {
         if (function_exists('getDBConnection')) {
             $pdo = getDBConnection();
             if ($pdo) {
@@ -140,13 +205,23 @@ function isAdminLoggedIn()
                     $stmt = $pdo->prepare("SELECT * FROM `admin_users` WHERE `remember_token` = ? LIMIT 1");
                     $stmt->execute([$rememberToken]);
                     $user = $stmt->fetch();
-                    if ($user) {
-                        session_regenerate_id(true);
-                        $_SESSION['admin_user_id'] = $user['id'];
-                        $_SESSION['admin_username'] = $user['username'];
-                        $_SESSION['admin_email'] = $user['email'];
-                        $_SESSION['admin_role'] = $user['role'] ?? 'Staff';
-                        return true;
+                    if ($user && strtolower((string) ($user['status'] ?? 'active')) !== 'suspended') {
+                        $uEmail = strtolower(trim((string) ($user['email'] ?? '')));
+                        if ($uEmail === '' || isValidCorporateFalhenEmail($uEmail)) {
+                            if (!headers_sent()) {
+                                @session_regenerate_id(true);
+                            }
+                            $_SESSION['admin_user_id'] = $user['id'];
+                            $_SESSION['admin_username'] = $user['username'];
+                            $_SESSION['admin_email'] = $user['email'];
+                            $_SESSION['admin_role'] = $user['role'] ?? 'Staff';
+                            if (!empty($user['full_name'])) {
+                                $_SESSION['admin_full_name'] = $user['full_name'];
+                            }
+                            $_SESSION['is_owner'] = !empty($user['is_owner']) || isOwnerUser($user['email'] ?? '', $user['username'] ?? '');
+                            $_SESSION['admin_ua_hash'] = hash('sha256', (string) ($_SERVER['HTTP_USER_AGENT'] ?? ''));
+                            return true;
+                        }
                     }
                 } catch (Exception $e) {
                 }
@@ -168,13 +243,11 @@ function requireAdmin()
 }
 
 /**
- * Clear Admin Session and Cookies
+ * Clear Admin Session and Cookies across current host and .falhen.com
  */
 function clearAdminSession()
 {
-    if (session_status() === PHP_SESSION_NONE) {
-        session_start();
-    }
+    falhenInitSession();
 
     // Clear DB remember token if logged in
     if (!empty($_SESSION['admin_user_id']) && function_exists('getDBConnection')) {
@@ -189,22 +262,35 @@ function clearAdminSession()
     }
 
     $_SESSION = [];
-    if (ini_get("session.use_cookies")) {
+
+    if (!headers_sent()) {
+        $isSecure = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+            || (($_SERVER['SERVER_PORT'] ?? 80) == 443)
+            || (strtolower((string) ($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '')) === 'https');
+        $cookieDomain = falhenGetCookieDomain();
+        $domainsToClear = array_values(array_unique(['', $cookieDomain]));
+        $cookiesToClear = ['falhen_remember_token', 'falhen_remember'];
+        if (ini_get('session.use_cookies')) {
+            $cookiesToClear[] = session_name();
+        }
         $params = session_get_cookie_params();
-        setcookie(
-            session_name(),
-            '',
-            time() - 42000,
-            $params["path"],
-            $params["domain"],
-            $params["secure"],
-            $params["httponly"]
-        );
+        $cookiePath = !empty($params['path']) ? $params['path'] : '/';
+
+        foreach ($cookiesToClear as $cookieName) {
+            foreach ($domainsToClear as $dom) {
+                setcookie($cookieName, '', [
+                    'expires' => time() - 42000,
+                    'path' => $cookiePath,
+                    'domain' => $dom,
+                    'secure' => $isSecure,
+                    'httponly' => true,
+                    'samesite' => 'Lax'
+                ]);
+            }
+        }
     }
-    if (isset($_COOKIE['falhen_remember'])) {
-        setcookie('falhen_remember', '', time() - 3600, '/', '', false, true);
-    }
-    session_destroy();
+
+    @session_destroy();
 }
 
 /**
@@ -991,7 +1077,11 @@ function createCodebaseZipArchive($zipFilename)
         '.git',
         'node_modules',
         'config/backups',
-        '.taste-skill'
+        'backups',
+        '.taste-skill',
+        '.env',
+        'config/db_credentials.json',
+        'config/smtp.php'
     ];
     $skipExts = ['zip', 'tar', 'gz', 'mp4', 'mov'];
 
@@ -1005,6 +1095,11 @@ function createCodebaseZipArchive($zipFilename)
         $filePath = $item->getRealPath();
         $relative = substr($filePath, strlen($projectRoot) + 1);
         $relativeNormalized = str_replace('\\', '/', $relative);
+        $baseName = basename($relativeNormalized);
+
+        if ($baseName === '.env' || str_starts_with($baseName, '.env.')) {
+            continue;
+        }
 
         $skip = false;
         foreach ($skipDirs as $sd) {
@@ -1102,20 +1197,91 @@ function createDatabaseSqlDump($sqlFilename)
     }
 
     if ($tablesCount === 0) {
+        $sqlEscape = function ($val) {
+            if ($val === null) {
+                return 'NULL';
+            }
+            return "'" . str_replace(
+                ["\\", "'", "\r", "\n", "\0"],
+                ["\\\\", "''", "\\r", "\\n", "\\0"],
+                (string) $val
+            ) . "'";
+        };
+
         $settings = function_exists('getSiteSettings') ? getSiteSettings() : [];
-        $settingsJson = json_encode($settings, JSON_UNESCAPED_SLASHES);
-        $escapedJson = addslashes($settingsJson);
 
         $out .= "-- AUTHORITATIVE RECONSTRUCTION SCRIPT (Generated from Active Disk State)\n";
-        $out .= "CREATE TABLE IF NOT EXISTS `site_settings` (
+        $out .= "CREATE TABLE IF NOT EXISTS `admin_users` (
             `id` INT AUTO_INCREMENT PRIMARY KEY,
-            `setting_key` VARCHAR(100) NOT NULL UNIQUE,
-            `setting_value` LONGTEXT NOT NULL,
-            `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+            `username` VARCHAR(100) NOT NULL UNIQUE,
+            `email` VARCHAR(150) NOT NULL UNIQUE,
+            `alt_email` VARCHAR(150) DEFAULT NULL,
+            `password_hash` VARCHAR(255) NOT NULL,
+            `full_name` VARCHAR(150) NOT NULL DEFAULT 'Staff Member',
+            `role` VARCHAR(50) DEFAULT 'Staff',
+            `is_owner` TINYINT(1) DEFAULT 0,
+            `status` ENUM('active', 'pending_activation', 'suspended') DEFAULT 'active',
+            `reset_otp` VARCHAR(64) DEFAULT NULL,
+            `reset_token` VARCHAR(255) DEFAULT NULL,
+            `reset_expires` DATETIME DEFAULT NULL,
+            `remember_token` VARCHAR(255) DEFAULT NULL,
+            `last_login_at` DATETIME DEFAULT NULL,
+            `last_login_ip` VARCHAR(45) DEFAULT NULL,
+            `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+            INDEX `idx_admin_users_email_status` (`email`, `status`),
+            INDEX `idx_admin_users_username_status` (`username`, `status`)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;\n\n";
 
-        $out .= "INSERT INTO `site_settings` (`setting_key`, `setting_value`) VALUES ('all_settings', '{$escapedJson}')
-            ON DUPLICATE KEY UPDATE `setting_value` = VALUES(`setting_value`);\n\n";
+        $staffListForSql = function_exists('getStaffAccountsRepo') ? array_values(getStaffAccountsRepo()) : ($settings['staff_accounts'] ?? []);
+        if (!empty($staffListForSql) && is_array($staffListForSql)) {
+            $out .= "-- Dumping reconstructed staff accounts into `admin_users`\n";
+            foreach ($staffListForSql as $stRow) {
+                $stUser = trim((string) ($stRow['username'] ?? ''));
+                $stEmail = strtolower(trim((string) ($stRow['email'] ?? '')));
+                if ($stUser === '' || $stEmail === '') {
+                    continue;
+                }
+                $stAlt = !empty($stRow['alt_email']) ? trim((string) $stRow['alt_email']) : null;
+                $stHash = !empty($stRow['password_hash']) ? (string) $stRow['password_hash'] : password_hash('Password123#', PASSWORD_DEFAULT);
+                $stName = trim((string) ($stRow['full_name'] ?? $stUser));
+                $stRole = trim((string) ($stRow['role'] ?? 'Staff'));
+                $stIsOwner = (!empty($stRow['is_owner']) || isOwnerUser($stEmail, $stUser)) ? 1 : 0;
+                $stStatus = in_array($stRow['status'] ?? 'active', ['active', 'pending_activation', 'suspended'], true) ? $stRow['status'] : 'active';
+
+                $out .= "INSERT INTO `admin_users` (`username`, `email`, `alt_email`, `password_hash`, `full_name`, `role`, `is_owner`, `status`) VALUES ("
+                    . $sqlEscape($stUser) . ", "
+                    . $sqlEscape($stEmail) . ", "
+                    . $sqlEscape($stAlt) . ", "
+                    . $sqlEscape($stHash) . ", "
+                    . $sqlEscape($stName) . ", "
+                    . $sqlEscape($stRole) . ", "
+                    . (int) $stIsOwner . ", "
+                    . $sqlEscape($stStatus)
+                    . ") ON DUPLICATE KEY UPDATE `email` = VALUES(`email`), `alt_email` = VALUES(`alt_email`), `full_name` = VALUES(`full_name`), `role` = VALUES(`role`), `is_owner` = VALUES(`is_owner`), `status` = VALUES(`status`);\n";
+            }
+            $out .= "\n";
+        }
+
+        $out .= "CREATE TABLE IF NOT EXISTS `site_settings` (
+            `setting_key` VARCHAR(100) NOT NULL PRIMARY KEY,
+            `setting_value` LONGTEXT NOT NULL,
+            `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            INDEX `idx_site_settings_key` (`setting_key`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;\n\n";
+
+        if (is_array($settings)) {
+            foreach ($settings as $k => $v) {
+                $valStr = is_string($v) ? $v : json_encode($v, JSON_UNESCAPED_SLASHES);
+                if ($valStr === false) {
+                    continue;
+                }
+                $out .= "INSERT INTO `site_settings` (`setting_key`, `setting_value`) VALUES ("
+                    . $sqlEscape((string) $k) . ", "
+                    . $sqlEscape($valStr)
+                    . ") ON DUPLICATE KEY UPDATE `setting_value` = VALUES(`setting_value`);\n";
+            }
+            $out .= "\n";
+        }
 
         $out .= "CREATE TABLE IF NOT EXISTS `client_download_logs` (
             `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -1146,7 +1312,7 @@ function createDatabaseSqlDump($sqlFilename)
             INDEX `idx_backup_date` (`created_at`)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;\n\n";
 
-        $tablesCount = 3;
+        $tablesCount = 4;
     }
 
     $out .= "SET FOREIGN_KEY_CHECKS=1;\n";
@@ -1173,7 +1339,7 @@ function pruneOldBackups($retentionLimit = 30)
     $files = scandir($backupDir);
     $archives = [];
     foreach ($files as $f) {
-        if ($f === '.' || $f === '..' || $f === 'backups_ledger.json' || $f === '.htaccess')
+        if ($f === '.' || $f === '..' || $f === 'backups_ledger.json' || $f === 'settings_latest_live.json' || $f === '.htaccess')
             continue;
         if (preg_match('/\.(zip|sql|json|csv)$/i', $f)) {
             $archives[] = [
@@ -1216,17 +1382,32 @@ function createFullSystemBackup($backupType = 'FULL_SYSTEM_SNAPSHOT', $notes = '
     $sqlFile = 'database_dump_' . $ts . '.sql';
     $sqlRes = createDatabaseSqlDump($sqlFile);
 
-    // 3. Settings & Pipeline Manifest JSON
+    // 3. Settings & Pipeline Manifest JSON (with SHA-256 Integrity Verification)
     $settings = function_exists('getSiteSettings') ? getSiteSettings() : [];
+    $codebasePath = $codebaseRes['path'] ?? ($backupDir . '/' . $codebaseFile);
+    $sqlPath = $sqlRes['path'] ?? ($backupDir . '/' . $sqlFile);
+    $codebaseSize = (file_exists($codebasePath) ? (int) filesize($codebasePath) : 0);
+    $databaseSize = (file_exists($sqlPath) ? (int) filesize($sqlPath) : 0);
+    $codebaseSha256 = ($codebaseSize > 0) ? hash_file('sha256', $codebasePath) : null;
+    $databaseSha256 = ($databaseSize > 0) ? hash_file('sha256', $sqlPath) : null;
+    $codebaseVerified = !empty($codebaseRes['success']) && $codebaseSize > 0 && !empty($codebaseSha256);
+    $databaseVerified = !empty($sqlRes['success']) && $databaseSize > 0 && !empty($databaseSha256);
+    $integrityVerified = ($databaseVerified && (!class_exists('ZipArchive') || $codebaseVerified));
+    $staffCount = count($settings['staff_accounts'] ?? []);
+
     $manifestFile = 'pipeline_manifest_' . $ts . '.json';
     $manifestPath = $backupDir . '/' . $manifestFile;
     $manifestData = [
         'timestamp' => date('Y-m-d H:i:s'),
         'backup_type' => $backupType,
         'codebase_archive' => $codebaseFile,
-        'codebase_size' => $codebaseRes['file_size'] ?? 0,
+        'codebase_size' => $codebaseSize,
+        'codebase_sha256' => $codebaseSha256,
         'database_dump' => $sqlFile,
-        'database_size' => $sqlRes['file_size'] ?? 0,
+        'database_size' => $databaseSize,
+        'database_sha256' => $databaseSha256,
+        'integrity_verified' => $integrityVerified,
+        'staff_count' => $staffCount,
         'portfolio_count' => count($settings['portfolio_items'] ?? []),
         'bts_count' => count($settings['bts_items'] ?? []),
         'brands_count' => count($settings['brand_logos_items'] ?? []),
@@ -1296,14 +1477,20 @@ function createFullSystemBackup($backupType = 'FULL_SYSTEM_SNAPSHOT', $notes = '
     pruneOldBackups(30);
 
     return [
-        'success' => true,
+        'success' => $integrityVerified,
         'timestamp' => date('Y-m-d H:i:s'),
         'codebase_zip' => $codebaseFile,
+        'codebase_size' => $codebaseSize,
+        'codebase_sha256' => $codebaseSha256,
         'database_sql' => $sqlFile,
+        'database_size' => $databaseSize,
+        'database_sha256' => $databaseSha256,
         'manifest_json' => $manifestFile,
         'dl_csv' => $dlFile,
         'bk_csv' => $bkFile,
+        'staff_count' => $staffCount,
         'items_count' => $itemsCount,
+        'integrity_verified' => $integrityVerified,
         'notes' => $notes
     ];
 }
@@ -2749,7 +2936,7 @@ function getStaffAccountsRepo()
     $settings = getSiteSettings();
     $items = $settings['staff_accounts'] ?? [];
 
-    $knownAccessRoles = ['Super Admin', 'HR Manager', 'Production Manager', 'Content Editor', 'Staff'];
+    $knownAccessRoles = ['Owner / Super Admin', 'Super Admin', 'IT Administrator', 'IT Manager', 'HR Manager', 'Production Manager', 'Content Editor', 'Staff'];
 
     if (empty($items) || !is_array($items)) {
         $defaultPasswordHash = password_hash('Password123#', PASSWORD_DEFAULT);
@@ -2770,7 +2957,7 @@ function getStaffAccountsRepo()
                 'bank_name' => 'Zenith Bank PLC',
                 'account_number' => '1012345678',
                 'account_name' => 'Henry Falonipe',
-                'raenest_email' => 'henry@falhen.com',
+                'raenest_email' => 'henry.falonipe@falhen.com',
                 'raenest_id' => 'RAE-HFAL-01',
                 'lemfi_tag' => '@henryfalhen',
                 'taptap_account' => '01012345678',
@@ -2783,7 +2970,7 @@ function getStaffAccountsRepo()
                 'id' => 2,
                 'full_name' => 'Kingsley Falonipe',
                 'username' => 'kingsley.falonipe',
-                'email' => 'kingsley@falhen.com',
+                'email' => 'kingsley.falonipe@falhen.com',
                 'role' => 'Production Manager',
                 'designation' => 'Operations Specialist',
                 'currency' => 'NGN',
@@ -2793,7 +2980,7 @@ function getStaffAccountsRepo()
                 'bank_name' => 'Guaranty Trust Bank (GTBank)',
                 'account_number' => '0123456789',
                 'account_name' => 'Kingsley Falonipe',
-                'raenest_email' => 'kingsley@falhen.com',
+                'raenest_email' => 'kingsley.falonipe@falhen.com',
                 'raenest_id' => 'RAE-KFAL-02',
                 'lemfi_tag' => '@kingsleyfalhen',
                 'taptap_account' => '01023456789',
@@ -2806,7 +2993,7 @@ function getStaffAccountsRepo()
                 'id' => 3,
                 'full_name' => 'Lisa Okoli',
                 'username' => 'lisa.okoli',
-                'email' => 'lisa@falhen.com',
+                'email' => 'lisa.okoli@falhen.com',
                 'role' => 'Content Editor',
                 'designation' => 'Head of Marketing & Client Partnerships',
                 'currency' => 'NGN',
@@ -2816,7 +3003,7 @@ function getStaffAccountsRepo()
                 'bank_name' => 'Access Bank PLC',
                 'account_number' => '0691234567',
                 'account_name' => 'Lisa Okoli',
-                'raenest_email' => 'lisa@falhen.com',
+                'raenest_email' => 'lisa.okoli@falhen.com',
                 'raenest_id' => 'RAE-LOKO-03',
                 'lemfi_tag' => '@lisaokoli',
                 'taptap_account' => '01069123456',
@@ -2829,7 +3016,7 @@ function getStaffAccountsRepo()
                 'id' => 4,
                 'full_name' => 'Mojisola Emjay',
                 'username' => 'mojisola.emjay',
-                'email' => 'mojisola@falhen.com',
+                'email' => 'mojisola.emjay@falhen.com',
                 'role' => 'HR Manager',
                 'designation' => 'Resource & HR Manager',
                 'currency' => 'NGN',
@@ -2839,7 +3026,7 @@ function getStaffAccountsRepo()
                 'bank_name' => 'United Bank for Africa (UBA)',
                 'account_number' => '2098765432',
                 'account_name' => 'Mojisola Emjay',
-                'raenest_email' => 'mojisola@falhen.com',
+                'raenest_email' => 'mojisola.emjay@falhen.com',
                 'raenest_id' => 'RAE-MEMJ-04',
                 'lemfi_tag' => '@mojisolaemjay',
                 'taptap_account' => '02098765432',
@@ -2852,7 +3039,7 @@ function getStaffAccountsRepo()
                 'id' => 5,
                 'full_name' => 'Daniel Ifeoluwa',
                 'username' => 'daniel.ifeoluwa',
-                'email' => 'daniel@falhen.com',
+                'email' => 'daniel.ifeoluwa@falhen.com',
                 'role' => 'Staff',
                 'designation' => 'Head of Creative Services',
                 'currency' => 'NGN',
@@ -2862,7 +3049,7 @@ function getStaffAccountsRepo()
                 'bank_name' => 'First Bank of Nigeria',
                 'account_number' => '3087654321',
                 'account_name' => 'Daniel Ifeoluwa',
-                'raenest_email' => 'daniel@falhen.com',
+                'raenest_email' => 'daniel.ifeoluwa@falhen.com',
                 'raenest_id' => 'RAE-DIFE-05',
                 'lemfi_tag' => '@danielife',
                 'taptap_account' => '03087654321',
@@ -2875,7 +3062,7 @@ function getStaffAccountsRepo()
                 'id' => 6,
                 'full_name' => 'Victoria Opemipo',
                 'username' => 'victoria.opemipo',
-                'email' => 'victoria@falhen.com',
+                'email' => 'victoria.opemipo@falhen.com',
                 'role' => 'Content Editor',
                 'designation' => 'Social Media Manager',
                 'currency' => 'NGN',
@@ -2885,7 +3072,7 @@ function getStaffAccountsRepo()
                 'bank_name' => 'Stanbic IBTC Bank',
                 'account_number' => '0034567890',
                 'account_name' => 'Victoria Opemipo',
-                'raenest_email' => 'victoria@falhen.com',
+                'raenest_email' => 'victoria.opemipo@falhen.com',
                 'raenest_id' => 'RAE-VOPE-06',
                 'lemfi_tag' => '@victoriaop',
                 'taptap_account' => '00034567890',
@@ -2898,7 +3085,7 @@ function getStaffAccountsRepo()
                 'id' => 7,
                 'full_name' => 'Micheal Otuwho',
                 'username' => 'micheal.otuwho',
-                'email' => 'micheal@falhen.com',
+                'email' => 'micheal.otuwho@falhen.com',
                 'role' => 'Content Editor',
                 'designation' => 'Content Manager',
                 'currency' => 'NGN',
@@ -2908,7 +3095,7 @@ function getStaffAccountsRepo()
                 'bank_name' => 'Kuda Microfinance Bank',
                 'account_number' => '2001234567',
                 'account_name' => 'Micheal Otuwho',
-                'raenest_email' => 'micheal@falhen.com',
+                'raenest_email' => 'micheal.otuwho@falhen.com',
                 'raenest_id' => 'RAE-MOTU-07',
                 'lemfi_tag' => '@michealotu',
                 'taptap_account' => '02001234567',
@@ -2921,8 +3108,8 @@ function getStaffAccountsRepo()
                 'id' => 8,
                 'full_name' => 'Ligali Oluwatosin',
                 'username' => 'ligali.oluwatosin',
-                'email' => 'ligali@falhen.com',
-                'role' => 'Super Admin',
+                'email' => 'ligali.oluwatosin@falhen.com',
+                'role' => 'IT Administrator',
                 'designation' => 'IT Support Specialist',
                 'currency' => 'NGN',
                 'base_salary' => 120000,
@@ -2931,7 +3118,7 @@ function getStaffAccountsRepo()
                 'bank_name' => 'Zenith Bank PLC',
                 'account_number' => '2089123456',
                 'account_name' => 'Ligali Oluwatosin',
-                'raenest_email' => 'ligali@falhen.com',
+                'raenest_email' => 'ligali.oluwatosin@falhen.com',
                 'raenest_id' => 'RAE-TLIG-08',
                 'lemfi_tag' => '@tosinligali',
                 'taptap_account' => '02089123456',
@@ -2964,8 +3151,8 @@ function getStaffAccountsRepo()
                 $it['designation'] = 'Creative Director & Founder';
                 $modified = true;
             }
-            if ($it['role'] !== 'Super Admin') {
-                $it['role'] = 'Super Admin';
+            if (!in_array($it['role'] ?? '', ['Owner / Super Admin', 'Super Admin'], true)) {
+                $it['role'] = 'Owner / Super Admin';
                 $modified = true;
             }
             if (!isset($it['base_salary']) || $it['base_salary'] === '' || (($it['currency'] ?? '') === 'USD' && (float) ($it['deductions'] ?? 0) > 500)) {
@@ -2979,7 +3166,7 @@ function getStaffAccountsRepo()
                 $it['bank_name'] = 'Zenith Bank PLC';
                 $it['account_number'] = '1012345678';
                 $it['account_name'] = 'Henry Falonipe';
-                $it['raenest_email'] = 'henry@falhen.com';
+                $it['raenest_email'] = 'henry.falonipe@falhen.com';
                 $it['raenest_id'] = 'RAE-HFAL-01';
                 $it['lemfi_tag'] = '@henryfalhen';
                 $it['taptap_account'] = '01012345678';
@@ -3005,7 +3192,7 @@ function getStaffAccountsRepo()
                 $it['bank_name'] = 'Guaranty Trust Bank (GTBank)';
                 $it['account_number'] = '0123456789';
                 $it['account_name'] = 'Kingsley Falonipe';
-                $it['raenest_email'] = 'kingsley@falhen.com';
+                $it['raenest_email'] = 'kingsley.falonipe@falhen.com';
                 $it['raenest_id'] = 'RAE-KFAL-02';
                 $it['lemfi_tag'] = '@kingsleyfalhen';
                 $it['taptap_account'] = '01023456789';
@@ -3031,7 +3218,7 @@ function getStaffAccountsRepo()
                 $it['bank_name'] = 'Access Bank PLC';
                 $it['account_number'] = '0691234567';
                 $it['account_name'] = 'Lisa Okoli';
-                $it['raenest_email'] = 'lisa@falhen.com';
+                $it['raenest_email'] = 'lisa.okoli@falhen.com';
                 $it['raenest_id'] = 'RAE-LOKO-03';
                 $it['lemfi_tag'] = '@lisaokoli';
                 $it['taptap_account'] = '01069123456';
@@ -3057,7 +3244,7 @@ function getStaffAccountsRepo()
                 $it['bank_name'] = 'United Bank for Africa (UBA)';
                 $it['account_number'] = '2098765432';
                 $it['account_name'] = 'Mojisola Emjay';
-                $it['raenest_email'] = 'mojisola@falhen.com';
+                $it['raenest_email'] = 'mojisola.emjay@falhen.com';
                 $it['raenest_id'] = 'RAE-MEMJ-04';
                 $it['lemfi_tag'] = '@mojisolaemjay';
                 $it['taptap_account'] = '02098765432';
@@ -3083,7 +3270,7 @@ function getStaffAccountsRepo()
                 $it['bank_name'] = 'First Bank of Nigeria';
                 $it['account_number'] = '3087654321';
                 $it['account_name'] = 'Daniel Ifeoluwa';
-                $it['raenest_email'] = 'daniel@falhen.com';
+                $it['raenest_email'] = 'daniel.ifeoluwa@falhen.com';
                 $it['raenest_id'] = 'RAE-DIFE-05';
                 $it['lemfi_tag'] = '@danielife';
                 $it['taptap_account'] = '03087654321';
@@ -3109,7 +3296,7 @@ function getStaffAccountsRepo()
                 $it['bank_name'] = 'Stanbic IBTC Bank';
                 $it['account_number'] = '0034567890';
                 $it['account_name'] = 'Victoria Opemipo';
-                $it['raenest_email'] = 'victoria@falhen.com';
+                $it['raenest_email'] = 'victoria.opemipo@falhen.com';
                 $it['raenest_id'] = 'RAE-VOPE-06';
                 $it['lemfi_tag'] = '@victoriaop';
                 $it['taptap_account'] = '00034567890';
@@ -3135,7 +3322,7 @@ function getStaffAccountsRepo()
                 $it['bank_name'] = 'Kuda Microfinance Bank';
                 $it['account_number'] = '2001234567';
                 $it['account_name'] = 'Micheal Otuwho';
-                $it['raenest_email'] = 'micheal@falhen.com';
+                $it['raenest_email'] = 'micheal.otuwho@falhen.com';
                 $it['raenest_id'] = 'RAE-MOTU-07';
                 $it['lemfi_tag'] = '@michealotu';
                 $it['taptap_account'] = '02001234567';
@@ -3146,8 +3333,8 @@ function getStaffAccountsRepo()
                 $it['designation'] = 'IT Support Specialist';
                 $modified = true;
             }
-            if ($it['role'] !== 'Super Admin') {
-                $it['role'] = 'Super Admin';
+            if (!in_array($it['role'] ?? '', ['IT Administrator', 'IT Manager'], true)) {
+                $it['role'] = 'IT Administrator';
                 $modified = true;
             }
             if (!isset($it['base_salary']) || $it['base_salary'] === '') {
@@ -3161,7 +3348,7 @@ function getStaffAccountsRepo()
                 $it['bank_name'] = 'Zenith Bank PLC';
                 $it['account_number'] = '2089123456';
                 $it['account_name'] = 'Ligali Oluwatosin';
-                $it['raenest_email'] = 'ligali@falhen.com';
+                $it['raenest_email'] = 'ligali.oluwatosin@falhen.com';
                 $it['raenest_id'] = 'RAE-TLIG-08';
                 $it['lemfi_tag'] = '@tosinligali';
                 $it['taptap_account'] = '02089123456';
@@ -3188,7 +3375,7 @@ function getStaffAccountsRepo()
                 $it['bank_name'] = 'Zenith Bank PLC';
                 $it['account_number'] = '10' . rand(10000000, 99999999);
                 $it['account_name'] = $fn;
-                $it['raenest_email'] = $it['email'] ?? 'staff@falhen.com';
+                $it['raenest_email'] = $it['email'] ?? '';
                 $it['raenest_id'] = 'RAE-STAFF-' . rand(10, 99);
                 $it['lemfi_tag'] = '@' . strtolower(str_replace(' ', '', $fn));
                 $it['taptap_account'] = $it['account_number'];
@@ -3410,10 +3597,12 @@ function activateStaffAccountWithCode($emailOrUser, $submittedCode)
         $uName = strtolower($st['username'] ?? '');
         $uEmail = strtolower($st['email'] ?? '');
         if ($inputLower === $uName || $inputLower === $uEmail) {
-            $expectedCode = trim($st['activation_code'] ?? '');
-            if ((!empty($expectedCode) && $cleanCode === $expectedCode) || preg_match('/^\d{6}$/', $cleanCode)) {
+            $expectedCode = trim((string)($st['activation_code'] ?? ''));
+            $isPendingActivation = (($st['status'] ?? '') === 'pending_activation' || ($st['activation_status'] ?? '') === 'pending' || !empty($expectedCode));
+            if ($isPendingActivation && !empty($expectedCode) && hash_equals((string)$expectedCode, (string)$cleanCode)) {
                 $st['status'] = 'active';
                 $st['activation_status'] = 'activated';
+                $st['activation_code'] = '';
                 $st['activated_at'] = date('Y-m-d H:i:s');
                 $activated = true;
                 break;
@@ -3450,82 +3639,529 @@ function maskEmailForDisplay($email)
 }
 
 /**
- * Synchronize Team (Content) Roster & Staff Accounts
+ * Canonical Account Resolver across MySQL admin_users and settings.json staff_accounts.
+ * Enforces strict @falhen.com firstname.lastname format (plus Henry Falonipe multi-mail
+ * and Ligali Oluwatosin IT alias). Rejects @falhenmedia.com and non-Henry firstname@falhen.com.
+ * When $allowAltEmailForRecovery is true, also resolves registered alt_email for recovery flows.
  */
-function syncTeamAndStaffAccounts()
+function findStaffAccountByIdentifier($input, $allowAltEmailForRecovery = false)
 {
+    $norm = strtolower(trim((string) $input));
+    if ($norm === '') {
+        return null;
+    }
+
+    $henryEmails = ['henry.falonipe@falhen.com', 'henry@falhen.com', 'admin@falhen.com', 'info@falhen.com'];
+    $henryUsernames = ['henry.falonipe', 'henry', 'admin'];
+    $ligaliEmails = ['ligali.oluwatosin@falhen.com', 'oluwatosin.ligali@falhen.com'];
+    $ligaliUsernames = ['ligali.oluwatosin', 'oluwatosin.ligali'];
+
+    $isEmailInput = str_contains($norm, '@');
+    if ($isEmailInput) {
+        $parts = explode('@', $norm);
+        if (count($parts) !== 2) {
+            return null;
+        }
+        $domain = $parts[1];
+        // Strictly reject legacy falhenmedia.com domain
+        if ($domain === 'falhenmedia.com') {
+            return null;
+        }
+        if ($domain === 'falhen.com') {
+            // Strictly reject non-Henry firstname@falhen.com
+            if (!isValidCorporateFalhenEmail($norm)) {
+                return null;
+            }
+        } else {
+            // External domains only permitted for recovery via registered alt_email
+            if (!$allowAltEmailForRecovery) {
+                return null;
+            }
+        }
+    }
+
+    $isHenryQuery = in_array($norm, $henryEmails, true) || in_array($norm, $henryUsernames, true);
+    $isLigaliQuery = in_array($norm, $ligaliEmails, true) || in_array($norm, $ligaliUsernames, true);
+
+    $dbRow = null;
+    if (function_exists('getDBConnection')) {
+        $pdo = getDBConnection();
+        if ($pdo) {
+            try {
+                if ($isHenryQuery) {
+                    $stmt = $pdo->prepare("SELECT * FROM `admin_users` WHERE LOWER(`email`) IN ('henry.falonipe@falhen.com','henry@falhen.com','admin@falhen.com','info@falhen.com') OR LOWER(`username`) IN ('henry.falonipe','henry','admin') ORDER BY `is_owner` DESC, `id` ASC LIMIT 1");
+                    $stmt->execute();
+                    $dbRow = $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+                } elseif ($isLigaliQuery) {
+                    $stmt = $pdo->prepare("SELECT * FROM `admin_users` WHERE LOWER(`email`) IN ('ligali.oluwatosin@falhen.com','oluwatosin.ligali@falhen.com') OR LOWER(`username`) IN ('ligali.oluwatosin','oluwatosin.ligali') ORDER BY `id` ASC LIMIT 1");
+                    $stmt->execute();
+                    $dbRow = $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+                } elseif ($allowAltEmailForRecovery) {
+                    $stmt = $pdo->prepare("SELECT * FROM `admin_users` WHERE LOWER(`email`) = ? OR LOWER(`username`) = ? OR LOWER(`alt_email`) = ? LIMIT 1");
+                    $stmt->execute([$norm, $norm, $norm]);
+                    $dbRow = $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+                } else {
+                    $stmt = $pdo->prepare("SELECT * FROM `admin_users` WHERE LOWER(`email`) = ? OR LOWER(`username`) = ? LIMIT 1");
+                    $stmt->execute([$norm, $norm]);
+                    $dbRow = $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+                }
+            } catch (Exception $e) {
+            }
+        }
+    }
+
+    // Reject DB row if it carries legacy falhenmedia.com email
+    if ($dbRow && str_ends_with(strtolower(trim((string) ($dbRow['email'] ?? ''))), '@falhenmedia.com')) {
+        $dbRow = null;
+    }
+
+    $staffRow = null;
+    $repo = getStaffAccountsRepo();
+    foreach ($repo as $st) {
+        $stEmail = strtolower(trim((string) ($st['email'] ?? '')));
+        $stUser = strtolower(trim((string) ($st['username'] ?? '')));
+        $stAlt = strtolower(trim((string) ($st['alt_email'] ?? $st['alternative_email'] ?? '')));
+
+        if (str_ends_with($stEmail, '@falhenmedia.com')) {
+            continue;
+        }
+
+        $matched = false;
+        if ($isHenryQuery && (in_array($stEmail, $henryEmails, true) || in_array($stUser, $henryUsernames, true) || !empty($st['is_owner']))) {
+            $matched = true;
+        } elseif ($isLigaliQuery && (in_array($stEmail, $ligaliEmails, true) || in_array($stUser, $ligaliUsernames, true))) {
+            $matched = true;
+        } elseif ($stEmail === $norm && isValidCorporateFalhenEmail($stEmail)) {
+            $matched = true;
+        } elseif (!$isEmailInput && $stUser !== '' && $stUser === $norm) {
+            $matched = true;
+        } elseif ($allowAltEmailForRecovery && $stAlt !== '' && $stAlt === $norm) {
+            $matched = true;
+        } elseif ($dbRow && (($stUser !== '' && $stUser === strtolower(trim((string) ($dbRow['username'] ?? '')))) || ($stEmail !== '' && $stEmail === strtolower(trim((string) ($dbRow['email'] ?? '')))))) {
+            $matched = true;
+        }
+
+        if ($matched) {
+            $staffRow = $st;
+            break;
+        }
+    }
+
+    // If matched only in staffRow, try resolving matching DB row by canonical email/username
+    if ($staffRow && !$dbRow && function_exists('getDBConnection')) {
+        $pdo = getDBConnection();
+        if ($pdo) {
+            try {
+                $stmt = $pdo->prepare("SELECT * FROM `admin_users` WHERE LOWER(`email`) = ? OR LOWER(`username`) = ? LIMIT 1");
+                $stmt->execute([strtolower(trim((string) ($staffRow['email'] ?? ''))), strtolower(trim((string) ($staffRow['username'] ?? '')))]);
+                $candidate = $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+                if ($candidate && !str_ends_with(strtolower(trim((string) ($candidate['email'] ?? ''))), '@falhenmedia.com')) {
+                    $dbRow = $candidate;
+                }
+            } catch (Exception $e) {
+            }
+        }
+    }
+
+    if (!$dbRow && !$staffRow) {
+        return null;
+    }
+
+    $unified = [];
+    if (is_array($staffRow)) {
+        $unified = $staffRow;
+    }
+    if (is_array($dbRow)) {
+        foreach ($dbRow as $k => $v) {
+            if ($v !== null && $v !== '') {
+                $unified[$k] = $v;
+            }
+        }
+    }
+
+    // Preserve critical fields cleanly across both stores
+    $unified['id'] = $dbRow['id'] ?? $staffRow['id'] ?? 0;
+    $unified['username'] = $dbRow['username'] ?? $staffRow['username'] ?? '';
+    $unified['email'] = $dbRow['email'] ?? $staffRow['email'] ?? '';
+    $unified['full_name'] = !empty($staffRow['full_name']) ? $staffRow['full_name'] : ($dbRow['full_name'] ?? $unified['username']);
+    $unified['role'] = !empty($staffRow['role']) ? $staffRow['role'] : ($dbRow['role'] ?? 'Staff');
+    $unified['status'] = !empty($dbRow['status']) ? $dbRow['status'] : ($staffRow['status'] ?? 'active');
+    $unified['avatar'] = !empty($staffRow['avatar']) ? $staffRow['avatar'] : ($dbRow['avatar'] ?? '');
+    $unified['alt_email'] = !empty($staffRow['alt_email'])
+        ? $staffRow['alt_email']
+        : (!empty($staffRow['alternative_email']) ? $staffRow['alternative_email'] : ($dbRow['alt_email'] ?? ''));
+    $unified['password_hash'] = !empty($dbRow['password_hash'])
+        ? $dbRow['password_hash']
+        : ($staffRow['password_hash'] ?? '');
+    $unified['is_owner'] = (!empty($dbRow['is_owner']) || !empty($staffRow['is_owner']) || isOwnerUser($unified['email'], $unified['username'])) ? 1 : 0;
+
+    if (empty($unified['password_hash']) && $unified['is_owner']) {
+        $adminProf = getAdminUserProfile();
+        if (!empty($adminProf['password_hash'])) {
+            $unified['password_hash'] = $adminProf['password_hash'];
+        }
+    }
+
+    // Final corporate email sanity check
+    if (!empty($unified['email']) && !isValidCorporateFalhenEmail($unified['email'])) {
+        return null;
+    }
+
+    return $unified;
+}
+
+/**
+ * Synchronize a user's password hash across MySQL admin_users, settings.json staff_accounts,
+ * and admin_profile (for Owner) so one password works everywhere across main domain & subdomains.
+ */
+function syncStaffPasswordAcrossStores($email, $username, $newPasswordHash)
+{
+    $newPasswordHash = (string) $newPasswordHash;
+    if ($newPasswordHash === '') {
+        return false;
+    }
+
+    $emailLower = strtolower(trim((string) $email));
+    $userLower = strtolower(trim((string) $username));
+    $isOwner = isOwnerUser($emailLower, $userLower);
+
+    $henryEmails = ['henry.falonipe@falhen.com', 'henry@falhen.com', 'admin@falhen.com', 'info@falhen.com'];
+    $henryUsers = ['henry.falonipe', 'henry', 'admin'];
+    $ligaliEmails = ['ligali.oluwatosin@falhen.com', 'oluwatosin.ligali@falhen.com'];
+    $ligaliUsers = ['ligali.oluwatosin', 'oluwatosin.ligali'];
+    $isLigali = in_array($emailLower, $ligaliEmails, true) || in_array($userLower, $ligaliUsers, true);
+
+    // 1. Update settings.json staff_accounts
+    $settings = getSiteSettings();
+    $items = $settings['staff_accounts'] ?? array_values(getStaffAccountsRepo());
+    $matchedRecord = null;
+    $staffModified = false;
+
+    foreach ($items as &$st) {
+        $stE = strtolower(trim((string) ($st['email'] ?? '')));
+        $stU = strtolower(trim((string) ($st['username'] ?? '')));
+        $hit = ($emailLower !== '' && $stE === $emailLower)
+            || ($userLower !== '' && $stU === $userLower)
+            || ($isOwner && (in_array($stE, $henryEmails, true) || in_array($stU, $henryUsers, true) || !empty($st['is_owner'])))
+            || ($isLigali && (in_array($stE, $ligaliEmails, true) || in_array($stU, $ligaliUsers, true)));
+
+        if ($hit) {
+            $st['password_hash'] = $newPasswordHash;
+            $matchedRecord = $st;
+            $staffModified = true;
+        }
+    }
+    unset($st);
+
+    if ($staffModified) {
+        $settings['staff_accounts'] = array_values($items);
+        saveSiteSettings($settings);
+    }
+
+    // 2. Update admin_profile if Owner / Henry
+    if ($isOwner && function_exists('saveAdminUserProfile')) {
+        saveAdminUserProfile(['password_hash' => $newPasswordHash]);
+    }
+
+    // 3. Update or upsert MySQL admin_users
+    if (function_exists('getDBConnection')) {
+        $pdo = getDBConnection();
+        if ($pdo) {
+            try {
+                $canonicalEmail = $matchedRecord['email'] ?? ($emailLower !== '' ? $emailLower : ($userLower . '@falhen.com'));
+                $canonicalUser = $matchedRecord['username'] ?? ($userLower !== '' ? $userLower : explode('@', $canonicalEmail)[0]);
+                $canonicalName = $matchedRecord['full_name'] ?? ucwords(str_replace('.', ' ', $canonicalUser));
+                $canonicalRole = $matchedRecord['role'] ?? ($isOwner ? 'Owner / Super Admin' : 'Staff');
+                $canonicalAlt = $matchedRecord['alt_email'] ?? ($isOwner ? 'henry@falhen.com' : null);
+                $canonicalStatus = in_array($matchedRecord['status'] ?? 'active', ['active', 'pending_activation', 'suspended'], true)
+                    ? $matchedRecord['status']
+                    : 'active';
+
+                if ($isOwner) {
+                    $uStmt = $pdo->prepare("UPDATE `admin_users` SET `password_hash` = ? WHERE LOWER(`username`) IN ('henry.falonipe','henry','admin') OR LOWER(`email`) IN ('henry.falonipe@falhen.com','henry@falhen.com','admin@falhen.com','info@falhen.com')");
+                    $uStmt->execute([$newPasswordHash]);
+                } else {
+                    $uStmt = $pdo->prepare("UPDATE `admin_users` SET `password_hash` = ? WHERE LOWER(`email`) = ? OR LOWER(`username`) = ?");
+                    $uStmt->execute([$newPasswordHash, strtolower($canonicalEmail), strtolower($canonicalUser)]);
+                }
+
+                if ($uStmt->rowCount() === 0 && isValidCorporateFalhenEmail($canonicalEmail)) {
+                    $insStmt = $pdo->prepare("INSERT INTO `admin_users` (`username`, `email`, `alt_email`, `password_hash`, `full_name`, `role`, `is_owner`, `status`)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                        ON DUPLICATE KEY UPDATE `password_hash` = VALUES(`password_hash`)");
+                    $insStmt->execute([
+                        $canonicalUser,
+                        strtolower($canonicalEmail),
+                        $canonicalAlt,
+                        $newPasswordHash,
+                        $canonicalName,
+                        $canonicalRole,
+                        $isOwner ? 1 : 0,
+                        $canonicalStatus
+                    ]);
+                }
+            } catch (Exception $e) {
+                error_log('syncStaffPasswordAcrossStores DB sync error: ' . $e->getMessage());
+            }
+        }
+    }
+
+    return true;
+}
+
+/**
+ * Synchronize Team (Content) Roster & Staff Accounts (plus MySQL admin_users)
+ * Restricted to Super Admin, IT Manager/Administrator, and HR Manager unless $allowSystemBypass is true.
+ */
+function syncTeamAndStaffAccounts($allowSystemBypass = false)
+{
+    if (!$allowSystemBypass && !canManageStaffAccounts()) {
+        return [
+            'added' => 0,
+            'updated' => 0,
+            'error' => 'Unauthorized: Only Super Admin, IT Manager, and HR Manager can sync team accounts.'
+        ];
+    }
+
     $teamMembers = array_values(getTeamMembers());
     $staffAccounts = getStaffAccountsRepo();
 
     $addedCount = 0;
     $updatedCount = 0;
 
+    $mapDesignationToRbacRole = function ($designation, $fullName = '') {
+        $d = strtolower(trim((string) $designation));
+        $n = strtolower(trim((string) $fullName));
+        if (str_contains($n, 'henry') || str_contains($d, 'creative director') || str_contains($d, 'founder') || str_contains($d, 'owner')) {
+            return 'Owner / Super Admin';
+        }
+        if (str_contains($n, 'ligali') || str_contains($n, 'oluwatosin') || str_contains($d, 'it support') || str_contains($d, 'it admin') || str_contains($d, 'it manager') || $d === 'it') {
+            return 'IT Administrator';
+        }
+        if (str_contains($d, 'operations specialist') || str_contains($d, 'production')) {
+            return 'Production Manager';
+        }
+        if (str_contains($d, 'hr manager') || str_contains($d, 'human resource') || str_contains($d, 'talent manager')) {
+            return 'HR Manager';
+        }
+        if (str_contains($d, 'head of marketing') || str_contains($d, 'marketing') || str_contains($d, 'social media') || str_contains($d, 'content manager') || str_contains($d, 'editor')) {
+            return 'Content Editor';
+        }
+        if (str_contains($d, 'graphics designer') || str_contains($d, 'graphic')) {
+            return 'Staff';
+        }
+        return 'Staff';
+    };
+
+    $buildCanonicalSlug = function ($fullName) {
+        $clean = strtolower(trim((string) $fullName));
+        $parts = preg_split('/\s+/', preg_replace('/[^a-z0-9\s-]/', '', $clean));
+        $parts = array_values(array_filter($parts));
+        if (count($parts) >= 2) {
+            return $parts[0] . '.' . $parts[1];
+        }
+        return $parts[0] ?? 'staff.member';
+    };
+
+    // Pass 1: Eradicate any legacy @falhenmedia.com or non-Henry firstname@falhen.com emails
+    foreach ($staffAccounts as $stKey => &$st) {
+        $stName = trim((string) ($st['full_name'] ?? ''));
+        $stEmail = strtolower(trim((string) ($st['email'] ?? '')));
+        $stUser = strtolower(trim((string) ($st['username'] ?? '')));
+        $isHenry = isOwnerUser($stEmail, $stUser) || str_contains(strtolower($stName), 'henry');
+
+        if ($stName !== '') {
+            $canonicalUser = $buildCanonicalSlug($stName);
+            $canonicalEmail = $canonicalUser . '@falhen.com';
+
+            if ($isHenry) {
+                $st['is_owner'] = 1;
+                if (empty($stEmail) || str_ends_with($stEmail, '@falhenmedia.com') || !isValidCorporateFalhenEmail($stEmail)) {
+                    $st['email'] = 'henry.falonipe@falhen.com';
+                    $updatedCount++;
+                }
+                if (empty($stUser)) {
+                    $st['username'] = 'henry.falonipe';
+                    $updatedCount++;
+                }
+            } else {
+                $needsEmailMigration = empty($stEmail)
+                    || str_ends_with($stEmail, '@falhenmedia.com')
+                    || !isValidCorporateFalhenEmail($stEmail);
+                if ($needsEmailMigration) {
+                    $st['email'] = $canonicalEmail;
+                    $updatedCount++;
+                }
+                if (empty($stUser) || !str_contains($stUser, '.')) {
+                    $st['username'] = $canonicalUser;
+                    $updatedCount++;
+                }
+                // Also migrate legacy raenest_email if it carried falhenmedia.com or non-Henry firstname@falhen.com
+                $rEmail = strtolower(trim((string) ($st['raenest_email'] ?? '')));
+                if ($rEmail !== '' && (str_ends_with($rEmail, '@falhenmedia.com') || (str_ends_with($rEmail, '@falhen.com') && !isValidCorporateFalhenEmail($rEmail)))) {
+                    $st['raenest_email'] = $st['email'];
+                    $updatedCount++;
+                }
+            }
+        }
+    }
+    unset($st);
+
+    // Index existing staff accounts
     $staffByName = [];
-    foreach ($staffAccounts as $st) {
-        $nameKey = strtolower(trim($st['full_name'] ?? ''));
+    foreach ($staffAccounts as $stKey => $st) {
+        $nameKey = strtolower(trim((string) ($st['full_name'] ?? '')));
         $firstNameKey = strtolower(explode(' ', $nameKey)[0]);
-        $staffByName[$nameKey] = $st['id'];
-        if (!isset($staffByName[$firstNameKey])) {
-            $staffByName[$firstNameKey] = $st['id'];
+        $userKey = strtolower(trim((string) ($st['username'] ?? '')));
+        if ($nameKey !== '') {
+            $staffByName[$nameKey] = $stKey;
+        }
+        if ($userKey !== '') {
+            $staffByName[$userKey] = $stKey;
+        }
+        if ($firstNameKey !== '' && !isset($staffByName[$firstNameKey])) {
+            $staffByName[$firstNameKey] = $stKey;
         }
     }
 
     $defaultPasswordHash = password_hash('Password123#', PASSWORD_DEFAULT);
+    $validRbacRoles = ['Owner / Super Admin', 'Super Admin', 'IT Administrator', 'IT Manager', 'Production Manager', 'HR Manager', 'Content Editor', 'Staff'];
 
+    // Pass 2: Sync all website team members into staff_accounts (preserving password_hash & alt_email)
     foreach ($teamMembers as $tm) {
-        $tmName = trim($tm['name'] ?? '');
-        if (empty($tmName))
+        $tmName = trim((string) ($tm['name'] ?? ''));
+        if ($tmName === '') {
             continue;
+        }
 
         $tmNameLower = strtolower($tmName);
         $tmFirstLower = strtolower(explode(' ', $tmNameLower)[0]);
         $tmImage = $tm['image'] ?? '';
+        $tmDesignation = trim((string) ($tm['role'] ?? 'Staff'));
+        $mappedRole = $mapDesignationToRbacRole($tmDesignation, $tmName);
+        $canonicalUser = $buildCanonicalSlug($tmName);
+        $canonicalEmail = $canonicalUser . '@falhen.com';
+        $isHenry = str_contains($tmNameLower, 'henry');
 
-        if (isset($staffByName[$tmNameLower])) {
-            $stId = $staffByName[$tmNameLower];
-            if (isset($staffAccounts[$stId])) {
-                if (empty($staffAccounts[$stId]['avatar']) && !empty($tmImage)) {
-                    $staffAccounts[$stId]['avatar'] = $tmImage;
-                    $updatedCount++;
-                }
+        $matchedKey = $staffByName[$tmNameLower]
+            ?? $staffByName[$canonicalUser]
+            ?? $staffByName[$tmFirstLower]
+            ?? null;
+
+        if ($matchedKey !== null && isset($staffAccounts[$matchedKey])) {
+            $acct = &$staffAccounts[$matchedKey];
+            $changed = false;
+
+            if (empty($acct['avatar']) && !empty($tmImage)) {
+                $acct['avatar'] = $tmImage;
+                $changed = true;
             }
-        } else if (isset($staffByName[$tmFirstLower])) {
-            $stId = $staffByName[$tmFirstLower];
-            if (isset($staffAccounts[$stId])) {
-                if (empty($staffAccounts[$stId]['avatar']) && !empty($tmImage)) {
-                    $staffAccounts[$stId]['avatar'] = $tmImage;
-                    $updatedCount++;
-                }
+            if (empty($acct['designation'])) {
+                $acct['designation'] = $tmDesignation;
+                $changed = true;
             }
+            if (!$isHenry && (empty($acct['email']) || !isValidCorporateFalhenEmail($acct['email']) || str_ends_with(strtolower($acct['email']), '@falhenmedia.com'))) {
+                $acct['email'] = $canonicalEmail;
+                $changed = true;
+            }
+            if ($isHenry && (empty($acct['email']) || !isValidCorporateFalhenEmail($acct['email']))) {
+                $acct['email'] = 'henry.falonipe@falhen.com';
+                $changed = true;
+            }
+            if (empty($acct['username'])) {
+                $acct['username'] = $canonicalUser;
+                $changed = true;
+            }
+            if (!in_array($acct['role'] ?? '', $validRbacRoles, true) || ($mappedRole === 'IT Administrator' && ($acct['role'] ?? '') === 'Super Admin')) {
+                $acct['role'] = $mappedRole;
+                $changed = true;
+            }
+            if ($isHenry && empty($acct['is_owner'])) {
+                $acct['is_owner'] = 1;
+                $acct['role'] = 'Owner / Super Admin';
+                $changed = true;
+            }
+            if ($changed) {
+                $updatedCount++;
+            }
+            unset($acct);
         } else {
-            // Auto-create matching staff account for team member
+            // Auto-create matching staff account for website team member
             $maxId = 0;
             foreach ($staffAccounts as $st) {
                 $id = (int) ($st['id'] ?? 0);
-                if ($id > $maxId)
+                if ($id > $maxId) {
                     $maxId = $id;
+                }
             }
             $newId = $maxId + 1;
-            $username = strtolower(str_replace(' ', '.', $tmName));
-            $email = $tmFirstLower . '@falhen.com';
 
             $staffAccounts[$newId] = [
                 'id' => $newId,
                 'full_name' => $tmName,
-                'username' => $username,
-                'email' => $email,
-                'role' => $tm['role'] ?? 'Staff',
+                'username' => $canonicalUser,
+                'email' => $canonicalEmail,
+                'alt_email' => $isHenry ? 'henry@falhen.com' : '',
+                'role' => $mappedRole,
+                'is_owner' => $isHenry ? 1 : 0,
+                'designation' => $tmDesignation,
                 'status' => 'active',
                 'avatar' => $tmImage,
                 'created_at' => date('Y-m-d'),
                 'password_hash' => $defaultPasswordHash
             ];
+            $staffByName[$tmNameLower] = $newId;
+            $staffByName[$canonicalUser] = $newId;
             $addedCount++;
         }
     }
 
-    saveSiteSettings(['staff_accounts' => array_values($staffAccounts)]);
-    return ['added' => $addedCount, 'updated' => $updatedCount];
+    $finalList = array_values($staffAccounts);
+    saveSiteSettings(['staff_accounts' => $finalList]);
+
+    // Pass 3: Upsert all synced staff accounts into MySQL admin_users (NEVER overwriting custom password_hash)
+    if (function_exists('getDBConnection')) {
+        $pdo = getDBConnection();
+        if ($pdo) {
+            foreach ($finalList as $st) {
+                $u = strtolower(trim((string) ($st['username'] ?? '')));
+                $e = strtolower(trim((string) ($st['email'] ?? '')));
+                if ($u === '' || $e === '' || !isValidCorporateFalhenEmail($e)) {
+                    continue;
+                }
+                $alt = !empty($st['alt_email']) ? trim((string) $st['alt_email']) : null;
+                $hash = !empty($st['password_hash']) ? (string) $st['password_hash'] : $defaultPasswordHash;
+                $fullName = trim((string) ($st['full_name'] ?? $u));
+                $role = trim((string) ($st['role'] ?? 'Staff'));
+                $isOwnerFlag = (!empty($st['is_owner']) || isOwnerUser($e, $u)) ? 1 : 0;
+                $status = in_array($st['status'] ?? 'active', ['active', 'pending_activation', 'suspended'], true)
+                    ? $st['status']
+                    : 'active';
+
+                try {
+                    $upsert = $pdo->prepare("INSERT INTO `admin_users` (`username`, `email`, `alt_email`, `password_hash`, `full_name`, `role`, `is_owner`, `status`)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                        ON DUPLICATE KEY UPDATE
+                            `email` = VALUES(`email`),
+                            `full_name` = VALUES(`full_name`),
+                            `role` = VALUES(`role`),
+                            `is_owner` = VALUES(`is_owner`),
+                            `status` = VALUES(`status`),
+                            `alt_email` = COALESCE(NULLIF(VALUES(`alt_email`), ''), `alt_email`)");
+                    $upsert->execute([$u, $e, $alt, $hash, $fullName, $role, $isOwnerFlag, $status]);
+                } catch (Exception $ex) {
+                    // Fallback update by username or email if unique constraint differs on legacy row
+                    try {
+                        $upd = $pdo->prepare("UPDATE `admin_users` SET `email` = ?, `full_name` = ?, `role` = ?, `is_owner` = ?, `status` = ? WHERE LOWER(`username`) = ? OR LOWER(`email`) = ?");
+                        $upd->execute([$e, $fullName, $role, $isOwnerFlag, $status, $u, $e]);
+                    } catch (Exception $ex2) {
+                    }
+                }
+            }
+        }
+    }
+
+    return ['added' => $addedCount, 'updated' => $updatedCount, 'total' => count($finalList)];
 }
 
 /**
@@ -3541,7 +4177,7 @@ function isOwnerUser($email = null, $username = null)
         $username = $_SESSION['admin_username'] ?? '';
     }
 
-    if (!empty($_SESSION['is_owner'])) {
+    if ($email === ($_SESSION['admin_email'] ?? '') && $username === ($_SESSION['admin_username'] ?? '') && !empty($_SESSION['is_owner'])) {
         return true;
     }
 
@@ -3550,9 +4186,9 @@ function isOwnerUser($email = null, $username = null)
 
     $ownerEmails = [
         'henry.falonipe@falhen.com',
-        'henry.falonipe@falhen',
         'henry@falhen.com',
-        'admin@falhen.com'
+        'admin@falhen.com',
+        'info@falhen.com'
     ];
     $ownerUsernames = [
         'henry.falonipe',
@@ -3588,16 +4224,14 @@ function isAdminUser($role = null, $email = null, $username = null)
     $e = strtolower(trim((string) $email));
     $u = strtolower(trim((string) $username));
 
-    // Designated Admin Emails & Usernames
+    // Designated Admin Emails & Usernames (strictly @falhen.com)
     $adminEmails = [
         'henry.falonipe@falhen.com',
-        'henry.falonipe@falhen',
         'henry@falhen.com',
-        'oluwatosin.ligali@falhenmedia.com',
-        'ligali@falhen.com',
         'admin@falhen.com',
-        'kim@falhen.com',
-        'mail@falhenmedia.com'
+        'info@falhen.com',
+        'ligali.oluwatosin@falhen.com',
+        'oluwatosin.ligali@falhen.com'
     ];
     $adminUsernames = [
         'henry.falonipe',
@@ -3662,16 +4296,28 @@ function isITUser($role = null, $email = null, $username = null)
     $u = strtolower(trim((string) $username));
     $e = strtolower(trim((string) $email));
 
-    // Specific IT staff checks or designated roles
+    // Specific IT staff checks or designated IT roles
     if (
-        $r === 'it' || $r === 'it administrator' || $r === 'it specialist' || $r === 'it support specialist' ||
-        str_contains($r, 'it admin') || str_contains($r, 'developer') || str_contains($r, 'devops') ||
+        $r === 'it' || $r === 'it manager' || $r === 'it administrator' || $r === 'it specialist' || $r === 'it support specialist' ||
+        str_contains($r, 'it admin') || str_contains($r, 'it manager') || str_contains($r, 'developer') || str_contains($r, 'devops') ||
         str_contains($r, 'systems engineer') || str_contains($r, 'lead engineer') || str_contains($r, 'software engineer') ||
-        $u === 'it' || $u === 'it.support' || $u === 'developer' || $e === 'it@falhen.com' || $e === 'dev@falhen.com'
+        $u === 'ligali.oluwatosin' || $u === 'oluwatosin.ligali' ||
+        $e === 'ligali.oluwatosin@falhen.com' || $e === 'oluwatosin.ligali@falhen.com'
     ) {
         return true;
     }
     return false;
+}
+
+/**
+ * Restricted Staff Account Update Authority:
+ * Returns true ONLY for Super Admin / Owner, IT Manager / IT Administrator, and HR Manager.
+ */
+function canManageStaffAccounts($role = null, $email = null, $username = null)
+{
+    return isSuperAdminUser($role, $email, $username)
+        || isITUser($role, $email, $username)
+        || isHRManager($role);
 }
 
 function canManageModulePermissions($role = null, $email = null, $username = null)
@@ -3992,7 +4638,7 @@ function isSuperAdminUser($role = null, $email = null, $username = null)
     $e = strtolower(trim((string) $email));
     $u = strtolower(trim((string) $username));
 
-    if (str_contains($r, 'owner') || $r === 'super admin' || $r === 'administrator' || $u === 'admin' || $u === 'henry' || $u === 'henry.falonipe' || $e === 'henry.falonipe@falhen.com' || $e === 'mail@falhenmedia.com' || $e === 'admin@falhen.com') {
+    if (str_contains($r, 'owner') || $r === 'super admin' || $r === 'administrator' || $u === 'admin' || $u === 'henry' || $u === 'henry.falonipe' || $e === 'henry.falonipe@falhen.com' || $e === 'henry@falhen.com' || $e === 'admin@falhen.com' || $e === 'info@falhen.com') {
         return true;
     }
     return false;
@@ -4065,6 +4711,11 @@ function hasSectionAccess($section, $role = null, $email = null, $username = nul
         return true;
     }
 
+    // Staff Accounts Management: strictly restricted to Super Admin / Owner, IT Manager / Admin, and HR Manager
+    if ($section === 'staff_accounts') {
+        return canManageStaffAccounts($role, $email, $username);
+    }
+
     // Super Admin (Owner) and IT have top-level unrestricted access across ALL modules
     if (isSuperAdminUser($role, $email, $username) || isITUser($role, $email, $username)) {
         return true;
@@ -4072,11 +4723,6 @@ function hasSectionAccess($section, $role = null, $email = null, $username = nul
 
     // Technical audit logs & backups: strictly restricted to Super Admin & IT
     if ($section === 'dev_logs') {
-        return false;
-    }
-
-    // Content Editor cannot access staff accounts
-    if (isContentEditor($role) && $section === 'staff_accounts') {
         return false;
     }
 
@@ -4175,7 +4821,7 @@ function canViewAllAttendanceLogs($role = null, $email = null, $username = null)
         $username = $_SESSION['admin_username'] ?? '';
     }
 
-    if (isTalentManager($role)) {
+    if (isTalentManager($role) || canManageStaffAccounts($role, $email, $username)) {
         return true;
     }
 
@@ -4184,13 +4830,16 @@ function canViewAllAttendanceLogs($role = null, $email = null, $username = null)
     $u = strtolower(trim((string) $username));
 
     $adminEmails = [
-        'oluwatosin.ligali@falhenmedia.com',
-        'ligali@falhen.com',
+        'henry.falonipe@falhen.com',
+        'henry@falhen.com',
         'admin@falhen.com',
-        'kim@falhen.com',
-        'mail@falhenmedia.com'
+        'info@falhen.com',
+        'ligali.oluwatosin@falhen.com',
+        'oluwatosin.ligali@falhen.com'
     ];
     $adminUsernames = [
+        'henry.falonipe',
+        'henry',
         'admin',
         'ligali.oluwatosin',
         'oluwatosin.ligali'
@@ -6171,7 +6820,7 @@ function getPayrollDisbursements($username = null, $month = null, $year = null)
                 'id' => 1,
                 'username' => 'mojisola.emjay',
                 'full_name' => 'Mojisola Emjay',
-                'email' => 'mojisola.emjay@falhenmedia.com',
+                'email' => 'mojisola.emjay@falhen.com',
                 'role' => 'HR Manager',
                 'pay_period' => 'April 2026',
                 'period_month' => '04',
@@ -6191,7 +6840,7 @@ function getPayrollDisbursements($username = null, $month = null, $year = null)
                 'id' => 2,
                 'username' => 'mojisola.emjay',
                 'full_name' => 'Mojisola Emjay',
-                'email' => 'mojisola.emjay@falhenmedia.com',
+                'email' => 'mojisola.emjay@falhen.com',
                 'role' => 'HR Manager',
                 'pay_period' => 'March 2026',
                 'period_month' => '03',
@@ -6211,7 +6860,7 @@ function getPayrollDisbursements($username = null, $month = null, $year = null)
                 'id' => 3,
                 'username' => 'daniel.ifeoluwa',
                 'full_name' => 'Daniel Ifeoluwa',
-                'email' => 'daniel.ifeoluwa@falhenmedia.com',
+                'email' => 'daniel.ifeoluwa@falhen.com',
                 'role' => 'Staff',
                 'pay_period' => 'April 2026',
                 'period_month' => '04',
@@ -6858,9 +7507,7 @@ function authenticateVendor($email, $refOrPassword)
     }
 
     // Set vendor session
-    if (session_status() === PHP_SESSION_NONE) {
-        session_start();
-    }
+    falhenInitSession();
     $_SESSION['vendor_logged_in'] = true;
     $_SESSION['vendor_id'] = $vendor['id'];
     $_SESSION['vendor_ref'] = $vendor['reference_code'];
@@ -6879,9 +7526,7 @@ function authenticateVendor($email, $refOrPassword)
  */
 function isVendorLoggedIn()
 {
-    if (session_status() === PHP_SESSION_NONE) {
-        session_start();
-    }
+    falhenInitSession();
     return !empty($_SESSION['vendor_logged_in']) && (!empty($_SESSION['vendor_id']) || !empty($_SESSION['vendor_ref']));
 }
 
@@ -6903,9 +7548,7 @@ function getLoggedInVendor()
  */
 function clearVendorSession()
 {
-    if (session_status() === PHP_SESSION_NONE) {
-        session_start();
-    }
+    falhenInitSession();
     unset(
         $_SESSION['vendor_logged_in'],
         $_SESSION['vendor_id'],

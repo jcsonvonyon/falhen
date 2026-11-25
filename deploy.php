@@ -4,10 +4,10 @@
  */
 
 // Secret key protection to prevent unauthorized access
-$secretKey = 'falhen_deploy_2026';
+$secretKey = getenv('FALHEN_DEPLOY_KEY') ?: 'falhen_deploy_2026';
 $providedKey = $_GET['key'] ?? $_POST['key'] ?? '';
 
-if ($providedKey !== $secretKey) {
+if (!hash_equals((string)$secretKey, (string)$providedKey)) {
     // If accessed from a web browser without key in URL, present an authentication form
     $isHtml = (strpos($_SERVER['HTTP_ACCEPT'] ?? '', 'text/html') !== false);
     if ($isHtml) {
@@ -119,15 +119,11 @@ if ($providedKey !== $secretKey) {
             <div class="deploy-card">
                 <div class="deploy-icon"><i class="fa-solid fa-cloud-arrow-up"></i></div>
                 <h1>cPanel Git Deployment</h1>
-                <p>Enter your secret deployment key below or click the button to trigger a production git pull.</p>
+                <p>Enter your secret deployment key below to trigger a production git pull.</p>
                 <form method="POST" action="deploy.php">
-                    <input type="password" name="key" class="deploy-input" value="falhen_deploy_2026" placeholder="Enter Secret Key" required>
+                    <input type="password" name="key" class="deploy-input" placeholder="Enter deployment secret key" required>
                     <button type="submit" class="btn-deploy"><i class="fa-solid fa-rocket"></i> Deploy Latest Commit</button>
                 </form>
-                <div class="direct-link-note">
-                    Or access directly via: <br>
-                    <a href="deploy.php?key=falhen_deploy_2026">deploy.php?key=falhen_deploy_2026</a>
-                </div>
             </div>
         </body>
         </html>
@@ -202,10 +198,13 @@ if ($action === 'lint_client') {
         'portfolio.php',
         'services.php',
         'admin/index.php',
+        'admin/login.php',
         'api/admin-client-gallery.php',
         'api/verify-download.php',
         'api/download-album.php',
         'includes/functions.php',
+        'includes/mxroute_auth.php',
+        'includes/smtp_mailer.php',
         'index.php'
     ];
     $allOk = true;
@@ -259,35 +258,63 @@ if ($action === 'seed_brands') {
 }
 
 if ($action === 'probe_db') {
-    $hosts = ['localhost', '127.0.0.1'];
-    $users = ['henadinnovate_falhen', 'henadinnovate_falhenmedia', 'henadinnovate_hub'];
-    $passes = ['FalhenMedia2026!#', 'Oluwatosin25#'];
-    $dbs = ['henadinnovate_falhen', 'henadinnovate_falhenmedia'];
-    
-    foreach ($hosts as $h) {
-        foreach ($users as $u) {
-            foreach ($passes as $p) {
-                foreach ($dbs as $d) {
-                    try {
-                        $dsn = "mysql:host={$h};dbname={$d};charset=utf8mb4";
-                        $pdo = new PDO($dsn, $u, $p, [PDO::ATTR_TIMEOUT => 2, PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
-                        echo "SUCCESS: host={$h} user={$u} db={$d}\n";
-                        exit;
-                    } catch (PDOException $e) {
-                        // ignore
-                    }
-                }
-            }
-        }
+    require_once $repoDir . '/config/db.php';
+    $pdo = function_exists('getDBConnection') ? getDBConnection(true) : false;
+    if ($pdo) {
+        $dsnInfo = $GLOBALS['falhen_db_active_dsn'] ?? 'connected';
+        echo "SUCCESS: Connected via config/db.php ({$dsnInfo})\n";
+        exit;
     }
-    echo "FAILED: Unable to connect\n";
+    $errDetail = $GLOBALS['falhen_db_last_error'] ?? 'Unable to connect';
+    echo "FAILED: {$errDetail}\n";
+    exit;
+}
+
+if ($action === 'sync_team_accounts') {
+    require_once $repoDir . '/config/db.php';
+    require_once $repoDir . '/includes/functions.php';
+    $pdo = function_exists('getDBConnection') ? getDBConnection() : null;
+    if ($pdo && function_exists('initDatabaseSchema')) {
+        initDatabaseSchema($pdo);
+    }
+    $syncRes = function_exists('syncTeamAndStaffAccounts') ? syncTeamAndStaffAccounts(true) : ['added' => 0, 'updated' => 0, 'error' => 'Function unavailable'];
+    if (function_exists('opcache_reset')) { @opcache_reset(); }
+    echo "TEAM & STAFF ACCOUNT SYNC RESULT\n";
+    echo "Added: " . (int)($syncRes['added'] ?? 0) . "\n";
+    echo "Updated: " . (int)($syncRes['updated'] ?? 0) . "\n";
+    echo "Total: " . (int)($syncRes['total'] ?? 0) . "\n";
+    if (!empty($syncRes['error'])) {
+        echo "ERROR: " . $syncRes['error'] . "\n";
+    } else {
+        echo "STATUS: SUCCESS - Team roster, settings.json, and MySQL admin_users synchronized.\n";
+    }
+    exit;
+}
+
+if ($action === 'snapshot') {
+    require_once $repoDir . '/config/db.php';
+    require_once $repoDir . '/includes/functions.php';
+    $snapRes = function_exists('createFullSystemBackup')
+        ? createFullSystemBackup('DEPLOY_FULL_SNAPSHOT', 'Deployment full system snapshot (Codebase ZIP + MySQL SQL + SHA-256 Manifest)')
+        : ['success' => false, 'error' => 'createFullSystemBackup unavailable'];
+    echo "===========================================\n";
+    echo "   FALHEN FULL SYSTEM SNAPSHOT REPORT      \n";
+    echo "===========================================\n";
+    echo "Timestamp:          " . ($snapRes['timestamp'] ?? date('Y-m-d H:i:s')) . "\n";
+    echo "Codebase Archive:   " . ($snapRes['codebase_zip'] ?? 'N/A') . " (" . (int)($snapRes['codebase_size'] ?? 0) . " bytes)\n";
+    echo "Codebase SHA-256:   " . ($snapRes['codebase_sha256'] ?? 'N/A') . "\n";
+    echo "Database SQL Dump:  " . ($snapRes['database_sql'] ?? 'N/A') . " (" . (int)($snapRes['database_size'] ?? 0) . " bytes)\n";
+    echo "Database SHA-256:   " . ($snapRes['database_sha256'] ?? 'N/A') . "\n";
+    echo "Pipeline Manifest:  " . ($snapRes['manifest_json'] ?? 'N/A') . "\n";
+    echo "Staff Count:        " . (int)($snapRes['staff_count'] ?? 0) . "\n";
+    echo "Integrity Verified: " . (!empty($snapRes['integrity_verified']) ? 'TRUE (SHA-256 OK)' : 'FALSE') . "\n";
     exit;
 }
 
 if ($action === 'stash_list') {
     $out = [];
-    exec("cd {$repoDir} && git config --global --add safe.directory {$repoDir} 2>&1");
-    exec("cd {$repoDir} && git stash list 2>&1", $out);
+    exec("cd " . escapeshellarg($repoDir) . " && git config --global --add safe.directory " . escapeshellarg($repoDir) . " 2>&1");
+    exec("cd " . escapeshellarg($repoDir) . " && git stash list 2>&1", $out);
     echo implode("\n", $out);
     exit;
 }
@@ -295,6 +322,8 @@ if ($action === 'stash_list') {
 echo "===========================================\n";
 echo "   FALHEN CPANEL GIT DEPLOYMENT SYSTEM     \n";
 echo "===========================================\n";
+$deployTimestamp = date('Ymd_His');
+$preDeployFilename = 'settings_pre_deploy_' . $deployTimestamp . '.json';
 echo "Timestamp: " . date('Y-m-d H:i:s') . "\n";
 
 $output = [];
@@ -307,14 +336,14 @@ if (!is_dir($backupDir)) {
 }
 $liveSettingsFile = $repoDir . '/config/settings.json';
 if (file_exists($liveSettingsFile)) {
-    @copy($liveSettingsFile, $backupDir . '/settings_pre_deploy_' . date('Ymd_His') . '.json');
+    @copy($liveSettingsFile, $backupDir . '/' . $preDeployFilename);
     @copy($liveSettingsFile, $backupDir . '/settings_latest_live.json');
 }
 
-// 2. Perform safe deployment
-exec("cd {$repoDir} && git config --global --add safe.directory {$repoDir} 2>&1", $output);
-exec("cd {$repoDir} && git stash -u 2>&1", $output);
-exec("cd {$repoDir} && git pull origin main 2>&1", $output, $returnVar);
+// 2. Perform safe deployment (never stash untracked secrets or backups)
+exec("cd " . escapeshellarg($repoDir) . " && git config --global --add safe.directory " . escapeshellarg($repoDir) . " 2>&1", $output);
+exec("cd " . escapeshellarg($repoDir) . " && git stash push -m " . escapeshellarg("pre_deploy_{$deployTimestamp}") . " -- config/settings.json 2>&1", $output);
+exec("cd " . escapeshellarg($repoDir) . " && git pull origin main 2>&1", $output, $returnVar);
 
 // Ensure LiteSpeed suEXEC-compatible file permissions on core entrypoints
 foreach (['admin/index.php', 'admin/login.php', 'deploy.php', 'config/db.php', 'includes/functions.php'] as $relFile) {
@@ -333,7 +362,7 @@ if (function_exists('initDatabaseSchema')) {
         $pdo = function_exists('getDBConnection') ? getDBConnection() : null;
         if ($pdo) {
             initDatabaseSchema($pdo);
-            $output[] = "Database schema verified & initialized (site_settings, client_download_logs, system_backups).";
+            $output[] = "Database schema verified & initialized (admin_users, site_settings, client_download_logs, system_backups).";
         }
     } catch (Throwable $e) {
         $output[] = "Database schema init notice: " . $e->getMessage();
@@ -399,11 +428,27 @@ try {
         $output[] = "Preserved authoritative MySQL settings (portfolio: {$dbCount}, bts: " . count($mergedSettings['bts_items'] ?? []) . ", brands: " . count($mergedSettings['brand_logos_items'] ?? []) . ") across deployment.";
     }
 
+    // 5. Automatically synchronize website team roster, settings.json staff_accounts, and MySQL admin_users
+    if (function_exists('syncTeamAndStaffAccounts')) {
+        $teamSync = syncTeamAndStaffAccounts(true);
+        $output[] = "Synchronized team & staff accounts across settings.json and MySQL admin_users (added: " . (int)($teamSync['added'] ?? 0) . ", updated: " . (int)($teamSync['updated'] ?? 0) . ", total: " . (int)($teamSync['total'] ?? 0) . ").";
+    }
+
     if (function_exists('logSystemBackup')) {
         $activeSettings = function_exists('getSiteSettings') ? getSiteSettings() : [];
         $count = count($activeSettings['portfolio_items'] ?? []);
-        logSystemBackup('settings_pre_deploy_' . date('Ymd_His') . '.json', 'DEPLOY_SNAPSHOT', $count, 'Automated post-deploy database & settings snapshot');
-        $output[] = "Logged system backup snapshot to database.";
+        logSystemBackup($preDeployFilename, 'DEPLOY_SNAPSHOT', $count, 'Automated post-deploy database & settings snapshot');
+        $output[] = "Logged system backup snapshot ({$preDeployFilename}) to database.";
+    }
+
+    // 6. Optional full system snapshot (?with_snapshot=1) with SHA-256 verification
+    if (!empty($_GET['with_snapshot']) || !empty($_POST['with_snapshot'])) {
+        if (function_exists('createFullSystemBackup')) {
+            $snapRes = createFullSystemBackup('DEPLOY_FULL_SNAPSHOT', 'Automated full codebase + database deployment snapshot');
+            $output[] = "Full System Snapshot created: ZIP=" . ($snapRes['codebase_zip'] ?? 'N/A')
+                . " (SHA256=" . substr((string)($snapRes['codebase_sha256'] ?? 'N/A'), 0, 16) . "...), SQL=" . ($snapRes['database_sql'] ?? 'N/A')
+                . " (SHA256=" . substr((string)($snapRes['database_sha256'] ?? 'N/A'), 0, 16) . "...), Integrity=" . (!empty($snapRes['integrity_verified']) ? 'VERIFIED' : 'FAILED');
+        }
     }
 } catch (Throwable $e) {
     $output[] = "Settings sync notice: " . $e->getMessage();

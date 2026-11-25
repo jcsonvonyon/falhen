@@ -61,6 +61,7 @@ CREATE TABLE IF NOT EXISTS `admin_users` (
     `password_hash` VARCHAR(255) NOT NULL,
     `full_name` VARCHAR(150) NOT NULL DEFAULT 'Staff Member',
     `role` VARCHAR(50) DEFAULT 'Staff',
+    `avatar` VARCHAR(500) DEFAULT NULL,
     `is_owner` TINYINT(1) DEFAULT 0,
     `status` ENUM('active', 'pending_activation', 'suspended') DEFAULT 'active',
     `reset_otp` VARCHAR(64) DEFAULT NULL,
@@ -72,6 +73,22 @@ CREATE TABLE IF NOT EXISTS `admin_users` (
     `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
     INDEX `idx_admin_users_email_status` (`email`, `status`),
     INDEX `idx_admin_users_username_status` (`username`, `status`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 6. Table for Security & Activity Audit Logs
+CREATE TABLE IF NOT EXISTS `audit_logs` (
+    `id` BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    `actor_username` VARCHAR(150) NOT NULL DEFAULT 'system',
+    `action_type` VARCHAR(100) NOT NULL,
+    `entity_type` VARCHAR(100) NOT NULL DEFAULT 'system',
+    `entity_id` VARCHAR(100) DEFAULT NULL,
+    `details` TEXT DEFAULT NULL,
+    `ip_address` VARCHAR(45) DEFAULT NULL,
+    `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+    INDEX `idx_audit_actor` (`actor_username`),
+    INDEX `idx_audit_action` (`action_type`),
+    INDEX `idx_audit_entity` (`entity_type`, `entity_id`),
+    INDEX `idx_audit_created` (`created_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Pre-populate Initial Services
@@ -98,9 +115,8 @@ INSERT INTO `testimonials` (`client_name`, `company_role`, `avatar_url`, `conten
 ('Claire Dupont', 'Event Lead, Vantage Summit', 'https://res.cloudinary.com/pnabfi91/image/upload/v1786714006/falhen/team/ini79za7jvbjokrf1dup.jpg', 'Their live streaming crew executed a flawless multi-camera broadcast for our global conference. Reliable, calm under pressure, and ultra-professional.', 5),
 ('Marcus & Evelyn', 'Destination Wedding Couple', 'https://res.cloudinary.com/pnabfi91/image/upload/v1786713958/falhen/team/b9r0j3jqvqflp2x7f64w.jpg', 'Our wedding video feels like a Hollywood motion picture! Every detail, emotion, and song match was perfection.', 5);
 
--- Insert Default Owner / Super Admin and Staff Accounts
+-- Insert Default Owner / Super Admin Accounts
 INSERT INTO `admin_users` (`username`, `email`, `alt_email`, `password_hash`, `role`, `full_name`, `is_owner`, `status`) VALUES
 ('henry.falonipe', 'henry.falonipe@falhen.com', 'henry@falhen.com', '$2y$10$w8T.N0V3F0r.rC3TqN197.W84d7O8w4Q8gU4E9hR2F1H0Z3F4X5Y6', 'Owner / Super Admin', 'Henry Falonipe', 1, 'active'),
-('admin', 'admin@falhen.com', 'henry@falhen.com', '$2y$10$w8T.N0V3F0r.rC3TqN197.W84d7O8w4Q8gU4E9hR2F1H0Z3F4X5Y6', 'Owner / Super Admin', 'Henry Falonipe', 1, 'active'),
-('staff', 'mail@falhenmedia.com', 'team@falhen.com', '$2y$10$w8T.N0V3F0r.rC3TqN197.W84d7O8w4Q8gU4E9hR2F1H0Z3F4X5Y6', 'Staff', 'Production Specialist', 0, 'active')
+('admin', 'admin@falhen.com', 'henry@falhen.com', '$2y$10$w8T.N0V3F0r.rC3TqN197.W84d7O8w4Q8gU4E9hR2F1H0Z3F4X5Y6', 'Owner / Super Admin', 'Henry Falonipe', 1, 'active')
 ON DUPLICATE KEY UPDATE `role` = VALUES(`role`), `is_owner` = VALUES(`is_owner`), `status` = VALUES(`status`), `alt_email` = VALUES(`alt_email`);
