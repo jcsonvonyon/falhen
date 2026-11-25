@@ -377,6 +377,17 @@ if ($action === 'warm_album_archive') {
     exit;
 }
 
+if ($action === 'test_delivery_email') {
+    require_once $repoDir . '/includes/smtp_mailer.php';
+    require_once $repoDir . '/includes/functions.php';
+    $to = 'falhenmedia@gmail.com';
+    $dlUrl = 'https://www.falhen.com/api/download-album.php?album_id=42&token=d1b57b3ad19ee8103da88254b059b1225db35c33f93b427b';
+    $cover = 'https://lh3.googleusercontent.com/d/1TLXn7mAjRJN_WK-_OeZCXUzSltsLnuvy=w2560';
+    $sent = sendClientGalleryDownloadDeliveryEmail($to, 'Henry Falonipe', 'Mr Abiodun 50th Birthday Shoot', $dlUrl, 235, $cover, 'authorized_client');
+    echo $sent ? "SUCCESS: Delivery email dispatched to {$to}\n" : "FAILED: Could not dispatch delivery email\n";
+    exit;
+}
+
 echo "===========================================\n";
 echo "   FALHEN CPANEL GIT DEPLOYMENT SYSTEM     \n";
 echo "===========================================\n";
