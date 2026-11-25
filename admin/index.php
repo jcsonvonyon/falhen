@@ -516,7 +516,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'save_testimonials_header'          => 'testimonials',
         'save_bts_header'                   => 'bts',
         'save_discovery_call'               => 'discovery',
-        'transfer_module_assignment'        => 'hero',
+        'transfer_module_assignment'        => 'staff_accounts',
         'save_module_permissions'           => 'staff_accounts'
     ];
 
@@ -2043,17 +2043,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     } else if ($action === 'transfer_module_assignment') {
         if (!canManageModulePermissions($currentRole, $currentEmail, $currentUsername)) {
+            http_response_code(403);
             die('Access Denied: Only Super Admin and IT Administrator can delegate or move module permissions.');
         }
-        $targetModule = trim(strip_tags($_POST['target_module'] ?? ''));
-        $assignee = trim(strip_tags($_POST['assignee'] ?? ''));
-        $op = trim(strip_tags($_POST['op'] ?? 'replace'));
+        $targetModule = strtolower(trim(strip_tags($_POST['target_module'] ?? $_POST['module_name'] ?? '')));
+        $assignee = trim(strip_tags($_POST['assignee'] ?? $_POST['target_user'] ?? ''));
+        $op = strtolower(trim(strip_tags($_POST['op'] ?? $_POST['sub_action'] ?? 'assign')));
         if ($targetModule !== '') {
-            setModuleAssignment($targetModule, $assignee, $op);
+            if ($op === 'clear' || ($op === 'transfer' && $assignee === '')) {
+                setModuleAssignment($targetModule, '', 'clear');
+            } else {
+                setModuleAssignment($targetModule, $assignee, $op);
+            }
         }
-        $_SESSION['saved_message'] = "Module '{$targetModule}' assignment updated successfully.";
-        $redir = in_array($targetModule, ['hero', 'brands', 'services', 'featured', 'portfolio', 'stats', 'testimonials', 'bts', 'discovery'], true) ? $targetModule : 'hero';
-        header("Location: /admin/{$redir}?saved=1");
+        $_SESSION['saved_message'] = "Module '{$targetModule}' access updated.";
+        header("Location: /admin/staff_accounts?saved=1#module-delegation");
         exit;
     } else if ($action === 'save_module_permissions') {
         if (!canManageModulePermissions($currentRole, $currentEmail, $currentUsername)) {
@@ -6502,53 +6506,39 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
             <?php else: ?>
 
             <!-- UNIFIED HOMEPAGE CMS STUDIO (8 MODULAR SECTIONS) -->
-            <?php if ($isHomepageModule && empty($_GET['edit_id']) && ($_GET['sub_action'] ?? '') !== 'add'): 
-                $moduleRegistry = function_exists('getModulePermissionsRegistry') ? getModulePermissionsRegistry() : [];
-                $allStaffAccounts = function_exists('getStaffAccountsRepo') ? getStaffAccountsRepo() : [];
+            <?php if ($isHomepageModule && empty($_GET['edit_id']) && ($_GET['sub_action'] ?? '') !== 'add' && ($_GET['view'] ?? '') !== 'full'): 
                 $canManageDelegation = function_exists('canManageModulePermissions') ? canManageModulePermissions($userRole, $userEmail, $username) : false;
-
-                // Active Homepage Tab
                 $activeTab = $activeHomepageTab ?? 'hero';
 
-                // Tabs definition
                 $studioTabs = [
-                    'hero'         => ['title' => 'Hero Stage',        'icon' => 'fa-solid fa-play',           'badge' => 'Stage 01'],
-                    'brands'       => ['title' => 'Brands Marquee',    'icon' => 'fa-solid fa-gem',            'badge' => 'Stage 02'],
-                    'services'     => ['title' => 'Services',          'icon' => 'fa-solid fa-briefcase',      'badge' => 'Stage 03'],
-                    'featured'     => ['title' => "Stories We've Told", 'icon' => 'fa-solid fa-film',           'badge' => 'Stage 04'],
-                    'stats'        => ['title' => 'By The Numbers',    'icon' => 'fa-solid fa-chart-line',     'badge' => 'Stage 05'],
-                    'testimonials' => ['title' => 'Testimonials',      'icon' => 'fa-solid fa-quote-left',     'badge' => 'Stage 06'],
-                    'bts'          => ['title' => 'Production BTS',    'icon' => 'fa-solid fa-camera-retro',   'badge' => 'Stage 07'],
-                    'discovery'    => ['title' => 'Discovery Call',    'icon' => 'fa-solid fa-calendar-check', 'badge' => 'Stage 08'],
+                    'hero'         => ['title' => 'Hero',         'icon' => 'fa-solid fa-play'],
+                    'brands'       => ['title' => 'Brands',       'icon' => 'fa-solid fa-gem'],
+                    'services'     => ['title' => 'Services',     'icon' => 'fa-solid fa-briefcase'],
+                    'featured'     => ['title' => 'Featured',     'icon' => 'fa-solid fa-film'],
+                    'stats'        => ['title' => 'Stats',        'icon' => 'fa-solid fa-chart-line'],
+                    'testimonials' => ['title' => 'Testimonials', 'icon' => 'fa-solid fa-quote-left'],
+                    'bts'          => ['title' => 'BTS',          'icon' => 'fa-solid fa-camera-retro'],
+                    'discovery'    => ['title' => 'Discovery',    'icon' => 'fa-solid fa-calendar-check'],
                 ];
             ?>
-            <div class="homepage-studio-container" style="margin-bottom: 40px;">
-                <!-- Studio Header Bar -->
-                <div class="homepage-studio-header" style="margin-bottom: 24px; display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 16px;">
-                    <div>
-                        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 6px;">
-                            <span style="background: rgba(220,38,38,0.08); color: #dc2626; font-size: 0.72rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; padding: 4px 12px; border-radius: 20px; border: 1px solid rgba(220,38,38,0.2); display: inline-flex; align-items: center; gap: 6px;">
-                                <i class="fa-solid fa-shapes"></i> Homepage CMS Studio
-                            </span>
-                            <span style="font-size: 0.76rem; color: #64748b; font-weight: 600;">8 Live Modular Sections &bull; Role-Based Access Control</span>
-                        </div>
-                        <h1 class="section-header-title" style="font-size: 1.75rem; font-weight: 800; color: #0f172a; margin: 0 0 4px 0; letter-spacing: -0.02em;">Homepage CMS Studio</h1>
-                        <p class="section-header-desc" style="font-size: 0.88rem; color: #64748b; margin: 0;">Full modular control of every frontpage section. Quiet 2-column layout: media structure on the left, copy &amp; texts on the right.</p>
-                    </div>
-                    <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-                        <a href="/" target="_blank" class="native-editor-btn" style="text-decoration: none; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; font-size: 0.84rem; height: 42px; padding: 0 18px; border-radius: 8px; border: 1px solid #e2e8f0; background: #ffffff; color: #0f172a; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
-                            <i class="fa-solid fa-arrow-up-right-from-square" style="color: #64748b;"></i> View Live Homepage
+            <div class="homepage-studio-container" style="margin-bottom: 36px;">
+                <!-- Studio Header -->
+                <div class="homepage-studio-header" style="margin-bottom: 18px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+                    <h1 class="section-header-title" style="font-size: 1.55rem; font-weight: 800; color: #0f172a; margin: 0; letter-spacing: -0.02em;">Homepage Studio</h1>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <a href="/" target="_blank" class="native-editor-btn" style="text-decoration: none; display: inline-flex; align-items: center; gap: 6px; font-weight: 600; font-size: 0.82rem; height: 36px; padding: 0 14px; border-radius: 8px; border: 1px solid #e2e8f0; background: #ffffff; color: #0f172a;">
+                            <i class="fa-solid fa-arrow-up-right-from-square" style="color: #64748b; font-size: 0.76rem;"></i> Live Site
                         </a>
                         <?php if ($canManageDelegation): ?>
-                        <a href="/admin/staff_accounts" class="native-editor-btn" style="text-decoration: none; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; font-size: 0.84rem; height: 42px; padding: 0 18px; border-radius: 8px; border: 1px solid #e2e8f0; background: #f8fafc; color: #334155;">
-                            <i class="fa-solid fa-user-shield" style="color: #dc2626;"></i> Staff Delegations
+                        <a href="/admin/staff_accounts#module-delegation" class="native-editor-btn" style="text-decoration: none; display: inline-flex; align-items: center; gap: 6px; font-weight: 600; font-size: 0.82rem; height: 36px; padding: 0 14px; border-radius: 8px; border: 1px solid #e2e8f0; background: #f8fafc; color: #334155;">
+                            <i class="fa-solid fa-user-shield" style="color: #dc2626; font-size: 0.76rem;"></i> Role Access
                         </a>
                         <?php endif; ?>
                     </div>
                 </div>
 
-                <!-- Horizontal Segmented Sub-Tab Bar -->
-                <div class="studio-subtabs-nav" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 6px; display: flex; gap: 6px; overflow-x: auto; margin-bottom: 24px; box-shadow: 0 1px 4px rgba(0,0,0,0.02);">
+                <!-- Segmented Sub-Tab Bar -->
+                <div class="studio-subtabs-nav" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 5px; display: flex; gap: 4px; overflow-x: auto; margin-bottom: 22px;">
                     <?php foreach ($studioTabs as $tabKey => $tabInfo): 
                         $isTabActive = ($activeTab === $tabKey);
                     ?>
@@ -6557,227 +6547,130 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                             id="tabBtn_<?php echo $tabKey; ?>"
                             class="studio-tab-btn <?php echo $isTabActive ? 'active-studio-tab' : ''; ?>"
                             onclick="switchHomepageTab('<?php echo $tabKey; ?>')"
-                            style="display: inline-flex; align-items: center; gap: 8px; padding: 9px 16px; border-radius: 10px; border: 1px solid <?php echo $isTabActive ? '#dc2626' : 'transparent'; ?>; background: <?php echo $isTabActive ? '#dc2626' : 'transparent'; ?>; color: <?php echo $isTabActive ? '#ffffff' : '#475569'; ?>; font-size: 0.84rem; font-weight: 700; cursor: pointer; white-space: nowrap; transition: all 0.15s ease;"
+                            style="display: inline-flex; align-items: center; gap: 7px; padding: 8px 14px; border-radius: 8px; border: 1px solid <?php echo $isTabActive ? '#dc2626' : 'transparent'; ?>; background: <?php echo $isTabActive ? '#dc2626' : 'transparent'; ?>; color: <?php echo $isTabActive ? '#ffffff' : '#475569'; ?>; font-size: 0.82rem; font-weight: 700; cursor: pointer; white-space: nowrap; transition: all 0.15s ease;"
                         >
-                            <i class="<?php echo $tabInfo['icon']; ?>" style="font-size: 0.82rem; opacity: <?php echo $isTabActive ? '1' : '0.8'; ?>;"></i>
+                            <i class="<?php echo $tabInfo['icon']; ?>" style="font-size: 0.78rem; opacity: <?php echo $isTabActive ? '1' : '0.75'; ?>;"></i>
                             <span><?php echo htmlspecialchars($tabInfo['title']); ?></span>
                         </button>
                     <?php endforeach; ?>
                 </div>
 
-                <!-- TAB PANES -->
-
                 <!-- 1. HERO STAGE -->
                 <div id="tabPane_hero" class="studio-tab-pane" style="<?php echo ($activeTab === 'hero') ? 'display: block;' : 'display: none;'; ?>">
-                    <!-- Delegation Bar -->
-                    <?php 
-                    $heroAssignees = $moduleRegistry['hero']['users'] ?? [];
-                    ?>
-                    <div class="module-delegation-bar" style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 12px 18px; margin-bottom: 22px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
-                        <div style="display: flex; align-items: center; gap: 12px; font-size: 0.84rem;">
-                            <span style="font-weight: 700; color: #0f172a; display: inline-flex; align-items: center; gap: 6px;">
-                                <i class="fa-solid fa-shield-halved" style="color: #dc2626;"></i> Access &amp; Delegation:
-                            </span>
-                            <span style="color: #475569;">
-                                <?php if (!empty($heroAssignees)): ?>
-                                    Assigned to: <strong style="color: #0f172a;"><?php echo htmlspecialchars(implode(', ', $heroAssignees)); ?></strong>
-                                <?php else: ?>
-                                    <strong style="color: #059669;">Universal Access</strong> (Super Admin &amp; IT Administrator)
-                                <?php endif; ?>
-                            </span>
-                        </div>
-                        <?php if ($canManageDelegation): ?>
-                        <form method="POST" action="/admin/hero" style="display: inline-flex; align-items: center; gap: 8px; margin: 0;">
-                            <input type="hidden" name="action" value="transfer_module_assignment">
-                            <input type="hidden" name="module_name" value="hero">
-                            <select name="target_user" class="form-text-input" style="padding: 4px 10px; font-size: 0.78rem; height: 32px; border-radius: 6px; width: auto;">
-                                <option value="">-- Delegate Hero Module --</option>
-                                <?php foreach ($allStaffAccounts as $stf): ?>
-                                    <option value="<?php echo htmlspecialchars($stf['username']); ?>"><?php echo htmlspecialchars($stf['full_name'] . ' (' . $stf['role'] . ')'); ?></option>
-                                <?php endforeach; ?>
-                            </select>
-                            <select name="sub_action" class="form-text-input" style="padding: 4px 8px; font-size: 0.78rem; height: 32px; border-radius: 6px; width: auto;">
-                                <option value="assign">Assign</option>
-                                <option value="transfer">Transfer</option>
-                                <option value="clear">Clear</option>
-                            </select>
-                            <button type="submit" class="native-editor-btn" style="height: 32px; padding: 0 12px; font-size: 0.78rem; font-weight: 700;">Apply</button>
-                        </form>
-                        <?php endif; ?>
-                    </div>
-
                     <form method="POST" action="/admin/hero" enctype="multipart/form-data">
                         <input type="hidden" name="action" value="save_hero">
-                        <div class="section-header-bar" style="margin-bottom: 20px;">
-                            <div>
-                                <h2 class="section-header-title" style="font-size: 1.25rem; font-weight: 700; color: #0f172a; margin: 0;">Hero Stage Configuration</h2>
-                                <p class="section-header-desc" style="font-size: 0.82rem; color: #64748b; margin: 2px 0 0 0;">Manage background film, poster, typography, and call-to-actions.</p>
-                            </div>
-                            <button type="submit" class="btn-save-primary">
-                                <i class="fa-solid fa-floppy-disk"></i> Save Hero Stage
-                            </button>
+                        <div class="section-header-bar" style="margin-bottom: 16px;">
+                            <h2 class="section-header-title" style="font-size: 1.15rem; font-weight: 700; color: #0f172a; margin: 0;">Hero Stage</h2>
+                            <button type="submit" class="btn-save-primary"><i class="fa-solid fa-floppy-disk"></i> Save</button>
                         </div>
 
                         <div class="form-grid-two">
-                            <!-- Column A: Picture Structure & Visual Media -->
                             <div>
-                                <div class="dashboard-card" style="margin-bottom: 20px;">
-                                    <div class="card-header-row" style="margin-bottom: 16px;">
+                                <div class="dashboard-card">
+                                    <div class="card-header-row" style="margin-bottom: 14px;">
                                         <div class="card-icon-badge"><i class="fa-solid fa-film"></i></div>
-                                        <div class="card-title-text">Column A &bull; Visual Film &amp; Poster Media</div>
+                                        <div class="card-title-text">Media</div>
                                     </div>
 
-                                    <!-- 1. POSTER IMAGE SECTION -->
-                                    <div class="form-field" style="margin-bottom: 20px;">
-                                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-                                            <label class="form-label-title" style="margin: 0; font-weight: 700;">Hero Poster Image (LCP Cover)</label>
-                                            <span style="font-size: 0.72rem; color: #64748b; font-weight: 600;">1920×1080 · High Quality CDN</span>
-                                        </div>
+                                    <?php 
+                                    $activePosterVal = $settings['hero_poster_image'] ?? '/assets/img/hero.jpg';
+                                    if ($activePosterVal === 'https://res.cloudinary.com/pnabfi91/image/upload/v1786578372/falhen/uploads/r96mxsji9cdogqrkxwoe.jpg') {
+                                        $activePosterVal = '/assets/img/hero.jpg';
+                                    }
+                                    $isPosterCloud = (!empty($activePosterVal) && strpos($activePosterVal, 'cloudinary') !== false);
+                                    $currVidVal = $settings['hero_video_url'] ?? ($settings['hero_youtube_bg'] ?? ($settings['hero_vimeo_bg'] ?? ''));
+                                    ?>
 
-                                        <?php 
-                                        $activePosterVal = $settings['hero_poster_image'] ?? '/assets/img/hero.jpg';
-                                        if ($activePosterVal === 'https://res.cloudinary.com/pnabfi91/image/upload/v1786578372/falhen/uploads/r96mxsji9cdogqrkxwoe.jpg') {
-                                            $activePosterVal = '/assets/img/hero.jpg';
-                                        }
-                                        $isPosterCloud = (!empty($activePosterVal) && strpos($activePosterVal, 'cloudinary') !== false);
-                                        ?>
-                                        <!-- Live 16:9 Cinema Aspect Preview Frame -->
-                                        <div style="aspect-ratio: 16/9; border-radius: 10px; overflow: hidden; background: #09090b; border: 1px solid #e2e8f0; position: relative; margin-bottom: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08);">
-                                            <img id="heroPosterPreview" src="<?php echo htmlspecialchars($activePosterVal); ?>" alt="Hero Poster Preview" style="width: 100%; height: 100%; object-fit: cover; display: block;" onerror="this.src='/assets/img/hero.jpg';">
-                                            <div style="position: absolute; bottom: 10px; left: 10px; background: rgba(9,9,11,0.85); backdrop-filter: blur(8px); padding: 4px 10px; border-radius: 6px; color: #ffffff; font-size: 0.72rem; font-weight: 600; display: inline-flex; align-items: center; gap: 6px;">
-                                                <i class="fa-solid fa-image" style="color: #ef4444;"></i> Active Poster Frame
-                                            </div>
-                                            <div id="posterCloudinaryPill" style="position: absolute; top: 10px; right: 10px; font-size: 0.7rem; font-weight: 600; padding: 3px 8px; border-radius: 5px; background: rgba(15,23,42,0.8); color: #fff; backdrop-filter: blur(4px);">
-                                                <?php echo $isPosterCloud ? '<i class="fa-solid fa-circle-check" style="color:#22c55e;"></i> Cloudinary CDN' : '<i class="fa-solid fa-globe"></i> Custom URL'; ?>
+                                    <div class="form-field" style="margin-bottom: 16px;">
+                                        <label class="form-label-title">Poster Image</label>
+                                        <div style="aspect-ratio: 16/9; border-radius: 10px; overflow: hidden; background: #09090b; border: 1px solid #e2e8f0; position: relative; margin-bottom: 10px;">
+                                            <img id="heroPosterPreview" src="<?php echo htmlspecialchars($activePosterVal); ?>" alt="Poster" style="width: 100%; height: 100%; object-fit: cover; display: block;" onerror="this.src='/assets/img/hero.jpg';">
+                                            <div id="posterCloudinaryPill" style="position: absolute; top: 8px; right: 8px; font-size: 0.68rem; font-weight: 600; padding: 3px 8px; border-radius: 5px; background: rgba(15,23,42,0.8); color: #fff;">
+                                                <?php echo $isPosterCloud ? '<i class="fa-solid fa-circle-check" style="color:#22c55e;"></i> CDN' : '<i class="fa-solid fa-globe"></i> URL'; ?>
                                             </div>
                                         </div>
-
-                                        <!-- Poster URL Input & Actions -->
-                                        <div style="display: flex; gap: 8px; margin-bottom: 10px;">
-                                            <input type="text" id="hero_poster_image_input" name="hero_poster_image" class="form-text-input" placeholder="https://res.cloudinary.com/.../hero-poster.jpg" value="<?php echo htmlspecialchars($activePosterVal); ?>" oninput="updatePosterPreview(this.value)">
-                                        </div>
-
-                                        <!-- File Upload Dropzone / Buttons -->
+                                        <input type="text" id="hero_poster_image_input" name="hero_poster_image" class="form-text-input" placeholder="https://..." value="<?php echo htmlspecialchars($activePosterVal); ?>" oninput="updatePosterPreview(this.value)" style="margin-bottom: 8px;">
                                         <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
-                                            <label for="hero_poster_file_input" class="native-editor-btn" id="heroPosterUploadBtn" style="cursor: pointer; display: inline-flex; align-items: center; gap: 6px; height: 34px; padding: 0 14px; font-size: 0.78rem; font-weight: 700; background: #0f172a; color: #fff; border-radius: 6px;">
-                                                <i class="fa-solid fa-cloud-arrow-up" style="color: #ef4444;"></i> Upload Poster Picture
+                                            <label for="hero_poster_file_input" class="native-editor-btn" id="heroPosterUploadBtn" style="cursor: pointer; display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 12px; font-size: 0.78rem; font-weight: 700; background: #0f172a; color: #fff; border-radius: 6px;">
+                                                <i class="fa-solid fa-cloud-arrow-up" style="color: #ef4444;"></i> Upload
                                             </label>
                                             <input type="file" id="hero_poster_file_input" name="hero_poster_file" accept="image/*" style="display: none;" onchange="uploadHeroAssetAjax(this, 'poster')">
-                                            
-                                            <button type="button" id="syncPosterCloudBtn" class="native-editor-btn" onclick="syncPosterUrlToCloudinary()" style="<?php echo $isPosterCloud ? 'display: none;' : 'display: inline-flex;'; ?> height: 34px; padding: 0 12px; font-size: 0.78rem; font-weight: 700; align-items: center; gap: 6px;">
-                                                <i class="fa-solid fa-arrows-rotate" style="color: #0284c7;"></i> Sync to Cloudinary
+                                            <button type="button" id="syncPosterCloudBtn" class="native-editor-btn" onclick="syncPosterUrlToCloudinary()" style="<?php echo $isPosterCloud ? 'display: none;' : 'display: inline-flex;'; ?> height: 32px; padding: 0 10px; font-size: 0.76rem; font-weight: 700; align-items: center; gap: 5px;">
+                                                <i class="fa-solid fa-arrows-rotate" style="color: #0284c7;"></i> Sync CDN
                                             </button>
-
-                                            <button type="button" class="native-editor-btn" onclick="resetHeroBackgroundDefaults()" style="height: 34px; padding: 0 12px; font-size: 0.78rem; color: #64748b;">
-                                                <i class="fa-solid fa-rotate-left"></i> Reset
-                                            </button>
+                                            <button type="button" class="native-editor-btn" onclick="resetHeroBackgroundDefaults()" style="height: 32px; padding: 0 10px; font-size: 0.76rem; color: #64748b;">Reset</button>
                                         </div>
-                                        <p class="form-label-help" style="font-size: 0.74rem; color: #64748b; margin-top: 6px;">
-                                            Upload an image from your computer to sync to Cloudinary CDN, or enter a remote image link above.
-                                        </p>
                                     </div>
 
-                                    <hr style="border: none; border-top: 1px solid #f1f5f9; margin: 20px 0;">
+                                    <div class="form-field" style="margin-bottom: 14px;">
+                                        <label class="form-label-title">YouTube / Vimeo ID or URL</label>
+                                        <input type="text" id="hero_video_url_input" name="hero_video_url" class="form-text-input" placeholder="Tf8rNMZ-Bw0" value="<?php echo htmlspecialchars($currVidVal); ?>" oninput="syncHeroStageMedia();">
+                                        <div id="videoProviderBadge" style="display: none;"></div>
+                                    </div>
 
-                                    <!-- 2. BACKGROUND VIDEO ENGINE -->
-                                    <div class="form-field" style="margin-bottom: 18px;">
-                                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-                                            <label class="form-label-title" style="margin: 0; font-weight: 700;">Background Video (Chromeless Iframe or Direct)</label>
-                                            <span style="font-size: 0.72rem; color: #64748b; font-weight: 600;">Plays muted &amp; looped</span>
-                                        </div>
-
-                                        <!-- Unified Video URL / ID Input -->
-                                        <div style="margin-bottom: 14px;">
-                                            <label class="form-label-title" style="font-size: 0.78rem; color: #334155; margin-bottom: 4px; display: block;">Video Link or ID (YouTube / Vimeo Iframe)</label>
-                                            <?php 
-                                            $currVidVal = $settings['hero_video_url'] ?? ($settings['hero_youtube_bg'] ?? ($settings['hero_vimeo_bg'] ?? ''));
-                                            ?>
-                                            <input type="text" id="hero_video_url_input" name="hero_video_url" class="form-text-input" placeholder="e.g. Tf8rNMZ-Bw0 or https://www.youtube.com/watch?v=... or Vimeo" value="<?php echo htmlspecialchars($currVidVal); ?>" oninput="syncHeroStageMedia();">
-                                            <div id="videoProviderBadge" style="margin-top: 6px; font-size: 0.74rem; display: flex; align-items: center; gap: 6px; color: #64748b;">
-                                                <?php if (!empty($currVidVal)): ?>
-                                                    <i class="fa-brands fa-youtube" style="color: #ef4444;"></i> Configured for background playback: <strong><?php echo htmlspecialchars($currVidVal); ?></strong>
-                                                <?php else: ?>
-                                                    <i class="fa-solid fa-info-circle" style="color: #94a3b8;"></i> Paste a YouTube link/ID or Vimeo link/ID
-                                                <?php endif; ?>
-                                            </div>
-                                        </div>
-
-                                        <!-- Direct Video URL (.mp4 / .webm) -->
-                                        <div style="margin-bottom: 14px;">
-                                            <label class="form-label-title" style="font-size: 0.78rem; color: #334155; margin-bottom: 4px; display: block;">Direct Video Stream URL (.mp4 / .webm)</label>
-                                            <div style="display: flex; gap: 8px;">
-                                                <input type="text" id="hero_direct_video_input" name="hero_direct_video_url" class="form-text-input" placeholder="https://res.cloudinary.com/.../hero.mp4" value="<?php echo htmlspecialchars($settings['hero_direct_video_url'] ?? ''); ?>" oninput="syncHeroStageMedia()">
-                                            </div>
-                                            <div style="margin-top: 6px;">
-                                                <label for="hero_video_file_input" class="native-editor-btn" id="heroVideoUploadBtn" style="cursor: pointer; display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 12px; font-size: 0.76rem; font-weight: 700; background: #f8fafc; color: #334155; border: 1px solid #cbd5e1; border-radius: 6px;">
-                                                    <i class="fa-solid fa-video" style="color: #0284c7;"></i> Upload MP4 Video
-                                                </label>
-                                                <input type="file" id="hero_video_file_input" name="hero_direct_video_file" accept="video/mp4,video/webm" style="display: none;" onchange="uploadHeroAssetAjax(this, 'video')">
-                                            </div>
-                                        </div>
-
-                                        <!-- Showreel Sync Checkbox -->
-                                        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 14px; margin-top: 10px;">
-                                            <label style="display: flex; align-items: center; gap: 8px; font-size: 0.78rem; color: #334155; cursor: pointer; margin: 0;">
-                                                <input type="checkbox" id="hero_bg_use_showreel_input" name="hero_bg_use_showreel" value="1" <?php echo !empty($settings['hero_bg_use_showreel']) ? 'checked' : ''; ?> onchange="syncHeroStageMedia()">
-                                                <span>Use Main Showreel as background video if no custom video is provided</span>
+                                    <div class="form-field" style="margin-bottom: 12px;">
+                                        <label class="form-label-title">Direct Video URL (.mp4 / .webm)</label>
+                                        <div style="display: flex; gap: 8px; align-items: center;">
+                                            <input type="text" id="hero_direct_video_input" name="hero_direct_video_url" class="form-text-input" placeholder="https://.../hero.mp4" value="<?php echo htmlspecialchars($settings['hero_direct_video_url'] ?? ''); ?>" oninput="syncHeroStageMedia()">
+                                            <label for="hero_video_file_input" class="native-editor-btn" id="heroVideoUploadBtn" style="cursor: pointer; display: inline-flex; align-items: center; gap: 5px; height: 38px; padding: 0 12px; font-size: 0.76rem; font-weight: 700; white-space: nowrap;">
+                                                <i class="fa-solid fa-video" style="color: #0284c7;"></i> MP4
                                             </label>
+                                            <input type="file" id="hero_video_file_input" name="hero_direct_video_file" accept="video/mp4,video/webm" style="display: none;" onchange="uploadHeroAssetAjax(this, 'video')">
                                         </div>
                                     </div>
+
+                                    <label style="display: flex; align-items: center; gap: 8px; font-size: 0.8rem; color: #475569; cursor: pointer; margin: 0;">
+                                        <input type="checkbox" id="hero_bg_use_showreel_input" name="hero_bg_use_showreel" value="1" <?php echo !empty($settings['hero_bg_use_showreel']) ? 'checked' : ''; ?> onchange="syncHeroStageMedia()">
+                                        <span>Fallback to main showreel video</span>
+                                    </label>
                                 </div>
                             </div>
 
-                            <!-- Column B: Text Structure & Copy -->
                             <div>
-                                <div class="dashboard-card" style="margin-bottom: 20px;">
-                                    <div class="card-header-row" style="margin-bottom: 16px;">
+                                <div class="dashboard-card">
+                                    <div class="card-header-row" style="margin-bottom: 14px;">
                                         <div class="card-icon-badge"><i class="fa-solid fa-align-left"></i></div>
-                                        <div class="card-title-text">Column B &bull; Typography &amp; Action Buttons</div>
+                                        <div class="card-title-text">Copy &amp; Buttons</div>
                                     </div>
 
-                                    <!-- Badge Label -->
-                                    <div class="form-field" style="margin-bottom: 16px;">
-                                        <label class="form-label-title">Pill Badge Label</label>
+                                    <div class="form-field" style="margin-bottom: 14px;">
+                                        <label class="form-label-title">Badge</label>
                                         <input type="text" id="hero_badge_label_input" name="hero_badge_label" class="form-text-input" value="<?php echo htmlspecialchars($settings['hero_badge_label'] ?? 'EST. 2020 • PRODUCTION STUDIO'); ?>" oninput="updateHeroPreview()">
                                     </div>
 
-                                    <!-- Split Headline -->
-                                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
+                                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px;">
                                         <div>
-                                            <label class="form-label-title">Headline Line 1 (White)</label>
+                                            <label class="form-label-title">Headline (White)</label>
                                             <input type="text" id="hero_line1_input" name="hero_headline_line1" class="form-text-input" value="<?php echo htmlspecialchars($settings['hero_headline_line1'] ?? ($settings['hero_headline_white'] ?? 'Creating what the')); ?>" oninput="updateHeroPreview()">
                                         </div>
                                         <div>
-                                            <label class="form-label-title">Headline Line 2 (Red Accent)</label>
+                                            <label class="form-label-title">Headline (Red)</label>
                                             <input type="text" id="hero_line2_input" name="hero_headline_line2" class="form-text-input" value="<?php echo htmlspecialchars($settings['hero_headline_line2'] ?? ($settings['hero_headline_red'] ?? 'World Watches')); ?>" oninput="updateHeroPreview()">
                                         </div>
                                     </div>
 
-                                    <!-- Subheadline with Character Counter -->
-                                    <div class="form-field" style="margin-bottom: 16px;">
+                                    <div class="form-field" style="margin-bottom: 14px;">
                                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-                                            <label class="form-label-title" style="margin: 0;">Subheadline Copy / Tagline</label>
-                                            <span id="heroSubCounter" style="font-size: 0.72rem; color: #94a3b8;">0 chars</span>
+                                            <label class="form-label-title" style="margin: 0;">Tagline</label>
+                                            <span id="heroSubCounter" style="font-size: 0.7rem; color: #94a3b8;"></span>
                                         </div>
-                                        <textarea id="hero_tagline_input" name="hero_tagline" class="form-text-input" rows="3" oninput="document.getElementById('heroSubCounter').textContent = this.value.length + ' chars'; updateHeroPreview();"><?php echo htmlspecialchars($settings['hero_tagline'] ?? ($settings['hero_subheadline'] ?? "From cinematic campaigns to viral content — we craft the visual stories your audience can't look away from.")); ?></textarea>
+                                        <textarea id="hero_tagline_input" name="hero_tagline" class="form-text-input" rows="2" oninput="document.getElementById('heroSubCounter').textContent = this.value.length; updateHeroPreview();"><?php echo htmlspecialchars($settings['hero_tagline'] ?? ($settings['hero_subheadline'] ?? "From cinematic campaigns to viral content — we craft the visual stories your audience can't look away from.")); ?></textarea>
                                     </div>
 
-                                    <!-- Primary CTA -->
-                                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
+                                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px;">
                                         <div>
-                                            <label class="form-label-title">Primary CTA Text</label>
+                                            <label class="form-label-title">Primary Button</label>
                                             <input type="text" id="primary_cta_input" name="hero_primary_cta_text" class="form-text-input" value="<?php echo htmlspecialchars($settings['hero_primary_cta_text'] ?? 'Explore Our Projects'); ?>" oninput="updateHeroPreview()">
                                         </div>
                                         <div>
-                                            <label class="form-label-title">Primary CTA Link</label>
+                                            <label class="form-label-title">Primary URL</label>
                                             <input type="text" id="primary_cta_url_input" name="hero_primary_cta_url" class="form-text-input" value="<?php echo htmlspecialchars($settings['hero_primary_cta_url'] ?? ($settings['hero_primary_cta_link'] ?? '/portfolio.php')); ?>">
                                         </div>
                                     </div>
 
-                                    <!-- Secondary CTA (Showreel Modal) -->
-                                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
+                                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px;">
                                         <div>
-                                            <label class="form-label-title">Secondary CTA Text</label>
+                                            <label class="form-label-title">Secondary Button</label>
                                             <input type="text" id="secondary_cta_input" name="hero_secondary_cta_text" class="form-text-input" value="<?php echo htmlspecialchars($settings['hero_secondary_cta_text'] ?? 'Watch Showreel'); ?>" oninput="updateHeroPreview()">
                                         </div>
                                         <div>
@@ -6786,25 +6679,23 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                         </div>
                                     </div>
 
-                                    <!-- Live Frontend Appearance Card -->
-                                    <div style="background: #09090b; border-radius: 10px; padding: 20px; color: #fff; text-align: center; border: 1px solid rgba(255,255,255,0.08); position: relative; overflow: hidden; margin-top: 10px;">
-                                        <div style="position: absolute; inset: 0; background: radial-gradient(circle at 50% 50%, rgba(220,38,38,0.12), transparent 70%); pointer-events: none;"></div>
-                                        <div id="previewBadge" style="display: inline-block; padding: 3px 10px; border-radius: 20px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.15); font-size: 0.68rem; font-weight: 700; letter-spacing: 0.05em; color: #e4e4e7; margin-bottom: 10px;">
+                                    <div style="background: #09090b; border-radius: 10px; padding: 16px; color: #fff; text-align: center;">
+                                        <div id="previewBadge" style="display: inline-block; padding: 2px 9px; border-radius: 20px; background: rgba(255,255,255,0.1); font-size: 0.65rem; font-weight: 700; color: #e4e4e7; margin-bottom: 8px;">
                                             <?php echo htmlspecialchars($settings['hero_badge_label'] ?? 'EST. 2020 • PRODUCTION STUDIO'); ?>
                                         </div>
-                                        <h3 style="font-size: 1.15rem; font-weight: 800; line-height: 1.2; margin: 0 0 8px 0; color: #fff;">
-                                            <span id="previewLine1"><?php echo htmlspecialchars($settings['hero_headline_line1'] ?? ($settings['hero_headline_white'] ?? 'Creating what the')); ?></span><br>
-                                            <span id="previewLine2" style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;"><?php echo htmlspecialchars($settings['hero_headline_line2'] ?? ($settings['hero_headline_red'] ?? 'World Watches')); ?></span>
+                                        <h3 style="font-size: 1.05rem; font-weight: 800; line-height: 1.2; margin: 0 0 6px 0; color: #fff;">
+                                            <span id="previewLine1"><?php echo htmlspecialchars($settings['hero_headline_line1'] ?? ($settings['hero_headline_white'] ?? 'Creating what the')); ?></span>
+                                            <span id="previewLine2" style="color: #ef4444;"><?php echo htmlspecialchars($settings['hero_headline_line2'] ?? ($settings['hero_headline_red'] ?? 'World Watches')); ?></span>
                                         </h3>
-                                        <p id="previewTagline" style="font-size: 0.74rem; color: #94a3b8; max-width: 90%; margin: 0 auto 14px auto; line-height: 1.4;">
+                                        <p id="previewTagline" style="font-size: 0.72rem; color: #94a3b8; margin: 0 auto 12px auto; line-height: 1.4;">
                                             <?php echo htmlspecialchars($settings['hero_tagline'] ?? ($settings['hero_subheadline'] ?? "From cinematic campaigns to viral content — we craft the visual stories your audience can't look away from.")); ?>
                                         </p>
-                                        <div style="display: flex; gap: 8px; justify-content: center; align-items: center;">
-                                            <span id="previewPrimaryCta" style="background: #dc2626; color: #fff; padding: 5px 12px; border-radius: 6px; font-size: 0.72rem; font-weight: 700;">
+                                        <div style="display: flex; gap: 8px; justify-content: center;">
+                                            <span id="previewPrimaryCta" style="background: #dc2626; color: #fff; padding: 4px 10px; border-radius: 6px; font-size: 0.7rem; font-weight: 700;">
                                                 <?php echo htmlspecialchars($settings['hero_primary_cta_text'] ?? 'Explore Our Projects'); ?>
                                             </span>
-                                            <span id="previewSecondaryCta" style="background: rgba(255,255,255,0.12); color: #fff; padding: 5px 12px; border-radius: 6px; font-size: 0.72rem; font-weight: 600; border: 1px solid rgba(255,255,255,0.2);">
-                                                <i class="fa-solid fa-play" style="font-size: 0.65rem; margin-right: 4px;"></i> <?php echo htmlspecialchars($settings['hero_secondary_cta_text'] ?? 'Watch Showreel'); ?>
+                                            <span id="previewSecondaryCta" style="background: rgba(255,255,255,0.12); color: #fff; padding: 4px 10px; border-radius: 6px; font-size: 0.7rem; font-weight: 600;">
+                                                <i class="fa-solid fa-play" style="font-size: 0.6rem; margin-right: 3px;"></i> <?php echo htmlspecialchars($settings['hero_secondary_cta_text'] ?? 'Watch Showreel'); ?>
                                             </span>
                                         </div>
                                     </div>
@@ -6816,64 +6707,23 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
 
                 <!-- 2. BRANDS MARQUEE -->
                 <div id="tabPane_brands" class="studio-tab-pane" style="<?php echo ($activeTab === 'brands') ? 'display: block;' : 'display: none;'; ?>">
-                    <!-- Delegation Bar -->
-                    <?php $brandsAssignees = $moduleRegistry['brands']['users'] ?? []; ?>
-                    <div class="module-delegation-bar" style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 12px 18px; margin-bottom: 22px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
-                        <div style="display: flex; align-items: center; gap: 12px; font-size: 0.84rem;">
-                            <span style="font-weight: 700; color: #0f172a; display: inline-flex; align-items: center; gap: 6px;">
-                                <i class="fa-solid fa-shield-halved" style="color: #dc2626;"></i> Access &amp; Delegation:
-                            </span>
-                            <span style="color: #475569;">
-                                <?php if (!empty($brandsAssignees)): ?>
-                                    Assigned to: <strong style="color: #0f172a;"><?php echo htmlspecialchars(implode(', ', $brandsAssignees)); ?></strong>
-                                <?php else: ?>
-                                    <strong style="color: #059669;">Universal Access</strong> (Super Admin &amp; IT Administrator)
-                                <?php endif; ?>
-                            </span>
-                        </div>
-                        <?php if ($canManageDelegation): ?>
-                        <form method="POST" action="/admin/brands" style="display: inline-flex; align-items: center; gap: 8px; margin: 0;">
-                            <input type="hidden" name="action" value="transfer_module_assignment">
-                            <input type="hidden" name="module_name" value="brands">
-                            <select name="target_user" class="form-text-input" style="padding: 4px 10px; font-size: 0.78rem; height: 32px; border-radius: 6px; width: auto;">
-                                <option value="">-- Delegate Brands Module --</option>
-                                <?php foreach ($allStaffAccounts as $stf): ?>
-                                    <option value="<?php echo htmlspecialchars($stf['username']); ?>"><?php echo htmlspecialchars($stf['full_name'] . ' (' . $stf['role'] . ')'); ?></option>
-                                <?php endforeach; ?>
-                            </select>
-                            <select name="sub_action" class="form-text-input" style="padding: 4px 8px; font-size: 0.78rem; height: 32px; border-radius: 6px; width: auto;">
-                                <option value="assign">Assign</option>
-                                <option value="transfer">Transfer</option>
-                                <option value="clear">Clear</option>
-                            </select>
-                            <button type="submit" class="native-editor-btn" style="height: 32px; padding: 0 12px; font-size: 0.78rem; font-weight: 700;">Apply</button>
-                        </form>
-                        <?php endif; ?>
-                    </div>
-
                     <form method="POST" action="/admin/brands">
                         <input type="hidden" name="action" value="save_brands_header">
-                        <div class="section-header-bar" style="margin-bottom: 20px;">
-                            <div>
-                                <h2 class="section-header-title" style="font-size: 1.25rem; font-weight: 700; color: #0f172a; margin: 0;">Brands Marquee Module</h2>
-                                <p class="section-header-desc" style="font-size: 0.82rem; color: #64748b; margin: 2px 0 0 0;">Manage the animated client logo ticker and section headline.</p>
-                            </div>
-                            <button type="submit" class="btn-save-primary">
-                                <i class="fa-solid fa-floppy-disk"></i> Save Brands Header
-                            </button>
+                        <div class="section-header-bar" style="margin-bottom: 16px;">
+                            <h2 class="section-header-title" style="font-size: 1.15rem; font-weight: 700; color: #0f172a; margin: 0;">Brands Marquee</h2>
+                            <button type="submit" class="btn-save-primary"><i class="fa-solid fa-floppy-disk"></i> Save</button>
                         </div>
 
                         <div class="form-grid-two">
-                            <!-- Column A: Brand Logos Media Structure -->
                             <div>
                                 <div class="dashboard-card">
-                                    <div class="card-header-row" style="margin-bottom: 16px; justify-content: space-between;">
+                                    <div class="card-header-row" style="margin-bottom: 14px; justify-content: space-between;">
                                         <div style="display: flex; align-items: center; gap: 10px;">
                                             <div class="card-icon-badge"><i class="fa-solid fa-gem"></i></div>
-                                            <div class="card-title-text">Column A &bull; Partner Brand Logos</div>
+                                            <div class="card-title-text">Brand Logos</div>
                                         </div>
                                         <a href="/admin/index.php?section=brands&sub_action=add" class="native-editor-btn" style="text-decoration: none; font-size: 0.78rem; height: 32px; padding: 0 12px; font-weight: 700;">
-                                            <i class="fa-solid fa-plus" style="color: #dc2626;"></i> Add Logo
+                                            <i class="fa-solid fa-plus" style="color: #dc2626;"></i> Add
                                         </a>
                                     </div>
 
@@ -6881,52 +6731,44 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                     $brandLogos = getBrandLogosRepo();
                                     if (empty($brandLogos)): 
                                     ?>
-                                        <div style="padding: 32px 16px; text-align: center; background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 10px; color: #64748b;">
-                                            <i class="fa-regular fa-images" style="font-size: 1.6rem; color: #94a3b8; margin-bottom: 8px; display: block;"></i>
-                                            <span style="font-size: 0.84rem; font-weight: 600;">No brand logos configured yet.</span>
+                                        <div style="padding: 28px 16px; text-align: center; background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 10px; color: #64748b; font-size: 0.84rem;">
+                                            No brand logos yet.
                                         </div>
                                     <?php else: ?>
-                                        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 12px;">
+                                        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(125px, 1fr)); gap: 10px;">
                                             <?php foreach ($brandLogos as $bIdx => $bLogo): ?>
-                                                <a href="/admin/index.php?section=brands&edit_id=<?php echo (int)($bLogo['id'] ?? 0); ?>" style="text-decoration: none; background: #0f172a; border: 1px solid #334155; border-radius: 10px; padding: 12px 8px; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 85px; transition: all 0.2s;" onmouseover="this.style.borderColor='#dc2626'" onmouseout="this.style.borderColor='#334155'">
+                                                <a href="/admin/index.php?section=brands&edit_id=<?php echo (int)($bLogo['id'] ?? 0); ?>" style="text-decoration: none; background: #0f172a; border: 1px solid #334155; border-radius: 10px; padding: 10px 8px; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 78px; transition: border-color 0.15s;" onmouseover="this.style.borderColor='#dc2626'" onmouseout="this.style.borderColor='#334155'">
                                                     <?php if (!empty($bLogo['image'])): ?>
-                                                        <img src="<?php echo htmlspecialchars(getCloudinaryUrl($bLogo['image'], 'f_auto,q_auto:good,w_240,h_70,c_fit')); ?>" alt="<?php echo htmlspecialchars($bLogo['name'] ?? 'Brand'); ?>" style="max-height: 36px; max-width: 90%; object-fit: contain; filter: brightness(0) invert(1); opacity: 0.9;">
+                                                        <img src="<?php echo htmlspecialchars(getCloudinaryUrl($bLogo['image'], 'f_auto,q_auto:good,w_240,h_70,c_fit')); ?>" alt="<?php echo htmlspecialchars($bLogo['name'] ?? 'Brand'); ?>" style="max-height: 32px; max-width: 88%; object-fit: contain; filter: brightness(0) invert(1); opacity: 0.92;">
                                                     <?php else: ?>
-                                                        <i class="<?php echo htmlspecialchars(!empty($bLogo['icon']) ? $bLogo['icon'] : 'fa-solid fa-star'); ?>" style="color: #ef4444; font-size: 1.2rem; margin-bottom: 4px;"></i>
+                                                        <i class="<?php echo htmlspecialchars(!empty($bLogo['icon']) ? $bLogo['icon'] : 'fa-solid fa-star'); ?>" style="color: #ef4444; font-size: 1.1rem; margin-bottom: 4px;"></i>
                                                     <?php endif; ?>
-                                                    <span style="font-size: 0.72rem; font-weight: 700; color: #f8fafc; margin-top: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 95%;"><?php echo htmlspecialchars($bLogo['name'] ?? 'Brand #' . ($bIdx + 1)); ?></span>
-                                                    <span style="font-size: 0.65rem; color: <?php echo !empty($bLogo['visible']) ? '#22c55e' : '#94a3b8'; ?>; font-weight: 600; margin-top: 2px;">
+                                                    <span style="font-size: 0.7rem; font-weight: 600; color: #f8fafc; margin-top: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 95%;"><?php echo htmlspecialchars($bLogo['name'] ?? 'Brand #' . ($bIdx + 1)); ?></span>
+                                                    <span style="font-size: 0.62rem; color: <?php echo !empty($bLogo['visible']) ? '#22c55e' : '#94a3b8'; ?>; font-weight: 600;">
                                                         ● <?php echo !empty($bLogo['visible']) ? 'Visible' : 'Hidden'; ?>
                                                     </span>
                                                 </a>
                                             <?php endforeach; ?>
                                         </div>
-                                        <div style="margin-top: 14px; text-align: right;">
-                                            <a href="/admin/index.php?section=brands" style="color: #dc2626; font-size: 0.82rem; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">
-                                                Manage All Brands in Full Screen <i class="fa-solid fa-arrow-right"></i>
+                                        <div style="margin-top: 12px; text-align: right;">
+                                            <a href="/admin/index.php?section=brands&view=full" style="color: #dc2626; font-size: 0.8rem; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 5px;">
+                                                Manage All <i class="fa-solid fa-arrow-right"></i>
                                             </a>
                                         </div>
                                     <?php endif; ?>
                                 </div>
                             </div>
 
-                            <!-- Column B: Text Structure & Copy -->
                             <div>
                                 <div class="dashboard-card">
-                                    <div class="card-header-row" style="margin-bottom: 16px;">
+                                    <div class="card-header-row" style="margin-bottom: 14px;">
                                         <div class="card-icon-badge"><i class="fa-solid fa-heading"></i></div>
-                                        <div class="card-title-text">Column B &bull; Marquee Text &amp; Ticker Settings</div>
+                                        <div class="card-title-text">Section Copy</div>
                                     </div>
 
-                                    <div class="form-field" style="margin-bottom: 20px;">
-                                        <label class="form-label-title">Marquee Section Title</label>
+                                    <div class="form-field" style="margin-bottom: 0;">
+                                        <label class="form-label-title">Section Title</label>
                                         <input type="text" name="brands_section_title" class="form-text-input" value="<?php echo htmlspecialchars($settings['brands_section_title'] ?? 'TRUSTED BY WORLD-CLASS BRANDS'); ?>" placeholder="TRUSTED BY WORLD-CLASS BRANDS">
-                                        <p class="form-label-help" style="font-size: 0.74rem; color: #94a3b8; margin-top: 5px;">This small-caps title sits directly above the infinite scrolling brand ticker on the frontpage.</p>
-                                    </div>
-
-                                    <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px 18px;">
-                                        <span style="font-size: 0.78rem; font-weight: 700; color: #0f172a; display: block; margin-bottom: 4px;">Infinite Loop Engine:</span>
-                                        <p style="font-size: 0.76rem; color: #64748b; margin: 0; line-height: 1.45;">Logos animate in a continuous hardware-accelerated loop across the homepage. Grayscale by default, colorizing on mouse hover.</p>
                                     </div>
                                 </div>
                             </div>
@@ -6934,123 +6776,77 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                     </form>
                 </div>
 
-                <!-- 3. SERVICES SHOWCASE -->
+                <!-- 3. SERVICES -->
                 <div id="tabPane_services" class="studio-tab-pane" style="<?php echo ($activeTab === 'services') ? 'display: block;' : 'display: none;'; ?>">
-                    <!-- Delegation Bar -->
-                    <?php $servicesAssignees = $moduleRegistry['services']['users'] ?? []; ?>
-                    <div class="module-delegation-bar" style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 12px 18px; margin-bottom: 22px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
-                        <div style="display: flex; align-items: center; gap: 12px; font-size: 0.84rem;">
-                            <span style="font-weight: 700; color: #0f172a; display: inline-flex; align-items: center; gap: 6px;">
-                                <i class="fa-solid fa-shield-halved" style="color: #dc2626;"></i> Access &amp; Delegation:
-                            </span>
-                            <span style="color: #475569;">
-                                <?php if (!empty($servicesAssignees)): ?>
-                                    Assigned to: <strong style="color: #0f172a;"><?php echo htmlspecialchars(implode(', ', $servicesAssignees)); ?></strong>
-                                <?php else: ?>
-                                    <strong style="color: #059669;">Universal Access</strong> (Super Admin &amp; IT Administrator)
-                                <?php endif; ?>
-                            </span>
-                        </div>
-                        <?php if ($canManageDelegation): ?>
-                        <form method="POST" action="/admin/services" style="display: inline-flex; align-items: center; gap: 8px; margin: 0;">
-                            <input type="hidden" name="action" value="transfer_module_assignment">
-                            <input type="hidden" name="module_name" value="services">
-                            <select name="target_user" class="form-text-input" style="padding: 4px 10px; font-size: 0.78rem; height: 32px; border-radius: 6px; width: auto;">
-                                <option value="">-- Delegate Services Module --</option>
-                                <?php foreach ($allStaffAccounts as $stf): ?>
-                                    <option value="<?php echo htmlspecialchars($stf['username']); ?>"><?php echo htmlspecialchars($stf['full_name'] . ' (' . $stf['role'] . ')'); ?></option>
-                                <?php endforeach; ?>
-                            </select>
-                            <select name="sub_action" class="form-text-input" style="padding: 4px 8px; font-size: 0.78rem; height: 32px; border-radius: 6px; width: auto;">
-                                <option value="assign">Assign</option>
-                                <option value="transfer">Transfer</option>
-                                <option value="clear">Clear</option>
-                            </select>
-                            <button type="submit" class="native-editor-btn" style="height: 32px; padding: 0 12px; font-size: 0.78rem; font-weight: 700;">Apply</button>
-                        </form>
-                        <?php endif; ?>
-                    </div>
-
                     <form method="POST" action="/admin/services">
                         <input type="hidden" name="action" value="save_services_header">
-                        <div class="section-header-bar" style="margin-bottom: 20px;">
-                            <div>
-                                <h2 class="section-header-title" style="font-size: 1.25rem; font-weight: 700; color: #0f172a; margin: 0;">Services Showcase Module</h2>
-                                <p class="section-header-desc" style="font-size: 0.82rem; color: #64748b; margin: 2px 0 0 0;">Manage services headline copy on the right, and service packages on the left.</p>
-                            </div>
-                            <button type="submit" class="btn-save-primary">
-                                <i class="fa-solid fa-floppy-disk"></i> Save Services Header
-                            </button>
+                        <div class="section-header-bar" style="margin-bottom: 16px;">
+                            <h2 class="section-header-title" style="font-size: 1.15rem; font-weight: 700; color: #0f172a; margin: 0;">Services</h2>
+                            <button type="submit" class="btn-save-primary"><i class="fa-solid fa-floppy-disk"></i> Save</button>
                         </div>
 
                         <div class="form-grid-two">
-                            <!-- Column A: Services Deliverables & Items Structure -->
                             <div>
                                 <div class="dashboard-card">
-                                    <div class="card-header-row" style="margin-bottom: 16px; justify-content: space-between;">
+                                    <div class="card-header-row" style="margin-bottom: 14px; justify-content: space-between;">
                                         <div style="display: flex; align-items: center; gap: 10px;">
                                             <div class="card-icon-badge"><i class="fa-solid fa-briefcase"></i></div>
-                                            <div class="card-title-text">Column A &bull; Service Packages</div>
+                                            <div class="card-title-text">Packages</div>
                                         </div>
                                         <a href="/admin/services?sub_action=add" class="native-editor-btn" style="text-decoration: none; font-size: 0.78rem; height: 32px; padding: 0 12px; font-weight: 700;">
-                                            <i class="fa-solid fa-plus" style="color: #dc2626;"></i> Add Service
+                                            <i class="fa-solid fa-plus" style="color: #dc2626;"></i> Add
                                         </a>
                                     </div>
 
-                                    <?php 
-                                    $servicesItems = $settings['services_items'] ?? [];
-                                    ?>
-                                    <div style="display: flex; flex-direction: column; gap: 10px;">
+                                    <?php $servicesItems = $settings['services_items'] ?? []; ?>
+                                    <div style="display: flex; flex-direction: column; gap: 8px;">
                                         <?php foreach ($servicesItems as $sItem): ?>
-                                            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; gap: 12px;">
-                                                <div style="display: flex; align-items: center; gap: 12px;">
-                                                    <div style="width: 36px; height: 36px; border-radius: 8px; background: rgba(220,38,38,0.08); border: 1px solid rgba(220,38,38,0.2); color: #dc2626; display: flex; align-items: center; justify-content: center; font-size: 0.95rem; flex-shrink: 0;">
+                                            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 10px 14px; display: flex; align-items: center; justify-content: space-between; gap: 10px;">
+                                                <div style="display: flex; align-items: center; gap: 10px;">
+                                                    <div style="width: 32px; height: 32px; border-radius: 8px; background: rgba(220,38,38,0.08); color: #dc2626; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; flex-shrink: 0;">
                                                         <i class="<?php echo htmlspecialchars($sItem['icon'] ?? 'fa-solid fa-film'); ?>"></i>
                                                     </div>
                                                     <div>
-                                                        <h4 style="font-size: 0.9rem; font-weight: 700; color: #0f172a; margin: 0;"><?php echo htmlspecialchars($sItem['title'] ?? 'Service'); ?></h4>
-                                                        <span style="font-size: 0.74rem; color: #64748b;">/services/<?php echo htmlspecialchars($sItem['slug'] ?? ''); ?></span>
+                                                        <div style="font-size: 0.86rem; font-weight: 700; color: #0f172a;"><?php echo htmlspecialchars($sItem['title'] ?? 'Service'); ?></div>
+                                                        <span style="font-size: 0.72rem; color: #64748b;">/services/<?php echo htmlspecialchars($sItem['slug'] ?? ''); ?></span>
                                                     </div>
                                                 </div>
-                                                <a href="/admin/services?edit_id=<?php echo $sItem['id']; ?>" class="native-editor-btn" style="text-decoration: none; font-size: 0.74rem; height: 30px; padding: 0 10px; font-weight: 600;">
-                                                    <i class="fa-solid fa-pen" style="font-size: 0.7rem;"></i> Edit
-                                                </a>
+                                                <a href="/admin/services?edit_id=<?php echo $sItem['id']; ?>" class="native-editor-btn" style="text-decoration: none; font-size: 0.74rem; height: 28px; padding: 0 10px; font-weight: 600;">Edit</a>
                                             </div>
                                         <?php endforeach; ?>
                                     </div>
                                 </div>
                             </div>
 
-                            <!-- Column B: Text Structure & Copy -->
                             <div>
                                 <div class="dashboard-card">
-                                    <div class="card-header-row" style="margin-bottom: 16px;">
+                                    <div class="card-header-row" style="margin-bottom: 14px;">
                                         <div class="card-icon-badge"><i class="fa-solid fa-align-left"></i></div>
-                                        <div class="card-title-text">Column B &bull; Services Section Copy</div>
+                                        <div class="card-title-text">Section Copy</div>
                                     </div>
 
-                                    <div class="form-field" style="margin-bottom: 16px;">
-                                        <label class="form-label-title">Pill Badge Label</label>
+                                    <div class="form-field" style="margin-bottom: 14px;">
+                                        <label class="form-label-title">Badge</label>
                                         <input type="text" name="services_badge_label" class="form-text-input" value="<?php echo htmlspecialchars($settings['services_badge_label'] ?? 'OUR EXPERTISE'); ?>">
                                     </div>
 
-                                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
+                                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px;">
                                         <div>
                                             <label class="form-label-title">Headline (White)</label>
                                             <input type="text" name="services_headline_white" class="form-text-input" value="<?php echo htmlspecialchars($settings['services_headline_white'] ?? 'What We'); ?>">
                                         </div>
                                         <div>
-                                            <label class="form-label-title">Headline (Red Accent)</label>
+                                            <label class="form-label-title">Headline (Red)</label>
                                             <input type="text" name="services_headline_red" class="form-text-input" value="<?php echo htmlspecialchars($settings['services_headline_red'] ?? 'Create'); ?>">
                                         </div>
                                     </div>
 
-                                    <div class="form-field">
+                                    <div class="form-field" style="margin-bottom: 0;">
                                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-                                            <label class="form-label-title" style="margin: 0;">Section Subtitle Copy</label>
-                                            <span id="servicesSubCounter" style="font-size: 0.72rem; color: #94a3b8;">0 chars</span>
+                                            <label class="form-label-title" style="margin: 0;">Subtitle</label>
+                                            <span id="servicesSubCounter" style="font-size: 0.7rem; color: #94a3b8;"></span>
                                         </div>
-                                        <textarea name="services_subtitle" id="servicesSubTextarea" class="form-text-input" rows="4" oninput="document.getElementById('servicesSubCounter').textContent = this.value.length + ' chars';"><?php echo htmlspecialchars($settings['services_subtitle'] ?? 'From cinematic commercials to brand documentaries, we deliver world-class visual storytelling that captivates and converts.'); ?></textarea>
+                                        <textarea name="services_subtitle" id="servicesSubTextarea" class="form-text-input" rows="3" oninput="document.getElementById('servicesSubCounter').textContent = this.value.length;"><?php echo htmlspecialchars($settings['services_subtitle'] ?? 'From cinematic commercials to brand documentaries, we deliver world-class visual storytelling that captivates and converts.'); ?></textarea>
                                     </div>
                                 </div>
                             </div>
@@ -7058,91 +6854,42 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                     </form>
                 </div>
 
-                <!-- 4. STORIES WE'VE TOLD (FEATURED WORK) -->
+                <!-- 4. FEATURED WORK -->
                 <div id="tabPane_featured" class="studio-tab-pane" style="<?php echo ($activeTab === 'featured') ? 'display: block;' : 'display: none;'; ?>">
-                    <!-- Delegation Bar -->
-                    <?php $featuredAssignees = $moduleRegistry['featured']['users'] ?? $moduleRegistry['portfolio']['users'] ?? []; ?>
-                    <div class="module-delegation-bar" style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 12px 18px; margin-bottom: 22px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
-                        <div style="display: flex; align-items: center; gap: 12px; font-size: 0.84rem;">
-                            <span style="font-weight: 700; color: #0f172a; display: inline-flex; align-items: center; gap: 6px;">
-                                <i class="fa-solid fa-shield-halved" style="color: #dc2626;"></i> Access &amp; Delegation:
-                            </span>
-                            <span style="color: #475569;">
-                                <?php if (!empty($featuredAssignees)): ?>
-                                    Assigned to: <strong style="color: #0f172a;"><?php echo htmlspecialchars(implode(', ', $featuredAssignees)); ?></strong>
-                                <?php else: ?>
-                                    <strong style="color: #059669;">Universal Access</strong> (Super Admin &amp; IT Administrator)
-                                <?php endif; ?>
-                            </span>
-                        </div>
-                        <?php if ($canManageDelegation): ?>
-                        <form method="POST" action="/admin/featured" style="display: inline-flex; align-items: center; gap: 8px; margin: 0;">
-                            <input type="hidden" name="action" value="transfer_module_assignment">
-                            <input type="hidden" name="module_name" value="featured">
-                            <select name="target_user" class="form-text-input" style="padding: 4px 10px; font-size: 0.78rem; height: 32px; border-radius: 6px; width: auto;">
-                                <option value="">-- Delegate Stories Module --</option>
-                                <?php foreach ($allStaffAccounts as $stf): ?>
-                                    <option value="<?php echo htmlspecialchars($stf['username']); ?>"><?php echo htmlspecialchars($stf['full_name'] . ' (' . $stf['role'] . ')'); ?></option>
-                                <?php endforeach; ?>
-                            </select>
-                            <select name="sub_action" class="form-text-input" style="padding: 4px 8px; font-size: 0.78rem; height: 32px; border-radius: 6px; width: auto;">
-                                <option value="assign">Assign</option>
-                                <option value="transfer">Transfer</option>
-                                <option value="clear">Clear</option>
-                            </select>
-                            <button type="submit" class="native-editor-btn" style="height: 32px; padding: 0 12px; font-size: 0.78rem; font-weight: 700;">Apply</button>
-                        </form>
-                        <?php endif; ?>
-                    </div>
-
                     <form method="POST" action="/admin/featured">
                         <input type="hidden" name="action" value="save_featured_work_header">
-                        <div class="section-header-bar" style="margin-bottom: 20px;">
-                            <div>
-                                <h2 class="section-header-title" style="font-size: 1.25rem; font-weight: 700; color: #0f172a; margin: 0;">Stories We've Told Showcase</h2>
-                                <p class="section-header-desc" style="font-size: 0.82rem; color: #64748b; margin: 2px 0 0 0;">Manage the 8 featured showreel video cards and showcase header typography.</p>
-                            </div>
-                            <button type="submit" class="btn-save-primary">
-                                <i class="fa-solid fa-floppy-disk"></i> Save Showcase Header
-                            </button>
+                        <div class="section-header-bar" style="margin-bottom: 16px;">
+                            <h2 class="section-header-title" style="font-size: 1.15rem; font-weight: 700; color: #0f172a; margin: 0;">Stories We've Told</h2>
+                            <button type="submit" class="btn-save-primary"><i class="fa-solid fa-floppy-disk"></i> Save</button>
                         </div>
 
                         <div class="form-grid-two">
-                            <!-- Column A: Video Showcase & Picture Structure -->
                             <div>
                                 <div class="dashboard-card">
-                                    <div class="card-header-row" style="margin-bottom: 16px; justify-content: space-between;">
+                                    <div class="card-header-row" style="margin-bottom: 14px; justify-content: space-between;">
                                         <div style="display: flex; align-items: center; gap: 10px;">
                                             <div class="card-icon-badge"><i class="fa-solid fa-film"></i></div>
-                                            <div class="card-title-text">Column A &bull; Featured Showreel Videos</div>
+                                            <div class="card-title-text">Featured Videos</div>
                                         </div>
                                         <a href="/admin/featured?sub_action=add" class="native-editor-btn" style="text-decoration: none; font-size: 0.78rem; height: 32px; padding: 0 12px; font-weight: 700;">
-                                            <i class="fa-solid fa-plus" style="color: #dc2626;"></i> Add Video
+                                            <i class="fa-solid fa-plus" style="color: #dc2626;"></i> Add
                                         </a>
                                     </div>
 
-                                    <?php 
-                                    $featuredItems = $settings['featured_work_items'] ?? [];
-                                    ?>
-                                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                                    <?php $featuredItems = $settings['featured_work_items'] ?? []; ?>
+                                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
                                         <?php foreach ($featuredItems as $fIt): ?>
                                             <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden; display: flex; flex-direction: column;">
                                                 <div style="aspect-ratio: 16/9; background: #0f172a; position: relative;">
                                                     <img src="<?php echo htmlspecialchars($fIt['thumbnail'] ?? '/assets/img/hero.jpg'); ?>" alt="<?php echo htmlspecialchars($fIt['project_name'] ?? ''); ?>" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.src='/assets/img/hero.jpg';">
-                                                    <span style="position: absolute; bottom: 6px; right: 6px; background: rgba(0,0,0,0.75); color: #ffffff; font-size: 0.65rem; font-weight: 700; padding: 2px 6px; border-radius: 4px;">
-                                                        <?php echo htmlspecialchars($fIt['duration'] ?? '1:30'); ?>
-                                                    </span>
+                                                    <span style="position: absolute; bottom: 5px; right: 5px; background: rgba(0,0,0,0.75); color: #ffffff; font-size: 0.64rem; font-weight: 700; padding: 1px 6px; border-radius: 4px;"><?php echo htmlspecialchars($fIt['duration'] ?? '1:30'); ?></span>
                                                 </div>
-                                                <div style="padding: 10px; flex: 1; display: flex; flex-direction: column; justify-content: space-between;">
-                                                    <div>
-                                                        <h5 style="font-size: 0.82rem; font-weight: 700; color: #0f172a; margin: 0 0 2px 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"><?php echo htmlspecialchars($fIt['project_name'] ?? ''); ?></h5>
-                                                        <span style="font-size: 0.72rem; color: #64748b;"><?php echo htmlspecialchars($fIt['category'] ?? ''); ?></span>
+                                                <div style="padding: 8px 10px; display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+                                                    <div style="min-width: 0;">
+                                                        <div style="font-size: 0.8rem; font-weight: 700; color: #0f172a; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"><?php echo htmlspecialchars($fIt['project_name'] ?? ''); ?></div>
+                                                        <span style="font-size: 0.7rem; color: #64748b;"><?php echo htmlspecialchars($fIt['category'] ?? ''); ?></span>
                                                     </div>
-                                                    <div style="margin-top: 8px; text-align: right;">
-                                                        <a href="/admin/featured?edit_id=<?php echo $fIt['id']; ?>" class="native-editor-btn" style="text-decoration: none; font-size: 0.72rem; height: 26px; padding: 0 8px; font-weight: 600;">
-                                                            <i class="fa-solid fa-pen"></i> Edit
-                                                        </a>
-                                                    </div>
+                                                    <a href="/admin/featured?edit_id=<?php echo $fIt['id']; ?>" class="native-editor-btn" style="text-decoration: none; font-size: 0.72rem; height: 26px; padding: 0 8px; font-weight: 600; flex-shrink: 0;">Edit</a>
                                                 </div>
                                             </div>
                                         <?php endforeach; ?>
@@ -7150,45 +6897,44 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                 </div>
                             </div>
 
-                            <!-- Column B: Text Structure & Copy -->
                             <div>
                                 <div class="dashboard-card">
-                                    <div class="card-header-row" style="margin-bottom: 16px;">
+                                    <div class="card-header-row" style="margin-bottom: 14px;">
                                         <div class="card-icon-badge"><i class="fa-solid fa-align-left"></i></div>
-                                        <div class="card-title-text">Column B &bull; Showcase Section Copy</div>
+                                        <div class="card-title-text">Section Copy</div>
                                     </div>
 
-                                    <div class="form-field" style="margin-bottom: 16px;">
-                                        <label class="form-label-title">Pill Badge Label</label>
+                                    <div class="form-field" style="margin-bottom: 14px;">
+                                        <label class="form-label-title">Badge</label>
                                         <input type="text" name="featured_work_badge_label" class="form-text-input" value="<?php echo htmlspecialchars($settings['featured_work_badge_label'] ?? 'PORTFOLIO SHOWCASE'); ?>">
                                     </div>
 
-                                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
+                                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px;">
                                         <div>
                                             <label class="form-label-title">Headline (White)</label>
                                             <input type="text" name="featured_work_headline_white" class="form-text-input" value="<?php echo htmlspecialchars($settings['featured_work_headline_white'] ?? 'Stories'); ?>">
                                         </div>
                                         <div>
-                                            <label class="form-label-title">Headline (Red Accent)</label>
+                                            <label class="form-label-title">Headline (Red)</label>
                                             <input type="text" name="featured_work_headline_red" class="form-text-input" value="<?php echo htmlspecialchars($settings['featured_work_headline_red'] ?? "We've Told."); ?>">
                                         </div>
                                     </div>
 
-                                    <div class="form-field" style="margin-bottom: 16px;">
+                                    <div class="form-field" style="margin-bottom: 14px;">
                                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-                                            <label class="form-label-title" style="margin: 0;">Showcase Subtitle</label>
-                                            <span id="featuredSubCounter" style="font-size: 0.72rem; color: #94a3b8;">0 chars</span>
+                                            <label class="form-label-title" style="margin: 0;">Subtitle</label>
+                                            <span id="featuredSubCounter" style="font-size: 0.7rem; color: #94a3b8;"></span>
                                         </div>
-                                        <textarea name="featured_work_subtitle" id="featuredSubTextarea" class="form-text-input" rows="4" oninput="document.getElementById('featuredSubCounter').textContent = this.value.length + ' chars';"><?php echo htmlspecialchars($settings['featured_work_subtitle'] ?? 'Every project is an opportunity to push creative boundaries. Here is a curated selection of our most memorable film and commercial productions.'); ?></textarea>
+                                        <textarea name="featured_work_subtitle" id="featuredSubTextarea" class="form-text-input" rows="3" oninput="document.getElementById('featuredSubCounter').textContent = this.value.length;"><?php echo htmlspecialchars($settings['featured_work_subtitle'] ?? 'Every project is an opportunity to push creative boundaries. Here is a curated selection of our most memorable film and commercial productions.'); ?></textarea>
                                     </div>
 
-                                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
                                         <div>
-                                            <label class="form-label-title">CTA Button Text</label>
+                                            <label class="form-label-title">Button Text</label>
                                             <input type="text" name="featured_work_cta_text" class="form-text-input" value="<?php echo htmlspecialchars($settings['featured_work_cta_text'] ?? 'Explore All Projects'); ?>">
                                         </div>
                                         <div>
-                                            <label class="form-label-title">CTA Button Link</label>
+                                            <label class="form-label-title">Button URL</label>
                                             <input type="text" name="featured_work_cta_url" class="form-text-input" value="<?php echo htmlspecialchars($settings['featured_work_cta_url'] ?? '/portfolio.php'); ?>">
                                         </div>
                                     </div>
@@ -7198,141 +6944,88 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                     </form>
                 </div>
 
-                <!-- 5. BY THE NUMBERS (STATS COUNTERS) -->
+                <!-- 5. STATS -->
                 <div id="tabPane_stats" class="studio-tab-pane" style="<?php echo ($activeTab === 'stats') ? 'display: block;' : 'display: none;'; ?>">
-                    <!-- Delegation Bar -->
-                    <?php $statsAssignees = $moduleRegistry['stats']['users'] ?? []; ?>
-                    <div class="module-delegation-bar" style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 12px 18px; margin-bottom: 22px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
-                        <div style="display: flex; align-items: center; gap: 12px; font-size: 0.84rem;">
-                            <span style="font-weight: 700; color: #0f172a; display: inline-flex; align-items: center; gap: 6px;">
-                                <i class="fa-solid fa-shield-halved" style="color: #dc2626;"></i> Access &amp; Delegation:
-                            </span>
-                            <span style="color: #475569;">
-                                <?php if (!empty($statsAssignees)): ?>
-                                    Assigned to: <strong style="color: #0f172a;"><?php echo htmlspecialchars(implode(', ', $statsAssignees)); ?></strong>
-                                <?php else: ?>
-                                    <strong style="color: #059669;">Universal Access</strong> (Super Admin &amp; IT Administrator)
-                                <?php endif; ?>
-                            </span>
-                        </div>
-                        <?php if ($canManageDelegation): ?>
-                        <form method="POST" action="/admin/stats" style="display: inline-flex; align-items: center; gap: 8px; margin: 0;">
-                            <input type="hidden" name="action" value="transfer_module_assignment">
-                            <input type="hidden" name="module_name" value="stats">
-                            <select name="target_user" class="form-text-input" style="padding: 4px 10px; font-size: 0.78rem; height: 32px; border-radius: 6px; width: auto;">
-                                <option value="">-- Delegate Stats Module --</option>
-                                <?php foreach ($allStaffAccounts as $stf): ?>
-                                    <option value="<?php echo htmlspecialchars($stf['username']); ?>"><?php echo htmlspecialchars($stf['full_name'] . ' (' . $stf['role'] . ')'); ?></option>
-                                <?php endforeach; ?>
-                            </select>
-                            <select name="sub_action" class="form-text-input" style="padding: 4px 8px; font-size: 0.78rem; height: 32px; border-radius: 6px; width: auto;">
-                                <option value="assign">Assign</option>
-                                <option value="transfer">Transfer</option>
-                                <option value="clear">Clear</option>
-                            </select>
-                            <button type="submit" class="native-editor-btn" style="height: 32px; padding: 0 12px; font-size: 0.78rem; font-weight: 700;">Apply</button>
-                        </form>
-                        <?php endif; ?>
-                    </div>
-
                     <form method="POST" action="/admin/stats">
                         <input type="hidden" name="action" value="save_stats">
-                        <div class="section-header-bar" style="margin-bottom: 20px;">
-                            <div>
-                                <h2 class="section-header-title" style="font-size: 1.25rem; font-weight: 700; color: #0f172a; margin: 0;">By The Numbers Module</h2>
-                                <p class="section-header-desc" style="font-size: 0.82rem; color: #64748b; margin: 2px 0 0 0;">Manage the 4 key metrics that highlight company track record on the frontpage.</p>
-                            </div>
-                            <button type="submit" class="btn-save-primary">
-                                <i class="fa-solid fa-floppy-disk"></i> Save Metrics
-                            </button>
+                        <div class="section-header-bar" style="margin-bottom: 16px;">
+                            <h2 class="section-header-title" style="font-size: 1.15rem; font-weight: 700; color: #0f172a; margin: 0;">By The Numbers</h2>
+                            <button type="submit" class="btn-save-primary"><i class="fa-solid fa-floppy-disk"></i> Save</button>
                         </div>
 
                         <div class="form-grid-two">
-                            <!-- Column A: Metric Cards Visual Preview -->
                             <div>
                                 <div class="dashboard-card">
-                                    <div class="card-header-row" style="margin-bottom: 16px;">
+                                    <div class="card-header-row" style="margin-bottom: 14px;">
                                         <div class="card-icon-badge"><i class="fa-solid fa-chart-simple"></i></div>
-                                        <div class="card-title-text">Column A &bull; Metric Cards Live Preview</div>
+                                        <div class="card-title-text">Preview</div>
                                     </div>
 
-                                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
-                                        <div style="background: #0f172a; border-radius: 12px; padding: 18px 16px; text-align: center; color: #ffffff; border: 1px solid #1e293b;">
-                                            <i class="fa-solid fa-video" style="color: #ef4444; font-size: 1.2rem; margin-bottom: 8px;"></i>
-                                            <div style="font-size: 1.6rem; font-weight: 800; color: #ffffff; line-height: 1.1;"><?php echo htmlspecialchars($settings['stats_counter_1_number'] ?? '150+'); ?></div>
-                                            <div style="font-size: 0.75rem; color: #94a3b8; font-weight: 600; margin-top: 4px;"><?php echo htmlspecialchars($settings['stats_counter_1_label'] ?? 'Commercials & Films'); ?></div>
+                                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                                        <div style="background: #0f172a; border-radius: 10px; padding: 16px; text-align: center; color: #ffffff;">
+                                            <div style="font-size: 1.5rem; font-weight: 800; line-height: 1.1;"><?php echo htmlspecialchars($settings['stats_counter_1_number'] ?? '150+'); ?></div>
+                                            <div style="font-size: 0.74rem; color: #94a3b8; font-weight: 600; margin-top: 4px;"><?php echo htmlspecialchars($settings['stats_counter_1_label'] ?? 'Commercials & Films'); ?></div>
                                         </div>
-                                        <div style="background: #0f172a; border-radius: 12px; padding: 18px 16px; text-align: center; color: #ffffff; border: 1px solid #1e293b;">
-                                            <i class="fa-solid fa-globe" style="color: #ef4444; font-size: 1.2rem; margin-bottom: 8px;"></i>
-                                            <div style="font-size: 1.6rem; font-weight: 800; color: #ffffff; line-height: 1.1;"><?php echo htmlspecialchars($settings['stats_counter_2_number'] ?? '12'); ?></div>
-                                            <div style="font-size: 0.75rem; color: #94a3b8; font-weight: 600; margin-top: 4px;"><?php echo htmlspecialchars($settings['stats_counter_2_label'] ?? 'Countries Filmed In'); ?></div>
+                                        <div style="background: #0f172a; border-radius: 10px; padding: 16px; text-align: center; color: #ffffff;">
+                                            <div style="font-size: 1.5rem; font-weight: 800; line-height: 1.1;"><?php echo htmlspecialchars($settings['stats_counter_2_number'] ?? '12'); ?></div>
+                                            <div style="font-size: 0.74rem; color: #94a3b8; font-weight: 600; margin-top: 4px;"><?php echo htmlspecialchars($settings['stats_counter_2_label'] ?? 'Countries Filmed In'); ?></div>
                                         </div>
-                                        <div style="background: #0f172a; border-radius: 12px; padding: 18px 16px; text-align: center; color: #ffffff; border: 1px solid #1e293b;">
-                                            <i class="fa-solid fa-trophy" style="color: #ef4444; font-size: 1.2rem; margin-bottom: 8px;"></i>
-                                            <div style="font-size: 1.6rem; font-weight: 800; color: #ffffff; line-height: 1.1;"><?php echo htmlspecialchars($settings['stats_counter_3_number'] ?? '24'); ?></div>
-                                            <div style="font-size: 0.75rem; color: #94a3b8; font-weight: 600; margin-top: 4px;"><?php echo htmlspecialchars($settings['stats_counter_3_label'] ?? 'Industry Awards'); ?></div>
+                                        <div style="background: #0f172a; border-radius: 10px; padding: 16px; text-align: center; color: #ffffff;">
+                                            <div style="font-size: 1.5rem; font-weight: 800; line-height: 1.1;"><?php echo htmlspecialchars($settings['stats_counter_3_number'] ?? '24'); ?></div>
+                                            <div style="font-size: 0.74rem; color: #94a3b8; font-weight: 600; margin-top: 4px;"><?php echo htmlspecialchars($settings['stats_counter_3_label'] ?? 'Industry Awards'); ?></div>
                                         </div>
-                                        <div style="background: #0f172a; border-radius: 12px; padding: 18px 16px; text-align: center; color: #ffffff; border: 1px solid #1e293b;">
-                                            <i class="fa-solid fa-star" style="color: #ef4444; font-size: 1.2rem; margin-bottom: 8px;"></i>
-                                            <div style="font-size: 1.6rem; font-weight: 800; color: #ffffff; line-height: 1.1;"><?php echo htmlspecialchars($settings['stats_counter_4_number'] ?? '99%'); ?></div>
-                                            <div style="font-size: 0.75rem; color: #94a3b8; font-weight: 600; margin-top: 4px;"><?php echo htmlspecialchars($settings['stats_counter_4_label'] ?? 'Client Satisfaction'); ?></div>
+                                        <div style="background: #0f172a; border-radius: 10px; padding: 16px; text-align: center; color: #ffffff;">
+                                            <div style="font-size: 1.5rem; font-weight: 800; line-height: 1.1;"><?php echo htmlspecialchars($settings['stats_counter_4_number'] ?? '99%'); ?></div>
+                                            <div style="font-size: 0.74rem; color: #94a3b8; font-weight: 600; margin-top: 4px;"><?php echo htmlspecialchars($settings['stats_counter_4_label'] ?? 'Client Satisfaction'); ?></div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
 
-                            <!-- Column B: Text Structure & Metrics Copy -->
                             <div>
                                 <div class="dashboard-card">
-                                    <div class="card-header-row" style="margin-bottom: 16px;">
+                                    <div class="card-header-row" style="margin-bottom: 14px;">
                                         <div class="card-icon-badge"><i class="fa-solid fa-pen-ruler"></i></div>
-                                        <div class="card-title-text">Column B &bull; Counter Values &amp; Labels</div>
+                                        <div class="card-title-text">Metrics</div>
                                     </div>
 
-                                    <!-- Stat 1 -->
-                                    <div style="display: grid; grid-template-columns: 120px 1fr; gap: 12px; margin-bottom: 14px;">
+                                    <div style="display: grid; grid-template-columns: 110px 1fr; gap: 10px; margin-bottom: 12px;">
                                         <div>
-                                            <label class="form-label-title">Stat 1 Value</label>
+                                            <label class="form-label-title">Value 1</label>
                                             <input type="text" name="stats_counter_1_number" class="form-text-input" value="<?php echo htmlspecialchars($settings['stats_counter_1_number'] ?? '150+'); ?>">
                                         </div>
                                         <div>
-                                            <label class="form-label-title">Stat 1 Label</label>
+                                            <label class="form-label-title">Label 1</label>
                                             <input type="text" name="stats_counter_1_label" class="form-text-input" value="<?php echo htmlspecialchars($settings['stats_counter_1_label'] ?? 'Commercials & Films'); ?>">
                                         </div>
                                     </div>
-
-                                    <!-- Stat 2 -->
-                                    <div style="display: grid; grid-template-columns: 120px 1fr; gap: 12px; margin-bottom: 14px;">
+                                    <div style="display: grid; grid-template-columns: 110px 1fr; gap: 10px; margin-bottom: 12px;">
                                         <div>
-                                            <label class="form-label-title">Stat 2 Value</label>
+                                            <label class="form-label-title">Value 2</label>
                                             <input type="text" name="stats_counter_2_number" class="form-text-input" value="<?php echo htmlspecialchars($settings['stats_counter_2_number'] ?? '12'); ?>">
                                         </div>
                                         <div>
-                                            <label class="form-label-title">Stat 2 Label</label>
+                                            <label class="form-label-title">Label 2</label>
                                             <input type="text" name="stats_counter_2_label" class="form-text-input" value="<?php echo htmlspecialchars($settings['stats_counter_2_label'] ?? 'Countries Filmed In'); ?>">
                                         </div>
                                     </div>
-
-                                    <!-- Stat 3 -->
-                                    <div style="display: grid; grid-template-columns: 120px 1fr; gap: 12px; margin-bottom: 14px;">
+                                    <div style="display: grid; grid-template-columns: 110px 1fr; gap: 10px; margin-bottom: 12px;">
                                         <div>
-                                            <label class="form-label-title">Stat 3 Value</label>
+                                            <label class="form-label-title">Value 3</label>
                                             <input type="text" name="stats_counter_3_number" class="form-text-input" value="<?php echo htmlspecialchars($settings['stats_counter_3_number'] ?? '24'); ?>">
                                         </div>
                                         <div>
-                                            <label class="form-label-title">Stat 3 Label</label>
+                                            <label class="form-label-title">Label 3</label>
                                             <input type="text" name="stats_counter_3_label" class="form-text-input" value="<?php echo htmlspecialchars($settings['stats_counter_3_label'] ?? 'Industry Awards'); ?>">
                                         </div>
                                     </div>
-
-                                    <!-- Stat 4 -->
-                                    <div style="display: grid; grid-template-columns: 120px 1fr; gap: 12px;">
+                                    <div style="display: grid; grid-template-columns: 110px 1fr; gap: 10px;">
                                         <div>
-                                            <label class="form-label-title">Stat 4 Value</label>
+                                            <label class="form-label-title">Value 4</label>
                                             <input type="text" name="stats_counter_4_number" class="form-text-input" value="<?php echo htmlspecialchars($settings['stats_counter_4_number'] ?? '99%'); ?>">
                                         </div>
                                         <div>
-                                            <label class="form-label-title">Stat 4 Label</label>
+                                            <label class="form-label-title">Label 4</label>
                                             <input type="text" name="stats_counter_4_label" class="form-text-input" value="<?php echo htmlspecialchars($settings['stats_counter_4_label'] ?? 'Client Satisfaction'); ?>">
                                         </div>
                                     </div>
@@ -7342,94 +7035,46 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                     </form>
                 </div>
 
-                <!-- 6. CLIENT TESTIMONIALS -->
+                <!-- 6. TESTIMONIALS -->
                 <div id="tabPane_testimonials" class="studio-tab-pane" style="<?php echo ($activeTab === 'testimonials') ? 'display: block;' : 'display: none;'; ?>">
-                    <!-- Delegation Bar -->
-                    <?php $testAssignees = $moduleRegistry['testimonials']['users'] ?? []; ?>
-                    <div class="module-delegation-bar" style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 12px 18px; margin-bottom: 22px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
-                        <div style="display: flex; align-items: center; gap: 12px; font-size: 0.84rem;">
-                            <span style="font-weight: 700; color: #0f172a; display: inline-flex; align-items: center; gap: 6px;">
-                                <i class="fa-solid fa-shield-halved" style="color: #dc2626;"></i> Access &amp; Delegation:
-                            </span>
-                            <span style="color: #475569;">
-                                <?php if (!empty($testAssignees)): ?>
-                                    Assigned to: <strong style="color: #0f172a;"><?php echo htmlspecialchars(implode(', ', $testAssignees)); ?></strong>
-                                <?php else: ?>
-                                    <strong style="color: #059669;">Universal Access</strong> (Super Admin &amp; IT Administrator)
-                                <?php endif; ?>
-                            </span>
-                        </div>
-                        <?php if ($canManageDelegation): ?>
-                        <form method="POST" action="/admin/testimonials" style="display: inline-flex; align-items: center; gap: 8px; margin: 0;">
-                            <input type="hidden" name="action" value="transfer_module_assignment">
-                            <input type="hidden" name="module_name" value="testimonials">
-                            <select name="target_user" class="form-text-input" style="padding: 4px 10px; font-size: 0.78rem; height: 32px; border-radius: 6px; width: auto;">
-                                <option value="">-- Delegate Testimonials Module --</option>
-                                <?php foreach ($allStaffAccounts as $stf): ?>
-                                    <option value="<?php echo htmlspecialchars($stf['username']); ?>"><?php echo htmlspecialchars($stf['full_name'] . ' (' . $stf['role'] . ')'); ?></option>
-                                <?php endforeach; ?>
-                            </select>
-                            <select name="sub_action" class="form-text-input" style="padding: 4px 8px; font-size: 0.78rem; height: 32px; border-radius: 6px; width: auto;">
-                                <option value="assign">Assign</option>
-                                <option value="transfer">Transfer</option>
-                                <option value="clear">Clear</option>
-                            </select>
-                            <button type="submit" class="native-editor-btn" style="height: 32px; padding: 0 12px; font-size: 0.78rem; font-weight: 700;">Apply</button>
-                        </form>
-                        <?php endif; ?>
-                    </div>
-
                     <form method="POST" action="/admin/testimonials">
                         <input type="hidden" name="action" value="save_testimonials_header">
-                        <div class="section-header-bar" style="margin-bottom: 20px;">
-                            <div>
-                                <h2 class="section-header-title" style="font-size: 1.25rem; font-weight: 700; color: #0f172a; margin: 0;">Client Testimonials Module</h2>
-                                <p class="section-header-desc" style="font-size: 0.82rem; color: #64748b; margin: 2px 0 0 0;">Manage review quotes, client portraits, and section header text.</p>
-                            </div>
-                            <button type="submit" class="btn-save-primary">
-                                <i class="fa-solid fa-floppy-disk"></i> Save Testimonials Header
-                            </button>
+                        <div class="section-header-bar" style="margin-bottom: 16px;">
+                            <h2 class="section-header-title" style="font-size: 1.15rem; font-weight: 700; color: #0f172a; margin: 0;">Testimonials</h2>
+                            <button type="submit" class="btn-save-primary"><i class="fa-solid fa-floppy-disk"></i> Save</button>
                         </div>
 
                         <div class="form-grid-two">
-                            <!-- Column A: Testimonial Reviews & Avatars Structure -->
                             <div>
                                 <div class="dashboard-card">
-                                    <div class="card-header-row" style="margin-bottom: 16px; justify-content: space-between;">
+                                    <div class="card-header-row" style="margin-bottom: 14px; justify-content: space-between;">
                                         <div style="display: flex; align-items: center; gap: 10px;">
                                             <div class="card-icon-badge"><i class="fa-solid fa-quote-left"></i></div>
-                                            <div class="card-title-text">Column A &bull; Client Reviews &amp; Ratings</div>
+                                            <div class="card-title-text">Reviews</div>
                                         </div>
                                         <a href="/admin/index.php?section=testimonials&sub_action=add" class="native-editor-btn" style="text-decoration: none; font-size: 0.78rem; height: 32px; padding: 0 12px; font-weight: 700;">
-                                            <i class="fa-solid fa-plus" style="color: #dc2626;"></i> Add Review
+                                            <i class="fa-solid fa-plus" style="color: #dc2626;"></i> Add
                                         </a>
                                     </div>
 
-                                    <?php 
-                                    $testimonials = $settings['testimonials_items'] ?? [];
-                                    if (empty($testimonials)):
-                                    ?>
-                                        <div style="padding: 32px 16px; text-align: center; background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 10px; color: #64748b;">
-                                            <i class="fa-regular fa-comment-dots" style="font-size: 1.6rem; color: #94a3b8; margin-bottom: 8px; display: block;"></i>
-                                            <span style="font-size: 0.84rem; font-weight: 600;">No testimonials found.</span>
-                                        </div>
+                                    <?php $testimonials = $settings['testimonials_items'] ?? []; ?>
+                                    <?php if (empty($testimonials)): ?>
+                                        <div style="padding: 28px 16px; text-align: center; background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 10px; color: #64748b; font-size: 0.84rem;">No reviews yet.</div>
                                     <?php else: ?>
-                                        <div style="display: flex; flex-direction: column; gap: 12px;">
+                                        <div style="display: flex; flex-direction: column; gap: 10px;">
                                             <?php foreach (array_slice($testimonials, 0, 4) as $tItem): ?>
-                                                <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 12px 16px;">
-                                                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px;">
-                                                        <div style="display: flex; align-items: center; gap: 10px;">
-                                                            <img src="<?php echo htmlspecialchars($tItem['author_image'] ?? $tItem['image'] ?? '/assets/img/hero.jpg'); ?>" alt="Author" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover;" onerror="this.src='/assets/img/hero.jpg';">
+                                                <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 10px 14px;">
+                                                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                                                        <div style="display: flex; align-items: center; gap: 8px;">
+                                                            <img src="<?php echo htmlspecialchars($tItem['author_image'] ?? $tItem['image'] ?? '/assets/img/hero.jpg'); ?>" alt="Author" style="width: 28px; height: 28px; border-radius: 50%; object-fit: cover;" onerror="this.src='/assets/img/hero.jpg';">
                                                             <div>
-                                                                <h5 style="font-size: 0.84rem; font-weight: 700; color: #0f172a; margin: 0;"><?php echo htmlspecialchars($tItem['author_name'] ?? $tItem['name'] ?? 'Client'); ?></h5>
-                                                                <span style="font-size: 0.72rem; color: #64748b;"><?php echo htmlspecialchars($tItem['author_title'] ?? $tItem['role'] ?? 'Partner'); ?></span>
+                                                                <div style="font-size: 0.82rem; font-weight: 700; color: #0f172a;"><?php echo htmlspecialchars($tItem['author_name'] ?? $tItem['name'] ?? 'Client'); ?></div>
+                                                                <span style="font-size: 0.7rem; color: #64748b;"><?php echo htmlspecialchars($tItem['author_title'] ?? $tItem['role'] ?? ''); ?></span>
                                                             </div>
                                                         </div>
-                                                        <div style="color: #f59e0b; font-size: 0.72rem;">
-                                                            <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i>
-                                                        </div>
+                                                        <div style="color: #f59e0b; font-size: 0.68rem;">★★★★★</div>
                                                     </div>
-                                                    <p style="font-size: 0.76rem; color: #475569; margin: 0; line-height: 1.4; font-style: italic;">&ldquo;<?php echo htmlspecialchars(mb_strimwidth($tItem['testimonial_text'] ?? $tItem['quote'] ?? '', 0, 110, '...')); ?>&rdquo;</p>
+                                                    <p style="font-size: 0.75rem; color: #475569; margin: 0; line-height: 1.4;">&ldquo;<?php echo htmlspecialchars(mb_strimwidth($tItem['testimonial_text'] ?? $tItem['quote'] ?? '', 0, 100, '...')); ?>&rdquo;</p>
                                                 </div>
                                             <?php endforeach; ?>
                                         </div>
@@ -7437,36 +7082,35 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                 </div>
                             </div>
 
-                            <!-- Column B: Text Structure & Copy -->
                             <div>
                                 <div class="dashboard-card">
-                                    <div class="card-header-row" style="margin-bottom: 16px;">
+                                    <div class="card-header-row" style="margin-bottom: 14px;">
                                         <div class="card-icon-badge"><i class="fa-solid fa-align-left"></i></div>
-                                        <div class="card-title-text">Column B &bull; Testimonials Section Copy</div>
+                                        <div class="card-title-text">Section Copy</div>
                                     </div>
 
-                                    <div class="form-field" style="margin-bottom: 16px;">
-                                        <label class="form-label-title">Pill Badge Label</label>
+                                    <div class="form-field" style="margin-bottom: 14px;">
+                                        <label class="form-label-title">Badge</label>
                                         <input type="text" name="testimonials_badge_label" class="form-text-input" value="<?php echo htmlspecialchars($settings['testimonials_badge_label'] ?? 'TESTIMONIALS'); ?>">
                                     </div>
 
-                                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
+                                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px;">
                                         <div>
                                             <label class="form-label-title">Headline (White)</label>
                                             <input type="text" name="testimonials_headline_white" class="form-text-input" value="<?php echo htmlspecialchars($settings['testimonials_headline_white'] ?? 'What Our'); ?>">
                                         </div>
                                         <div>
-                                            <label class="form-label-title">Headline (Red Accent)</label>
+                                            <label class="form-label-title">Headline (Red)</label>
                                             <input type="text" name="testimonials_headline_red" class="form-text-input" value="<?php echo htmlspecialchars($settings['testimonials_headline_red'] ?? 'Clients Say'); ?>">
                                         </div>
                                     </div>
 
-                                    <div class="form-field">
+                                    <div class="form-field" style="margin-bottom: 0;">
                                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-                                            <label class="form-label-title" style="margin: 0;">Subtitle Copy</label>
-                                            <span id="testimonialsSubCounter" style="font-size: 0.72rem; color: #94a3b8;">0 chars</span>
+                                            <label class="form-label-title" style="margin: 0;">Subtitle</label>
+                                            <span id="testimonialsSubCounter" style="font-size: 0.7rem; color: #94a3b8;"></span>
                                         </div>
-                                        <textarea name="testimonials_subtitle" id="testimonialsSubTextarea" class="form-text-input" rows="4" oninput="document.getElementById('testimonialsSubCounter').textContent = this.value.length + ' chars';"><?php echo htmlspecialchars($settings['testimonials_subtitle'] ?? 'Trusted by global brands, creative leaders, and visionary couples.'); ?></textarea>
+                                        <textarea name="testimonials_subtitle" id="testimonialsSubTextarea" class="form-text-input" rows="3" oninput="document.getElementById('testimonialsSubCounter').textContent = this.value.length;"><?php echo htmlspecialchars($settings['testimonials_subtitle'] ?? 'Trusted by global brands, creative leaders, and visionary couples.'); ?></textarea>
                                     </div>
                                 </div>
                             </div>
@@ -7476,75 +7120,30 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
 
                 <!-- 7. PRODUCTION BTS -->
                 <div id="tabPane_bts" class="studio-tab-pane" style="<?php echo ($activeTab === 'bts') ? 'display: block;' : 'display: none;'; ?>">
-                    <!-- Delegation Bar -->
-                    <?php $btsAssignees = $moduleRegistry['bts']['users'] ?? []; ?>
-                    <div class="module-delegation-bar" style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 12px 18px; margin-bottom: 22px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
-                        <div style="display: flex; align-items: center; gap: 12px; font-size: 0.84rem;">
-                            <span style="font-weight: 700; color: #0f172a; display: inline-flex; align-items: center; gap: 6px;">
-                                <i class="fa-solid fa-shield-halved" style="color: #dc2626;"></i> Access &amp; Delegation:
-                            </span>
-                            <span style="color: #475569;">
-                                <?php if (!empty($btsAssignees)): ?>
-                                    Assigned to: <strong style="color: #0f172a;"><?php echo htmlspecialchars(implode(', ', $btsAssignees)); ?></strong>
-                                <?php else: ?>
-                                    <strong style="color: #059669;">Universal Access</strong> (Super Admin &amp; IT Administrator)
-                                <?php endif; ?>
-                            </span>
-                        </div>
-                        <?php if ($canManageDelegation): ?>
-                        <form method="POST" action="/admin/bts" style="display: inline-flex; align-items: center; gap: 8px; margin: 0;">
-                            <input type="hidden" name="action" value="transfer_module_assignment">
-                            <input type="hidden" name="module_name" value="bts">
-                            <select name="target_user" class="form-text-input" style="padding: 4px 10px; font-size: 0.78rem; height: 32px; border-radius: 6px; width: auto;">
-                                <option value="">-- Delegate BTS Module --</option>
-                                <?php foreach ($allStaffAccounts as $stf): ?>
-                                    <option value="<?php echo htmlspecialchars($stf['username']); ?>"><?php echo htmlspecialchars($stf['full_name'] . ' (' . $stf['role'] . ')'); ?></option>
-                                <?php endforeach; ?>
-                            </select>
-                            <select name="sub_action" class="form-text-input" style="padding: 4px 8px; font-size: 0.78rem; height: 32px; border-radius: 6px; width: auto;">
-                                <option value="assign">Assign</option>
-                                <option value="transfer">Transfer</option>
-                                <option value="clear">Clear</option>
-                            </select>
-                            <button type="submit" class="native-editor-btn" style="height: 32px; padding: 0 12px; font-size: 0.78rem; font-weight: 700;">Apply</button>
-                        </form>
-                        <?php endif; ?>
-                    </div>
-
                     <form method="POST" action="/admin/bts">
                         <input type="hidden" name="action" value="save_bts_header">
-                        <div class="section-header-bar" style="margin-bottom: 20px;">
-                            <div>
-                                <h2 class="section-header-title" style="font-size: 1.25rem; font-weight: 700; color: #0f172a; margin: 0;">Production BTS Module</h2>
-                                <p class="section-header-desc" style="font-size: 0.82rem; color: #64748b; margin: 2px 0 0 0;">Manage behind-the-scenes photography gallery and section header typography.</p>
-                            </div>
-                            <button type="submit" class="btn-save-primary">
-                                <i class="fa-solid fa-floppy-disk"></i> Save BTS Header
-                            </button>
+                        <div class="section-header-bar" style="margin-bottom: 16px;">
+                            <h2 class="section-header-title" style="font-size: 1.15rem; font-weight: 700; color: #0f172a; margin: 0;">Production BTS</h2>
+                            <button type="submit" class="btn-save-primary"><i class="fa-solid fa-floppy-disk"></i> Save</button>
                         </div>
 
                         <div class="form-grid-two">
-                            <!-- Column A: Behind the Scenes Gallery Structure -->
                             <div>
                                 <div class="dashboard-card">
-                                    <div class="card-header-row" style="margin-bottom: 16px;">
+                                    <div class="card-header-row" style="margin-bottom: 14px;">
                                         <div class="card-icon-badge"><i class="fa-solid fa-camera-retro"></i></div>
-                                        <div class="card-title-text">Column A &bull; Behind the Scenes Media Cards</div>
+                                        <div class="card-title-text">BTS Gallery</div>
                                     </div>
 
-                                    <?php 
-                                    $btsPhotos = $settings['bts_photos'] ?? [];
-                                    ?>
-                                    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px;">
-                                        <?php foreach ($btsPhotos as $bIdx => $bPhoto): 
-                                            $bImg = $bPhoto['image'] ?? '';
-                                        ?>
-                                            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden; position: relative;">
+                                    <?php $btsPhotos = $settings['bts_photos'] ?? ($settings['bts_items'] ?? []); ?>
+                                    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(125px, 1fr)); gap: 10px;">
+                                        <?php foreach ($btsPhotos as $bIdx => $bPhoto): $bImg = $bPhoto['image'] ?? ''; ?>
+                                            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden;">
                                                 <div style="aspect-ratio: 16/11; background: #0f172a;">
-                                                    <img src="<?php echo htmlspecialchars($bImg); ?>" alt="BTS Photo" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.src='/assets/img/hero.jpg';">
+                                                    <img src="<?php echo htmlspecialchars($bImg); ?>" alt="BTS" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.src='/assets/img/hero.jpg';">
                                                 </div>
-                                                <div style="padding: 6px 8px; font-size: 0.72rem; color: #334155; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                                                    <?php echo htmlspecialchars($bPhoto['caption'] ?? $bPhoto['title'] ?? 'BTS Frame #' . ($bIdx + 1)); ?>
+                                                <div style="padding: 5px 8px; font-size: 0.7rem; color: #334155; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                                    <?php echo htmlspecialchars($bPhoto['caption'] ?? $bPhoto['title'] ?? 'Frame #' . ($bIdx + 1)); ?>
                                                 </div>
                                             </div>
                                         <?php endforeach; ?>
@@ -7552,36 +7151,35 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                 </div>
                             </div>
 
-                            <!-- Column B: Text Structure & Copy -->
                             <div>
                                 <div class="dashboard-card">
-                                    <div class="card-header-row" style="margin-bottom: 16px;">
+                                    <div class="card-header-row" style="margin-bottom: 14px;">
                                         <div class="card-icon-badge"><i class="fa-solid fa-align-left"></i></div>
-                                        <div class="card-title-text">Column B &bull; Production BTS Section Copy</div>
+                                        <div class="card-title-text">Section Copy</div>
                                     </div>
 
-                                    <div class="form-field" style="margin-bottom: 16px;">
-                                        <label class="form-label-title">Pill Badge Label</label>
+                                    <div class="form-field" style="margin-bottom: 14px;">
+                                        <label class="form-label-title">Badge</label>
                                         <input type="text" name="bts_badge_label" class="form-text-input" value="<?php echo htmlspecialchars($settings['bts_badge_label'] ?? 'PRODUCTION BTS'); ?>">
                                     </div>
 
-                                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
+                                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px;">
                                         <div>
                                             <label class="form-label-title">Headline (White)</label>
                                             <input type="text" name="bts_headline_white" class="form-text-input" value="<?php echo htmlspecialchars($settings['bts_headline_white'] ?? 'Every Frame'); ?>">
                                         </div>
                                         <div>
-                                            <label class="form-label-title">Headline (Red Accent)</label>
+                                            <label class="form-label-title">Headline (Red)</label>
                                             <input type="text" name="bts_headline_red" class="form-text-input" value="<?php echo htmlspecialchars($settings['bts_headline_red'] ?? 'Speaks'); ?>">
                                         </div>
                                     </div>
 
-                                    <div class="form-field">
+                                    <div class="form-field" style="margin-bottom: 0;">
                                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-                                            <label class="form-label-title" style="margin: 0;">Description Copy</label>
-                                            <span id="btsSubCounter" style="font-size: 0.72rem; color: #94a3b8;">0 chars</span>
+                                            <label class="form-label-title" style="margin: 0;">Description</label>
+                                            <span id="btsSubCounter" style="font-size: 0.7rem; color: #94a3b8;"></span>
                                         </div>
-                                        <textarea name="bts_description" id="btsSubTextarea" class="form-text-input" rows="4" oninput="document.getElementById('btsSubCounter').textContent = this.value.length + ' chars';"><?php echo htmlspecialchars($settings['bts_description'] ?? 'A raw look at what it takes to create world-class content — from location scouts to post-production suites.'); ?></textarea>
+                                        <textarea name="bts_description" id="btsSubTextarea" class="form-text-input" rows="3" oninput="document.getElementById('btsSubCounter').textContent = this.value.length;"><?php echo htmlspecialchars($settings['bts_description'] ?? 'A raw look at what it takes to create world-class content — from location scouts to post-production suites.'); ?></textarea>
                                     </div>
                                 </div>
                             </div>
@@ -7591,131 +7189,83 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
 
                 <!-- 8. DISCOVERY CALL -->
                 <div id="tabPane_discovery" class="studio-tab-pane" style="<?php echo ($activeTab === 'discovery') ? 'display: block;' : 'display: none;'; ?>">
-                    <!-- Delegation Bar -->
-                    <?php $discAssignees = $moduleRegistry['discovery']['users'] ?? []; ?>
-                    <div class="module-delegation-bar" style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 12px 18px; margin-bottom: 22px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
-                        <div style="display: flex; align-items: center; gap: 12px; font-size: 0.84rem;">
-                            <span style="font-weight: 700; color: #0f172a; display: inline-flex; align-items: center; gap: 6px;">
-                                <i class="fa-solid fa-shield-halved" style="color: #dc2626;"></i> Access &amp; Delegation:
-                            </span>
-                            <span style="color: #475569;">
-                                <?php if (!empty($discAssignees)): ?>
-                                    Assigned to: <strong style="color: #0f172a;"><?php echo htmlspecialchars(implode(', ', $discAssignees)); ?></strong>
-                                <?php else: ?>
-                                    <strong style="color: #059669;">Universal Access</strong> (Super Admin &amp; IT Administrator)
-                                <?php endif; ?>
-                            </span>
-                        </div>
-                        <?php if ($canManageDelegation): ?>
-                        <form method="POST" action="/admin/discovery" style="display: inline-flex; align-items: center; gap: 8px; margin: 0;">
-                            <input type="hidden" name="action" value="transfer_module_assignment">
-                            <input type="hidden" name="module_name" value="discovery">
-                            <select name="target_user" class="form-text-input" style="padding: 4px 10px; font-size: 0.78rem; height: 32px; border-radius: 6px; width: auto;">
-                                <option value="">-- Delegate Discovery Module --</option>
-                                <?php foreach ($allStaffAccounts as $stf): ?>
-                                    <option value="<?php echo htmlspecialchars($stf['username']); ?>"><?php echo htmlspecialchars($stf['full_name'] . ' (' . $stf['role'] . ')'); ?></option>
-                                <?php endforeach; ?>
-                            </select>
-                            <select name="sub_action" class="form-text-input" style="padding: 4px 8px; font-size: 0.78rem; height: 32px; border-radius: 6px; width: auto;">
-                                <option value="assign">Assign</option>
-                                <option value="transfer">Transfer</option>
-                                <option value="clear">Clear</option>
-                            </select>
-                            <button type="submit" class="native-editor-btn" style="height: 32px; padding: 0 12px; font-size: 0.78rem; font-weight: 700;">Apply</button>
-                        </form>
-                        <?php endif; ?>
-                    </div>
-
                     <form method="POST" action="/admin/discovery" enctype="multipart/form-data">
                         <input type="hidden" name="action" value="save_discovery_call">
-                        <div class="section-header-bar" style="margin-bottom: 20px;">
-                            <div>
-                                <h2 class="section-header-title" style="font-size: 1.25rem; font-weight: 700; color: #0f172a; margin: 0;">Discovery Call Booking Module</h2>
-                                <p class="section-header-desc" style="font-size: 0.82rem; color: #64748b; margin: 2px 0 0 0;">Manage discovery hero visual, availability pill, copy, and 4 feature value cards.</p>
-                            </div>
-                            <button type="submit" class="btn-save-primary">
-                                <i class="fa-solid fa-floppy-disk"></i> Save Discovery Module
-                            </button>
+                        <div class="section-header-bar" style="margin-bottom: 16px;">
+                            <h2 class="section-header-title" style="font-size: 1.15rem; font-weight: 700; color: #0f172a; margin: 0;">Discovery Call</h2>
+                            <button type="submit" class="btn-save-primary"><i class="fa-solid fa-floppy-disk"></i> Save</button>
                         </div>
 
                         <div class="form-grid-two">
-                            <!-- Column A: Picture Structure & Visual Media -->
                             <div>
-                                <div class="dashboard-card" style="margin-bottom: 20px;">
-                                    <div class="card-header-row" style="margin-bottom: 16px;">
+                                <div class="dashboard-card">
+                                    <div class="card-header-row" style="margin-bottom: 14px;">
                                         <div class="card-icon-badge"><i class="fa-solid fa-image"></i></div>
-                                        <div class="card-title-text">Column A &bull; Cinema Hero Image &amp; Status</div>
+                                        <div class="card-title-text">Media &amp; Form</div>
                                     </div>
 
-                                    <div class="form-field" style="margin-bottom: 16px;">
-                                        <label class="form-label-title">Discovery Hero Image URL</label>
-                                        <input type="text" id="discHeroInput" name="discovery_hero_image" class="form-text-input" placeholder="https://res.cloudinary.com/.../discovery.jpg" value="<?php echo htmlspecialchars($settings['discovery_hero_image'] ?? '/assets/img/discovery_call.jpg'); ?>" oninput="document.getElementById('discHeroPreview').src=this.value;">
+                                    <div class="form-field" style="margin-bottom: 14px;">
+                                        <label class="form-label-title">Cover Image URL</label>
+                                        <input type="text" id="discHeroInput" name="discovery_hero_image" class="form-text-input" placeholder="https://..." value="<?php echo htmlspecialchars($settings['discovery_hero_image'] ?? '/assets/img/discovery_call.jpg'); ?>" oninput="document.getElementById('discHeroPreview').src=this.value;">
                                     </div>
 
-                                    <!-- 16:9 Preview Frame -->
-                                    <div style="margin-bottom: 16px;">
-                                        <label class="form-label-title" style="font-size: 0.76rem; margin-bottom: 6px; display: block;">16:9 Cinema Image Preview Frame</label>
-                                        <div style="aspect-ratio: 16/9; border-radius: 10px; overflow: hidden; background: #0f172a; border: 1px solid #e2e8f0; position: relative;">
-                                            <img id="discHeroPreview" src="<?php echo htmlspecialchars($settings['discovery_hero_image'] ?? '/assets/img/discovery_call.jpg'); ?>" alt="Discovery Hero Preview" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.src='/assets/img/hero.jpg';">
-                                            <div style="position: absolute; top: 12px; left: 12px; background: rgba(5,150,105,0.9); backdrop-filter: blur(8px); padding: 4px 10px; border-radius: 20px; color: #ffffff; font-size: 0.72rem; font-weight: 700; display: inline-flex; align-items: center; gap: 6px;">
-                                                <span style="width: 6px; height: 6px; border-radius: 50%; background: #ffffff;"></span>
-                                                <?php echo htmlspecialchars($settings['discovery_available_text'] ?? 'Available — Book your slot now'); ?>
-                                            </div>
+                                    <div style="aspect-ratio: 16/9; border-radius: 10px; overflow: hidden; background: #0f172a; border: 1px solid #e2e8f0; position: relative; margin-bottom: 14px;">
+                                        <img id="discHeroPreview" src="<?php echo htmlspecialchars($settings['discovery_hero_image'] ?? '/assets/img/discovery_call.jpg'); ?>" alt="Preview" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.src='/assets/img/hero.jpg';">
+                                        <div style="position: absolute; top: 10px; left: 10px; background: rgba(5,150,105,0.9); padding: 3px 10px; border-radius: 20px; color: #ffffff; font-size: 0.7rem; font-weight: 700;">
+                                            <?php echo htmlspecialchars($settings['discovery_available_text'] ?? 'Available — Book your slot now'); ?>
                                         </div>
                                     </div>
 
-                                    <div class="form-field" style="margin-bottom: 16px;">
-                                        <label class="form-label-title">Availability Status Pill Text</label>
+                                    <div class="form-field" style="margin-bottom: 14px;">
+                                        <label class="form-label-title">Availability Pill</label>
                                         <input type="text" name="discovery_available_text" class="form-text-input" value="<?php echo htmlspecialchars($settings['discovery_available_text'] ?? 'Available — Book your slot now'); ?>">
                                     </div>
 
-                                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
                                         <div>
                                             <label class="form-label-title">Form Title</label>
                                             <input type="text" name="discovery_form_title" class="form-text-input" value="<?php echo htmlspecialchars($settings['discovery_form_title'] ?? 'Request a Discovery Call'); ?>">
                                         </div>
                                         <div>
-                                            <label class="form-label-title">Button Label</label>
+                                            <label class="form-label-title">Submit Button</label>
                                             <input type="text" name="discovery_button_text" class="form-text-input" value="<?php echo htmlspecialchars($settings['discovery_button_text'] ?? 'Schedule Consultation'); ?>">
                                         </div>
                                     </div>
                                 </div>
                             </div>
 
-                            <!-- Column B: Text Structure & 4 Repeatable Feature Cards -->
                             <div>
                                 <div class="dashboard-card">
-                                    <div class="card-header-row" style="margin-bottom: 16px;">
+                                    <div class="card-header-row" style="margin-bottom: 14px;">
                                         <div class="card-icon-badge"><i class="fa-solid fa-align-left"></i></div>
-                                        <div class="card-title-text">Column B &bull; Discovery Copy &amp; 4 Feature Cards</div>
+                                        <div class="card-title-text">Copy &amp; Highlights</div>
                                     </div>
 
-                                    <div class="form-field" style="margin-bottom: 14px;">
-                                        <label class="form-label-title">Pill Badge Label</label>
+                                    <div class="form-field" style="margin-bottom: 12px;">
+                                        <label class="form-label-title">Badge</label>
                                         <input type="text" name="discovery_badge_label" class="form-text-input" value="<?php echo htmlspecialchars($settings['discovery_badge_label'] ?? 'GET IN TOUCH'); ?>">
                                     </div>
 
-                                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px;">
+                                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px;">
                                         <div>
                                             <label class="form-label-title">Headline (White)</label>
                                             <input type="text" name="discovery_headline_white" class="form-text-input" value="<?php echo htmlspecialchars($settings['discovery_headline_white'] ?? 'Book a'); ?>">
                                         </div>
                                         <div>
-                                            <label class="form-label-title">Headline (Red Accent)</label>
+                                            <label class="form-label-title">Headline (Red)</label>
                                             <input type="text" name="discovery_headline_red" class="form-text-input" value="<?php echo htmlspecialchars($settings['discovery_headline_red'] ?? 'Discovery Call'); ?>">
                                         </div>
                                     </div>
 
-                                    <div class="form-field" style="margin-bottom: 18px;">
+                                    <div class="form-field" style="margin-bottom: 14px;">
                                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-                                            <label class="form-label-title" style="margin: 0;">Discovery Subtitle</label>
-                                            <span id="discSubCounter" style="font-size: 0.72rem; color: #94a3b8;">0 chars</span>
+                                            <label class="form-label-title" style="margin: 0;">Subtitle</label>
+                                            <span id="discSubCounter" style="font-size: 0.7rem; color: #94a3b8;"></span>
                                         </div>
-                                        <textarea name="discovery_subtitle" id="discSubTextarea" class="form-text-input" rows="3" oninput="document.getElementById('discSubCounter').textContent = this.value.length + ' chars';"><?php echo htmlspecialchars($settings['discovery_subtitle'] ?? 'Schedule a direct consultation with our creative directors to discuss your upcoming production, timeline, and creative vision.'); ?></textarea>
+                                        <textarea name="discovery_subtitle" id="discSubTextarea" class="form-text-input" rows="2" oninput="document.getElementById('discSubCounter').textContent = this.value.length;"><?php echo htmlspecialchars($settings['discovery_subtitle'] ?? 'Schedule a direct consultation with our creative directors to discuss your upcoming production, timeline, and creative vision.'); ?></textarea>
                                     </div>
 
-                                    <!-- 4 Feature Cards -->
-                                    <label class="form-label-title" style="margin-bottom: 10px; display: block;">4 Discovery Value Points (Frontpage Feature Grid):</label>
+                                    <label class="form-label-title" style="margin-bottom: 8px; display: block;">Highlights</label>
                                     <?php 
                                     $discFeatures = $settings['discovery_features'] ?? [
                                         ['icon' => 'fa-solid fa-camera-movie', 'title' => '4K / 8K Cinema Production', 'desc' => 'Cinema-grade optics, stabilized gimbal rigs, and broadcast sound gear.'],
@@ -7723,14 +7273,14 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                         ['icon' => 'fa-solid fa-shield-halved', 'title' => 'Guaranteed Turnaround', 'desc' => 'Milestone-driven editing, grading, and sound mastering delivered on schedule.'],
                                         ['icon' => 'fa-solid fa-earth-americas', 'title' => 'Global Crew Capabilities', 'desc' => 'Mobile cinematography units ready for destination shoots worldwide.']
                                     ];
-                                    foreach ($discFeatures as $fIdx => $feat):
+                                    foreach ($discFeatures as $feat):
                                     ?>
-                                        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 12px; margin-bottom: 10px;">
-                                            <div style="display: grid; grid-template-columns: 140px 1fr; gap: 8px; margin-bottom: 6px;">
-                                                <input type="text" name="feature_icon[]" class="form-text-input" style="padding: 5px 8px; font-size: 0.76rem;" placeholder="fa-solid fa-check" value="<?php echo htmlspecialchars($feat['icon'] ?? 'fa-solid fa-check'); ?>">
-                                                <input type="text" name="feature_title[]" class="form-text-input" style="padding: 5px 8px; font-size: 0.78rem; font-weight: 700;" placeholder="Feature Title" value="<?php echo htmlspecialchars($feat['title'] ?? ''); ?>">
+                                        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px 10px; margin-bottom: 8px;">
+                                            <div style="display: grid; grid-template-columns: 135px 1fr; gap: 6px; margin-bottom: 6px;">
+                                                <input type="text" name="feature_icon[]" class="form-text-input" style="padding: 5px 8px; font-size: 0.74rem;" placeholder="fa-solid fa-check" value="<?php echo htmlspecialchars($feat['icon'] ?? 'fa-solid fa-check'); ?>">
+                                                <input type="text" name="feature_title[]" class="form-text-input" style="padding: 5px 8px; font-size: 0.78rem; font-weight: 700;" placeholder="Title" value="<?php echo htmlspecialchars($feat['title'] ?? ''); ?>">
                                             </div>
-                                            <input type="text" name="feature_desc[]" class="form-text-input" style="padding: 5px 8px; font-size: 0.74rem;" placeholder="Feature Description" value="<?php echo htmlspecialchars($feat['desc'] ?? ''); ?>">
+                                            <input type="text" name="feature_desc[]" class="form-text-input" style="padding: 5px 8px; font-size: 0.74rem;" placeholder="Description" value="<?php echo htmlspecialchars($feat['desc'] ?? ''); ?>">
                                         </div>
                                     <?php endforeach; ?>
                                 </div>
@@ -8050,6 +7600,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                             </div>
                         <?php endforeach; ?>
                     </div>
+
                 <?php endif; ?>
 
             <!-- SECTION: SERVICES -->
@@ -10241,6 +9792,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                             </div>
                         <?php endforeach; ?>
                     </div>
+
                 <?php endif; ?>
 
                 <!-- Custom Delete Portfolio Modal Popup -->
@@ -12602,6 +12154,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                             </div>
                         <?php endforeach; ?>
                     </div>
+
                 <?php endif; ?>
 
             <!-- SECTION: CLIENT BRANDS MANAGEMENT -->
@@ -12621,38 +12174,38 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                 }
             ?>
                 <!-- Header Bar -->
-                <div class="section-header-bar" style="align-items: center; margin-bottom: 24px;">
-                    <div>
-                        <h1 class="section-header-title" style="font-size: 1.75rem; font-weight: 700; color: #0f172a; margin-bottom: 4px;">Client Brands &amp; Partners</h1>
-                        <p class="section-header-desc" style="font-size: 0.88rem; color: #64748b; margin: 0; display: flex; align-items: center; gap: 8px;">
-                            <strong style="color: #0f172a;"><?php echo count($brandLogosList); ?> Client Brands</strong>
-                            <span>•</span>
-                            <span>Manage brand names, icons, and Cloudinary logo images displayed in the homepage ticker</span>
-                        </p>
+                <div class="section-header-bar" style="align-items: center; margin-bottom: 20px;">
+                    <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+                        <h1 class="section-header-title" style="font-size: 1.5rem; font-weight: 700; color: #0f172a; margin: 0;">Client Brands</h1>
+                        <span style="background: #f1f5f9; color: #475569; font-size: 0.76rem; font-weight: 700; padding: 3px 10px; border-radius: 20px;"><?php echo count($brandLogosList); ?></span>
                     </div>
-                    <?php if ($subAction !== 'add' && $editingBrandId === null): ?>
-                        <a href="/admin/index.php?section=brands&sub_action=add" class="btn-save-primary" style="text-decoration: none; padding: 10px 22px; background-color: #dc2626;">
-                            <i class="fa-solid fa-plus"></i> Add New Brand
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <a href="/admin/brands" class="native-editor-btn" style="text-decoration: none; height: 38px; padding: 0 14px; font-size: 0.82rem; font-weight: 600;">
+                            <i class="fa-solid fa-arrow-left" style="margin-right: 4px;"></i> Studio
                         </a>
-                    <?php endif; ?>
+                        <?php if ($subAction !== 'add' && $editingBrandId === null): ?>
+                            <a href="/admin/index.php?section=brands&sub_action=add" class="btn-save-primary" style="text-decoration: none; padding: 9px 18px; background-color: #dc2626; font-size: 0.84rem;">
+                                <i class="fa-solid fa-plus"></i> Add Brand
+                            </a>
+                        <?php endif; ?>
+                    </div>
                 </div>
 
                 <?php if ($editingBrand !== null || $subAction === 'add'): ?>
                     <!-- FORM VIEW: EDIT OR ADD BRAND LOGO -->
-                    <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 28px; margin-bottom: 32px; box-shadow: 0 4px 12px rgba(0,0,0,0.03);">
-                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; padding-bottom: 14px; border-bottom: 1px solid #f1f5f9;">
-                            <h2 style="font-size: 1.2rem; font-weight: 700; color: #0f172a; margin: 0; display: flex; align-items: center; gap: 8px;">
-                                <i class="fa-solid fa-pen-to-square" style="color: #dc2626;"></i>
-                                <?php echo ($editingBrand !== null) ? 'Editing Brand: ' . htmlspecialchars($editingBrand['name']) : 'Add New Client Brand'; ?>
+                    <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 24px; margin-bottom: 28px; box-shadow: 0 2px 8px rgba(0,0,0,0.02);">
+                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; padding-bottom: 12px; border-bottom: 1px solid #f1f5f9;">
+                            <h2 style="font-size: 1.08rem; font-weight: 700; color: #0f172a; margin: 0;">
+                                <?php echo ($editingBrand !== null) ? htmlspecialchars($editingBrand['name']) : 'New Brand'; ?>
                             </h2>
-                            <a href="/admin/index.php?section=brands" style="color: #64748b; font-size: 0.85rem; text-decoration: none; font-weight: 600;">
-                                <i class="fa-solid fa-xmark"></i> Close Form
+                            <a href="/admin/index.php?section=brands&view=full" style="color: #64748b; font-size: 0.82rem; text-decoration: none; font-weight: 600;">
+                                <i class="fa-solid fa-xmark"></i> Close
                             </a>
                         </div>
 
                         <?php if (isset($_GET['saved'])): ?>
-                            <div style="background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; padding: 12px 18px; border-radius: 10px; font-weight: 700; font-size: 0.9rem; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
-                                <i class="fa-solid fa-circle-check" style="color: #22c55e;"></i> Brand logo saved successfully &amp; live on homepage ticker!
+                            <div style="background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; padding: 10px 16px; border-radius: 8px; font-weight: 700; font-size: 0.85rem; margin-bottom: 18px; display: flex; align-items: center; gap: 8px;">
+                                <i class="fa-solid fa-circle-check" style="color: #22c55e;"></i> Brand saved.
                             </div>
                         <?php endif; ?>
 
@@ -12669,76 +12222,70 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                 <div>
                                     <div class="form-field">
                                         <label class="form-label-title">Brand Name <span style="color: #ef4444;">*</span></label>
-                                        <input type="text" name="name" required class="form-text-input" value="<?php echo htmlspecialchars($editingBrand['name'] ?? ''); ?>" placeholder="e.g. WeatherTech">
+                                        <input type="text" name="name" required class="form-text-input" value="<?php echo htmlspecialchars($editingBrand['name'] ?? ''); ?>" placeholder="WeatherTech">
                                     </div>
 
                                     <div class="form-field">
-                                        <label class="form-label-title">Logo Image URL / Path (PNG / JPEG)</label>
-                                        <input type="text" name="image" id="brand_image_input" class="form-text-input" value="<?php echo htmlspecialchars($editingBrand['image'] ?? ''); ?>" placeholder="/assets/img/brands/weathertech.png or Cloudinary URL" oninput="updateBrandPreviewFromUrl(this.value)">
-                                        <small style="color: #64748b; font-size: 0.78rem; margin-top: 4px; display: block;">You can paste an image URL/path above, or upload a PNG/JPEG using the dropzone on the right.</small>
+                                        <label class="form-label-title">Logo URL</label>
+                                        <input type="text" name="image" id="brand_image_input" class="form-text-input" value="<?php echo htmlspecialchars($editingBrand['image'] ?? ''); ?>" placeholder="https://... or /assets/img/brands/..." oninput="updateBrandPreviewFromUrl(this.value)">
                                     </div>
 
                                     <div class="form-field">
-                                        <label class="form-label-title">FontAwesome Icon Class (Fallback)</label>
+                                        <label class="form-label-title">Fallback Icon</label>
                                         <div style="display: flex; gap: 10px; align-items: center;">
                                             <input type="text" name="icon" class="form-text-input" value="<?php echo htmlspecialchars($editingBrand['icon'] ?? 'fa-solid fa-star'); ?>" placeholder="fa-solid fa-star">
                                             <div style="width: 38px; height: 38px; border: 1px solid #cbd5e1; border-radius: 8px; display: flex; align-items: center; justify-content: center; background: #f8fafc; color: #0f172a; flex-shrink: 0;">
                                                 <i class="<?php echo htmlspecialchars($editingBrand['icon'] ?? 'fa-solid fa-star'); ?>"></i>
                                             </div>
                                         </div>
-                                        <small style="color: #64748b; font-size: 0.78rem; margin-top: 4px; display: block;">Used if no logo image is uploaded. e.g. <code>fa-solid fa-building</code> or <code>fa-solid fa-film</code>.</small>
                                     </div>
 
-                                    <div class="form-field" style="margin-top: 18px; display: flex; flex-direction: column; gap: 10px;">
-                                        <label style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; font-size: 0.9rem; color: #0f172a; cursor: pointer;">
+                                    <div class="form-field" style="margin-top: 16px; display: flex; flex-direction: column; gap: 10px;">
+                                        <label style="display: inline-flex; align-items: center; gap: 8px; font-weight: 600; font-size: 0.86rem; color: #0f172a; cursor: pointer;">
                                             <input type="checkbox" name="visible" value="1" <?php echo (!isset($editingBrand['visible']) || !empty($editingBrand['visible'])) ? 'checked' : ''; ?>>
-                                            Display in Homepage Ticker
+                                            Show on homepage
                                         </label>
 
-                                        <label style="display: inline-flex; align-items: center; gap: 8px; font-weight: 600; font-size: 0.86rem; color: #475569; cursor: pointer;">
+                                        <label style="display: inline-flex; align-items: center; gap: 8px; font-weight: 500; font-size: 0.84rem; color: #475569; cursor: pointer;">
                                             <input type="checkbox" name="full_color" id="brand_full_color" value="1" <?php echo !empty($editingBrand['full_color']) ? 'checked' : ''; ?> onchange="toggleBrandColorPreview(this.checked)">
-                                            Keep Original Full Colors (Disable white monochrome filter for dark theme)
+                                            Keep original colors
                                         </label>
                                     </div>
                                 </div>
 
-                                <!-- Right Column: Image Upload & Live Dark Preview -->
+                                <!-- Right Column: Logo Preview & Upload -->
                                 <div>
                                     <div class="form-field">
-                                        <label class="form-label-title">Brand Logo Image &amp; Live Dark Preview</label>
-                                        <div style="border: 2px dashed #cbd5e1; border-radius: 12px; padding: 22px; text-align: center; background: #f8fafc; position: relative;">
-                                            <div style="font-size: 0.76rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;">
-                                                Dark Marquee Live Preview
-                                            </div>
-                                            <div id="brand_preview_container" style="background: #09090b; border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 10px; padding: 18px; margin-bottom: 14px; min-height: 80px; display: flex; align-items: center; justify-content: center; box-shadow: inset 0 2px 8px rgba(0,0,0,0.4);">
+                                        <label class="form-label-title">Logo Preview</label>
+                                        <div style="border: 1.5px dashed #cbd5e1; border-radius: 12px; padding: 20px; text-align: center; background: #f8fafc;">
+                                            <div id="brand_preview_container" style="background: #09090b; border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 10px; padding: 18px; margin-bottom: 14px; min-height: 84px; display: flex; align-items: center; justify-content: center;">
                                                 <?php if (!empty($editingBrand['image'])): ?>
                                                     <img id="brand_preview_img" src="<?php echo htmlspecialchars(getCloudinaryUrl($editingBrand['image'])); ?>" style="max-height: 48px; max-width: 170px; object-fit: contain; <?php echo empty($editingBrand['full_color']) ? 'filter: brightness(0) invert(1);' : ''; ?>">
-                                                    <div id="brand_no_preview" style="color: #64748b; font-size: 0.85rem; display: none;">No logo image uploaded yet.</div>
+                                                    <div id="brand_no_preview" style="color: #64748b; font-size: 0.82rem; display: none;">No logo yet</div>
                                                 <?php else: ?>
                                                     <img id="brand_preview_img" src="" style="max-height: 48px; max-width: 170px; object-fit: contain; display: none;">
-                                                    <div id="brand_no_preview" style="color: #64748b; font-size: 0.85rem;">No logo image uploaded yet.</div>
+                                                    <div id="brand_no_preview" style="color: #64748b; font-size: 0.82rem;">No logo yet</div>
                                                 <?php endif; ?>
                                             </div>
 
-                                            <div id="brand_upload_status" style="display: none; margin-bottom: 12px; font-weight: 700; font-size: 0.84rem; color: #2563eb;">
-                                                <i class="fa-solid fa-spinner fa-spin"></i> Uploading brand logo to Cloudinary...
+                                            <div id="brand_upload_status" style="display: none; margin-bottom: 10px; font-weight: 700; font-size: 0.8rem; color: #2563eb;">
+                                                <i class="fa-solid fa-spinner fa-spin"></i> Uploading...
                                             </div>
 
-                                            <label class="btn-save-primary" style="background-color: #0f172a; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; font-size: 0.84rem; padding: 10px 20px;">
-                                                <i class="fa-solid fa-cloud-arrow-up"></i> Upload PNG / JPEG Logo
+                                            <label class="btn-save-primary" style="background-color: #0f172a; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; font-size: 0.82rem; padding: 9px 18px;">
+                                                <i class="fa-solid fa-cloud-arrow-up"></i> Upload Logo
                                                 <input type="file" id="brand_file_input" name="brand_image_file" accept="image/png, image/jpeg, image/webp, image/svg+xml" style="display: none;" onchange="handleBrandFileUpload(this)">
                                             </label>
-                                            <p style="font-size: 0.74rem; color: #94a3b8; margin-top: 8px; margin-bottom: 0;">Supported formats: Transparent PNG, JPEG, SVG, WebP. High-resolution bold logos recommended.</p>
                                         </div>
                                     </div>
                                 </div>
                             </div>
 
-                            <div style="display: flex; gap: 12px; margin-top: 24px;">
-                                <button type="submit" class="btn-save-primary" style="background-color: #dc2626; padding: 12px 28px;">
-                                    <i class="fa-solid fa-floppy-disk"></i> Save Brand Logo
+                            <div style="display: flex; gap: 10px; margin-top: 20px;">
+                                <button type="submit" class="btn-save-primary" style="background-color: #dc2626; padding: 10px 24px;">
+                                    <i class="fa-solid fa-floppy-disk"></i> Save Brand
                                 </button>
-                                <a href="/admin/index.php?section=brands" style="padding: 12px 20px; background: #f1f5f9; color: #475569; border-radius: 8px; text-decoration: none; font-weight: 700; font-size: 0.9rem;">
+                                <a href="/admin/index.php?section=brands&view=full" style="padding: 10px 18px; background: #f1f5f9; color: #475569; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 0.86rem;">
                                     Cancel
                                 </a>
                             </div>
@@ -12828,18 +12375,10 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                     <!-- TOAST CONTAINER FOR BRAND ACTIONS -->
                     <div id="brand_toast_container" style="position: fixed; bottom: 28px; right: 28px; z-index: 99999; display: flex; flex-direction: column; gap: 10px; pointer-events: none;"></div>
 
-                    <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px 20px; margin-bottom: 24px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
-                        <div style="display: flex; align-items: center; gap: 10px;">
-                            <span style="width: 32px; height: 32px; border-radius: 8px; background: #e0e7ff; color: #4338ca; display: flex; align-items: center; justify-content: center; font-size: 0.85rem;">
-                                <i class="fa-solid fa-arrows-up-down-left-right"></i>
-                            </span>
-                            <div>
-                                <strong style="font-size: 0.88rem; color: #0f172a; display: block;">Reorder &amp; Organize Ticker Display</strong>
-                                <span style="font-size: 0.78rem; color: #64748b;">Drag and drop cards or use the &larr; / &rarr; buttons to reorder how logos roll across the homepage marquee.</span>
-                            </div>
-                        </div>
-                        <div id="brand_save_indicator" style="display: none; align-items: center; gap: 6px; font-size: 0.82rem; font-weight: 700; color: #16a34a; background: #f0fdf4; border: 1px solid #bbf7d0; padding: 6px 14px; border-radius: 20px;">
-                            <i class="fa-solid fa-circle-check"></i> Order saved live!
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; font-size: 0.82rem; color: #64748b;">
+                        <span><i class="fa-solid fa-grip-vertical" style="margin-right: 6px; color: #94a3b8;"></i>Drag cards or use arrows to reorder</span>
+                        <div id="brand_save_indicator" style="display: none; align-items: center; gap: 6px; font-size: 0.8rem; font-weight: 700; color: #16a34a; background: #f0fdf4; border: 1px solid #bbf7d0; padding: 4px 12px; border-radius: 20px;">
+                            <i class="fa-solid fa-circle-check"></i> Saved
                         </div>
                     </div>
 
@@ -14100,42 +13639,36 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                                 </div>
                             </div>
 
-                            <!-- MODULE PERMISSIONS & CMS DELEGATION ASSIGNMENTS -->
-                            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 14px; padding: 22px; margin-top: 24px;">
-                                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px;">
-                                    <div>
-                                        <h3 style="margin: 0; font-size: 1.05rem; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 8px;">
-                                            <i class="fa-solid fa-layer-group" style="color: #dc2626;"></i> Module Permissions &amp; Delegation
-                                        </h3>
-                                        <p style="margin: 4px 0 0 0; font-size: 0.8rem; color: #64748b;">
-                                            Assign or move module permissions across team members. Super Admin and IT Administrator roles automatically possess universal access across all modules.
-                                        </p>
-                                    </div>
-                                    <span style="font-size: 0.72rem; font-weight: 700; background: #e2e8f0; color: #475569; padding: 3px 10px; border-radius: 20px;">
-                                        Dynamic RBAC
+                            <!-- MODULE PERMISSIONS -->
+                            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; margin-top: 22px;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+                                    <h3 style="margin: 0; font-size: 0.98rem; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 8px;">
+                                        <i class="fa-solid fa-layer-group" style="color: #dc2626;"></i> Module Access
+                                    </h3>
+                                    <?php 
+                                        $allModules = getAvailableAdminModules();
+                                        $editingRole = $editingStaff['role'] ?? 'Staff';
+                                        $isTargetHighLevel = in_array($editingRole, ['Owner / Super Admin', 'Super Admin', 'IT Administrator', 'IT Manager'], true);
+                                        $assignedStaffModules = !empty($editingStaff['assigned_modules']) && is_array($editingStaff['assigned_modules']) 
+                                            ? $editingStaff['assigned_modules'] 
+                                            : getUserAssignedModules($editingStaff['username'] ?? '', $editingStaff['email'] ?? '', $editingRole);
+                                    ?>
+                                    <span style="font-size: 0.72rem; font-weight: 700; background: <?php echo $isTargetHighLevel ? '#ecfdf5' : '#e2e8f0'; ?>; color: <?php echo $isTargetHighLevel ? '#059669' : '#475569'; ?>; padding: 3px 10px; border-radius: 20px;">
+                                        <?php echo $isTargetHighLevel ? 'Full Access (Role)' : 'Custom Modules'; ?>
                                     </span>
                                 </div>
 
-                                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px;">
+                                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 10px;">
                                     <?php 
-                                        $allModules = getAvailableAdminModules();
-                                        $assignedStaffModules = !empty($editingStaff['assigned_modules']) && is_array($editingStaff['assigned_modules']) 
-                                            ? $editingStaff['assigned_modules'] 
-                                            : getUserAssignedModules($editingStaff['username'] ?? '', $editingStaff['email'] ?? '', $editingStaff['role'] ?? 'Staff');
-                                        
-                                        $isHighLevelRole = in_array($currentRole, ['Owner / Super Admin', 'Super Admin', 'IT Administrator', 'IT Manager'], true);
                                         foreach ($allModules as $mKey => $mInfo):
-                                            $hasMod = $isHighLevelRole || in_array('*', $assignedStaffModules, true) || in_array($mKey, $assignedStaffModules, true);
+                                            $hasMod = $isTargetHighLevel || in_array('*', $assignedStaffModules, true) || in_array($mKey, $assignedStaffModules, true);
                                     ?>
-                                        <label style="display: flex; align-items: center; gap: 10px; background: #ffffff; border: 1px solid <?php echo $hasMod ? '#fca5a5' : '#cbd5e1'; ?>; border-radius: 10px; padding: 10px 14px; cursor: pointer; transition: all 0.15s ease;" onmouseover="this.style.borderColor='#dc2626'" onmouseout="this.style.borderColor='<?php echo $hasMod ? '#fca5a5' : '#cbd5e1'; ?>'">
-                                            <input type="checkbox" name="assigned_modules[]" value="<?php echo htmlspecialchars($mKey); ?>" <?php echo $hasMod ? 'checked' : ''; ?> style="accent-color: #dc2626; width: 16px; height: 16px;">
-                                            <div style="overflow: hidden;">
-                                                <div style="font-size: 0.84rem; font-weight: 700; color: #0f172a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-                                                    <i class="<?php echo htmlspecialchars($mInfo['icon']); ?>" style="color: #64748b; margin-right: 4px; font-size: 0.78rem;"></i>
-                                                    <?php echo htmlspecialchars($mInfo['name']); ?>
-                                                </div>
-                                                <div style="font-size: 0.7rem; color: #94a3b8;"><?php echo htmlspecialchars($mInfo['category']); ?></div>
-                                            </div>
+                                        <label style="display: flex; align-items: center; gap: 10px; background: #ffffff; border: 1px solid <?php echo $hasMod ? '#fca5a5' : '#cbd5e1'; ?>; border-radius: 9px; padding: 9px 12px; cursor: pointer; transition: all 0.15s ease;">
+                                            <input type="checkbox" name="assigned_modules[]" value="<?php echo htmlspecialchars($mKey); ?>" <?php echo $hasMod ? 'checked' : ''; ?> style="accent-color: #dc2626; width: 15px; height: 15px;">
+                                            <span style="font-size: 0.82rem; font-weight: 600; color: #0f172a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                                <i class="<?php echo htmlspecialchars($mInfo['icon']); ?>" style="color: #64748b; margin-right: 5px; font-size: 0.76rem;"></i>
+                                                <?php echo htmlspecialchars($mInfo['name']); ?>
+                                            </span>
                                         </label>
                                     <?php endforeach; ?>
                                 </div>
@@ -14339,6 +13872,87 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                             </div>
                         <?php endforeach; ?>
                     </div>
+
+                    <?php if (function_exists('canManageModulePermissions') && canManageModulePermissions($userRole, $userEmail, $username)):
+                        $moduleRegistry = function_exists('getModulePermissionsRegistry') ? getModulePermissionsRegistry() : [];
+                        $availableMods = function_exists('getAvailableAdminModules') ? getAvailableAdminModules() : [];
+                        $staffNameByUser = [];
+                        foreach ($staffAccounts as $stMap) {
+                            $uKey = strtolower(trim((string)($stMap['username'] ?? '')));
+                            if ($uKey !== '') {
+                                $staffNameByUser[$uKey] = $stMap['full_name'] ?? $uKey;
+                            }
+                        }
+                    ?>
+                    <!-- CENTRALIZED MODULE ACCESS & DELEGATION -->
+                    <div id="module-delegation" class="dashboard-card" style="margin-top: 28px; padding: 24px; border-radius: 14px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; flex-wrap: wrap; gap: 10px;">
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <div class="card-icon-badge"><i class="fa-solid fa-shield-halved"></i></div>
+                                <div>
+                                    <h2 style="margin: 0; font-size: 1.08rem; font-weight: 700; color: #0f172a;">Module Access &amp; Delegation</h2>
+                                </div>
+                            </div>
+                            <span style="font-size: 0.74rem; font-weight: 700; color: #059669; background: #ecfdf5; border: 1px solid #a7f3d0; padding: 3px 10px; border-radius: 20px;">
+                                Super Admin &amp; IT: Full Access
+                            </span>
+                        </div>
+
+                        <div style="display: flex; flex-direction: column; gap: 8px;">
+                            <?php foreach ($availableMods as $mKey => $mMeta):
+                                $rawAssignees = $moduleRegistry[$mKey] ?? [];
+                                if (isset($rawAssignees['users']) && is_array($rawAssignees['users'])) {
+                                    $rawAssignees = $rawAssignees['users'];
+                                }
+                                if (!is_array($rawAssignees)) {
+                                    $rawAssignees = [];
+                                }
+                            ?>
+                            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 10px 14px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                                <div style="display: flex; align-items: center; gap: 10px; min-width: 220px;">
+                                    <i class="<?php echo htmlspecialchars($mMeta['icon'] ?? 'fa-solid fa-cube'); ?>" style="color: #dc2626; width: 18px; text-align: center;"></i>
+                                    <div>
+                                        <div style="font-size: 0.86rem; font-weight: 700; color: #0f172a;"><?php echo htmlspecialchars($mMeta['name'] ?? $mKey); ?></div>
+                                        <div style="font-size: 0.72rem; color: #64748b;"><?php echo htmlspecialchars($mMeta['url'] ?? ('/admin/' . $mKey)); ?></div>
+                                    </div>
+                                </div>
+
+                                <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap; flex: 1;">
+                                    <?php if (!empty($rawAssignees)): ?>
+                                        <?php foreach ($rawAssignees as $aUser):
+                                            $aLabel = $staffNameByUser[strtolower($aUser)] ?? $aUser;
+                                        ?>
+                                            <span style="font-size: 0.74rem; font-weight: 600; color: #0f172a; background: #ffffff; border: 1px solid #cbd5e1; padding: 2px 9px; border-radius: 14px;">
+                                                <?php echo htmlspecialchars($aLabel); ?>
+                                            </span>
+                                        <?php endforeach; ?>
+                                    <?php else: ?>
+                                        <span style="font-size: 0.74rem; font-weight: 600; color: #64748b;">Admins &amp; IT only</span>
+                                    <?php endif; ?>
+                                </div>
+
+                                <form method="POST" action="/admin/staff_accounts" style="display: inline-flex; align-items: center; gap: 6px; margin: 0;">
+                                    <input type="hidden" name="action" value="transfer_module_assignment">
+                                    <input type="hidden" name="target_module" value="<?php echo htmlspecialchars($mKey); ?>">
+                                    <select name="assignee" class="form-text-input" style="padding: 4px 8px; font-size: 0.76rem; height: 30px; border-radius: 6px; width: auto;">
+                                        <option value="">Member...</option>
+                                        <?php foreach ($staffAccounts as $stOpt): ?>
+                                            <option value="<?php echo htmlspecialchars($stOpt['username']); ?>"><?php echo htmlspecialchars($stOpt['full_name']); ?></option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                    <select name="op" class="form-text-input" style="padding: 4px 8px; font-size: 0.76rem; height: 30px; border-radius: 6px; width: auto;">
+                                        <option value="assign">Assign</option>
+                                        <option value="transfer">Transfer</option>
+                                        <option value="remove">Remove</option>
+                                        <option value="clear">Clear</option>
+                                    </select>
+                                    <button type="submit" class="native-editor-btn" style="height: 30px; padding: 0 10px; font-size: 0.76rem; font-weight: 700;">Apply</button>
+                                </form>
+                            </div>
+                            <?php endforeach; ?>
+                        </div>
+                    </div>
+                    <?php endif; ?>
                 <?php endif; ?>
 
             <?php elseif ($activeSection === 'dashboard'): ?>
@@ -18010,6 +17624,7 @@ $isAccessDenied = !hasSectionAccess($activeSection, $userRole, $userEmail, $user
                             </div>
                         <?php endforeach; ?>
                     </div>
+
                 <?php endif; ?>
 
                 <!-- POST ANNOUNCEMENT MODAL -->

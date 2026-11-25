@@ -4728,9 +4728,11 @@ function setModuleAssignment($module, $assignee, $action = 'add')
                 return strcasecmp((string) $x, $target) !== 0;
             }));
         }
-    } elseif ($action === 'replace') {
+    } elseif ($action === 'replace' || $action === 'transfer') {
         // Exclusively move/transfer module across team members
         $perms[$m] = is_array($assignee) ? array_values(array_unique(array_filter($assignee))) : (!empty($target) ? [$target] : []);
+    } elseif ($action === 'clear' || $action === 'reset') {
+        $perms[$m] = [];
     }
 
     saveSiteSettings(['module_permissions' => $perms]);
